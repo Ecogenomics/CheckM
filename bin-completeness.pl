@@ -98,9 +98,9 @@ my $outdir;
 opendir($outdir, $prefix) || die $!;
 my @resultsdir = grep { $_ !~ /^\./ } readdir($outdir);
 
-my %found_genes;
 # parse the tabular output from hmmer
 for my $infile (@resultsdir) {
+    my %found_genes;
     print "$infile\n";
     my $hmmerout = openRead("$prefix/$infile/hmmer_out.txt");
     while (<$hmmerout>) {
