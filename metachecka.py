@@ -24,12 +24,19 @@
 #
 ###############################################################################
 
-from optparse import OptionParser
+
 import sys
-from pprint import pprint
 import os
 import re
+import csv
+from optparse import OptionParser
+from pprint import pprint
 from cogent.parse.fasta import  MinimalFastaParser
+from cogent.core.usage import BaseUsage
+import numpy as np
+import matplotlib
+matplotlib.use("PS")
+import matplotlib.pyplot as plt
 
 ###############################################################################
 # CODE HERE
@@ -39,12 +46,14 @@ class Marker:
         self.name = marker_name
         self.good_count = 0
         self.bad_count = 0
+        self.contig = {}
 
     def __str__(self):
         return "%s\t%s\t%s" % (self.name, self.good_count, self.bad_count)
 
-    def add_good(self):
+    def add_good(self, contig_name):
         self.good_count += 1
+        self.contig[contig_name] = True
 
     def add_bad(self):
         self.bad_count += 1
@@ -98,7 +107,7 @@ class MarkerParser(object):
                         if c == '-':
                             num_gaps+=1.0
                     if num_gaps/float(len(seq)) <= self.cutoff:
-                        marker_counts[match.group(1)].add_good()
+                        marker_counts[match.group(1)].add_good(name)
                         total_good+=1
                     else:
                         marker_counts[match.group(1)].add_bad()
@@ -109,23 +118,15 @@ class MarkerParser(object):
                         marker_contigs[name] = MarkerMapping(name)
                         marker_contigs[name].add_marker(match.group(1))
                 #print infile, total_good, total_seqs
-        for marker_name, marker_obj in marker_counts.iteritems():
-            print marker_obj
+        #for marker_name, marker_obj in marker_counts.iteritems():
+        #    print marker_obj
 
-        for name, marker in marker_contigs.iteritems():
-            print name
-            for k, v in marker.marker.iteritems():
-                print k, v
-        return 0
+        #for name, marker in marker_contigs.iteritems():
+        #    print name
+        #    for k, v in marker.marker.iteritems():
+        #        print k, v
+        return marker_contigs, marker_counts
         
-
-# parse a bam file to generate the length, gc, and coverage 
-# information for all of the contigs to plot
-class StatsGenerator(object):
-    def __init__(self, arg):
-        super(StatsGenerator, self).__init__()
-        self.arg = arg
-
 # class for holding all of the information about our contigs
 # info that will be useful: gc, coverage, length  
 class ContigStats(object):
@@ -139,12 +140,180 @@ class ContigStats(object):
     def __str__(self):
         return "%s\t%s\t%s\t%s" % (self.name, self.length, self.gc, self.coverage)
 
-    def read_csv(self, file, field_separator="\t"):
-        pass
+
+# parse a bam file to generate the length, gc, and coverage 
+# information for all of the contigs to plot
+class StatsGenerator(object):
+    def __init__(self):
+        super(StatsGenerator, self).__init__()
+        self.contigs = {}
+        #self.arg = arg
+
+    def read_csv(self, csv_file, field_separator=","):
+        fd = open(csv_file)
+        for line in fd:
+            try:
+                name, length, gc, coverage = line.rstrip().split(field_separator)
+            except ValueError, e:
+                print e
+                print "Offending line: "
+                print line
+                raise e
+            cs = ContigStats(name, int(length), float(gc), float(coverage))
+            self.contigs[name] = cs
+
+    def read_fasta(self, fasta_file, contig_list):
+        fd = open(fasta_file)
+        for name, seq in MinimalFastaParser(fd):
+            base_usage = BaseUsage(seq)
+            gc = base_usage.content("GC")
+            length = len(seq)
+
+    def read_bam(self, bam_file, contig_list):
+        try:
+            import pysam
+            try:
+                samFile = pysam.Samfile(bam_file, 'rb')
+            except:
+                print "Unable to open BAM file -- did you supply a SAM file instead?"
+                sys.exit(1)
+            
+            basename = os.path.splitext(bam_file)[0]
+            output_csv = csv.writer(open(basename + '.cov.csv', "wb"),
+                quoting = csv.QUOTE_NONNUMERIC )
+            
+            for reference, length in zip(samFile.references, samFile.lengths):
+                #num_reads = samFile.count(reference, 0, length)
+                #print num_reads / length
+                tid = samFile.gettid(reference)
+                if(tid != -1):
+                    tmp_cov = 0
+                    cov_vec = []
+                    for base in samFile.pileup(samFile.header['SQ'][tid]['SN'],
+                                            0, length):
+                        if opts.averages:
+                            tmp_cov += base.n
+                        else:
+                            cov_vec.append(base.n)
+                    if opts.averages:
+                        ave_coverage = float(tmp_cov) / float(length)
+                        print reference, ave_coverage
+                    else:
+                        if len(cov_vec) == 0:
+                            cov_vec = [0]*length
+                        cov_vec.insert(0,reference)
+                        output_csv.writerow(cov_vec)
+
+        except ImportError, e:
+            print "ERROR: 'pysam' not in pythonpath, cannot read bam file"
+            raise e
+
+
+# Here we plot the contigs with the markers to see where they all fall
+class Plotter(object):
+    def __init__(self, contigs, coverage_limit, output="test" ):
+            
+        super(Plotter, self).__init__()
+        self.contigs = contigs
+        self.out_name = output
+        if coverage_limit is not None:
+            self.cov_lim = coverage_limit.split(":")
+        else:
+            self.cov_lim = None
+
+    def plot_markers(self, markers, marker_mapping):
+        gc_list = []
+        gc_marker_list = []
+        gc_single_marker_list = []
+        length_list = []
+        length_marker_list = []
+        length_single_marker_list = []
+        coverage_list = []
+        coverage_marker_list = []
+        coverage_single_marker_list = []
         
+        for k,v in self.contigs.iteritems():
+            # check if this contig contains a marker
+            if k in marker_mapping:
+                for marker_name, marker_count in marker_mapping[k].marker.iteritems():
+                    if markers[marker_name].good_count > 1:
+                        gc_marker_list.append(v.gc)
+                        length_marker_list.append(v.length)
+                        coverage_marker_list.append(v.coverage)
+                    else:
+                        gc_single_marker_list.append(v.gc)
+                        length_single_marker_list.append(v.length)
+                        coverage_single_marker_list.append(v.coverage)
+            else:
+                gc_list.append(v.gc)
+                length_list.append(v.length)
+                coverage_list.append(v.coverage)
+
+        fig = plt.figure()
+        
+        ax1 = fig.add_subplot(311)
+        ax2 = fig.add_subplot(312)
+        ax3 = fig.add_subplot(313)
+        
+        if length_list and gc_list:
+            ax1.scatter(length_list, gc_list, facecolors='none')
+        if length_marker_list and gc_marker_list:
+            ax1.scatter(length_marker_list, gc_marker_list, c='r')
+        if length_single_marker_list and gc_single_marker_list:
+            ax1.scatter(length_single_marker_list, gc_single_marker_list, c='g')
+        ax1.set_xlabel('length')
+        ax1.set_ylabel('GC %')
+        ax1.set_xlim(left=0)
+        #ax1.set_ylim(bottom=0)
+        
+        if length_list and coverage_list:
+            ax2.scatter(length_list, coverage_list, facecolors='none')
+        if length_marker_list and coverage_marker_list:
+            ax2.scatter(length_marker_list, coverage_marker_list, c='r')
+        if length_single_marker_list and coverage_single_marker_list:
+            ax2.scatter(length_single_marker_list, coverage_single_marker_list,
+                    c='g')
+        ax2.set_xlabel('length')
+        ax2.set_ylabel('coverage')
+        ax2.set_xlim(left=0)
+        if self.cov_lim is not None:
+            try:
+                ax2.set_ylim(int(self.cov_lim[0]), int(self.cov_lim[1]))
+            except IndexError, e:
+                print e
+                print "The list is:"
+                print self.cov_limit
+                raise e
+        
+        if gc_list and coverage_list:
+            ax3.scatter(gc_list, coverage_list, facecolors='none')
+        if gc_marker_list and coverage_marker_list:
+            ax3.scatter(gc_marker_list, coverage_marker_list, c='r')
+        if gc_single_marker_list and coverage_single_marker_list:
+            ax3.scatter(gc_single_marker_list, coverage_single_marker_list, c='g')
+        ax3.set_xlabel('GC %')
+        ax3.set_ylabel('coverage')
+        if self.cov_lim is not None:
+            ax3.set_ylim(int(self.cov_lim[0]), int(self.cov_lim[1]))
+
+        fig.canvas.draw()
+        plt.savefig(self.out_name+".ps")
+                        
+
+      
 def main( options ):
+    # read the phylosift directory to figure out which
+    # contigs have which markers on them
     marker_parser = MarkerParser(options.path)
-    marker_parser.read_phylosift_directory()
+    marker_contigs, marker_counts = marker_parser.read_phylosift_directory()
+    
+    # read in the contig stats file
+    sg = StatsGenerator()
+    sg.read_csv(options.contig_stats)
+    #for k,v in sg.contigs.iteritems():
+    #    print v
+    plotter = Plotter(sg.contigs, options.cov_lim, options.out_name )
+    plotter.plot_markers(marker_counts, marker_contigs)
 
 ###############################################################################
 # TEMPLATE SUBS
@@ -159,18 +328,23 @@ if __name__ == '__main__':
     # add options here:
     parser.add_option("-i", "--input-directory", dest="path", default='./', 
         help="Input directory containing the output of phylosift align [default: ./]")
-    #parser.add_option("-c", "--cat", dest="cat", default=16, help="The cat's age? [default: 16")
-    
+    parser.add_option("-c", "--contig_stats", dest="contig_stats", 
+        help="A comma separated file containing assembly stats for one contig per line.\
+        The columns should be: name, length, gc, coverage")
+    parser.add_option("-o", "--output", dest="out_name", default="test",
+        help="output name prefix for postscript file (no file extension)")
+    parser.add_option("-y", "--cov_lim", dest="cov_lim",help="The upper and\
+            lower limits of the coverage to outputi in the form of 'lower:upper'")
     # get and check options
     (opts, args) = parser.parse_args()
     
     #
     # compulsory opts
     #
-    #if (opts.frog is None ):
-    #    print ("**ERROR: %prog : No frog!")
-    #    parser.print_help()
-    #    sys.exit(1)
+    if (opts.path is None or opts.contig_stats is None):
+        print ("Please supply a file containing contig stats and the output from the phylosift align directory")
+        parser.print_help()
+        sys.exit(1)
     
     # 
     # do what we came here to do
