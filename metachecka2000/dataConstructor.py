@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 ###############################################################################
 #                                                                             #
-#    metachecka2000                                                           #
+#    dataConstructor                                                          #
 #                                                                             #
-#    Wraps coarse workflows                                                   #
+#    Wrap prodical and hmmer to make data!                                    #
 #                                                                             #
 #    Copyright (C) Michael Imelfort                                           #
 #                                                                             #
@@ -48,55 +48,14 @@ __status__ = "Development"
 
 import sys
 import os 
-import argparse
 
 # MetaChecka2000 imports
-import resultsParser
 
 ###############################################################################
 ###############################################################################
 ###############################################################################
 ###############################################################################
 
-class MC2KOptionsParser():
-    def __init__(self): pass
-    
-    def parseOptions(self, options ):
-
-        if(options.subparser_name == 'build'):
-            # build prodigal and hmm result
-            print "****************************************************************"
-            print " [[MC2K]] Running prodigal and hmmer on bins..."
-            print "****************************************************************"
-                            
-        elif(options.subparser_name == 'qa'):
-            # do qa analysis
-            if options.verbose:
-                print "****************************************************************"
-                print " [[MC2K]] Checking bins..."
-                print "****************************************************************"
-            RP = resultsParser.MC2KHmmerResultsParser(prefix=options.prefix)
-            RP.analyseResults(options.out_folder,
-                              options.hmm,
-                              eCO=options.e_value,
-                              lengthCO=options.length,
-                              verbose=options.verbose
-                              )
-
-        elif(options.subparser_name == 'all'):
-            # all in one
-            print "****************************************************************"
-            print " [[MC2K]] Running complete MC2K pipeline..."
-            print "****************************************************************"
-
-        return 0
-
-        if(options.subparser_name == 'debug'):
-            # who knows?
-            RP = resultsParser.MC2KHmmerResultsParser()
-            RP.analyseResults(options.data, options.e_value)
-            
-        return 0
 
 ###############################################################################
 ###############################################################################

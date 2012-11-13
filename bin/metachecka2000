@@ -48,8 +48,7 @@ __status__ = "Development"
 
 import argparse
 import sys
-import re
-from metachecka2000 import metachecka2000 
+from metachecka2000 import metachecka2000
 
 ###############################################################################
 ###############################################################################
@@ -82,17 +81,55 @@ if __name__ == '__main__':
     ##################################################
     
     #-------------------------------------------------
-    # parse raw data and save
-    file_parser = subparsers.add_parser('parse',
+    # parse binned contigs
+    build_parser = subparsers.add_parser('build',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='parse raw data and save to disk',
-                                        description='Parse raw data and save to disk')
-    file_parser.add_argument('dbname', help="name of the database being created")
-    file_parser.add_argument('reference', help="fasta file containing bam reference sequences")
-    file_parser.add_argument('bamfiles', nargs='+', help="bam files to parse")
-    file_parser.add_argument('-d', '--dump', action="store_true", default=False, help="dump the contents of all tables to screen")
-    file_parser.add_argument('-f', '--force', action="store_true", default=False, help="overwrite existing DB file without prompting")
+                                        help='parse binned contigs',
+                                        description='Parse binned contigs')
+    build_parser.add_argument('bin_folder', help="folder containing bins to check (fasta formatted)")
+    build_parser.add_argument('out_folder', help="a place to write output files")
+    build_parser.add_argument('hmm', help="name of hmmer db to search")
+    build_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
         
+
+    #-------------------------------------------------
+    # do QA on pre-processed contigs
+    qa_parser = subparsers.add_parser('qa',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        help='do QA on pre-processed contigs',
+                                        description='Do QA on pre-processed contigs')
+    qa_parser.add_argument('out_folder', help="folder specified during build command")
+    qa_parser.add_argument('hmm', help="hmm used in the search")
+    qa_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
+    qa_parser.add_argument('-e', '--e_value', type=float, default=1e-10, help="e value cut off")
+    qa_parser.add_argument('-l', '--length', type=float, default=0.7, help="percent overlap between target and query")
+    qa_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
+    qa_parser.add_argument('-c', '--colour', action="store_true", default=False, help="print in colour")
+
+
+    #-------------------------------------------------
+    # Build + qa in one step
+    pipeline_parser = subparsers.add_parser('all',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        help='build + qa in one step',
+                                        description='Build + qa in one step')
+    pipeline_parser.add_argument('bin_folder', help="folder containing bins to check (fasta formatted)")
+    pipeline_parser.add_argument('out_folder', help="a place to write output files")
+    build_parser.add_argument('hmm', help="name of hmmer db to search")
+    pipeline_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
+    pipeline_parser.add_argument('-e', '--e_value', type=float, default=1e-10, help="e value cut off")
+    pipeline_parser.add_argument('-l', '--length', type=float, default=0.7, help="percent overlap between target and query")
+    pipeline_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
+    pipeline_parser.add_argument('-c', '--colour', action="store_true", default=False, help="print in colour")
+
+    #-------------------------------------------------
+    # debug and development
+    if False:
+        debug_parser = subparsers.add_parser('debug',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            help='rogue mode for use in testing new features',
+                                            description='Rogue mode for use in testing new features')
+        debug_parser.add_argument('data', help="some data")
         
     #-------------------------------------------------
     # get and check options
@@ -106,7 +143,7 @@ if __name__ == '__main__':
     #-------------------------------------------------
     # do what we came here to do
     try:
-        MC2K_parser = groopm.MC2KOptionsParser()
+        MC2K_parser = metachecka2000.MC2KOptionsParser()
         if(False):
             #import pstats
             #p = pstats.Stats('prof')
