@@ -52,6 +52,7 @@ import argparse
 
 # MetaChecka2000 imports
 import resultsParser
+import dataConstructor
 
 ###############################################################################
 ###############################################################################
@@ -65,37 +66,34 @@ class MC2KOptionsParser():
 
         if(options.subparser_name == 'build'):
             # build prodigal and hmm result
-            print "****************************************************************"
-            print " [[MC2K]] Running prodigal and hmmer on bins..."
-            print "****************************************************************"
+            print "Building data prior to checking..."
+            DC = dataConstructor() 
                             
         elif(options.subparser_name == 'qa'):
             # do qa analysis
-            if options.verbose:
-                print "****************************************************************"
-                print " [[MC2K]] Checking bins..."
-                print "****************************************************************"
+            print "Checking bins..."
             RP = resultsParser.MC2KHmmerResultsParser(prefix=options.prefix)
             RP.analyseResults(options.out_folder,
                               options.hmm,
                               eCO=options.e_value,
                               lengthCO=options.length,
-                              verbose=options.verbose
+                              verbose=options.verbose,
+                              outFile=options.file
                               )
 
         elif(options.subparser_name == 'all'):
             # all in one
-            print "****************************************************************"
-            print " [[MC2K]] Running complete MC2K pipeline..."
-            print "****************************************************************"
-
-        return 0
-
-        if(options.subparser_name == 'debug'):
-            # who knows?
-            RP = resultsParser.MC2KHmmerResultsParser()
-            RP.analyseResults(options.data, options.e_value)
-            
+            print "Running complete MC2K pipeline..."
+            print "Building data prior to checking..."
+            print "Checking bins..."
+            RP = resultsParser.MC2KHmmerResultsParser(prefix=options.prefix)
+            RP.analyseResults(options.out_folder,
+                              options.hmm,
+                              eCO=options.e_value,
+                              lengthCO=options.length,
+                              verbose=options.verbose,
+                              outFile=options.file
+                              )
         return 0
 
 ###############################################################################

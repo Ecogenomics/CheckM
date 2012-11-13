@@ -89,6 +89,7 @@ if __name__ == '__main__':
     build_parser.add_argument('bin_folder', help="folder containing bins to check (fasta formatted)")
     build_parser.add_argument('out_folder', help="a place to write output files")
     build_parser.add_argument('hmm', help="name of hmmer db to search")
+    build_parser.add_argument('-x', '--extension', default='fa', help="extension used on files to be parsed")
     build_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
         
 
@@ -103,9 +104,8 @@ if __name__ == '__main__':
     qa_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
     qa_parser.add_argument('-e', '--e_value', type=float, default=1e-10, help="e value cut off")
     qa_parser.add_argument('-l', '--length', type=float, default=0.7, help="percent overlap between target and query")
+    qa_parser.add_argument('-f', '--file', default='', help="print results to file")    
     qa_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
-    qa_parser.add_argument('-c', '--colour', action="store_true", default=False, help="print in colour")
-
 
     #-------------------------------------------------
     # Build + qa in one step
@@ -119,8 +119,8 @@ if __name__ == '__main__':
     pipeline_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
     pipeline_parser.add_argument('-e', '--e_value', type=float, default=1e-10, help="e value cut off")
     pipeline_parser.add_argument('-l', '--length', type=float, default=0.7, help="percent overlap between target and query")
+    pipeline_parser.add_argument('-f', '--file', default='', help="print results to file")    
     pipeline_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
-    pipeline_parser.add_argument('-c', '--colour', action="store_true", default=False, help="print in colour")
 
     #-------------------------------------------------
     # debug and development

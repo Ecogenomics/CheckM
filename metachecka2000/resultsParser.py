@@ -195,7 +195,11 @@ class MC2KHitStorage():
             gene_counts[marker_count] += 1
         perc_comp = 100*float(len(self.markers))/float(len(queries))
         perc_cont = 100*float(gene_counts[2] + gene_counts[3] + gene_counts[4] + gene_counts[5])/float(len(queries))  
-        print "%s\t%s\t%0.2f\t%0.2f" % (self.name, "\t".join([str(gene_counts[i]) for i in range(6)]), perc_comp, perc_cont)
+        print "%s\t%s\t%0.2f\t%0.2f" % (self.name,
+                                        "\t".join([str(gene_counts[i]) for i in range(6)]),
+                                        perc_comp,
+                                        perc_cont
+                                        )
         
 ###############################################################################
 ###############################################################################
