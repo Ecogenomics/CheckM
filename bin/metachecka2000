@@ -90,8 +90,10 @@ if __name__ == '__main__':
     build_parser.add_argument('out_folder', help="a place to write output files")
     build_parser.add_argument('hmm', help="name of hmmer db to search")
     build_parser.add_argument('-x', '--extension', default='fa', help="extension used on files to be parsed")
+    build_parser.add_argument('-c', '--closed', action="store_true", default=False, help="do not allow genes to run off edges when running prodigal")    
+    build_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
     build_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
-        
+    build_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
 
     #-------------------------------------------------
     # do QA on pre-processed contigs
@@ -115,7 +117,10 @@ if __name__ == '__main__':
                                         description='Build + qa in one step')
     pipeline_parser.add_argument('bin_folder', help="folder containing bins to check (fasta formatted)")
     pipeline_parser.add_argument('out_folder', help="a place to write output files")
-    build_parser.add_argument('hmm', help="name of hmmer db to search")
+    pipeline_parser.add_argument('hmm', help="name of hmmer db to search")
+    pipeline_parser.add_argument('-x', '--extension', default='fa', help="extension used on files to be parsed")
+    pipeline_parser.add_argument('-c', '--closed', action="store_true", default=False, help="do not allow genes to run off edges when running prodigal")    
+    pipeline_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
     pipeline_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
     pipeline_parser.add_argument('-e', '--e_value', type=float, default=1e-10, help="e value cut off")
     pipeline_parser.add_argument('-l', '--length', type=float, default=0.7, help="percent overlap between target and query")
@@ -151,6 +156,9 @@ if __name__ == '__main__':
             #p.sort_stats('time').print_stats(10)
             import cProfile
             cProfile.run('MC2K_parser.parseOptions(args)', 'prof')
+        elif False:
+            import pdb
+            pdb.run(MC2K_parser.parseOptions(args))
         else:        
             MC2K_parser.parseOptions(args)
     except:

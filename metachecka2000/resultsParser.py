@@ -54,8 +54,7 @@ from re import compile as re_compile, split as re_split
 # MetaChecka2000 imports
 
 # other local imports
-import simplehmmer
-from simplehmmer.simplehmmer import HMMERParser
+from simplehmmer.simplehmmer import HMMERParser, makeOutputFNs
 
 ###############################################################################
 ###############################################################################
@@ -66,13 +65,22 @@ class MC2KHmmerResultsParser():
     """This class does the job of parsing through the txt output from a hmmer run"""
     def __init__(self, prefix=''):
         # make the output file names
-        (self.txtOut, self.hmmOut) = simplehmmer.simplehmmer.makeOutputFNs(prefix)
+        (self.txtOut, self.hmmOut) = makeOutputFNs(prefix)
         self.results = {}
         self.qLengths = {}
         self.numQs = 0
     
-    def analyseResults(self, directory, hmmFile, eCO=1e-10, lengthCO=0.7, verbose=False):
+    def analyseResults(self, directory, hmmFile, eCO=1e-10, lengthCO=0.7, verbose=False, outFile=''):
         """Parse the results in the output directory"""
+        old_stdout = sys.stdout
+        if("" != outFile):
+            try:
+                # redirect stdout to a file
+                sys.stdout = open(outFile, 'w')
+            except:
+                print "Error diverting stout to file:", outFile, exc_info()[0]
+                raise
+
         # parse the hmm file itself so we can determine the length
         # of the queries
         name_re = re_compile('^NAME')
@@ -99,7 +107,22 @@ class MC2KHmmerResultsParser():
             hmmer_file_name = os.path.join(directory, folder, self.txtOut)
             # and then we can parse it
             self.parseHmmerResults(hmmer_file_name, storage, verbose)
-            self.results[folder] = storage 
+            self.results[folder] = storage
+        
+        if not verbose:
+            self.printHeader()
+        for fasta in self.results:
+            self.results[fasta].printSummary(self.qLengths, verbose=verbose)
+
+        # restore stdout        
+        if("" != outFile):
+            try:
+                # redirect stdout to a file
+                sys.stdout = old_stdout
+            except:
+                print "Error restoring stdout", exc_info()[0]
+                raise
+        
         
     def parseHmmerResults(self, fileName, storage, verbose):
         """Parse through a hmmer file and see what's what"""
@@ -115,8 +138,11 @@ class MC2KHmmerResultsParser():
                 if hit is None:
                     break
                 storage.addHit(hit)
-        
-        storage.printSummary(self.qLengths, verbose=verbose)    
+
+    def printHeader(self):
+        """Print the NON_VERBOSE header"""
+        # keep count of single, double, triple genes etc...
+        print "\t".join(['Bin_name','0','1','2','3','4','5+','comp','cont'])
 
 ###############################################################################
 ###############################################################################
@@ -179,8 +205,7 @@ class MC2KHitStorage():
                                               100*float(len(self.markers))/float(len(queries))
                                               )+"%)"
             return
-        # keep count of single, double, triple genes etc...
-        print "\t".join(['Bin_name','0','1','2','3','4','5+','comp','cont'])
+
         gene_counts = [0]*6
         for marker in queries:
             # we need to limit it form 0 to 5+

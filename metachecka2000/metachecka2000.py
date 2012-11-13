@@ -66,12 +66,22 @@ class MC2KOptionsParser():
 
         if(options.subparser_name == 'build'):
             # build prodigal and hmm result
-            print "Building data prior to checking..."
-            DC = dataConstructor() 
+            if options.verbose:
+                print "Building data prior to checking..."
+            DC = dataConstructor.MC2KHmmerDataConstructor(threads=options.threads)
+            DC.buildData(options.bin_folder,
+                         options.out_folder,
+                         options.hmm,
+                         options.extension,
+                         options.closed,
+                         options.prefix,
+                         verbose=options.verbose
+                         )
                             
         elif(options.subparser_name == 'qa'):
             # do qa analysis
-            print "Checking bins..."
+            if options.verbose:
+                print "Checking bins..."
             RP = resultsParser.MC2KHmmerResultsParser(prefix=options.prefix)
             RP.analyseResults(options.out_folder,
                               options.hmm,
@@ -83,9 +93,21 @@ class MC2KOptionsParser():
 
         elif(options.subparser_name == 'all'):
             # all in one
-            print "Running complete MC2K pipeline..."
-            print "Building data prior to checking..."
-            print "Checking bins..."
+            if options.verbose:
+                print "Running complete MC2K pipeline..."
+            if options.verbose:
+                print "Building data prior to checking..."
+            DC = dataConstructor.MC2KHmmerDataConstructor(threads=options.threads)
+            DC.buildData(options.bin_folder,
+                         options.out_folder,
+                         options.hmm,
+                         options.extension,
+                         options.closed,
+                         options.prefix,
+                         verbose=options.verbose
+                         )
+            if options.verbose:
+                print "Checking bins..."
             RP = resultsParser.MC2KHmmerResultsParser(prefix=options.prefix)
             RP.analyseResults(options.out_folder,
                               options.hmm,

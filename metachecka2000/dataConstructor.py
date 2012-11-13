@@ -47,16 +47,157 @@ __status__ = "Development"
 ###############################################################################
 
 import sys
-import os 
+from os import system, listdir
+from os.path import join as osp_join
+import Queue
+import threading
+import time
 
 # MetaChecka2000 imports
 
+# other local imports
+from simplehmmer.simplehmmer import HMMERRunner, checkForHMMER, makeSurePathExists
+
 ###############################################################################
 ###############################################################################
 ###############################################################################
 ###############################################################################
 
+class ProdigalError(BaseException): pass
+class HMMERError(BaseException): pass
 
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+
+class MC2KHmmerDataConstructor():
+    """This class runs prodigal and hmmer creating data for parsing"""
+    def __init__(self, checkHmmer=True, checkProdigal=True, threads=1):
+        if checkHmmer:
+            checkForHMMER()
+        if checkProdigal:
+            checkForProdigal()
+            
+        self.varLock = threading.Lock() # we don't have many variables here, so use one lock for everything    
+        
+        self.totalThreads = threads
+        self.threadPool = threading.BoundedSemaphore(self.totalThreads)
+
+        self.num_files_total = 0
+        self.num_files_started = 0
+        self.num_files_parsed = 0
+
+    def buildData(self, binFolder, outFolder, hmm, extension, closed, prefix, verbose=False):
+        """Main wrapper used for building datasets"""
+        # get a listing of all the files in the directory
+        all_files = listdir(binFolder)
+        target_files = [j for j in all_files if j.endswith(extension)]
+        self.num_files_total = len(target_files)
+        if verbose:
+            print "Will process %d files" % self.num_files_total
+        
+        for fasta in target_files:
+            t = threading.Thread(target=self.processFasta,
+                                 args=(fasta,outFolder,hmm,closed,prefix,verbose)
+                                 )
+            #t.daemon = True
+            t.start()
+            
+        while True:
+            # don't exit till we're done!
+            self.varLock.acquire()
+            doned = False
+            try:
+                doned = self.num_files_parsed >= self.num_files_total
+            finally:
+                self.varLock.release()
+            
+            if doned:
+                break
+            else:
+                time.sleep(1)
+            
+              
+    def processFasta(self, fasta, outFolder, hmm, closed, prefix, verbose=False):
+        self.threadPool.acquire()
+        file_num = 0
+        try:
+            self.varLock.acquire()
+            try:
+                self.num_files_started += 1
+                file_num = self.num_files_started
+                print "Processing file %s (%d of %d)" % (fasta, self.num_files_started, self.num_files_total) 
+            finally:
+                self.varLock.release()
+            
+            # make sure we have somewhere to write files to
+            makeSurePathExists(osp_join(outFolder,fasta))
+            
+            # run prodigal
+            prod_fasta = self.runProdigal(fasta,
+                                          outFolder,
+                                          closed=closed,
+                                          verbose=verbose
+                                          )
+            # run HMMER
+            if verbose:
+                self.varLock.acquire()
+                try:
+                    print "    Running hmmer on file %s" % fasta
+                finally:
+                    self.varLock.release()
+                
+            HR = HMMERRunner(prefix=prefix)
+            HR.search(hmm, prod_fasta, osp_join(outFolder,fasta))
+
+            # let the world know we've parsed this file
+            self.varLock.acquire()
+            try:
+                self.num_files_parsed += 1
+            finally:
+                self.varLock.release()
+            
+        finally:
+            self.threadPool.release()
+    
+    def runProdigal(self, fasta, outFolder, verbose=False, closed=False):
+        """Wrapper for running prodigal"""
+        if verbose:
+            self.varLock.acquire()
+            try:
+                print "    Running prodigal on file %s" % fasta
+            finally:
+                self.varLock.release()
+        prod_file = osp_join(outFolder, fasta, 'prodigal_out.faa')
+        # work out if we're closing the ends
+        if closed:
+            cs = "-c"
+        else:
+            cs = ""
+        prod_result = system("prodigal -a %s -i %s -q %s > /dev/null" % (prod_file, fasta, cs))
+
+        if prod_result != 0:
+            raise ProdigalError("Error running prodigal")
+        
+        return prod_file
+    
+def checkForProdigal():
+    """Check to see if Prodigal is on the system before we try fancy things
+    
+    We assume that a successful prodigal -h returns 0 and anything
+    else returns something non-zero
+    """
+    # redirect stdout so we don't get mess!
+    try:
+        exit_status = system('prodigal -h 1> /dev/null 2> /dev/null')
+    except:
+      print "Unexpected error!", sys.exc_info()[0]
+      raise
+  
+    if exit_status != 0:
+        raise ProdigalError("Error attempting to run prodigal, is it in your path?")
+    
 ###############################################################################
 ###############################################################################
 ###############################################################################
