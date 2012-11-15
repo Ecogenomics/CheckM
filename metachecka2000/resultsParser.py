@@ -322,11 +322,13 @@ class HMMAligner:
 
         align_tmp_file = os.path.join('/tmp', str(uuid.uuid4()))
         align_seq_file = os.path.join('/tmp', str(uuid.uuid4()))
+        file_modified = False
         os.system('echo %s > %s' % (fasta, align_tmp_file))
         for hit in hits:
             # make a multiple fasta consisting of the nodes here and 
             # the hmm consensus, we overwrite on the first go
             os.system('cat %s > %s' % (consensi[hit], align_seq_file))
+            file_modified = True
             for sequence in hits[hit]:
                 os.system("echo '>%s' >> %s" % (sequence, align_seq_file))
                 os.system('echo %s >> %s' % (bin_genes[sequence], align_seq_file))
@@ -341,7 +343,8 @@ class HMMAligner:
             os.system('echo >> %s' % (align_tmp_file))
 
         os.system('cat %s > %s' % (align_tmp_file, finalFile))
-        os.remove(align_seq_file)
+        if file_modified:
+            os.remove(align_seq_file)
         os.remove(align_tmp_file)
         
     def makeAlignmentModels(self, HF, hmm, keyz, hmms, consensi):
