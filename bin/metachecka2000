@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 ###############################################################################
 #                                                                             #
 #    metachecka2000                                                           #
@@ -87,9 +87,11 @@ if __name__ == '__main__':
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         help='parse binned contigs',
                                         description='Parse binned contigs')
-    build_parser.add_argument('bin_folder', help="folder containing bins to check (fasta formatted)")
     build_parser.add_argument('out_folder', help="a place to write output files")
     build_parser.add_argument('hmm', help="name of hmmer db to search")
+    build_parser.add_argument('infiles', nargs='*', metavar="FASTA", 
+                              help="A list of fasta formatted files to be used as the input")
+    build_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
     build_parser.add_argument('-x', '--extension', default='fa', help="extension used on files to be parsed")
     build_parser.add_argument('-c', '--closed', action="store_true", default=False, help="do not allow genes to run off edges when running prodigal")    
     build_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
@@ -129,9 +131,11 @@ if __name__ == '__main__':
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         help='build + qa in one step',
                                         description='Build + qa in one step')
-    pipeline_parser.add_argument('bin_folder', help="folder containing bins to check (fasta formatted)")
     pipeline_parser.add_argument('out_folder', help="a place to write output files")
     pipeline_parser.add_argument('hmm', help="name of hmmer db to search")
+    pipeline_parser.add_argument('infiles', nargs='*', metavar="FASTA", 
+                                 help="A list of fasta formatted files to be used as the input")
+    pipeline_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
     pipeline_parser.add_argument('-x', '--extension', default='fa', help="extension used on files to be parsed")
     pipeline_parser.add_argument('-c', '--closed', action="store_true", default=False, help="do not allow genes to run off edges when running prodigal")    
     pipeline_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
