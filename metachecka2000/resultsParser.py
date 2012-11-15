@@ -321,9 +321,9 @@ class HMMAligner:
                 bin_genes[cid] = seq
 
         align_tmp_file = os.path.join('/tmp', str(uuid.uuid4()))
+        align_seq_file = os.path.join('/tmp', str(uuid.uuid4()))
         os.system('echo %s > %s' % (fasta, align_tmp_file))
         for hit in hits:
-            align_seq_file = os.path.join('/tmp', str(uuid.uuid4()))
             # make a multiple fasta consisting of the nodes here and 
             # the hmm consensus, we overwrite on the first go
             os.system('cat %s > %s' % (consensi[hit], align_seq_file))
