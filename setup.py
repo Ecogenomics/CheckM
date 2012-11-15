@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='MetaChecka2000',
-    version='0.1.0',
+    version='0.1.1',
     author='Michael Imelfort',
     author_email='mike@mikeimelfort.com',
     packages=['metachecka2000', 'metachecka2000.test'],
