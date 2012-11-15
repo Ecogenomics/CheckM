@@ -39,7 +39,7 @@ __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012"
 __credits__ = ["Michael Imelfort"]
 __license__ = "GPL3"
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -49,11 +49,11 @@ __status__ = "Development"
 import sys
 from os import system, listdir
 from os.path import join as osp_join
-import Queue
 import threading
 import time
 
 # MetaChecka2000 imports
+import defaultValues
 
 # other local imports
 from simplehmmer.simplehmmer import HMMERRunner, checkForHMMER, makeSurePathExists
@@ -71,16 +71,16 @@ class HMMERError(BaseException): pass
 ###############################################################################
 ###############################################################################
 
-class MC2KHmmerDataConstructor():
+class Mc2kHmmerDataConstructor():
     """This class runs prodigal and hmmer creating data for parsing"""
     def __init__(self, checkHmmer=True, checkProdigal=True, threads=1):
         if checkHmmer:
             checkForHMMER()
         if checkProdigal:
             checkForProdigal()
-            
+
+        # thready stuff            
         self.varLock = threading.Lock() # we don't have many variables here, so use one lock for everything    
-        
         self.totalThreads = threads
         self.threadPool = threading.BoundedSemaphore(self.totalThreads)
 
@@ -99,7 +99,7 @@ class MC2KHmmerDataConstructor():
         
         for fasta in target_files:
             t = threading.Thread(target=self.processFasta,
-                                 args=(fasta,outFolder,hmm,closed,prefix,verbose)
+                                 args=(fasta,binFolder,outFolder,hmm,closed,prefix,verbose)
                                  )
             #t.daemon = True
             t.start()
@@ -119,7 +119,8 @@ class MC2KHmmerDataConstructor():
                 time.sleep(1)
             
               
-    def processFasta(self, fasta, outFolder, hmm, closed, prefix, verbose=False):
+    def processFasta(self, fasta, binFolder, outFolder, hmm, closed, prefix, verbose=False):
+        """Thread safe fasta processing"""
         self.threadPool.acquire()
         file_num = 0
         try:
@@ -136,6 +137,7 @@ class MC2KHmmerDataConstructor():
             
             # run prodigal
             prod_fasta = self.runProdigal(fasta,
+                                          binFolder,
                                           outFolder,
                                           closed=closed,
                                           verbose=verbose
@@ -161,7 +163,7 @@ class MC2KHmmerDataConstructor():
         finally:
             self.threadPool.release()
     
-    def runProdigal(self, fasta, outFolder, verbose=False, closed=False):
+    def runProdigal(self, fasta, binFolder, outFolder, verbose=False, closed=False):
         """Wrapper for running prodigal"""
         if verbose:
             self.varLock.acquire()
@@ -169,13 +171,15 @@ class MC2KHmmerDataConstructor():
                 print "    Running prodigal on file %s" % fasta
             finally:
                 self.varLock.release()
-        prod_file = osp_join(outFolder, fasta, 'prodigal_out.faa')
+        # make file names
+        prod_file = osp_join(outFolder, fasta,  defaultValues.__MC2K_DEFAULT_PROD_FN__)
+        fasta_file = osp_join(binFolder, fasta)
         # work out if we're closing the ends
         if closed:
             cs = "-c"
         else:
             cs = ""
-        prod_result = system("prodigal -a %s -i %s -q %s > /dev/null" % (prod_file, fasta, cs))
+        prod_result = system("prodigal -a %s -i %s -q %s > /dev/null" % (prod_file, fasta_file, cs))
 
         if prod_result != 0:
             raise ProdigalError("Error running prodigal")

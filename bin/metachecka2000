@@ -39,7 +39,7 @@ __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012"
 __credits__ = ["Michael Imelfort"]
 __license__ = "GPL3"
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -48,7 +48,7 @@ __status__ = "Development"
 
 import argparse
 import sys
-from metachecka2000 import metachecka2000
+from metachecka2000 import metachecka2000, defaultValues
 
 ###############################################################################
 ###############################################################################
@@ -64,6 +64,7 @@ def printHelp():
 
     metachecka2000 build   -> Create the underlying data needed for testing
     metachecka2000 qa      -> Test for bin contamination and completeness
+    metachecka2000 align   -> Create alignments of hmms to the matched markers
     metachecka2000 all     -> Build and test in one step
     
     USE: metachecka2000 OPTION -h to see detailed options
@@ -104,13 +105,26 @@ if __name__ == '__main__':
     qa_parser.add_argument('out_folder', help="folder specified during build command")
     qa_parser.add_argument('hmm', help="hmm used in the search")
     qa_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
-    qa_parser.add_argument('-e', '--e_value', type=float, default=1e-10, help="e value cut off")
-    qa_parser.add_argument('-l', '--length', type=float, default=0.7, help="percent overlap between target and query")
-    qa_parser.add_argument('-f', '--file', default='', help="print results to file")    
+    qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
+    qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
+    qa_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")    
     qa_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
 
     #-------------------------------------------------
-    # Build + qa in one step
+    # produce alignments of matches
+    align_parser = subparsers.add_parser('align',
+                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         help='create alignments of hmms to the matched markers',
+                                         description='Create alignments of hmms to the matched markers')
+    align_parser.add_argument('out_folder', help="folder specified during build command")
+    align_parser.add_argument('hmm', help="hmm used in the search")
+    align_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
+    align_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
+    align_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
+    align_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
+
+    #-------------------------------------------------
+    # Build + align in one step
     pipeline_parser = subparsers.add_parser('all',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         help='build + qa in one step',
@@ -122,9 +136,9 @@ if __name__ == '__main__':
     pipeline_parser.add_argument('-c', '--closed', action="store_true", default=False, help="do not allow genes to run off edges when running prodigal")    
     pipeline_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
     pipeline_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
-    pipeline_parser.add_argument('-e', '--e_value', type=float, default=1e-10, help="e value cut off")
-    pipeline_parser.add_argument('-l', '--length', type=float, default=0.7, help="percent overlap between target and query")
-    pipeline_parser.add_argument('-f', '--file', default='', help="print results to file")    
+    pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
+    pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
+    pipeline_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")    
     pipeline_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
 
     #-------------------------------------------------
@@ -148,19 +162,19 @@ if __name__ == '__main__':
     #-------------------------------------------------
     # do what we came here to do
     try:
-        MC2K_parser = metachecka2000.MC2KOptionsParser()
+        Mc2k_parser = metachecka2000.Mc2kOptionsParser()
         if(False):
             #import pstats
             #p = pstats.Stats('prof')
             #p.sort_stats('cumulative').print_stats(10)
             #p.sort_stats('time').print_stats(10)
             import cProfile
-            cProfile.run('MC2K_parser.parseOptions(args)', 'prof')
+            cProfile.run('Mc2k_parser.parseOptions(args)', 'prof')
         elif False:
             import pdb
-            pdb.run(MC2K_parser.parseOptions(args))
+            pdb.run(Mc2k_parser.parseOptions(args))
         else:        
-            MC2K_parser.parseOptions(args)
+            Mc2k_parser.parseOptions(args)
     except:
         print "Unexpected error:", sys.exc_info()[0]
         raise

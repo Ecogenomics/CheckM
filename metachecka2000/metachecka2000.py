@@ -39,7 +39,7 @@ __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012"
 __credits__ = ["Michael Imelfort"]
 __license__ = "GPL3"
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -59,63 +59,79 @@ import dataConstructor
 ###############################################################################
 ###############################################################################
 
-class MC2KOptionsParser():
+class Mc2kOptionsParser():
     def __init__(self): pass
     
-    def parseOptions(self, options ):
+    def Mc2kBuild(self, options):
+        """Build command"""
+        DC = dataConstructor.Mc2kHmmerDataConstructor(threads=options.threads)
+        DC.buildData(options.bin_folder,
+                     options.out_folder,
+                     options.hmm,
+                     options.extension,
+                     options.closed,
+                     options.prefix,
+                     verbose=options.verbose
+                     )
+    
+    def Mc2kQa(self, options):
+        """QA Command"""
+        RP = resultsParser.Mc2kHmmerResultsParser(prefix=options.prefix)
+        RP.analyseResults(options.out_folder,
+                          options.hmm,
+                          eCO=options.e_value,
+                          lengthCO=options.length,
+                          verbose=options.verbose,
+                          outFile=options.file
+                          )
+
+    def Mc2kAlign(self, options):
+        """Align Command"""
+        HA = resultsParser.HMMAligner(prefix=options.prefix)
+        HA.makeAlignments(options.out_folder,
+                          options.hmm,
+                          eCO=options.e_value,
+                          lengthCO=options.length,                              
+                          verbose=options.verbose,
+                          prefix=options.prefix
+                          )
+
+    def parseOptions(self, options):
+        """Parse user options and call the correct pipeline(s)"""
+        try:
+            if options.file == "STDOUT":
+                options.file = ''
+        except:
+            pass
 
         if(options.subparser_name == 'build'):
             # build prodigal and hmm result
             if options.verbose:
                 print "Building data prior to checking..."
-            DC = dataConstructor.MC2KHmmerDataConstructor(threads=options.threads)
-            DC.buildData(options.bin_folder,
-                         options.out_folder,
-                         options.hmm,
-                         options.extension,
-                         options.closed,
-                         options.prefix,
-                         verbose=options.verbose
-                         )
+            self.Mc2kBuild(options)
                             
         elif(options.subparser_name == 'qa'):
             # do qa analysis
             if options.verbose:
-                print "Checking bins..."
-            RP = resultsParser.MC2KHmmerResultsParser(prefix=options.prefix)
-            RP.analyseResults(options.out_folder,
-                              options.hmm,
-                              eCO=options.e_value,
-                              lengthCO=options.length,
-                              verbose=options.verbose,
-                              outFile=options.file
-                              )
+                print "Analysing bins..."
+            self.Mc2kQa(options)
 
         elif(options.subparser_name == 'all'):
             # all in one
+            print "Building data prior to checking..."
+            self.Mc2kBuild(options)
+            print "Analysing bins..."
+            self.Mc2kQa(options)
+            print "Constructing alignments..."
+            self.Mc2kAlign(options)
+            
+        elif(options.subparser_name == 'align'):
+            
+            # make alignments
             if options.verbose:
-                print "Running complete MC2K pipeline..."
-            if options.verbose:
-                print "Building data prior to checking..."
-            DC = dataConstructor.MC2KHmmerDataConstructor(threads=options.threads)
-            DC.buildData(options.bin_folder,
-                         options.out_folder,
-                         options.hmm,
-                         options.extension,
-                         options.closed,
-                         options.prefix,
-                         verbose=options.verbose
-                         )
-            if options.verbose:
-                print "Checking bins..."
-            RP = resultsParser.MC2KHmmerResultsParser(prefix=options.prefix)
-            RP.analyseResults(options.out_folder,
-                              options.hmm,
-                              eCO=options.e_value,
-                              lengthCO=options.length,
-                              verbose=options.verbose,
-                              outFile=options.file
-                              )
+                print "Constructing alignments..."
+            self.Mc2kAlign(options)
+
         return 0
 
 ###############################################################################
