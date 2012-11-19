@@ -65,10 +65,21 @@ class Mc2kOptionsParser():
     def Mc2kBuild(self, options):
         """Build command"""
         DC = dataConstructor.Mc2kHmmerDataConstructor(threads=options.threads)
-        DC.buildData(options.bin_folder,
+        target_files = []
+        if options.bin_folder is not None:
+            all_files = listdir(options.bin_folder)
+            for j in all_files:
+                if j.endswith(options.extension):
+                    target_files.append(j)
+
+        if options.infiles:
+            target_files.extend(options.infiles)
+        
+        if not target_files:
+            raise "No input files!"
+        DC.buildData(target_files,
                      options.out_folder,
                      options.hmm,
-                     options.extension,
                      options.closed,
                      options.prefix,
                      verbose=options.verbose

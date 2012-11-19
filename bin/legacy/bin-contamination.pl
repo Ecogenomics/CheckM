@@ -1,11 +1,11 @@
 #!/usr/bin/env perl
 ###############################################################################
 #
-#    __Script__Name__
+#    bin-contamination
 #    
-#    <one line to give the program's name and a brief idea of what it does.>
+#    Check for multiple copies of known single-copy marker genes
 #
-#    Copyright (C) Michael Imelfort
+#    Copyright (C) 2012 Connor Skennerton
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -57,9 +57,10 @@ unless($global_options->{'quiet'}) {
     printAtStart();
 }
 
+if($global_options->{'verbose'}) {
+    $global_log_commands = 1;
+}
 
-use warnings;
-use strict;
 # list of phylosift markers
 my %markers;
 $markers{'PMPROK00003'}="50S Ribosomal Protein L14P (rpl14P)";
@@ -165,21 +166,45 @@ for my $resultdir (@resultdirs) {
     while (my($marker,$count) = each %marker_counts) {
         if(! defined $count || $count == 0) {
             $zero_count++;
-            unless($global_options->{'quiet'}){ print $colours{FG_YELLOW},"$marker $markers{$marker} 0",$colours{NOCOLOR},"\n"};
+            unless($global_options->{'quiet'}){ 
+                print colourize("$marker $markers{$marker} 0",$global_options->{colour},'FG_YELLOW'),"\n";
+            }
         } elsif ($count == 1) {
             $single_count++;
-            unless($global_options->{'quiet'}){ print $colours{FG_GREEN},"$marker $markers{$marker} 1",$colours{NOCOLOR},"\n"};
+            unless($global_options->{'quiet'}){
+                print colourize("$marker $markers{$marker} 1",$global_options->{colour},'FG_GREEN'),"\n";
+            }
         } else {
             $multi_count++;
-            unless($global_options->{'quiet'}){ print $colours{FG_RED},"$marker $markers{$marker} $count",$colours{NOCOLOR},"\n"};
+            unless($global_options->{'quiet'}){
+                print colourize("$marker $markers{$marker} $count",$global_options->{colour},'FG_RED'),"\n";
+            }
         }
     }
     if($global_options->{'quiet'}){
-        print "$colours{FG_MAGENTA}$resultdir ";
+        print colourize($resultdir ,$global_options->{colour},'FG_MAGENTA')," ";
     }
-    print "$colours{FG_GREEN}$single_count $colours{FG_YELLOW}$zero_count $colours{FG_RED}$multi_count $colours{NOCOLOR}\n";
+    print colourize($single_count,$global_options->{colour},'FG_GREEN'), ' ';
+    print colourize($zero_count, $global_options->{colour}, 'FG_YELLOW'), ' ';
+    print colourize($multi_count,$global_options->{colour}, 'FG_RED'), "\n";
+
 }
 exit;
+######################################################################
+# CUSTOM SUBS
+
+######################################################################
+
+sub colourize {
+    my ($exp, $is_colouring, $color) = @_;
+    if($is_colouring) {
+        return $colours{$color}.$exp.$colours{NOCOLOR};
+    } else {
+        return $exp;
+    }
+}
+
+
 ######################################################################
 # TEMPLATE SUBS
 
@@ -190,7 +215,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "runPS+","quiet","prefix:s");
+    my @standard_options = ( "help|h+", "runPS+","quiet","prefix:s", "colour+", "verbose+");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -402,7 +427,10 @@ __DATA__
 
 =head1 DESCRIPTION
 
-   Insert detailed description here
+   bin-contamination is a wrapper around phylosift for checking metagenomic
+   contig sets for multiple copies of any of the marders provided by pyhlosift.
+   The output can be a simple count of the number of single, duplicate or 
+   unfound genes, or a more detailed list of those markers.
 
 =head1 SYNOPSIS
 
@@ -412,5 +440,7 @@ __DATA__
       [-runPS]                     Run Phylosift on the input files to generate results
       [-prefix STRING]             Output folder for the results
       [-quiet]                     Output only the aggregate counts for each bin
+      [-verbose]                   Print alot of stuff to screen
+      [-noColour]                  Don't output anything colourful
          
 =cut

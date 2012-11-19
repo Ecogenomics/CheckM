@@ -37,7 +37,7 @@
 
 __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012"
-__credits__ = ["Michael Imelfort"]
+__credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
 __version__ = "0.1.0"
 __maintainer__ = "Michael Imelfort"
@@ -47,8 +47,8 @@ __status__ = "Development"
 ###############################################################################
 
 import sys
-from os import system, listdir
-from os.path import join as osp_join
+from os import system, listdir, mkdir
+import os.path
 import threading
 import time
 
@@ -88,18 +88,20 @@ class Mc2kHmmerDataConstructor():
         self.num_files_started = 0
         self.num_files_parsed = 0
 
-    def buildData(self, binFolder, outFolder, hmm, extension, closed, prefix, verbose=False):
+    def buildData(self, inFiles, outFolder, hmm, closed, prefix, verbose=False):
         """Main wrapper used for building datasets"""
+
+        if not os.path.exists(outFolder):
+            mkdir(outFolder)
+
         # get a listing of all the files in the directory
-        all_files = listdir(binFolder)
-        target_files = [j for j in all_files if j.endswith(extension)]
-        self.num_files_total = len(target_files)
+        self.num_files_total = len(inFiles)
         if verbose:
             print "Will process %d files" % self.num_files_total
         
-        for fasta in target_files:
+        for fasta in inFiles:
             t = threading.Thread(target=self.processFasta,
-                                 args=(fasta,binFolder,outFolder,hmm,closed,prefix,verbose)
+                                 args=(fasta,outFolder,hmm,closed,prefix,verbose)
                                  )
             #t.daemon = True
             t.start()
@@ -119,7 +121,7 @@ class Mc2kHmmerDataConstructor():
                 time.sleep(1)
             
               
-    def processFasta(self, fasta, binFolder, outFolder, hmm, closed, prefix, verbose=False):
+    def processFasta(self, fasta, outFolder, hmm, closed, prefix, verbose=False):
         """Thread safe fasta processing"""
         self.threadPool.acquire()
         file_num = 0
@@ -133,12 +135,12 @@ class Mc2kHmmerDataConstructor():
                 self.varLock.release()
             
             # make sure we have somewhere to write files to
-            makeSurePathExists(osp_join(outFolder,fasta))
+            out_dir = os.path.join(outFolder, os.path.basename(fasta))
+            makeSurePathExists(out_dir)
             
             # run prodigal
             prod_fasta = self.runProdigal(fasta,
-                                          binFolder,
-                                          outFolder,
+                                          out_dir,
                                           closed=closed,
                                           verbose=verbose
                                           )
@@ -151,7 +153,7 @@ class Mc2kHmmerDataConstructor():
                     self.varLock.release()
                 
             HR = HMMERRunner(prefix=prefix)
-            HR.search(hmm, prod_fasta, osp_join(outFolder,fasta))
+            HR.search(hmm, prod_fasta, out_dir)
 
             # let the world know we've parsed this file
             self.varLock.acquire()
@@ -163,7 +165,7 @@ class Mc2kHmmerDataConstructor():
         finally:
             self.threadPool.release()
     
-    def runProdigal(self, fasta, binFolder, outFolder, verbose=False, closed=False):
+    def runProdigal(self, fasta, outFolder, verbose=False, closed=False):
         """Wrapper for running prodigal"""
         if verbose:
             self.varLock.acquire()
@@ -172,14 +174,15 @@ class Mc2kHmmerDataConstructor():
             finally:
                 self.varLock.release()
         # make file names
-        prod_file = osp_join(outFolder, fasta,  defaultValues.__MC2K_DEFAULT_PROD_FN__)
-        fasta_file = osp_join(binFolder, fasta)
+        
+        prod_file = os.path.join(outFolder,
+                                 defaultValues.__MC2K_DEFAULT_PROD_FN__)
         # work out if we're closing the ends
         if closed:
             cs = "-c"
         else:
             cs = ""
-        prod_result = system("prodigal -a %s -i %s -q %s > /dev/null" % (prod_file, fasta_file, cs))
+        prod_result = system("prodigal -a %s -i %s -q %s > /dev/null" % (prod_file, fasta, cs))
 
         if prod_result != 0:
             raise ProdigalError("Error running prodigal")
