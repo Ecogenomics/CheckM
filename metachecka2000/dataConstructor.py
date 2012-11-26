@@ -184,8 +184,13 @@ class Mc2kHmmerDataConstructor():
             cs = ""
         prod_result = system("prodigal -a %s -i %s -q %s > /dev/null" % (prod_file, fasta, cs))
 
+        if prod_result == 2560:
+            # need to rerun with the -p option!
+            print "rerunning prodigal with the -p option for %s" % fasta
+            prod_result = system("prodigal -a %s -i %s -p meta -q %s > /dev/null" % (prod_file, fasta, cs))
+
         if prod_result != 0:
-            raise ProdigalError("Error running prodigal")
+            raise ProdigalError("Error running prodigal %d" % prod_result)
         
         return prod_file
     

@@ -67,11 +67,11 @@ class Mc2kOptionsParser():
         DC = dataConstructor.Mc2kHmmerDataConstructor(threads=options.threads)
         target_files = []
         if options.bin_folder is not None:
-            all_files = listdir(options.bin_folder)
+            all_files = os.listdir(options.bin_folder)
             for j in all_files:
                 if j.endswith(options.extension):
-                    target_files.append(j)
-
+                    target_files.append(os.path.join(options.bin_folder,j))
+        
         if options.infiles:
             target_files.extend(options.infiles)
         

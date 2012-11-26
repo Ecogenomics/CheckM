@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='MetaChecka2000',
-    version='0.1.1',
+    version='0.1.2',
     author='Michael Imelfort',
     author_email='mike@mikeimelfort.com',
     packages=['metachecka2000', 'metachecka2000.test'],
@@ -12,6 +12,6 @@ setup(
     description='MetaChecka2000',
     long_description=open('README.txt').read(),
     install_requires=[
-                      'simplehmmer >= 0.2.1'
+                      'simplehmmer >= 0.2.2'
                       ],
 )
