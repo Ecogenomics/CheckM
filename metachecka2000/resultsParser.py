@@ -57,6 +57,7 @@ import defaultValues
 
 # other local imports
 from simplehmmer.simplehmmer import HMMERRunner, HMMERParser, makeOutputFNs
+from simplehmmer.hmmmodelparser import HmmMoodel, HmmModelParser
 
 ###############################################################################
 ###############################################################################
@@ -69,7 +70,8 @@ class Mc2kHmmerResultsParser():
         # make the output file names
         (self.txtOut, self.hmmOut) = makeOutputFNs(prefix)
         self.results = {}
-        self.qLengths = {}
+#        self.qLengths = {}
+        self.models = {}
         self.numQs = 0
     
     def analyseResults(self,
@@ -92,26 +94,31 @@ class Mc2kHmmerResultsParser():
 
         # parse the hmm file itself so we can determine the length
         # of the queries
-        name_re = re_compile('^NAME')
-        length_re = re_compile('^LENG')
-        name = ''
-        with open(hmmFile, 'r') as hmm_fh:
-            for line in hmm_fh:
-                if name == '':
-                    if name_re.match(line):
-                        name = re_split( r'\s+', line.rstrip() )[1] 
-                else:
-                    if length_re.match(line):
-                        self.qLengths[name] = re_split( r'\s+', line.rstrip() )[1]
-                        name = ''
-                    
-        self.numQs = len(self.qLengths)
+        model_parser = HmmModelParser(hmmFile)
+        for model in model_parser.parse():
+            self.models[model.name] = model
+        
+        self.numQs = len(self.models)
+##        name_re = re_compile('^NAME')
+#        length_re = re_compile('^LENG')
+#        name = ''
+#        with open(hmmFile, 'r') as hmm_fh:
+#            for line in hmm_fh:
+#                if name == '':
+#                    if name_re.match(line):
+#                        name = re_split( r'\s+', line.rstrip() )[1] 
+#                else:
+#                    if length_re.match(line):
+#                        self.qLengths[name] = re_split( r'\s+', line.rstrip() )[1]
+#                        name = ''
+#                    
+#        self.numQs = len(self.qLengths)
 
         # we expect directory to contain a collection of folders
         # names after the original bins
         for folder in os.listdir(directory):
             # somewhere to store results
-            storage = HitManager(folder, eCO, lengthCO)
+            storage = HitManager(folder, eCO, lengthCO, self.models)
             # we can now build the hmmer_file_name
             hmmer_file_name = os.path.join(directory, folder, self.txtOut)
             # and then we can parse it
@@ -160,19 +167,24 @@ class Mc2kHmmerResultsParser():
 
 class HitManager():
     """Store all the results for a single bin"""
-    def __init__(self, name, eCO, lengthCO):
+    def __init__(self, name, lengthCO, eCO, models=None):
         self.name = name
         self.markers = {}
         self.eCO = eCO
         self.lengthCO = lengthCO
+        self.models = models
     
     def vetHit(self, hit):
         """See if this hit meets our exacting standards"""
         # we should first check to see if this hit is spurious
         # evalue is the easiest method
-        if hit.full_e_value > self.eCO:
-            #print "BAD1:", hit.query_name
-            return False
+        try:
+            if self.models[hit.target_name].tc[0] < hit.full_score:
+                return False
+        except:
+            if hit.full_e_value > self.eCO:
+                #print "BAD1:", hit.query_name
+                return False
         
         # also from the manual, if the bias is significantly large
         # then we shouldn't trust the hit
@@ -201,26 +213,26 @@ class HitManager():
             except KeyError:
                 self.markers[hit.query_name] = 1
 
-    def printSummary(self, queries, verbose=False):
+    def printSummary(self, verbose=False):
         """print out some information about this bin"""
         # if verbose, then just dump the whole thing
         if verbose:
             print "--------------------"
             print self.name
-            for marker in queries:
+            for marker in self.models:
                 try:
                     print "%s\t%d" % (marker, self.markers[marker])
                 except KeyError:
                     print "%s\t0" % (marker)
                     
             print "TOTAL:\t%d / %d (%0.2f" % (len(self.markers),
-                                              len(queries),
+                                              len(self.models),
                                               100*float(len(self.markers))/float(len(queries))
                                               )+"%)"
             return
 
         gene_counts = [0]*6
-        for marker in queries:
+        for marker in self.models:
             # we need to limit it form 0 to 5+
             try:
                 if self.markers[marker] > 5:
@@ -231,8 +243,8 @@ class HitManager():
                 marker_count = 0
             
             gene_counts[marker_count] += 1
-        perc_comp = 100*float(len(self.markers))/float(len(queries))
-        perc_cont = 100*float(gene_counts[2] + gene_counts[3] + gene_counts[4] + gene_counts[5])/float(len(queries))  
+        perc_comp = 100*float(len(self.markers))/float(len(self.models))
+        perc_cont = 100*float(gene_counts[2] + gene_counts[3] + gene_counts[4] + gene_counts[5])/float(len(self.models))  
         print "%s\t%s\t%0.2f\t%0.2f" % (self.name,
                                         "\t".join([str(gene_counts[i]) for i in range(6)]),
                                         perc_comp,
@@ -257,7 +269,7 @@ class HMMAligner:
                        eCO=defaultValues.__MC2K_DEFAULT_E_VAL__,
                        lengthCO=defaultValues.__MC2K_DEFAULT_LENGTH__,
                        prefix='',
-                       verbose=False
+                       verbose=False,
                        ):
         """main wrapper for making hmm alignments"""
         # first parse through the hmm txt and work out all the 
@@ -265,7 +277,12 @@ class HMMAligner:
         # we expect directory to contain a collection of folders
         # names after the original bins
         # we need to use this guy to vet the hits
-        HM = HitManager('', eCO, lengthCO)
+        models = {}
+        model_parser = HmmModelParser(hmmFile)
+        for model in model_parser.parse():
+            models[model.name] = model
+
+        HM = HitManager('', eCO, lengthCO, models)
         hit_lookup = {}
         unique_hits = {}
         for folder in os.listdir(directory):
