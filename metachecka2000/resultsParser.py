@@ -57,7 +57,7 @@ import defaultValues
 
 # other local imports
 from simplehmmer.simplehmmer import HMMERRunner, HMMERParser, makeOutputFNs
-from simplehmmer.hmmmodelparser import HmmMoodel, HmmModelParser
+from simplehmmer.hmmmodelparser import HmmModel, HmmModelParser
 
 ###############################################################################
 ###############################################################################
@@ -118,7 +118,7 @@ class Mc2kHmmerResultsParser():
         # names after the original bins
         for folder in os.listdir(directory):
             # somewhere to store results
-            storage = HitManager(folder, eCO, lengthCO, self.models)
+            storage = HitManager(folder, lengthCO, eCO, self.models)
             # we can now build the hmmer_file_name
             hmmer_file_name = os.path.join(directory, folder, self.txtOut)
             # and then we can parse it
@@ -128,7 +128,7 @@ class Mc2kHmmerResultsParser():
         if not verbose:
             self.printHeader()
         for fasta in self.results:
-            self.results[fasta].printSummary(self.qLengths, verbose=verbose)
+            self.results[fasta].printSummary(verbose=verbose)
 
         # restore stdout        
         if("" != outFile):
@@ -227,7 +227,7 @@ class HitManager():
                     
             print "TOTAL:\t%d / %d (%0.2f" % (len(self.markers),
                                               len(self.models),
-                                              100*float(len(self.markers))/float(len(queries))
+                                              100*float(len(self.markers))/float(len(self.models))
                                               )+"%)"
             return
 
@@ -278,11 +278,11 @@ class HMMAligner:
         # names after the original bins
         # we need to use this guy to vet the hits
         models = {}
-        model_parser = HmmModelParser(hmmFile)
+        model_parser = HmmModelParser(hmm)
         for model in model_parser.parse():
             models[model.name] = model
 
-        HM = HitManager('', eCO, lengthCO, models)
+        HM = HitManager('', lengthCO, eCO, models)
         hit_lookup = {}
         unique_hits = {}
         for folder in os.listdir(directory):
