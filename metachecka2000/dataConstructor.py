@@ -68,7 +68,6 @@ from cogent.parse.fasta import MinimalFastaParser
 ###############################################################################
 ###############################################################################
 
-class ProdigalError(BaseException): pass
 class HMMERError(BaseException): pass
 
 ###############################################################################
@@ -81,8 +80,6 @@ class Mc2kHmmerDataConstructor():
     def __init__(self, checkHmmer=True, checkProdigal=True, threads=1):
         if checkHmmer:
             checkForHMMER()
-        if checkProdigal:
-            checkForProdigal()
 
         # thready stuff            
         self.varLock = threading.Lock() # we don't have many variables here, so use one lock for everything    
@@ -155,18 +152,12 @@ class Mc2kHmmerDataConstructor():
                 translations = GeneticCodes[11].sixframes(dna_seq)
                 frame_number = 0
                 for frame in translations:
-                    p = PROTEIN.makeSequence(frame, name+'_'+str(frame_count+=1))
-                    out_file.write(p.toFasta())
+                    frame_number += 1
+                    out_file.write(">"+name+'_'+str(frame_number)+"\n")
+                    out_file.write(frame+"\n")
 
             out_file.close()
-            # run prodigal
-            #prod_fasta = self.runProdigal(fasta,
-            #                              out_dir,
-            #                              closed=closed,
-            #                              verbose=verbose
-            #                              )
-            
-            
+
             # run HMMER
             if verbose:
                 self.varLock.acquire()
@@ -192,50 +183,6 @@ class Mc2kHmmerDataConstructor():
 
             self.threadPool.release()
     
-    def runProdigal(self, fasta, outFolder, verbose=False, closed=False):
-        """Wrapper for running prodigal"""
-        if verbose:
-            self.varLock.acquire()
-            try:
-                print "    Running prodigal on file %s" % fasta
-            finally:
-                self.varLock.release()
-        # make file names
-        
-        prod_file = os.path.join(outFolder,
-                                 defaultValues.__MC2K_DEFAULT_PROD_FN__)
-        # work out if we're closing the ends
-        if closed:
-            cs = "-c"
-        else:
-            cs = ""
-        prod_result = system("prodigal -a %s -i %s -q %s > /dev/null" % (prod_file, fasta, cs))
-
-        if prod_result == 2560:
-            # need to rerun with the -p option!
-            print "rerunning prodigal with the -p option for %s" % fasta
-            prod_result = system("prodigal -a %s -i %s -p meta -q %s > /dev/null" % (prod_file, fasta, cs))
-
-        if prod_result != 0:
-            raise ProdigalError("Error running prodigal %d" % prod_result)
-        
-        return prod_file
-    
-def checkForProdigal():
-    """Check to see if Prodigal is on the system before we try fancy things
-    
-    We assume that a successful prodigal -h returns 0 and anything
-    else returns something non-zero
-    """
-    # redirect stdout so we don't get mess!
-    try:
-        exit_status = system('prodigal -h 1> /dev/null 2> /dev/null')
-    except:
-      print "Unexpected error!", sys.exc_info()[0]
-      raise
-  
-    if exit_status != 0:
-        raise ProdigalError("Error attempting to run prodigal, is it in your path?")
     
 ###############################################################################
 ###############################################################################

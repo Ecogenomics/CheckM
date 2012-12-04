@@ -99,20 +99,6 @@ class Mc2kHmmerResultsParser():
             self.models[model.name] = model
         
         self.numQs = len(self.models)
-##        name_re = re_compile('^NAME')
-#        length_re = re_compile('^LENG')
-#        name = ''
-#        with open(hmmFile, 'r') as hmm_fh:
-#            for line in hmm_fh:
-#                if name == '':
-#                    if name_re.match(line):
-#                        name = re_split( r'\s+', line.rstrip() )[1] 
-#                else:
-#                    if length_re.match(line):
-#                        self.qLengths[name] = re_split( r'\s+', line.rstrip() )[1]
-#                        name = ''
-#                    
-#        self.numQs = len(self.qLengths)
 
         # we expect directory to contain a collection of folders
         # names after the original bins
@@ -194,7 +180,7 @@ class HitManager():
         
         # now we can see if we have a long enough match
         alignment_length = float(hit.ali_to - hit.ali_from)
-        length_perc = alignment_length/float(hit.target_length) 
+        length_perc = alignment_length/float(hit.query_length)
         if length_perc < self.lengthCO:
             #print "BAD3:", hit.query_name, length_perc, self.lengthCO
             return False
