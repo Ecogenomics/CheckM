@@ -39,7 +39,7 @@ __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012"
 __credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -57,6 +57,11 @@ import defaultValues
 
 # other local imports
 from simplehmmer.simplehmmer import HMMERRunner, checkForHMMER, makeSurePathExists
+
+from cogent import DNA, PROTEIN
+from cogent.core.genetic_code import GeneticCodes
+from cogent.parse.fasta import MinimalFastaParser
+
 
 ###############################################################################
 ###############################################################################
@@ -138,12 +143,30 @@ class Mc2kHmmerDataConstructor():
             out_dir = os.path.join(outFolder, os.path.basename(fasta))
             makeSurePathExists(out_dir)
             
+            out_file = open(os.path.join(out_dir,
+                                 defaultValues.__MC2K_DEFAULT_TRANSLATE_FILE__),
+                                 'w')
+
+            # translate the fasta file in all six frames
+            contig_file = open(fasta)
+            for name, seq in MinimalFastaParser(contig_file):
+                dna_seq = DNA.makeSequence(seq)
+                dna_seq.Name = name
+                translations = GeneticCodes[11].sixframes(dna_seq)
+                frame_number = 0
+                for frame in translations:
+                    p = PROTEIN.makeSequence(frame, name+'_'+str(frame_count+=1))
+                    out_file.write(p.toFasta())
+
+            out_file.close()
             # run prodigal
-            prod_fasta = self.runProdigal(fasta,
-                                          out_dir,
-                                          closed=closed,
-                                          verbose=verbose
-                                          )
+            #prod_fasta = self.runProdigal(fasta,
+            #                              out_dir,
+            #                              closed=closed,
+            #                              verbose=verbose
+            #                              )
+            
+            
             # run HMMER
             if verbose:
                 self.varLock.acquire()
@@ -153,7 +176,7 @@ class Mc2kHmmerDataConstructor():
                     self.varLock.release()
                 
             HR = HMMERRunner(prefix=prefix)
-            HR.search(hmm, prod_fasta, out_dir)
+            HR.search(hmm, out_file.name, out_dir)
 
             # let the world know we've parsed this file
             self.varLock.acquire()
@@ -163,6 +186,10 @@ class Mc2kHmmerDataConstructor():
                 self.varLock.release()
             
         finally:
+            # make sure to close the input and output files no matter what
+            out_file.close()
+            contig_file.close()
+
             self.threadPool.release()
     
     def runProdigal(self, fasta, outFolder, verbose=False, closed=False):
