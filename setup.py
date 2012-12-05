@@ -13,6 +13,6 @@ setup(
     long_description=open('README.txt').read(),
     install_requires=[
                       'simplehmmer >= 0.2.2',
-                      'cogent >= 1.5.3'
+                      'biopython >= 1.58'
                       ],
 )

@@ -98,13 +98,24 @@ class Mc2kOptionsParser():
 
     def Mc2kAlign(self, options):
         """Align Command"""
-        HA = resultsParser.HMMAligner(prefix=options.prefix)
+        if hasattr(options, 'separate'):
+            HA = resultsParser.HMMAligner(options.prefix,
+                      options.separate,
+                      options.consensus,
+                      options.out_format
+                      )
+        else:
+            HA = resultsParser.HMMAligner(options.prefix)
+        bh = False
+        if hasattr(options, 'best_alignment'):
+            bh=True
         HA.makeAlignments(options.out_folder,
                           options.hmm,
                           eCO=options.e_value,
                           lengthCO=options.length,                              
                           verbose=options.verbose,
-                          prefix=options.prefix
+                          prefix=options.prefix,
+                          bestHit=bh
                           )
 
     def parseOptions(self, options):

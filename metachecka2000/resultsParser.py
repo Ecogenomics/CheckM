@@ -51,7 +51,7 @@ import os
 import argparse
 from re import compile as re_compile, split as re_split
 import uuid
-
+import shutil
 # MetaChecka2000 imports
 import defaultValues 
 
@@ -243,8 +243,11 @@ class HitManager():
 ###############################################################################
 
 class HMMAligner:
-    def __init__(self, prefix=''):
+    def __init__(self, prefix='', individualFile=False, includeConsensus=True, outputFormat='PSIBLAST'):
         # make output file names
+        self.individualFile = individualFile
+        self.includeConsensus = includeConsensus
+        self.outputFormat = outputFormat
         (self.txtOut, self.hmmOut) = makeOutputFNs(prefix=prefix)
         (txtOut, self.hmmAlign) = makeOutputFNs(prefix=prefix, mode='align')
         
@@ -256,6 +259,7 @@ class HMMAligner:
                        lengthCO=defaultValues.__MC2K_DEFAULT_LENGTH__,
                        prefix='',
                        verbose=False,
+                       bestHit=False
                        ):
         """main wrapper for making hmm alignments"""
         # first parse through the hmm txt and work out all the 
@@ -288,13 +292,17 @@ class HMMAligner:
                         break
                     if HM.vetHit(hit): # we only want good hits
                         try:
-                            hit_lookup[folder][hit.query_accession].append(hit.target_name)
+                            if bestHit:
+                                if hit_lookup[folder][hit.query_name][0].full_e_value > hit.full_e_value:
+                                    hit_lookup[folder][hit.query_name] = [hit]
+                            else:
+                                hit_lookup[folder][hit.query_name].append(hit)
                         except KeyError:
-                            hit_lookup[folder][hit.query_accession] = [hit.target_name]
+                            hit_lookup[folder][hit.query_name] = [hit]
                         try:
-                            unique_hits[hit.query_accession] += 1
+                            unique_hits[hit.query_name] += 1
                         except KeyError:
-                            unique_hits[hit.query_accession] = 1
+                            unique_hits[hit.query_name] = 1
         
         # make temporary files and write the extracted hmms
         single_hmms = {}
@@ -306,9 +314,11 @@ class HMMAligner:
         
         # now we need to go through each of the bins and extract the contigs which we need
         for folder in hit_lookup:
-            genes_file_name = os.path.join(directory, folder, 'prodigal_out.faa') # the seqs to align
-            final_alignment_file = os.path.join(directory, folder, self.hmmAlign) # where to write the whole shebang to
-            self.alignBin(HA, hit_lookup[folder], single_hmms, single_hmm_consensi, genes_file_name, final_alignment_file)
+            genes_file_name = os.path.join(directory, folder,
+                    defaultValues.__MC2K_DEFAULT_TRANSLATE_FILE__) # the seqs to align
+
+            self.alignBin(HA, hit_lookup[folder], single_hmms,
+                    single_hmm_consensi, genes_file_name, directory, folder)
         
         # remove the tmp files
         for file_name in single_hmms:
@@ -316,39 +326,48 @@ class HMMAligner:
         for file_name in single_hmm_consensi:
             os.remove(single_hmm_consensi[file_name])
             
-    def alignBin(self, HA, hits, hmms, consensi, fasta, finalFile):
+    def alignBin(self, HA, hits, hmms, consensi, fasta,
+            directory, folder):
+        # hits is a hash of HMM names to hit objects
         """Make alignments for this bin"""
+        final_alignment_file = os.path.join(directory, folder, self.hmmAlign) # where to write the whole shebang to
+        # a hash of sequence names and sequences
         bin_genes = {}
         with open(fasta, 'r') as fh:
             for cid,seq,qual in self.readfq(fh):
                 bin_genes[cid] = seq
 
         align_tmp_file = os.path.join('/tmp', str(uuid.uuid4()))
-        align_seq_file = os.path.join('/tmp', str(uuid.uuid4()))
-        file_modified = False
-        os.system('echo %s > %s' % (fasta, align_tmp_file))
-        for hit in hits:
-            # make a multiple fasta consisting of the nodes here and 
-            # the hmm consensus, we overwrite on the first go
-            os.system('cat %s > %s' % (consensi[hit], align_seq_file))
-            file_modified = True
-            for sequence in hits[hit]:
-                os.system("echo '>%s' >> %s" % (sequence, align_seq_file))
-                os.system('echo %s >> %s' % (bin_genes[sequence], align_seq_file))
-                
-            # now we can do the alignment
-            # we don't want to overwrite the file
-            HA.align(hmms[hit], align_seq_file, align_tmp_file, writeMode='>>')
-            
-            # end of  this hit
-            os.system('echo >> %s' % (align_tmp_file))
-            os.system('echo "################################################################################" >> %s' % (align_tmp_file))
-            os.system('echo >> %s' % (align_tmp_file))
+        for hit_name in hits:
+            align_seq_file = open(os.path.join('/tmp', str(uuid.uuid4())), 'w')
 
-        os.system('cat %s > %s' % (align_tmp_file, finalFile))
-        if file_modified:
-            os.remove(align_seq_file)
-        os.remove(align_tmp_file)
+            if self.includeConsensus:
+                with open(consensi[hit_name]) as fh:
+                    for line in fh:
+                        align_seq_file.write(line)
+
+            for hmm_hit in hits[hit_name]:
+                align_seq_file.write(">"+hmm_hit.target_name+"\n")
+                align_seq_file.write(bin_genes[hmm_hit.target_name][hmm_hit.ali_from-100:hmm_hit.ali_to+100])
+                align_seq_file.write("\n")
+            align_seq_file.close()
+
+            if self.individualFile:
+                out_file = os.path.join(directory, folder,hit_name+"_out.align" )
+                HA.align(hmms[hit_name], align_seq_file.name, out_file,
+                        writeMode='>', outputFormat=self.outputFormat)
+                
+            else:
+                HA.align(hmms[hit_name], align_seq_file.name, align_tmp_file,
+                        writeMode='>>', outputFormat=self.outputFormat)
+                with open(align_tmp_file, 'a') as fh:
+                    fh.write("\n###########################################\n\n")
+            
+            os.remove(align_seq_file.name)
+
+        if not self.individualFile:
+            shutil.copy(align_tmp_file, final_alignment_file)
+            os.remove(align_tmp_file)
         
     def makeAlignmentModels(self, HF, hmm, keyz, hmms, consensi):
         """Make a bunch of temporary hmm files which we'll use when aligning"""

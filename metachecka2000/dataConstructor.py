@@ -58,9 +58,11 @@ import defaultValues
 # other local imports
 from simplehmmer.simplehmmer import HMMERRunner, checkForHMMER, makeSurePathExists
 
-from cogent import DNA, PROTEIN
-from cogent.core.genetic_code import GeneticCodes
-from cogent.parse.fasta import MinimalFastaParser
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+#from cogent import DNA, PROTEIN
+#from cogent.core.genetic_code import GeneticCodes
+#from cogent.parse.fasta import MinimalFastaParser
 
 
 ###############################################################################
@@ -89,6 +91,7 @@ class Mc2kHmmerDataConstructor():
         self.num_files_total = 0
         self.num_files_started = 0
         self.num_files_parsed = 0
+
 
     def buildData(self, inFiles, outFolder, hmm, closed, prefix, verbose=False):
         """Main wrapper used for building datasets"""
@@ -122,6 +125,11 @@ class Mc2kHmmerDataConstructor():
             else:
                 time.sleep(1)
             
+    def translate_six_frames(self, bioseq, table=1):
+        revseq = bioseq.reverse_complement()
+        for i in range(3):
+            yield bioseq[i:].translate(table)
+            yield revseq[i:].translate(table)
               
     def processFasta(self, fasta, outFolder, hmm, closed, prefix, verbose=False):
         """Thread safe fasta processing"""
@@ -146,15 +154,20 @@ class Mc2kHmmerDataConstructor():
 
             # translate the fasta file in all six frames
             contig_file = open(fasta)
-            for name, seq in MinimalFastaParser(contig_file):
-                dna_seq = DNA.makeSequence(seq)
-                dna_seq.Name = name
-                translations = GeneticCodes[11].sixframes(dna_seq)
+            for rec in SeqIO.parse(contig_file, 'fasta'):
                 frame_number = 0
-                for frame in translations:
-                    frame_number += 1
-                    out_file.write(">"+name+'_'+str(frame_number)+"\n")
-                    out_file.write(frame+"\n")
+                for frame in self.translate_six_frames(rec.seq):
+                    frame_number+=1
+                    SeqIO.write(SeqRecord(frame, description='', id=rec.id+"_"+str(frame_number)), out_file, 'fasta')
+            #for name, seq in MinimalFastaParser(contig_file):
+            #    dna_seq = DNA.makeSequence(seq)
+            #    dna_seq.Name = name
+            #    translations = GeneticCodes[11].sixframes(dna_seq)
+            #    frame_number = 0
+            #    for frame in translations:
+            #        frame_number += 1
+            #        out_file.write(">"+name+'_'+str(frame_number)+"\n")
+            #        out_file.write(frame+"\n")
 
             out_file.close()
 
