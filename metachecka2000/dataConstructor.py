@@ -39,7 +39,7 @@ __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012"
 __credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -58,12 +58,18 @@ import defaultValues
 # other local imports
 from simplehmmer.simplehmmer import HMMERRunner, checkForHMMER, makeSurePathExists
 
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+#from cogent import DNA, PROTEIN
+#from cogent.core.genetic_code import GeneticCodes
+#from cogent.parse.fasta import MinimalFastaParser
+
+
 ###############################################################################
 ###############################################################################
 ###############################################################################
 ###############################################################################
 
-class ProdigalError(BaseException): pass
 class HMMERError(BaseException): pass
 
 ###############################################################################
@@ -76,8 +82,6 @@ class Mc2kHmmerDataConstructor():
     def __init__(self, checkHmmer=True, checkProdigal=True, threads=1):
         if checkHmmer:
             checkForHMMER()
-        if checkProdigal:
-            checkForProdigal()
 
         # thready stuff            
         self.varLock = threading.Lock() # we don't have many variables here, so use one lock for everything    
@@ -87,6 +91,7 @@ class Mc2kHmmerDataConstructor():
         self.num_files_total = 0
         self.num_files_started = 0
         self.num_files_parsed = 0
+
 
     def buildData(self, inFiles, outFolder, hmm, closed, prefix, verbose=False):
         """Main wrapper used for building datasets"""
@@ -120,6 +125,11 @@ class Mc2kHmmerDataConstructor():
             else:
                 time.sleep(1)
             
+    def translate_six_frames(self, bioseq, table=1):
+        revseq = bioseq.reverse_complement()
+        for i in range(3):
+            yield bioseq[i:].translate(table)
+            yield revseq[i:].translate(table)
               
     def processFasta(self, fasta, outFolder, hmm, closed, prefix, verbose=False):
         """Thread safe fasta processing"""
@@ -138,12 +148,29 @@ class Mc2kHmmerDataConstructor():
             out_dir = os.path.join(outFolder, os.path.basename(fasta))
             makeSurePathExists(out_dir)
             
-            # run prodigal
-            prod_fasta = self.runProdigal(fasta,
-                                          out_dir,
-                                          closed=closed,
-                                          verbose=verbose
-                                          )
+            out_file = open(os.path.join(out_dir,
+                                 defaultValues.__MC2K_DEFAULT_TRANSLATE_FILE__),
+                                 'w')
+
+            # translate the fasta file in all six frames
+            contig_file = open(fasta)
+            for rec in SeqIO.parse(contig_file, 'fasta'):
+                frame_number = 0
+                for frame in self.translate_six_frames(rec.seq):
+                    frame_number+=1
+                    SeqIO.write(SeqRecord(frame, description='', id=rec.id+"_"+str(frame_number)), out_file, 'fasta')
+            #for name, seq in MinimalFastaParser(contig_file):
+            #    dna_seq = DNA.makeSequence(seq)
+            #    dna_seq.Name = name
+            #    translations = GeneticCodes[11].sixframes(dna_seq)
+            #    frame_number = 0
+            #    for frame in translations:
+            #        frame_number += 1
+            #        out_file.write(">"+name+'_'+str(frame_number)+"\n")
+            #        out_file.write(frame+"\n")
+
+            out_file.close()
+
             # run HMMER
             if verbose:
                 self.varLock.acquire()
@@ -153,7 +180,7 @@ class Mc2kHmmerDataConstructor():
                     self.varLock.release()
                 
             HR = HMMERRunner(prefix=prefix)
-            HR.search(hmm, prod_fasta, out_dir)
+            HR.search(hmm, out_file.name, out_dir)
 
             # let the world know we've parsed this file
             self.varLock.acquire()
@@ -163,52 +190,12 @@ class Mc2kHmmerDataConstructor():
                 self.varLock.release()
             
         finally:
+            # make sure to close the input and output files no matter what
+            out_file.close()
+            contig_file.close()
+
             self.threadPool.release()
     
-    def runProdigal(self, fasta, outFolder, verbose=False, closed=False):
-        """Wrapper for running prodigal"""
-        if verbose:
-            self.varLock.acquire()
-            try:
-                print "    Running prodigal on file %s" % fasta
-            finally:
-                self.varLock.release()
-        # make file names
-        
-        prod_file = os.path.join(outFolder,
-                                 defaultValues.__MC2K_DEFAULT_PROD_FN__)
-        # work out if we're closing the ends
-        if closed:
-            cs = "-c"
-        else:
-            cs = ""
-        prod_result = system("prodigal -a %s -i %s -q %s > /dev/null" % (prod_file, fasta, cs))
-
-        if prod_result == 2560:
-            # need to rerun with the -p option!
-            print "rerunning prodigal with the -p option for %s" % fasta
-            prod_result = system("prodigal -a %s -i %s -p meta -q %s > /dev/null" % (prod_file, fasta, cs))
-
-        if prod_result != 0:
-            raise ProdigalError("Error running prodigal %d" % prod_result)
-        
-        return prod_file
-    
-def checkForProdigal():
-    """Check to see if Prodigal is on the system before we try fancy things
-    
-    We assume that a successful prodigal -h returns 0 and anything
-    else returns something non-zero
-    """
-    # redirect stdout so we don't get mess!
-    try:
-        exit_status = system('prodigal -h 1> /dev/null 2> /dev/null')
-    except:
-      print "Unexpected error!", sys.exc_info()[0]
-      raise
-  
-    if exit_status != 0:
-        raise ProdigalError("Error attempting to run prodigal, is it in your path?")
     
 ###############################################################################
 ###############################################################################

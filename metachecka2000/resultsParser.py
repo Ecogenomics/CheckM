@@ -51,12 +51,13 @@ import os
 import argparse
 from re import compile as re_compile, split as re_split
 import uuid
-
+import shutil
 # MetaChecka2000 imports
 import defaultValues 
 
 # other local imports
 from simplehmmer.simplehmmer import HMMERRunner, HMMERParser, makeOutputFNs
+from simplehmmer.hmmmodelparser import HmmModel, HmmModelParser
 
 ###############################################################################
 ###############################################################################
@@ -69,7 +70,8 @@ class Mc2kHmmerResultsParser():
         # make the output file names
         (self.txtOut, self.hmmOut) = makeOutputFNs(prefix)
         self.results = {}
-        self.qLengths = {}
+#        self.qLengths = {}
+        self.models = {}
         self.numQs = 0
     
     def analyseResults(self,
@@ -92,26 +94,17 @@ class Mc2kHmmerResultsParser():
 
         # parse the hmm file itself so we can determine the length
         # of the queries
-        name_re = re_compile('^NAME')
-        length_re = re_compile('^LENG')
-        name = ''
-        with open(hmmFile, 'r') as hmm_fh:
-            for line in hmm_fh:
-                if name == '':
-                    if name_re.match(line):
-                        name = re_split( r'\s+', line.rstrip() )[1] 
-                else:
-                    if length_re.match(line):
-                        self.qLengths[name] = re_split( r'\s+', line.rstrip() )[1]
-                        name = ''
-                    
-        self.numQs = len(self.qLengths)
+        model_parser = HmmModelParser(hmmFile)
+        for model in model_parser.parse():
+            self.models[model.name] = model
+        
+        self.numQs = len(self.models)
 
         # we expect directory to contain a collection of folders
         # names after the original bins
         for folder in os.listdir(directory):
             # somewhere to store results
-            storage = HitManager(folder, eCO, lengthCO)
+            storage = HitManager(folder, lengthCO, eCO, self.models)
             # we can now build the hmmer_file_name
             hmmer_file_name = os.path.join(directory, folder, self.txtOut)
             # and then we can parse it
@@ -121,7 +114,7 @@ class Mc2kHmmerResultsParser():
         if not verbose:
             self.printHeader()
         for fasta in self.results:
-            self.results[fasta].printSummary(self.qLengths, verbose=verbose)
+            self.results[fasta].printSummary(verbose=verbose)
 
         # restore stdout        
         if("" != outFile):
@@ -160,19 +153,24 @@ class Mc2kHmmerResultsParser():
 
 class HitManager():
     """Store all the results for a single bin"""
-    def __init__(self, name, eCO, lengthCO):
+    def __init__(self, name, lengthCO, eCO, models=None):
         self.name = name
         self.markers = {}
         self.eCO = eCO
         self.lengthCO = lengthCO
+        self.models = models
     
     def vetHit(self, hit):
         """See if this hit meets our exacting standards"""
         # we should first check to see if this hit is spurious
         # evalue is the easiest method
-        if hit.full_e_value > self.eCO:
-            #print "BAD1:", hit.query_name
-            return False
+        try:
+            if self.models[hit.target_name].tc[0] < hit.full_score:
+                return False
+        except:
+            if hit.full_e_value > self.eCO:
+                #print "BAD1:", hit.query_name
+                return False
         
         # also from the manual, if the bias is significantly large
         # then we shouldn't trust the hit
@@ -182,7 +180,7 @@ class HitManager():
         
         # now we can see if we have a long enough match
         alignment_length = float(hit.ali_to - hit.ali_from)
-        length_perc = alignment_length/float(hit.target_length) 
+        length_perc = alignment_length/float(hit.query_length)
         if length_perc < self.lengthCO:
             #print "BAD3:", hit.query_name, length_perc, self.lengthCO
             return False
@@ -201,26 +199,26 @@ class HitManager():
             except KeyError:
                 self.markers[hit.query_name] = 1
 
-    def printSummary(self, queries, verbose=False):
+    def printSummary(self, verbose=False):
         """print out some information about this bin"""
         # if verbose, then just dump the whole thing
         if verbose:
             print "--------------------"
             print self.name
-            for marker in queries:
+            for marker in self.models:
                 try:
                     print "%s\t%d" % (marker, self.markers[marker])
                 except KeyError:
                     print "%s\t0" % (marker)
                     
             print "TOTAL:\t%d / %d (%0.2f" % (len(self.markers),
-                                              len(queries),
-                                              100*float(len(self.markers))/float(len(queries))
+                                              len(self.models),
+                                              100*float(len(self.markers))/float(len(self.models))
                                               )+"%)"
             return
 
         gene_counts = [0]*6
-        for marker in queries:
+        for marker in self.models:
             # we need to limit it form 0 to 5+
             try:
                 if self.markers[marker] > 5:
@@ -231,8 +229,8 @@ class HitManager():
                 marker_count = 0
             
             gene_counts[marker_count] += 1
-        perc_comp = 100*float(len(self.markers))/float(len(queries))
-        perc_cont = 100*float(gene_counts[2] + gene_counts[3] + gene_counts[4] + gene_counts[5])/float(len(queries))  
+        perc_comp = 100*float(len(self.markers))/float(len(self.models))
+        perc_cont = 100*float(gene_counts[2] + gene_counts[3] + gene_counts[4] + gene_counts[5])/float(len(self.models))  
         print "%s\t%s\t%0.2f\t%0.2f" % (self.name,
                                         "\t".join([str(gene_counts[i]) for i in range(6)]),
                                         perc_comp,
@@ -245,8 +243,11 @@ class HitManager():
 ###############################################################################
 
 class HMMAligner:
-    def __init__(self, prefix=''):
+    def __init__(self, prefix='', individualFile=False, includeConsensus=True, outputFormat='PSIBLAST'):
         # make output file names
+        self.individualFile = individualFile
+        self.includeConsensus = includeConsensus
+        self.outputFormat = outputFormat
         (self.txtOut, self.hmmOut) = makeOutputFNs(prefix=prefix)
         (txtOut, self.hmmAlign) = makeOutputFNs(prefix=prefix, mode='align')
         
@@ -257,7 +258,8 @@ class HMMAligner:
                        eCO=defaultValues.__MC2K_DEFAULT_E_VAL__,
                        lengthCO=defaultValues.__MC2K_DEFAULT_LENGTH__,
                        prefix='',
-                       verbose=False
+                       verbose=False,
+                       bestHit=False
                        ):
         """main wrapper for making hmm alignments"""
         # first parse through the hmm txt and work out all the 
@@ -265,7 +267,12 @@ class HMMAligner:
         # we expect directory to contain a collection of folders
         # names after the original bins
         # we need to use this guy to vet the hits
-        HM = HitManager('', eCO, lengthCO)
+        models = {}
+        model_parser = HmmModelParser(hmm)
+        for model in model_parser.parse():
+            models[model.name] = model
+
+        HM = HitManager('', lengthCO, eCO, models)
         hit_lookup = {}
         unique_hits = {}
         for folder in os.listdir(directory):
@@ -285,13 +292,17 @@ class HMMAligner:
                         break
                     if HM.vetHit(hit): # we only want good hits
                         try:
-                            hit_lookup[folder][hit.query_accession].append(hit.target_name)
+                            if bestHit:
+                                if hit_lookup[folder][hit.query_name][0].full_e_value > hit.full_e_value:
+                                    hit_lookup[folder][hit.query_name] = [hit]
+                            else:
+                                hit_lookup[folder][hit.query_name].append(hit)
                         except KeyError:
-                            hit_lookup[folder][hit.query_accession] = [hit.target_name]
+                            hit_lookup[folder][hit.query_name] = [hit]
                         try:
-                            unique_hits[hit.query_accession] += 1
+                            unique_hits[hit.query_name] += 1
                         except KeyError:
-                            unique_hits[hit.query_accession] = 1
+                            unique_hits[hit.query_name] = 1
         
         # make temporary files and write the extracted hmms
         single_hmms = {}
@@ -303,9 +314,11 @@ class HMMAligner:
         
         # now we need to go through each of the bins and extract the contigs which we need
         for folder in hit_lookup:
-            genes_file_name = os.path.join(directory, folder, 'prodigal_out.faa') # the seqs to align
-            final_alignment_file = os.path.join(directory, folder, self.hmmAlign) # where to write the whole shebang to
-            self.alignBin(HA, hit_lookup[folder], single_hmms, single_hmm_consensi, genes_file_name, final_alignment_file)
+            genes_file_name = os.path.join(directory, folder,
+                    defaultValues.__MC2K_DEFAULT_TRANSLATE_FILE__) # the seqs to align
+
+            self.alignBin(HA, hit_lookup[folder], single_hmms,
+                    single_hmm_consensi, genes_file_name, directory, folder)
         
         # remove the tmp files
         for file_name in single_hmms:
@@ -313,39 +326,48 @@ class HMMAligner:
         for file_name in single_hmm_consensi:
             os.remove(single_hmm_consensi[file_name])
             
-    def alignBin(self, HA, hits, hmms, consensi, fasta, finalFile):
+    def alignBin(self, HA, hits, hmms, consensi, fasta,
+            directory, folder):
+        # hits is a hash of HMM names to hit objects
         """Make alignments for this bin"""
+        final_alignment_file = os.path.join(directory, folder, self.hmmAlign) # where to write the whole shebang to
+        # a hash of sequence names and sequences
         bin_genes = {}
         with open(fasta, 'r') as fh:
             for cid,seq,qual in self.readfq(fh):
                 bin_genes[cid] = seq
 
         align_tmp_file = os.path.join('/tmp', str(uuid.uuid4()))
-        align_seq_file = os.path.join('/tmp', str(uuid.uuid4()))
-        file_modified = False
-        os.system('echo %s > %s' % (fasta, align_tmp_file))
-        for hit in hits:
-            # make a multiple fasta consisting of the nodes here and 
-            # the hmm consensus, we overwrite on the first go
-            os.system('cat %s > %s' % (consensi[hit], align_seq_file))
-            file_modified = True
-            for sequence in hits[hit]:
-                os.system("echo '>%s' >> %s" % (sequence, align_seq_file))
-                os.system('echo %s >> %s' % (bin_genes[sequence], align_seq_file))
-                
-            # now we can do the alignment
-            # we don't want to overwrite the file
-            HA.align(hmms[hit], align_seq_file, align_tmp_file, writeMode='>>')
-            
-            # end of  this hit
-            os.system('echo >> %s' % (align_tmp_file))
-            os.system('echo "################################################################################" >> %s' % (align_tmp_file))
-            os.system('echo >> %s' % (align_tmp_file))
+        for hit_name in hits:
+            align_seq_file = open(os.path.join('/tmp', str(uuid.uuid4())), 'w')
 
-        os.system('cat %s > %s' % (align_tmp_file, finalFile))
-        if file_modified:
-            os.remove(align_seq_file)
-        os.remove(align_tmp_file)
+            if self.includeConsensus:
+                with open(consensi[hit_name]) as fh:
+                    for line in fh:
+                        align_seq_file.write(line)
+
+            for hmm_hit in hits[hit_name]:
+                align_seq_file.write(">"+hmm_hit.target_name+"\n")
+                align_seq_file.write(bin_genes[hmm_hit.target_name][hmm_hit.ali_from-100:hmm_hit.ali_to+100])
+                align_seq_file.write("\n")
+            align_seq_file.close()
+
+            if self.individualFile:
+                out_file = os.path.join(directory, folder,hit_name+"_out.align" )
+                HA.align(hmms[hit_name], align_seq_file.name, out_file,
+                        writeMode='>', outputFormat=self.outputFormat)
+                
+            else:
+                HA.align(hmms[hit_name], align_seq_file.name, align_tmp_file,
+                        writeMode='>>', outputFormat=self.outputFormat)
+                with open(align_tmp_file, 'a') as fh:
+                    fh.write("\n###########################################\n\n")
+            
+            os.remove(align_seq_file.name)
+
+        if not self.individualFile:
+            shutil.copy(align_tmp_file, final_alignment_file)
+            os.remove(align_tmp_file)
         
     def makeAlignmentModels(self, HF, hmm, keyz, hmms, consensi):
         """Make a bunch of temporary hmm files which we'll use when aligning"""

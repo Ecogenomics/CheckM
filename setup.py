@@ -12,6 +12,7 @@ setup(
     description='MetaChecka2000',
     long_description=open('README.txt').read(),
     install_requires=[
-                      'simplehmmer >= 0.2.2'
+                      'simplehmmer >= 0.2.2',
+                      'biopython >= 1.58'
                       ],
 )
