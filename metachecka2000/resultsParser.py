@@ -317,9 +317,12 @@ class HMMAligner:
         for folder in hit_lookup:
             genes_file_name = os.path.join(directory, folder,
                     defaultValues.__MC2K_DEFAULT_TRANSLATE_FILE__) # the seqs to align
-
-            self.alignBin(HA, hit_lookup[folder], single_hmms,
-                    single_hmm_consensi, genes_file_name, directory, folder)
+            if 0 < len(hit_lookup[folder]):
+                self.alignBin(HA, hit_lookup[folder], single_hmms,
+                        single_hmm_consensi, genes_file_name, directory, folder)
+            elif verbose:
+                print "Skipping alignment for", folder, ": no hits found"
+                
         
         # remove the tmp files
         for file_name in single_hmms:

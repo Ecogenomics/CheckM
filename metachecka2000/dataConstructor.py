@@ -124,7 +124,7 @@ class Mc2kHmmerDataConstructor():
             else:
                 time.sleep(1)
             
-    def translate_six_frames(self, bioseq, table=1):
+    def translate_six_frames(self, bioseq, table=11):
         revseq = bioseq.reverse_complement()
         for i in range(3):
             yield bioseq[i:].translate(table)
