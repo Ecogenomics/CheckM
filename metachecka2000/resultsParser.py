@@ -165,7 +165,7 @@ class HitManager():
         # we should first check to see if this hit is spurious
         # evalue is the easiest method
         try:
-            if self.models[hit.target_name].tc[0] < hit.full_score:
+            if self.models[hit.query_name].tc[0] < hit.full_score:
                 return False
         except:
             if hit.full_e_value > self.eCO:
@@ -259,7 +259,8 @@ class HMMAligner:
                        lengthCO=defaultValues.__MC2K_DEFAULT_LENGTH__,
                        prefix='',
                        verbose=False,
-                       bestHit=False
+                       bestHit=False,
+                       generateModelFiles=True
                        ):
         """main wrapper for making hmm alignments"""
         # first parse through the hmm txt and work out all the 
@@ -307,8 +308,8 @@ class HMMAligner:
         # make temporary files and write the extracted hmms
         single_hmms = {}
         single_hmm_consensi = {}
-        if True:
-            HA = HMMERRunner(mode='align', prefix=prefix)
+        HA = HMMERRunner(mode='align', prefix=prefix)
+        if generateModelFiles:
             HF = HMMERRunner(mode='fetch', prefix=prefix)
             self.makeAlignmentModels(HF, hmm, unique_hits.keys(), single_hmms, single_hmm_consensi)
         
