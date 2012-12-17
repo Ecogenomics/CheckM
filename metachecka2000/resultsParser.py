@@ -128,18 +128,21 @@ class Mc2kHmmerResultsParser():
         
     def parseHmmerResults(self, fileName, storage, verbose):
         """Parse through a hmmer file and see what's what"""
-        with open(fileName, 'r') as hmmer_handle:
-            try:
-                HP = HMMERParser(hmmer_handle)
-            except:
-                print "Error opening HMM file:", fileName
-                raise
-            
-            while True:
-                hit = HP.next()
-                if hit is None:
-                    break
-                storage.addHit(hit)
+        try:
+            with open(fileName, 'r') as hmmer_handle:
+                try:
+                    HP = HMMERParser(hmmer_handle)
+                except:
+                    print "Error opening HMM file:", fileName
+                    raise
+                
+                while True:
+                    hit = HP.next()
+                    if hit is None:
+                        break
+                    storage.addHit(hit)
+        except IOError as detail:
+            sys.stderr.write(detail+"\n")
 
     def printHeader(self):
         """Print the NON_VERBOSE header"""
