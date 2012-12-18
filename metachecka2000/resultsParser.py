@@ -128,18 +128,21 @@ class Mc2kHmmerResultsParser():
         
     def parseHmmerResults(self, fileName, storage, verbose):
         """Parse through a hmmer file and see what's what"""
-        with open(fileName, 'r') as hmmer_handle:
-            try:
-                HP = HMMERParser(hmmer_handle)
-            except:
-                print "Error opening HMM file:", fileName
-                raise
-            
-            while True:
-                hit = HP.next()
-                if hit is None:
-                    break
-                storage.addHit(hit)
+        try:
+            with open(fileName, 'r') as hmmer_handle:
+                try:
+                    HP = HMMERParser(hmmer_handle)
+                except:
+                    print "Error opening HMM file:", fileName
+                    raise
+                
+                while True:
+                    hit = HP.next()
+                    if hit is None:
+                        break
+                    storage.addHit(hit)
+        except IOError as detail:
+            sys.stderr.write(detail+"\n")
 
     def printHeader(self):
         """Print the NON_VERBOSE header"""
@@ -165,7 +168,7 @@ class HitManager():
         # we should first check to see if this hit is spurious
         # evalue is the easiest method
         try:
-            if self.models[hit.target_name].tc[0] < hit.full_score:
+            if self.models[hit.query_name].tc[0] < hit.full_score:
                 return False
         except:
             if hit.full_e_value > self.eCO:
@@ -259,7 +262,8 @@ class HMMAligner:
                        lengthCO=defaultValues.__MC2K_DEFAULT_LENGTH__,
                        prefix='',
                        verbose=False,
-                       bestHit=False
+                       bestHit=False,
+                       generateModelFiles=True
                        ):
         """main wrapper for making hmm alignments"""
         # first parse through the hmm txt and work out all the 
@@ -307,8 +311,8 @@ class HMMAligner:
         # make temporary files and write the extracted hmms
         single_hmms = {}
         single_hmm_consensi = {}
-        if True:
-            HA = HMMERRunner(mode='align', prefix=prefix)
+        HA = HMMERRunner(mode='align', prefix=prefix)
+        if generateModelFiles:
             HF = HMMERRunner(mode='fetch', prefix=prefix)
             self.makeAlignmentModels(HF, hmm, unique_hits.keys(), single_hmms, single_hmm_consensi)
         
@@ -316,9 +320,12 @@ class HMMAligner:
         for folder in hit_lookup:
             genes_file_name = os.path.join(directory, folder,
                     defaultValues.__MC2K_DEFAULT_TRANSLATE_FILE__) # the seqs to align
-
-            self.alignBin(HA, hit_lookup[folder], single_hmms,
-                    single_hmm_consensi, genes_file_name, directory, folder)
+            if 0 < len(hit_lookup[folder]):
+                self.alignBin(HA, hit_lookup[folder], single_hmms,
+                        single_hmm_consensi, genes_file_name, directory, folder)
+            elif verbose:
+                print "Skipping alignment for", folder, ": no hits found"
+                
         
         # remove the tmp files
         for file_name in single_hmms:

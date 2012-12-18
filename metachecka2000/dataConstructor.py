@@ -98,7 +98,6 @@ class Mc2kHmmerDataConstructor():
 
         if not os.path.exists(outFolder):
             mkdir(outFolder)
-
         # get a listing of all the files in the directory
         self.num_files_total = len(inFiles)
         if verbose:
@@ -125,7 +124,7 @@ class Mc2kHmmerDataConstructor():
             else:
                 time.sleep(1)
             
-    def translate_six_frames(self, bioseq, table=1):
+    def translate_six_frames(self, bioseq, table=11):
         revseq = bioseq.reverse_complement()
         for i in range(3):
             yield bioseq[i:].translate(table)
@@ -147,10 +146,14 @@ class Mc2kHmmerDataConstructor():
             # make sure we have somewhere to write files to
             out_dir = os.path.join(outFolder, os.path.basename(fasta))
             makeSurePathExists(out_dir)
-            
-            out_file = open(os.path.join(out_dir,
+            try:
+                out_file = open(os.path.join(out_dir,
                                  defaultValues.__MC2K_DEFAULT_TRANSLATE_FILE__),
                                  'w')
+            except:
+                print "Cannot open file:", os.path.join(out_dir,
+                                 defaultValues.__MC2K_DEFAULT_TRANSLATE_FILE__)
+                sys.exit(1)
 
             # translate the fasta file in all six frames
             contig_file = open(fasta)
