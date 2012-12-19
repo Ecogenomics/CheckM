@@ -39,7 +39,7 @@ __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012"
 __credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -354,11 +354,21 @@ class HMMAligner:
                         align_seq_file.write(line)
 
             for hmm_hit in hits[hit_name]:
-                align_seq_file.write(">"+hmm_hit.target_name+"\n")
-                align_seq_file.write(bin_genes[hmm_hit.target_name][hmm_hit.ali_from-100:hmm_hit.ali_to+100])
-                align_seq_file.write("\n")
-            align_seq_file.close()
+                start_location = 0
+                end_location = len(bin_genes[hmm_hit.target_name])
+                
+                if hmm_hit.ali_to+100 < end_location:
+                    end_location = hmm_hit.ali_to+100 
+                
+                if hmm_hit.ali_from-100 > start_location:
+                    start_location = hmm_hit.ali_from-100 
 
+                align_seq_file.write(">"+hmm_hit.target_name+"\n")
+                align_seq_file.write(bin_genes[hmm_hit.target_name][start_location:end_location])
+                align_seq_file.write("\n")
+            
+            align_seq_file.close()
+            
             if self.individualFile:
                 out_file = os.path.join(directory, folder,hit_name+"_out.align" )
                 HA.align(hmms[hit_name], align_seq_file.name, out_file,
