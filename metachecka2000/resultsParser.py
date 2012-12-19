@@ -142,7 +142,7 @@ class Mc2kHmmerResultsParser():
                         break
                     storage.addHit(hit)
         except IOError as detail:
-            sys.stderr.write(detail+"\n")
+            sys.stderr.write(str(detail)+"\n")
 
     def printHeader(self):
         """Print the NON_VERBOSE header"""
@@ -168,7 +168,7 @@ class HitManager():
         # we should first check to see if this hit is spurious
         # evalue is the easiest method
         try:
-            if self.models[hit.query_name].tc[0] < hit.full_score:
+            if self.models[hit.query_name].tc[0] > hit.full_score:
                 return False
         except:
             if hit.full_e_value > self.eCO:
