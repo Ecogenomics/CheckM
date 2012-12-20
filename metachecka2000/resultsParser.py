@@ -39,7 +39,7 @@ __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012"
 __credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -142,7 +142,7 @@ class Mc2kHmmerResultsParser():
                         break
                     storage.addHit(hit)
         except IOError as detail:
-            sys.stderr.write(detail+"\n")
+            sys.stderr.write(str(detail)+"\n")
 
     def printHeader(self):
         """Print the NON_VERBOSE header"""
@@ -168,7 +168,7 @@ class HitManager():
         # we should first check to see if this hit is spurious
         # evalue is the easiest method
         try:
-            if self.models[hit.query_name].tc[0] < hit.full_score:
+            if self.models[hit.query_name].tc[0] > hit.full_score:
                 return False
         except:
             if hit.full_e_value > self.eCO:
@@ -354,11 +354,21 @@ class HMMAligner:
                         align_seq_file.write(line)
 
             for hmm_hit in hits[hit_name]:
-                align_seq_file.write(">"+hmm_hit.target_name+"\n")
-                align_seq_file.write(bin_genes[hmm_hit.target_name][hmm_hit.ali_from-100:hmm_hit.ali_to+100])
-                align_seq_file.write("\n")
-            align_seq_file.close()
+                start_location = 0
+                end_location = len(bin_genes[hmm_hit.target_name])
+                
+                if hmm_hit.ali_to+100 < end_location:
+                    end_location = hmm_hit.ali_to+100 
+                
+                if hmm_hit.ali_from-100 > start_location:
+                    start_location = hmm_hit.ali_from-100 
 
+                align_seq_file.write(">"+hmm_hit.target_name+"\n")
+                align_seq_file.write(bin_genes[hmm_hit.target_name][start_location:end_location])
+                align_seq_file.write("\n")
+            
+            align_seq_file.close()
+            
             if self.individualFile:
                 out_file = os.path.join(directory, folder,hit_name+"_out.align" )
                 HA.align(hmms[hit_name], align_seq_file.name, out_file,
