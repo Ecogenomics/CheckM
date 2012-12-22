@@ -37,9 +37,9 @@
 
 __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012"
-__credits__ = ["Michael Imelfort"]
+__credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -94,7 +94,6 @@ if __name__ == '__main__':
     build_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
     build_parser.add_argument('-x', '--extension', default='fa', 
                              help="used in conjuntion with -b to specify the extension used on files to be parsed")
-    build_parser.add_argument('-c', '--closed', action="store_true", default=False, help="do not allow genes to run off edges when running prodigal")    
     build_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
     build_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
     build_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
@@ -151,7 +150,6 @@ if __name__ == '__main__':
     pipeline_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
     pipeline_parser.add_argument('-x', '--extension', default='fa',
                                  help="used in conjuntion with -b to specify the extension used on files to be parsed")
-    pipeline_parser.add_argument('-c', '--closed', action="store_true", default=False, help="do not allow genes to run off edges when running prodigal")    
     pipeline_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
     pipeline_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
     pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
