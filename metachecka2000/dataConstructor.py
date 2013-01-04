@@ -79,7 +79,7 @@ class HMMERError(BaseException): pass
 
 class Mc2kHmmerDataConstructor():
     """This class runs prodigal and hmmer creating data for parsing"""
-    def __init__(self, checkHmmer=True, checkProdigal=True, threads=1):
+    def __init__(self, checkHmmer=True, threads=1):
         if checkHmmer:
             checkForHMMER()
 
@@ -93,7 +93,7 @@ class Mc2kHmmerDataConstructor():
         self.num_files_parsed = 0
 
 
-    def buildData(self, inFiles, outFolder, hmm, closed, prefix, verbose=False):
+    def buildData(self, inFiles, outFolder, hmm, prefix, verbose=False, quiet=False):
         """Main wrapper used for building datasets"""
 
         if not os.path.exists(outFolder):
@@ -105,7 +105,7 @@ class Mc2kHmmerDataConstructor():
         
         for fasta in inFiles:
             t = threading.Thread(target=self.processFasta,
-                                 args=(fasta,outFolder,hmm,closed,prefix,verbose)
+                                 args=(fasta,outFolder,hmm,prefix,verbose, quiet)
                                  )
             #t.daemon = True
             t.start()
@@ -130,7 +130,7 @@ class Mc2kHmmerDataConstructor():
             yield bioseq[i:].translate(table)
             yield revseq[i:].translate(table)
               
-    def processFasta(self, fasta, outFolder, hmm, closed, prefix, verbose=False):
+    def processFasta(self, fasta, outFolder, hmm, prefix, verbose=False, quiet=False):
         """Thread safe fasta processing"""
         self.threadPool.acquire()
         file_num = 0
@@ -139,7 +139,8 @@ class Mc2kHmmerDataConstructor():
             try:
                 self.num_files_started += 1
                 file_num = self.num_files_started
-                print "Processing file %s (%d of %d)" % (fasta, self.num_files_started, self.num_files_total) 
+                if not quiet:
+                    print "Processing file %s (%d of %d)" % (fasta, self.num_files_started, self.num_files_total) 
             finally:
                 self.varLock.release()
             
@@ -162,15 +163,6 @@ class Mc2kHmmerDataConstructor():
                 for frame in self.translate_six_frames(rec.seq):
                     frame_number+=1
                     SeqIO.write(SeqRecord(frame, description='', id=rec.id+"_"+str(frame_number)), out_file, 'fasta')
-            #for name, seq in MinimalFastaParser(contig_file):
-            #    dna_seq = DNA.makeSequence(seq)
-            #    dna_seq.Name = name
-            #    translations = GeneticCodes[11].sixframes(dna_seq)
-            #    frame_number = 0
-            #    for frame in translations:
-            #        frame_number += 1
-            #        out_file.write(">"+name+'_'+str(frame_number)+"\n")
-            #        out_file.write(frame+"\n")
 
             out_file.close()
 

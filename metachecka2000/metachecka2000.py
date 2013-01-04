@@ -37,7 +37,7 @@
 
 __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012"
-__credits__ = ["Michael Imelfort"]
+__credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
 __version__ = "0.1.1"
 __maintainer__ = "Michael Imelfort"
@@ -80,7 +80,6 @@ class Mc2kOptionsParser():
         DC.buildData(target_files,
                      options.out_folder,
                      options.hmm,
-                     options.closed,
                      options.prefix,
                      verbose=options.verbose
                      )
