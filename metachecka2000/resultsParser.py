@@ -111,11 +111,6 @@ class Mc2kHmmerResultsParser():
             self.parseHmmerResults(hmmer_file_name, storage, verbose)
             self.results[folder] = storage
         
-        if not verbose:
-            self.printHeader()
-        for fasta in self.results:
-            self.results[fasta].printSummary(verbose=verbose)
-
         # restore stdout        
         if("" != outFile):
             try:
@@ -124,7 +119,6 @@ class Mc2kHmmerResultsParser():
             except:
                 print "Error restoring stdout", exc_info()[0]
                 raise
-        
         
     def parseHmmerResults(self, fileName, storage, verbose):
         """Parse through a hmmer file and see what's what"""
@@ -148,7 +142,14 @@ class Mc2kHmmerResultsParser():
         """Print the NON_VERBOSE header"""
         # keep count of single, double, triple genes etc...
         print "\t".join(['Bin_name','0','1','2','3','4','5+','comp','cont'])
+    
+    def printSummary(self, verbose=False):
+        if not verbose:
+            self.printHeader()
+        for fasta in self.results:
+            self.results[fasta].printSummary(verbose=verbose)
 
+        
 ###############################################################################
 ###############################################################################
 ###############################################################################

@@ -94,6 +94,7 @@ class Mc2kOptionsParser():
                           verbose=options.verbose,
                           outFile=options.file
                           )
+        RP.printSummary(verbose=options.verbose)
 
     def Mc2kAlign(self, options):
         """Align Command"""
