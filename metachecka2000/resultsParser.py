@@ -202,44 +202,62 @@ class HitManager():
             except KeyError:
                 self.markers[hit.query_name] = 1
 
-    def printSummary(self, verbose=False):
-        """print out some information about this bin"""
-        # if verbose, then just dump the whole thing
+    def calculateMarkers(self, verbose=False):
+        """Returns an object containing summary information 
+           When verbose is False a list is returned containing the counts of
+           markers for the bin as well as the total completeness and
+           contamination.  If the verbose flag is set to true, a dict is
+           returned containing each marker as the key and the value as the
+           count
+        """
         if verbose:
-            print "--------------------"
-            print self.name
+            ret = dict()
             for marker in self.models:
                 try:
-                    print "%s\t%d" % (marker, self.markers[marker])
+                    ret[marker] = self.markers[marker]
                 except KeyError:
-                    print "%s\t0" % (marker)
-                    
+                    ret[marker] = 0
+            return ret
+        else:
+            gene_counts = [0]*6
+            for marker in self.models:
+                # we need to limit it form 0 to 5+
+                try:
+                    if self.markers[marker] > 5:
+                        marker_count = 5
+                    else:
+                        marker_count = self.markers[marker]
+                except KeyError:
+                    marker_count = 0
+                
+                gene_counts[marker_count] += 1
+            perc_comp = 100*float(len(self.markers))/float(len(self.models))
+            perc_cont = 100*float(gene_counts[2] + gene_counts[3] + gene_counts[4] + gene_counts[5])/float(len(self.models))  
+            gene_counts.append(perc_comp)
+            gene_counts.append(perc_cont)
+            return gene_counts
+
+    def printSummary(self, verbose=False):
+        """print out some information about this bin"""
+        
+        data = self.calculateMarkers(verbose=verbose)
+        if isinstance(data, list):
+            print "%s\t%s\t%0.2f\t%0.2f" % (self.name,
+                                            "\t".join([str(data[i]) for i in range(6)]),
+                                            data[6],
+                                            data[7]
+                                            )
+        else:
+            print "--------------------"
+            print self.name
+            for marker,count in ret.iteritems():
+                print "%s\t%d" % (marker, count)
+
             print "TOTAL:\t%d / %d (%0.2f" % (len(self.markers),
                                               len(self.models),
                                               100*float(len(self.markers))/float(len(self.models))
                                               )+"%)"
-            return
 
-        gene_counts = [0]*6
-        for marker in self.models:
-            # we need to limit it form 0 to 5+
-            try:
-                if self.markers[marker] > 5:
-                    marker_count = 5
-                else:
-                    marker_count = self.markers[marker]
-            except KeyError:
-                marker_count = 0
-            
-            gene_counts[marker_count] += 1
-        perc_comp = 100*float(len(self.markers))/float(len(self.models))
-        perc_cont = 100*float(gene_counts[2] + gene_counts[3] + gene_counts[4] + gene_counts[5])/float(len(self.models))  
-        print "%s\t%s\t%0.2f\t%0.2f" % (self.name,
-                                        "\t".join([str(gene_counts[i]) for i in range(6)]),
-                                        perc_comp,
-                                        perc_cont
-                                        )
-        
 ###############################################################################
 ###############################################################################
 ###############################################################################
@@ -254,7 +272,6 @@ class HMMAligner:
         (self.txtOut, self.hmmOut) = makeOutputFNs(prefix=prefix)
         (txtOut, self.hmmAlign) = makeOutputFNs(prefix=prefix, mode='align')
         
-
     def makeAlignments(self,
                        directory,
                        hmm,
@@ -265,12 +282,13 @@ class HMMAligner:
                        bestHit=False,
                        generateModelFiles=True
                        ):
-        """main wrapper for making hmm alignments"""
-        # first parse through the hmm txt and work out all the 
-        # hits that were made
-        # we expect directory to contain a collection of folders
-        # names after the original bins
-        # we need to use this guy to vet the hits
+        """main wrapper for making hmm alignments
+           first parse through the hmm txt and work out all the 
+           hits that were made
+           we expect directory to contain a collection of folders
+           names after the original bins
+           we need to use this guy to vet the hits
+         """
         models = {}
         model_parser = HmmModelParser(hmm)
         for model in model_parser.parse():
