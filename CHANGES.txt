@@ -2,3 +2,4 @@ v0.0.1, 12/11/2012 -- Fresh start on a new version.
 v0.1.0, 15/11/2012 -- First good working version.
 v0.1.1, 15/11/2012 -- Needed to fix one teeny mistake
 v0.1.2, 26/11/2012 -- Minor bug fixes
+v0.1.4, 16/01/2013 -- Minor bug fix with verbose flag in qa
