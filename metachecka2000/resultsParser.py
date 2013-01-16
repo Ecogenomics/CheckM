@@ -251,7 +251,7 @@ class HitManager():
         else:
             print "--------------------"
             print self.name
-            for marker,count in ret.iteritems():
+            for marker,count in data.iteritems():
                 print "%s\t%d" % (marker, count)
 
             print "TOTAL:\t%d / %d (%0.2f" % (len(self.markers),
