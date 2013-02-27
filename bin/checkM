@@ -1,0 +1,202 @@
+#!/usr/bin/env python
+###############################################################################
+#                                                                             #
+#    checkM                                                                   #
+#                                                                             #
+#    Entry point. See metachecka2000/metachecka2000.py for internals          #
+#                                                                             #
+#    Copyright (C) Michael Imelfort, Connor Skennerton                        #
+#                                                                             #
+###############################################################################
+#                                                                             #
+#                888b     d888  .d8888b.   .d8888b.  888    d8P               #  
+#                8888b   d8888 d88P  Y88b d88P  Y88b 888   d8P                #  
+#                88888b.d88888 888    888        888 888  d8P                 #
+#                888Y88888P888 888             .d88P 888d88K                  #
+#                888 Y888P 888 888         .od888P"  8888888b                 #
+#                888  Y8P  888 888    888 d88P"      888  Y88b                #
+#                888   "   888 Y88b  d88P 888"       888   Y88b               #
+#                888       888  "Y8888P"  888888888  888    Y88b              #
+#                                                                             #
+###############################################################################
+#                                                                             #
+#    This program is free software: you can redistribute it and/or modify     #
+#    it under the terms of the GNU General Public License as published by     #
+#    the Free Software Foundation, either version 3 of the License, or        #
+#    (at your option) any later version.                                      #
+#                                                                             #
+#    This program is distributed in the hope that it will be useful,          #
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of           #
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            #
+#    GNU General Public License for more details.                             #
+#                                                                             #
+#    You should have received a copy of the GNU General Public License        #
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.     #
+#                                                                             #
+###############################################################################
+
+__author__ = "Michael Imelfort"
+__copyright__ = "Copyright 2012, 2013"
+__credits__ = ["Michael Imelfort", "Connor Skennerton"]
+__license__ = "GPL3"
+__version__ = "0.2.0"
+__maintainer__ = "Michael Imelfort"
+__email__ = "mike@mikeimelfort.com"
+__status__ = "Development"
+
+###############################################################################
+
+import argparse
+import sys
+from metachecka2000 import metachecka2000, defaultValues
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+
+def printHelp():
+    print '''\
+    
+             ...::: checkM :::...
+                   
+    Betta check your meta before you wreck your meta!
+
+    checkM build   -> Create the underlying data needed for testing
+    checkM qa      -> Test for bin contamination and completeness
+    checkM align   -> Create alignments of hmms to the matched markers
+    checkM all     -> Build and test in one step
+    
+    USE: checkM OPTION -h to see detailed options
+    '''
+
+if __name__ == '__main__':
+
+    #-------------------------------------------------
+    # intialise the options parser
+    parser = argparse.ArgumentParser(add_help=False)
+    subparsers = parser.add_subparsers(help="--", dest='subparser_name')
+
+    ##################################################
+    # Typical workflow
+    ##################################################
+    
+    #-------------------------------------------------
+    # parse binned contigs
+    build_parser = subparsers.add_parser('build',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        help='parse binned contigs',
+                                        description='Parse binned contigs')
+    build_parser.add_argument('out_folder', help="a place to write output files")
+    build_parser.add_argument('hmm', help="name of hmmer db to search")
+    build_parser.add_argument('infiles', nargs='*', metavar="FASTA", 
+                              help="A list of fasta formatted files to be used as the input")
+    build_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
+    build_parser.add_argument('-x', '--extension', default='fa', 
+                             help="used in conjuntion with -b to specify the extension used on files to be parsed")
+    build_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
+    build_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
+    build_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
+
+    #-------------------------------------------------
+    # do QA on pre-processed contigs
+    qa_parser = subparsers.add_parser('qa',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        help='do QA on pre-processed contigs',
+                                        description='Do QA on pre-processed contigs')
+    qa_parser.add_argument('out_folder', help="folder specified during build command")
+    qa_parser.add_argument('hmm', help="hmm used in the search")
+    qa_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
+    qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
+    qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
+    qa_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")    
+    qa_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
+
+    #-------------------------------------------------
+    # produce alignments of matches
+    align_parser = subparsers.add_parser('align',
+                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         help='create alignments of hmms to the matched markers',
+                                         description='Create alignments of hmms to the matched markers')
+    align_parser.add_argument('out_folder', help="folder specified during build command")
+    align_parser.add_argument('hmm', help="hmm used in the search")
+    align_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
+    align_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
+    align_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
+    align_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
+    align_parser.add_argument('-s', '--separate-files',action="store_true",
+            dest="separate", default=False, help="Output a separate file for \
+            each of the hits to a HMM model.")
+    align_parser.add_argument('-o', '--output-format',default='PSIBLAST',
+            dest="out_format", help="The output format passed to hmmalign")
+    align_parser.add_argument('-c','--include-consensus',action="store_true",
+            default=False, dest="consensus", help="Include the HMM \
+            consensus sequence (generated by hmmemit) in the alignment")
+    align_parser.add_argument('-b', '--best-hit', action="store_true",
+            default=False, dest="best_alignment", help="Only align the best \
+            match to the HMM even if there are multiple matches that pass the \
+            threshold")
+
+    #-------------------------------------------------
+    # Build + align in one step
+    pipeline_parser = subparsers.add_parser('all',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        help='build + qa in one step',
+                                        description='Build + qa in one step')
+    pipeline_parser.add_argument('out_folder', help="a place to write output files")
+    pipeline_parser.add_argument('hmm', help="name of hmmer db to search")
+    pipeline_parser.add_argument('infiles', nargs='*', metavar="FASTA", 
+                                 help="A list of fasta formatted files to be used as the input")
+    pipeline_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
+    pipeline_parser.add_argument('-x', '--extension', default='fa',
+                                 help="used in conjuntion with -b to specify the extension used on files to be parsed")
+    pipeline_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
+    pipeline_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
+    pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
+    pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
+    pipeline_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")    
+    pipeline_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
+
+    #-------------------------------------------------
+    # debug and development
+    if False:
+        debug_parser = subparsers.add_parser('debug',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            help='rogue mode for use in testing new features',
+                                            description='Rogue mode for use in testing new features')
+        debug_parser.add_argument('data', help="some data")
+        
+    #-------------------------------------------------
+    # get and check options
+    args = None
+    if(len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv == '--help'):
+        printHelp()
+        sys.exit(0)
+    else:
+        args = parser.parse_args()
+
+    #-------------------------------------------------
+    # do what we came here to do
+    try:
+        Mc2k_parser = metachecka2000.Mc2kOptionsParser()
+        if(False):
+            #import pstats
+            #p = pstats.Stats('prof')
+            #p.sort_stats('cumulative').print_stats(10)
+            #p.sort_stats('time').print_stats(10)
+            import cProfile
+            cProfile.run('Mc2k_parser.parseOptions(args)', 'prof')
+        elif False:
+            import pdb
+            pdb.run(Mc2k_parser.parseOptions(args))
+        else:        
+            Mc2k_parser.parseOptions(args)
+    except:
+        print "Unexpected error:", sys.exc_info()[0]
+        raise
+    
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+        

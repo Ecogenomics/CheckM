@@ -36,10 +36,10 @@
 ###############################################################################
 
 __author__ = "Michael Imelfort"
-__copyright__ = "Copyright 2012"
+__copyright__ = "Copyright 2012, 2013"
 __credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
-__version__ = "0.1.4"
+__version__ = "0.2.0"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
