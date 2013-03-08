@@ -76,6 +76,19 @@ if __name__ == '__main__':
     # intialise the options parser
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers(help="--", dest='subparser_name')
+    taxon_parser = argparse.ArgumentParser(add_help=False)
+    taxon_parser.add_argument('-D', '--domain', dest='domain', help="Specify "\
+            "the domain. Options are Bacteria, Archaea or Universal")
+    taxon_parser.add_argument('-P', '--phylum', dest='phylum',
+            help="Specify phylum")
+    taxon_parser.add_argument('-C', '--class', dest='class', 
+            help="Specify class")
+    taxon_parser.add_argument('-O', '--order', dest='order',
+            help="Specify order")
+    taxon_parser.add_argument('-F', '--family', dest='family',
+            help="Specify family")
+    taxon_parser.add_argument('-G', '--genus', dest='genus',
+            help="specify genus")
 
     ##################################################
     # Typical workflow
@@ -86,6 +99,7 @@ if __name__ == '__main__':
     build_parser = subparsers.add_parser('build',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         help='parse binned contigs',
+                                        parents=[taxon_parser],
                                         description='Parse binned contigs')
     build_parser.add_argument('out_folder', help="a place to write output files")
     build_parser.add_argument('hmm', help="name of hmmer db to search")
@@ -141,7 +155,8 @@ if __name__ == '__main__':
     # Build + align in one step
     pipeline_parser = subparsers.add_parser('all',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='build + qa in one step',
+                                        help='build + qa + align in one step',
+                                        parents=[taxon_parser],
                                         description='Build + qa in one step')
     pipeline_parser.add_argument('out_folder', help="a place to write output files")
     pipeline_parser.add_argument('hmm', help="name of hmmer db to search")
