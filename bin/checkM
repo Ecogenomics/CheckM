@@ -66,6 +66,8 @@ def printHelp():
     checkM qa      -> Test for bin contamination and completeness
     checkM align   -> Create alignments of hmms to the matched markers
     checkM all     -> Build and test in one step
+
+    checkM makeDB  -> Build the marker database using data from Pfam and IMG
     
     USE: checkM OPTION -h to see detailed options
     '''
@@ -77,18 +79,33 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers(help="--", dest='subparser_name')
     taxon_parser = argparse.ArgumentParser(add_help=False)
-    taxon_parser.add_argument('-D', '--domain', dest='domain', help="Specify "\
-            "the domain. Options are Bacteria, Archaea or Universal")
-    taxon_parser.add_argument('-P', '--phylum', dest='phylum',
-            help="Specify phylum")
-    taxon_parser.add_argument('-C', '--class', dest='class', 
-            help="Specify class")
-    taxon_parser.add_argument('-O', '--order', dest='order',
-            help="Specify order")
-    taxon_parser.add_argument('-F', '--family', dest='family',
-            help="Specify family")
-    taxon_parser.add_argument('-G', '--genus', dest='genus',
-            help="specify genus")
+    #taxon_parser.add_argument('-T', '--tax-string', dest='taxonomy', required=False,
+    #    help='Specify a Greengenes taxonomy string for the lineage of interest')
+    # taxon_parser.add_argument('-D', '--domain', dest='domain', help="Specify "\
+    #         "the domain. Options are Bacteria, Archaea or Universal")
+    # taxon_parser.add_argument('-P', '--phylum', dest='phylum', required=False,
+    #         help="Specify phylum")
+    # taxon_parser.add_argument('-C', '--class', dest='class', required=False,
+    #         help="Specify class")
+    # taxon_parser.add_argument('-O', '--order', dest='order', required=False,
+    #         help="Specify order")
+    # taxon_parser.add_argument('-F', '--family', dest='family', required=False,
+    #         help="Specify family")
+    # taxon_parser.add_argument('-G', '--genus', dest='genus', required=False,
+    #         help="specify genus")
+    
+    output_parser = argparse.ArgumentParser(add_help=False)
+    output_parser.add_argument('-o', '--output-format', dest='out_format',
+            type=int,
+            help='''Change the output format to one of the following:
+                 1. Simple Summary showing bin name, counts, completeness and
+                    contamination
+                 2. List of marker names and their counts
+                 3. Matrix of marker counts
+                 4. Tabular list of bin name, marker name, contig name
+                 5. Tabular list showing contigs that contain more than one 
+                     copy of the same marker. Format: bin name, contig name, 
+                     {Marker name, count}...''', default=1)
 
     ##################################################
     # Typical workflow
@@ -117,6 +134,7 @@ if __name__ == '__main__':
     qa_parser = subparsers.add_parser('qa',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         help='do QA on pre-processed contigs',
+                                        parents=[output_parser],
                                         description='Do QA on pre-processed contigs')
     qa_parser.add_argument('out_folder', help="folder specified during build command")
     qa_parser.add_argument('hmm', help="hmm used in the search")
@@ -156,7 +174,7 @@ if __name__ == '__main__':
     pipeline_parser = subparsers.add_parser('all',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         help='build + qa + align in one step',
-                                        parents=[taxon_parser],
+                                        parents=[taxon_parser, output_parser],
                                         description='Build + qa in one step')
     pipeline_parser.add_argument('out_folder', help="a place to write output files")
     pipeline_parser.add_argument('hmm', help="name of hmmer db to search")
@@ -170,8 +188,33 @@ if __name__ == '__main__':
     pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
     pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
     pipeline_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")    
-    pipeline_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
 
+
+    #-------------------------------------------------
+    # Build the markers
+
+
+    makedb_parser = subparsers.add_parser('makeDB',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        help='Build a database of markers from data available from Pfam and IMG')
+    makedb_parser.add_argument('-f', '--force', action="store_true",
+            dest='overwrite', default=False, help="overwite markers or taxons if"\
+            "they are already stored in the database")
+    makedb_parser.add_argument('-m', '--make_tables', action="store_true",
+            dest='make', default=False, help="make new tables from scratch")
+    makedb_parser.add_argument('-p', '--input-prefix', dest='img_base',
+            help='The root directory to all the IMG genomes')
+    makedb_parser.add_argument('-M', '--metadata', dest='metadata',
+            help='The IMG metadata file')
+    makedb_parser.add_argument('--minimum-genome-count', default=5, dest='min_genome',
+            help='A taxonomic lineage must have at least this number of '\
+            'genomes for a marker set to be made')
+    makedb_parser.add_argument('--minimum-taxon-conservation', default=0.95,
+            dest='min_cons')
+    makedb_parser.add_argument('-d', '--pfam-database', dest='pfam',
+            help='path to Pfam-A file')
+    makedb_parser.add_argument('-o', '--output-database', dest='database',
+            help='output sqlite3 database name')
     #-------------------------------------------------
     # debug and development
     if False:

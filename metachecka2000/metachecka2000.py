@@ -53,6 +53,7 @@ import argparse
 # MetaChecka2000 imports
 import resultsParser
 import dataConstructor
+import database
 
 ###############################################################################
 ###############################################################################
@@ -94,7 +95,7 @@ class Mc2kOptionsParser():
                           verbose=options.verbose,
                           outFile=options.file
                           )
-        RP.printSummary(verbose=options.verbose)
+        RP.printSummary(outputFormat=options.out_format)
 
     def Mc2kAlign(self, options):
         """Align Command"""
@@ -118,6 +119,10 @@ class Mc2kOptionsParser():
                           bestHit=bh
                           )
 
+    def Mc2kMakeDB(self, options):
+        DB = database.MarkerDB()
+        DB.makeDB(options)
+        
     def parseOptions(self, options):
         """Parse user options and call the correct pipeline(s)"""
         try:
@@ -153,6 +158,11 @@ class Mc2kOptionsParser():
             if options.verbose:
                 print "Constructing alignments..."
             self.Mc2kAlign(options)
+
+        elif(options.subparser_name == 'makeDB'):
+            if options.verbose:
+                print "Making marker database..."
+            self.Mc2kMakeDB(options)
 
         return 0
 

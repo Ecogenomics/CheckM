@@ -34,7 +34,7 @@
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.     #
 #                                                                             #
 ###############################################################################
-
+from __future__ import print_function
 __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012, 2013"
 __credits__ = ["Michael Imelfort", "Connor Skennerton"]
@@ -52,6 +52,7 @@ import argparse
 from re import compile as re_compile, split as re_split
 import uuid
 import shutil
+from collections import defaultdict
 # MetaChecka2000 imports
 import defaultValues 
 
@@ -89,7 +90,7 @@ class Mc2kHmmerResultsParser():
                 # redirect stdout to a file
                 sys.stdout = open(outFile, 'w')
             except:
-                print "Error diverting stout to file:", outFile, exc_info()[0]
+                print("Error diverting stout to file: ", exc_info()[0])
                 raise
 
         # parse the hmm file itself so we can determine the length
@@ -117,7 +118,7 @@ class Mc2kHmmerResultsParser():
                 # redirect stdout to a file
                 sys.stdout = old_stdout
             except:
-                print "Error restoring stdout", exc_info()[0]
+                print("Error restoring stdout ", exc_info()[0])
                 raise
         
     def parseHmmerResults(self, fileName, storage, verbose):
@@ -127,7 +128,7 @@ class Mc2kHmmerResultsParser():
                 try:
                     HP = HMMERParser(hmmer_handle)
                 except:
-                    print "Error opening HMM file:", fileName
+                    print("Error opening HMM file: ", fileName)
                     raise
                 
                 while True:
@@ -138,16 +139,19 @@ class Mc2kHmmerResultsParser():
         except IOError as detail:
             sys.stderr.write(str(detail)+"\n")
 
-    def printHeader(self):
+    def printHeader(self, outputFormat):
         """Print the NON_VERBOSE header"""
         # keep count of single, double, triple genes etc...
-        print "\t".join(['Bin_name','0','1','2','3','4','5+','comp','cont'])
+        if outputFormat == 1:
+            print("\t".join(['Bin_name','0','1','2','3','4','5+','comp','cont']))
+        elif outputFormat == 3:
+            print('\t', '\t'.join(self.models.keys()))
     
-    def printSummary(self, verbose=False):
-        if not verbose:
-            self.printHeader()
+    def printSummary(self, outputFormat=1):
+        if outputFormat == 1 or outputFormat == 3:
+            self.printHeader(outputFormat)
         for fasta in self.results:
-            self.results[fasta].printSummary(verbose=verbose)
+            self.results[fasta].printSummary(outputFormat=outputFormat)
 
         
 ###############################################################################
@@ -199,9 +203,9 @@ class HitManager():
         """
         if self.vetHit(hit):
             try:
-                self.markers[hit.query_name] += 1
+                self.markers[hit.query_name].append(hit)
             except KeyError:
-                self.markers[hit.query_name] = 1
+                self.markers[hit.query_name] = [hit]
 
     def calculateMarkers(self, verbose=False):
         """Returns an object containing summary information 
@@ -215,7 +219,7 @@ class HitManager():
             ret = dict()
             for marker in self.models:
                 try:
-                    ret[marker] = self.markers[marker]
+                    ret[marker] = len(self.markers[marker])
                 except KeyError:
                     ret[marker] = 0
             return ret
@@ -224,10 +228,10 @@ class HitManager():
             for marker in self.models:
                 # we need to limit it form 0 to 5+
                 try:
-                    if self.markers[marker] > 5:
+                    if len(self.markers[marker]) > 5:
                         marker_count = 5
                     else:
-                        marker_count = self.markers[marker]
+                        marker_count = len(self.markers[marker])
                 except KeyError:
                     marker_count = 0
                 
@@ -238,26 +242,75 @@ class HitManager():
             gene_counts.append(perc_cont)
             return gene_counts
 
-    def printSummary(self, verbose=False):
+    def printSummary(self, outputFormat=1):
         """print out some information about this bin"""
-        
-        data = self.calculateMarkers(verbose=verbose)
-        if isinstance(data, list):
-            print "%s\t%s\t%0.2f\t%0.2f" % (self.name,
+
+        if outputFormat == 1:
+            data = self.calculateMarkers(verbose=False)
+            print("%s\t%s\t%0.2f\t%0.2f" % (self.name,
                                             "\t".join([str(data[i]) for i in range(6)]),
                                             data[6],
                                             data[7]
-                                            )
-        else:
-            print "--------------------"
-            print self.name
+                                            ))
+        elif outputFormat == 2:
+            data = self.calculateMarkers(verbose=True)
+            print("--------------------")
+            print(self.name)
             for marker,count in data.iteritems():
-                print "%s\t%d" % (marker, count)
+                print("%s\t%d" % (marker, count))
 
-            print "TOTAL:\t%d / %d (%0.2f" % (len(self.markers),
+            print("TOTAL:\t%d / %d (%0.2f" % (len(self.markers),
                                               len(self.models),
                                               100*float(len(self.markers))/float(len(self.models))
-                                              )+"%)"
+                                              )+"%)")
+        elif outputFormat == 3:
+            # matrix of bin vs marker counts
+            data = self.calculateMarkers(verbose=True)
+            columns = self.models.keys()
+            print(self.name, end='\t')
+            #print('\t','\t'.join(columns))
+            for marker in columns:
+                count = 0
+                try:
+                    count = data[marker]
+                except KeyError:
+                    pass
+                else:
+                    print(count, end='\t')
+            print()
+
+        elif outputFormat == 4:
+            # tabular of bin_id, marker, contig_id
+            for marker, hit_list in self.markers.items():
+                for hit in hit_list:
+                    print(self.name, marker, hit.target_name, sep='\t', end='\n')
+
+        elif outputFormat == 5:
+            # tabular - print only contigs that have more than one copy 
+            # of the same marker on them
+            contigs = defaultdict(dict)
+            for marker, hit_list in self.markers.items():
+                for hit in hit_list:
+                    try:
+                        contigs[hit.target_name][marker] += 1
+                    except KeyError:
+                        contigs[hit.target_name][marker] = 1
+            
+            for contig_name, marker_counts in contigs.items():
+                first_time = True
+                for marker_name, marker_count in marker_counts.items():
+                    if marker_count > 1:
+                        if first_time:
+                            first_time = False
+                            print(self.name, contig_name, sep='\t', end='\t')
+                        print(marker_name, marker_count, sep=',', end='\t')
+                if not first_time:
+                    print()
+
+        else:
+            print("Unknown output format: ", outputFormat)
+
+
 
 ###############################################################################
 ###############################################################################
@@ -306,7 +359,7 @@ class HMMAligner:
                 try:
                     HP = HMMERParser(hmmer_handle)
                 except:
-                    print "Error opening HMM file:", fileName
+                    print("Error opening HMM file: ", fileName)
                     raise
                 
                 while True:
@@ -343,7 +396,7 @@ class HMMAligner:
                 self.alignBin(HA, hit_lookup[folder], single_hmms,
                         single_hmm_consensi, genes_file_name, directory, folder)
             elif verbose:
-                print "Skipping alignment for", folder, ": no hits found"
+                print("Skipping alignment for", folder, ": no hits found")
                 
         
         # remove the tmp files
