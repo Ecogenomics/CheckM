@@ -39,7 +39,7 @@ __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012, 2013"
 __credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -49,21 +49,32 @@ __status__ = "Development"
 import sys
 import os 
 import argparse
-
+import tempfile
+import uuid
 # MetaChecka2000 imports
 import resultsParser
 import dataConstructor
-import database
+import database as chmdb
 
 ###############################################################################
 ###############################################################################
 ###############################################################################
 ###############################################################################
+def connectToDatabase(database_name):
+    ''' Return a database object based on name 
+    '''
+    if database_name is None:
+        database_name = os.getenv("CHECKM_DB")
+        if database_name is None:
+            raise RuntimeError('Cannot connect to DB')
+
+    return database.MarkerDB(db=database_name)
+
 
 class Mc2kOptionsParser():
     def __init__(self): pass
-    
-    def Mc2kBuild(self, options):
+
+    def Mc2kBuild(self, options, db=None):
         """Build command"""
         DC = dataConstructor.Mc2kHmmerDataConstructor(threads=options.threads)
         target_files = []
@@ -120,7 +131,7 @@ class Mc2kOptionsParser():
                           )
 
     def Mc2kMakeDB(self, options):
-        DB = database.MarkerDB()
+        DB = chmdb.MarkerDB()
         DB.makeDB(options)
         
     def parseOptions(self, options):
@@ -130,13 +141,33 @@ class Mc2kOptionsParser():
                 options.file = ''
         except:
             pass
+        
+        if(options.subparser_name == 'makeDB'):
+            self.Mc2kMakeDB(options)
+            return 0
+        
+        database_name=None
+        try:
+            if options.hmm is None and options.taxonomy is not None:
+                if options.database is None:
+                    database_name = os.getenv("CHECKM_DB")
+                    if database_name is None:
+                        raise RuntimeError('Cannot connect to DB')
+
+                database = chmdb.MarkerDB(db=database_name)
+                tmp = os.path.join('/tmp', str(uuid.uuid4()))
+                database.generateModelFiles(options.taxonomy, tmp)
+                options.hmm = tmp
+        except AttributeError:
+            pass
 
         if(options.subparser_name == 'build'):
             # build prodigal and hmm result
+
             if options.verbose:
                 print "Building data prior to checking..."
             self.Mc2kBuild(options)
-                            
+
         elif(options.subparser_name == 'qa'):
             # do qa analysis
             if options.verbose:
@@ -159,10 +190,9 @@ class Mc2kOptionsParser():
                 print "Constructing alignments..."
             self.Mc2kAlign(options)
 
-        elif(options.subparser_name == 'makeDB'):
-            if options.verbose:
-                print "Making marker database..."
-            self.Mc2kMakeDB(options)
+
+        if database_name is not None:
+            os.remove(tmp)
 
         return 0
 

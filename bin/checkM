@@ -39,7 +39,7 @@ __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012, 2013"
 __credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -79,8 +79,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers(help="--", dest='subparser_name')
     taxon_parser = argparse.ArgumentParser(add_help=False)
-    #taxon_parser.add_argument('-T', '--tax-string', dest='taxonomy', required=False,
-    #    help='Specify a Greengenes taxonomy string for the lineage of interest')
+    taxon_parser.add_argument('-T', '--tax-string', dest='taxonomy', required=False,
+        help='Specify a Greengenes taxonomy string for the lineage of interest')
+    taxon_parser.add_argument('-d', '--database', dest='database',
+        help='Specify a different path for the marker database. The default '\
+        'is to use the value of the environmental variable "CHECKM_DB"')
     # taxon_parser.add_argument('-D', '--domain', dest='domain', help="Specify "\
     #         "the domain. Options are Bacteria, Archaea or Universal")
     # taxon_parser.add_argument('-P', '--phylum', dest='phylum', required=False,
@@ -119,7 +122,7 @@ if __name__ == '__main__':
                                         parents=[taxon_parser],
                                         description='Parse binned contigs')
     build_parser.add_argument('out_folder', help="a place to write output files")
-    build_parser.add_argument('hmm', help="name of hmmer db to search")
+    build_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     build_parser.add_argument('infiles', nargs='*', metavar="FASTA", 
                               help="A list of fasta formatted files to be used as the input")
     build_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
@@ -134,10 +137,10 @@ if __name__ == '__main__':
     qa_parser = subparsers.add_parser('qa',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         help='do QA on pre-processed contigs',
-                                        parents=[output_parser],
+                                        parents=[output_parser, taxon_parser],
                                         description='Do QA on pre-processed contigs')
     qa_parser.add_argument('out_folder', help="folder specified during build command")
-    qa_parser.add_argument('hmm', help="hmm used in the search")
+    qa_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     qa_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
     qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
     qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
@@ -149,9 +152,10 @@ if __name__ == '__main__':
     align_parser = subparsers.add_parser('align',
                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          help='create alignments of hmms to the matched markers',
+                                         parents=[taxon_parser],
                                          description='Create alignments of hmms to the matched markers')
     align_parser.add_argument('out_folder', help="folder specified during build command")
-    align_parser.add_argument('hmm', help="hmm used in the search")
+    align_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     align_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
     align_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
     align_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
@@ -177,7 +181,7 @@ if __name__ == '__main__':
                                         parents=[taxon_parser, output_parser],
                                         description='Build + qa in one step')
     pipeline_parser.add_argument('out_folder', help="a place to write output files")
-    pipeline_parser.add_argument('hmm', help="name of hmmer db to search")
+    pipeline_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     pipeline_parser.add_argument('infiles', nargs='*', metavar="FASTA", 
                                  help="A list of fasta formatted files to be used as the input")
     pipeline_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
@@ -188,6 +192,7 @@ if __name__ == '__main__':
     pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
     pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
     pipeline_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")    
+    pipeline_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
 
 
     #-------------------------------------------------
@@ -202,7 +207,7 @@ if __name__ == '__main__':
             "they are already stored in the database")
     makedb_parser.add_argument('-m', '--make_tables', action="store_true",
             dest='make', default=False, help="make new tables from scratch")
-    makedb_parser.add_argument('-p', '--input-prefix', dest='img_base',
+    makedb_parser.add_argument('-i', '--input-prefix', dest='img_base',
             help='The root directory to all the IMG genomes')
     makedb_parser.add_argument('-M', '--metadata', dest='metadata',
             help='The IMG metadata file')
@@ -210,8 +215,9 @@ if __name__ == '__main__':
             help='A taxonomic lineage must have at least this number of '\
             'genomes for a marker set to be made')
     makedb_parser.add_argument('--minimum-taxon-conservation', default=0.95,
-            dest='min_cons')
-    makedb_parser.add_argument('-d', '--pfam-database', dest='pfam',
+            dest='min_cons', help='Percent of genomes in taxon that must '\
+            'contain the marker')
+    makedb_parser.add_argument('-p', '--pfam-database', dest='pfam',
             help='path to Pfam-A file')
     makedb_parser.add_argument('-o', '--output-database', dest='database',
             help='output sqlite3 database name')
