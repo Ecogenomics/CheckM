@@ -39,7 +39,7 @@ __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012, 2013"
 __credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -106,7 +106,8 @@ class Mc2kOptionsParser():
                           verbose=options.verbose,
                           outFile=options.file
                           )
-        RP.printSummary(outputFormat=options.out_format)
+        RP.printSummary(outputFormat=options.out_format,
+                singleCopy=(not options.all_markers))
 
     def Mc2kAlign(self, options):
         """Align Command"""
@@ -150,16 +151,22 @@ class Mc2kOptionsParser():
         try:
             if options.hmm is None and options.taxonomy is not None:
                 if options.database is None:
-                    database_name = os.getenv("CHECKM_DB")
-                    if database_name is None:
+                    options.database = os.getenv("CHECKM_DB")
+                    if options.database is None:
                         raise RuntimeError('Cannot connect to DB')
 
-                database = chmdb.MarkerDB(db=database_name)
+                database = chmdb.MarkerDB(db=options.database)
                 tmp = os.path.join('/tmp', str(uuid.uuid4()))
-                database.generateModelFiles(options.taxonomy, tmp)
+                if options.verbose:
+                    if options.all_markers:
+                        print 'Analysing with all taxonomic markers'
+                    else:
+                        print 'Analysing with single-copy taxonomic markers'
+                database.generateModelFiles(options.taxonomy, tmp,
+                        singleCopy=( not options.all_markers) )
                 options.hmm = tmp
-        except AttributeError:
-            pass
+        except AttributeError, e:
+            raise e
 
         if(options.subparser_name == 'build'):
             # build prodigal and hmm result

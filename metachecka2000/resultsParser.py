@@ -39,7 +39,7 @@ __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012, 2013"
 __credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -81,7 +81,7 @@ class Mc2kHmmerResultsParser():
                        eCO=defaultValues.__MC2K_DEFAULT_E_VAL__,
                        lengthCO=defaultValues.__MC2K_DEFAULT_LENGTH__,
                        verbose=False,
-                       outFile=''
+                       outFile='',
                        ):
         """Parse the results in the output directory"""
         old_stdout = sys.stdout
@@ -147,11 +147,12 @@ class Mc2kHmmerResultsParser():
         elif outputFormat == 3:
             print('\t', '\t'.join(self.models.keys()))
     
-    def printSummary(self, outputFormat=1):
+    def printSummary(self, outputFormat=1, singleCopy=True):
         if outputFormat == 1 or outputFormat == 3:
             self.printHeader(outputFormat)
         for fasta in self.results:
-            self.results[fasta].printSummary(outputFormat=outputFormat)
+            self.results[fasta].printSummary(outputFormat=outputFormat,
+                    singleCopy=singleCopy)
 
         
 ###############################################################################
@@ -242,16 +243,22 @@ class HitManager():
             gene_counts.append(perc_cont)
             return gene_counts
 
-    def printSummary(self, outputFormat=1):
+    def printSummary(self, outputFormat=1, singleCopy=True):
         """print out some information about this bin"""
 
         if outputFormat == 1:
             data = self.calculateMarkers(verbose=False)
-            print("%s\t%s\t%0.2f\t%0.2f" % (self.name,
-                                            "\t".join([str(data[i]) for i in range(6)]),
-                                            data[6],
-                                            data[7]
-                                            ))
+            if singleCopy:
+                print("%s\t%s\t%0.2f\t%0.2f" % (self.name,
+                                                "\t".join([str(data[i]) for i in range(6)]),
+                                                data[6],
+                                                data[7]
+                                                ))
+            else:
+                print("%s\t%s\t%0.2f\tNA" % (self.name,
+                                                "\t".join([str(data[i]) for i in range(6)]),
+                                                data[6]
+                                                ))
         elif outputFormat == 2:
             data = self.calculateMarkers(verbose=True)
             print("--------------------")

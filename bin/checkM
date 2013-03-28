@@ -39,7 +39,7 @@ __author__ = "Michael Imelfort"
 __copyright__ = "Copyright 2012, 2013"
 __credits__ = ["Michael Imelfort", "Connor Skennerton"]
 __license__ = "GPL3"
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 __maintainer__ = "Michael Imelfort"
 __email__ = "mike@mikeimelfort.com"
 __status__ = "Development"
@@ -80,6 +80,9 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(help="--", dest='subparser_name')
     taxon_parser = argparse.ArgumentParser(add_help=False)
     taxon_parser.add_argument('-T', '--tax-string', dest='taxonomy', required=False,
+        help='Specify a Greengenes taxonomy string for the lineage of interest')
+    taxon_parser.add_argument('-A', '--all-markers', dest='all_markers', required=False,
+        default=False, action='store_true',
         help='Specify a Greengenes taxonomy string for the lineage of interest')
     taxon_parser.add_argument('-d', '--database', dest='database',
         help='Specify a different path for the marker database. The default '\
