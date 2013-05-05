@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 ###############################################################################
 #
 # uniqueMarkers.py - find a set of markers that are descriptive for a taxonomy

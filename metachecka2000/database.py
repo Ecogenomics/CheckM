@@ -260,9 +260,10 @@ class MarkerDB(object):
             cur.execute('''INSERT INTO taxons (Domain, Phylum, Class, "Order",
                     Family, Genus, Species, "Count") VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
                     tuple(input_data))
-            
+            #print "%s\t%d" % (str(taxonRanks), cur.lastrowid)
             return cur.lastrowid
         else:
+            #print "%s\t%d" % (str(taxonRanks), result[0])
             return result[0]
 
     def addMarkerToTaxon(self, cur, taxonId, markerId, Count, singleCopy=True):
@@ -363,11 +364,12 @@ class MarkerDB(object):
                 continue
             per_genome_counts[genome] = self._getPfamMarkersFromGenomeAnnotation(open(annotations))
 
-        if self.con is None:
-            self.con = sqlite3.connect(args.database)
+
+        self.con = sqlite3.connect(args.database)
         
         cur = self.con.cursor()
         if args.make:
+            #print "making tables..."
             self.makeTables()
             self.con.commit()
 
@@ -377,16 +379,18 @@ class MarkerDB(object):
         #for t in sorted_taxons:
         #    print t
         for taxon, genomes in genome_taxon_mapping.items():    
-            if len(genomes) < args.min_genome:
+            if len(genomes) < int(args.min_genome):
+                #print "skipping %s, not enough genomes (%d < %d)" % (taxon,
+                #        len(genomes), int(args.min_genome))
                 continue
             
             verbose = False
             taxon_id = self.addTaxon(cur, taxon, len(genomes))
             self.con.commit()
-            # if taxon_id == 151:
-            #     verbose = True
-            # if verbose:
-            #     print taxon
+            #if taxon_id == 180:
+            #    verbose = True
+            if verbose:
+                print taxon
             cons_single, cons_all = self.getMarkersForTaxonomy(per_genome_counts, genomes, args.min_cons, verbose=verbose)
             all_markers |= set(cons_all.keys())
             for marker in cons_all.keys():
