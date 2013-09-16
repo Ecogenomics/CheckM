@@ -175,7 +175,7 @@ class Mc2kHmmerDataConstructor():
                     self.varLock.release()
                 
             HR = HMMERRunner(prefix=prefix)
-            HR.search(hmm, out_file.name, out_dir)
+            HR.search(hmm, out_file.name, out_dir, '--cpu 1')
 
             # let the world know we've parsed this file
             self.varLock.acquire()
