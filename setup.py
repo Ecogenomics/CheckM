@@ -12,7 +12,7 @@ setup(
     description='Beta check your meta before you wreck your meta',
     long_description=open('README.md').read(),
     install_requires=[
-                      'simplehmmer >= 0.2.2',
+                      'simplehmmer >= 0.2.4',
                       'biopython >= 1.58'
                       ],
 )
