@@ -450,11 +450,11 @@ class HMMAligner:
             if self.individualFile:
                 out_file = os.path.join(directory, folder,hit_name+"_out.align" )
                 HA.align(hmms[hit_name], align_seq_file.name, out_file,
-                        writeMode='>', outputFormat=self.outputFormat)
+                        writeMode='>', outputFormat=self.outputFormat, allcol=False)
                 
             else:
                 HA.align(hmms[hit_name], align_seq_file.name, align_tmp_file,
-                        writeMode='>>', outputFormat=self.outputFormat)
+                        writeMode='>>', outputFormat=self.outputFormat, allcol=False)
                 with open(align_tmp_file, 'a') as fh:
                     fh.write("\n###########################################\n\n")
             
