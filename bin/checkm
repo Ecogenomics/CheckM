@@ -1,23 +1,5 @@
-#!/usr/bin/python
-###############################################################################
-#                                                                             #
-#    checkM                                                                   #
-#                                                                             #
-#    Entry point. See metachecka2000/metachecka2000.py for internals          #
-#                                                                             #
-#    Copyright (C) Michael Imelfort, Connor Skennerton                        #
-#                                                                             #
-###############################################################################
-#                                                                             #
-#                888b     d888  .d8888b.   .d8888b.  888    d8P               #  
-#                8888b   d8888 d88P  Y88b d88P  Y88b 888   d8P                #  
-#                88888b.d88888 888    888        888 888  d8P                 #
-#                888Y88888P888 888             .d88P 888d88K                  #
-#                888 Y888P 888 888         .od888P"  8888888b                 #
-#                888  Y8P  888 888    888 d88P"      888  Y88b                #
-#                888   "   888 Y88b  d88P 888"       888   Y88b               #
-#                888       888  "Y8888P"  888888888  888    Y88b              #
-#                                                                             #
+#!/srv/whitlam/bio/apps/12.04/sw/python/2.7.4/bin/python
+
 ###############################################################################
 #                                                                             #
 #    This program is free software: you can redistribute it and/or modify     #
@@ -35,45 +17,37 @@
 #                                                                             #
 ###############################################################################
 
-__author__ = "Michael Imelfort"
-__copyright__ = "Copyright 2012, 2013"
-__credits__ = ["Michael Imelfort", "Connor Skennerton"]
+__author__ = "Donovan Parks, Connor Skennerton, Michael Imelfort"
+__copyright__ = "Copyright 2013"
+__credits__ = ["Donovan Parks", "Connor Skennerton", "Michael Imelfort"]
 __license__ = "GPL3"
-__maintainer__ = "Michael Imelfort"
-__email__ = "mike@mikeimelfort.com"
+__maintainer__ = "Donovan Parks"
+__email__ = "donovan.parks@gmail.com"
 __status__ = "Development"
-
-###############################################################################
 
 import argparse
 import sys
-from metachecka2000 import metachecka2000, defaultValues
 
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
+from checkm import checkm, defaultValues
 
 def printHelp():
     print '''\
-    
-             ...::: checkM :::...
-                   
-    Betta check your meta before you wreck your meta!
 
-    checkM build   -> Create the underlying data needed for testing
-    checkM qa      -> Test for bin contamination and completeness
-    checkM align   -> Create alignments of hmms to the matched markers
-    checkM all     -> Build and test in one step
+             ...::: CheckM :::...
 
-    checkM makeDB  -> Build the marker database using data from Pfam and IMG
-    
-    USE: checkM OPTION -h to see detailed options
+    Estimate completeness and contamination of putative genomes.
+
+    checkm build   -> Create the underlying data needed for testing
+    checkm qa      -> Test for bin contamination and completeness
+    checkm align   -> Create alignments of hmms to the matched markers
+
+    checkm all     -> Build and test in one step
+
+    USE: checkm OPTION -h to see detailed options
     '''
 
 if __name__ == '__main__':
 
-    #-------------------------------------------------
     # intialise the options parser
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers(help="--", dest='subparser_name')
@@ -86,19 +60,7 @@ if __name__ == '__main__':
     taxon_parser.add_argument('-d', '--database', dest='database',
         help='Specify a different path for the marker database. The default '\
         'is to use the value of the environmental variable "CHECKM_DB"')
-    # taxon_parser.add_argument('-D', '--domain', dest='domain', help="Specify "\
-    #         "the domain. Options are Bacteria, Archaea or Universal")
-    # taxon_parser.add_argument('-P', '--phylum', dest='phylum', required=False,
-    #         help="Specify phylum")
-    # taxon_parser.add_argument('-C', '--class', dest='class', required=False,
-    #         help="Specify class")
-    # taxon_parser.add_argument('-O', '--order', dest='order', required=False,
-    #         help="Specify order")
-    # taxon_parser.add_argument('-F', '--family', dest='family', required=False,
-    #         help="Specify family")
-    # taxon_parser.add_argument('-G', '--genus', dest='genus', required=False,
-    #         help="specify genus")
-    
+
     output_parser = argparse.ArgumentParser(add_help=False)
     output_parser.add_argument('-o', '--output-format', dest='out_format',
             type=int,
@@ -108,15 +70,14 @@ if __name__ == '__main__':
                  2. List of marker names and their counts
                  3. Matrix of marker counts
                  4. Tabular list of bin name, marker name, contig name
-                 5. Tabular list showing contigs that contain more than one 
-                     copy of the same marker. Format: bin name, contig name, 
+                 5. Tabular list showing contigs that contain more than one
+                     copy of the same marker. Format: bin name, contig name,
                      {Marker name, count}...''', default=1)
 
     ##################################################
     # Typical workflow
     ##################################################
-    
-    #-------------------------------------------------
+
     # parse binned contigs
     build_parser = subparsers.add_parser('build',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -125,16 +86,15 @@ if __name__ == '__main__':
                                         description='Parse binned contigs')
     build_parser.add_argument('out_folder', help="a place to write output files")
     build_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
-    build_parser.add_argument('infiles', nargs='*', metavar="FASTA", 
+    build_parser.add_argument('infiles', nargs='*', metavar="FASTA",
                               help="A list of fasta formatted files to be used as the input")
     build_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
-    build_parser.add_argument('-x', '--extension', default='fa', 
+    build_parser.add_argument('-x', '--extension', default='fa',
                              help="used in conjuntion with -b to specify the extension used on files to be parsed")
     build_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
     build_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
     build_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
 
-    #-------------------------------------------------
     # do QA on pre-processed contigs
     qa_parser = subparsers.add_parser('qa',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -146,10 +106,9 @@ if __name__ == '__main__':
     qa_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
     qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
     qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
-    qa_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")    
+    qa_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
     qa_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
 
-    #-------------------------------------------------
     # produce alignments of matches
     align_parser = subparsers.add_parser('align',
                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -175,7 +134,6 @@ if __name__ == '__main__':
             match to the HMM even if there are multiple matches that pass the \
             threshold")
 
-    #-------------------------------------------------
     # Build + align in one step
     pipeline_parser = subparsers.add_parser('all',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -184,7 +142,7 @@ if __name__ == '__main__':
                                         description='Build + qa in one step')
     pipeline_parser.add_argument('out_folder', help="a place to write output files")
     pipeline_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
-    pipeline_parser.add_argument('infiles', nargs='*', metavar="FASTA", 
+    pipeline_parser.add_argument('infiles', nargs='*', metavar="FASTA",
                                  help="A list of fasta formatted files to be used as the input")
     pipeline_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
     pipeline_parser.add_argument('-x', '--extension', default='fa',
@@ -193,37 +151,9 @@ if __name__ == '__main__':
     pipeline_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
     pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
     pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
-    pipeline_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")    
+    pipeline_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
     pipeline_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
 
-
-    #-------------------------------------------------
-    # Build the markers
-
-
-    makedb_parser = subparsers.add_parser('makeDB',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        help='Build a database of markers from data available from Pfam and IMG')
-    makedb_parser.add_argument('-f', '--force', action="store_true",
-            dest='overwrite', default=False, help="overwite markers or taxons if"\
-            "they are already stored in the database")
-    makedb_parser.add_argument('-m', '--make_tables', action="store_true",
-            dest='make', default=False, help="make new tables from scratch")
-    makedb_parser.add_argument('-i', '--input-prefix', dest='img_base',
-            help='The root directory to all the IMG genomes')
-    makedb_parser.add_argument('-M', '--metadata', dest='metadata',
-            help='The IMG metadata file')
-    makedb_parser.add_argument('--minimum-genome-count', default=5, dest='min_genome',
-            help='A taxonomic lineage must have at least this number of '\
-            'genomes for a marker set to be made')
-    makedb_parser.add_argument('--minimum-taxon-conservation', default=0.95,
-            dest='min_cons', help='Percent of genomes in taxon that must '\
-            'contain the marker')
-    makedb_parser.add_argument('-p', '--pfam-database', dest='pfam',
-            help='path to Pfam-A file')
-    makedb_parser.add_argument('-o', '--output-database', dest='database',
-            help='output sqlite3 database name')
-    #-------------------------------------------------
     # debug and development
     if False:
         debug_parser = subparsers.add_parser('debug',
@@ -231,8 +161,7 @@ if __name__ == '__main__':
                                             help='rogue mode for use in testing new features',
                                             description='Rogue mode for use in testing new features')
         debug_parser.add_argument('data', help="some data")
-        
-    #-------------------------------------------------
+
     # get and check options
     args = None
     if(len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv == '--help'):
@@ -241,28 +170,27 @@ if __name__ == '__main__':
     else:
         args = parser.parse_args()
 
-    #-------------------------------------------------
     # do what we came here to do
     try:
-        Mc2k_parser = metachecka2000.Mc2kOptionsParser()
+        checkmParser = checkm.optionsParser()
         if(False):
             #import pstats
             #p = pstats.Stats('prof')
             #p.sort_stats('cumulative').print_stats(10)
             #p.sort_stats('time').print_stats(10)
             import cProfile
-            cProfile.run('Mc2k_parser.parseOptions(args)', 'prof')
+            cProfile.run('checkmParser.parseOptions(args)', 'prof')
         elif False:
             import pdb
-            pdb.run(Mc2k_parser.parseOptions(args))
-        else:        
-            Mc2k_parser.parseOptions(args)
+            pdb.run(checkmParser.parseOptions(args))
+        else:
+            checkmParser.parseOptions(args)
     except:
         print "Unexpected error:", sys.exc_info()[0]
         raise
-    
+
 ###############################################################################
 ###############################################################################
 ###############################################################################
 ###############################################################################
-        
+

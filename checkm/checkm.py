@@ -1,23 +1,5 @@
 #!/usr/bin/env python
-###############################################################################
-#                                                                             #
-#    checkM                                                                   #
-#                                                                             #
-#    Wraps coarse workflows                                                   #
-#                                                                             #
-#    Copyright (C) Michael Imelfort                                           #
-#                                                                             #
-###############################################################################
-#                                                                             #
-#                888b     d888  .d8888b.   .d8888b.  888    d8P               #  
-#                8888b   d8888 d88P  Y88b d88P  Y88b 888   d8P                #  
-#                88888b.d88888 888    888        888 888  d8P                 #
-#                888Y88888P888 888             .d88P 888d88K                  #
-#                888 Y888P 888 888         .od888P"  8888888b                 #
-#                888  Y8P  888 888    888 d88P"      888  Y88b                #
-#                888   "   888 Y88b  d88P 888"       888   Y88b               #
-#                888       888  "Y8888P"  888888888  888    Y88b              #
-#                                                                             #
+
 ###############################################################################
 #                                                                             #
 #    This program is free software: you can redistribute it and/or modify     #
@@ -35,32 +17,18 @@
 #                                                                             #
 ###############################################################################
 
-__author__ = "Michael Imelfort"
-__copyright__ = "Copyright 2012, 2013"
-__credits__ = ["Michael Imelfort", "Connor Skennerton"]
-__license__ = "GPL3"
-__maintainer__ = "Michael Imelfort"
-__email__ = "mike@mikeimelfort.com"
-__status__ = "Development"
-
-###############################################################################
-
 import sys
-import os 
+import os
 import argparse
 import tempfile
 import uuid
-# MetaChecka2000 imports
+
 import resultsParser
 import dataConstructor
 import database as chmdb
 
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
 def connectToDatabase(database_name):
-    ''' Return a database object based on name 
+    ''' Return a database object based on name
     '''
     if database_name is None:
         database_name = os.getenv("CHECKM_DB")
@@ -70,10 +38,10 @@ def connectToDatabase(database_name):
     return database.MarkerDB(db=database_name)
 
 
-class Mc2kOptionsParser():
+class OptionsParser():
     def __init__(self): pass
 
-    def Mc2kBuild(self, options, db=None):
+    def Build(self, options, db=None):
         """Build command"""
         DC = dataConstructor.Mc2kHmmerDataConstructor(threads=options.threads)
         target_files = []
@@ -82,10 +50,10 @@ class Mc2kOptionsParser():
             for j in all_files:
                 if j.endswith(options.extension):
                     target_files.append(os.path.join(options.bin_folder,j))
-        
+
         if options.infiles:
             target_files.extend(options.infiles)
-        
+
         if not target_files:
             raise "No input files!"
         DC.buildData(target_files,
@@ -94,8 +62,8 @@ class Mc2kOptionsParser():
                      options.prefix,
                      verbose=options.verbose
                      )
-    
-    def Mc2kQa(self, options):
+
+    def Qa(self, options):
         """QA Command"""
         RP = resultsParser.Mc2kHmmerResultsParser(prefix=options.prefix)
         RP.analyseResults(options.out_folder,
@@ -108,7 +76,7 @@ class Mc2kOptionsParser():
         RP.printSummary(outputFormat=options.out_format,
                 singleCopy=(not options.all_markers))
 
-    def Mc2kAlign(self, options):
+    def Align(self, options):
         """Align Command"""
         if hasattr(options, 'separate'):
             HA = resultsParser.HMMAligner(options.prefix,
@@ -124,16 +92,16 @@ class Mc2kOptionsParser():
         HA.makeAlignments(options.out_folder,
                           options.hmm,
                           eCO=options.e_value,
-                          lengthCO=options.length,                              
+                          lengthCO=options.length,
                           verbose=options.verbose,
                           prefix=options.prefix,
                           bestHit=bh
                           )
 
-    def Mc2kMakeDB(self, options):
+    def MakeDB(self, options):
         DB = chmdb.MarkerDB()
         DB.makeDB(options)
-        
+
     def parseOptions(self, options):
         """Parse user options and call the correct pipeline(s)"""
         try:
@@ -141,11 +109,11 @@ class Mc2kOptionsParser():
                 options.file = ''
         except:
             pass
-        
+
         if(options.subparser_name == 'makeDB'):
             self.Mc2kMakeDB(options)
             return 0
-        
+
         database_name=None
         try:
             if options.hmm is None and options.taxonomy is not None:
@@ -188,9 +156,9 @@ class Mc2kOptionsParser():
             self.Mc2kQa(options)
             print "Constructing alignments..."
             self.Mc2kAlign(options)
-            
+
         elif(options.subparser_name == 'align'):
-            
+
             # make alignments
             if options.verbose:
                 print "Constructing alignments..."
@@ -201,8 +169,3 @@ class Mc2kOptionsParser():
             os.remove(tmp)
 
         return 0
-
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################

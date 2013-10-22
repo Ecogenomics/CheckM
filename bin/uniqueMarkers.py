@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/srv/whitlam/bio/apps/12.04/sw/python/2.7.4/bin/python
 ###############################################################################
 #
 # uniqueMarkers.py - find a set of markers that are descriptive for a taxonomy

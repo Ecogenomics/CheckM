@@ -5,13 +5,13 @@ that collections of contigs that have been 'binned' into putative
 genomes may be contaminated from another organism or represent an
 incomplete genome.  Both are major problems that need to be addressed
 before inferences about metabolic function can be made by the presence
-or absence of genes. CheckM, is a set of tools that can assess the 
+or absence of genes. CheckM, is a set of tools that can assess the
 contamination and completeness of genome bins using conserved genes found
-in a single copy for different taxonomic lineages.  More closely 
+in a single copy for different taxonomic lineages.  More closely
 related bacteria and archaea share a higher proportion of their gene
 complement and therefore estimations of completeness based on these
 markers will be more accurate than estimates based on gene markers
-that are universal. 
+that are universal.
 
 #Installation and Dependancies
 
@@ -57,8 +57,8 @@ export CHECKM_DB=/full/path/to/your/checkm_database
 To make that setting perminant add the above line into your `.bashrc` file.
 
 # Marker Sets
-Marker sets are a list of genes/protein domains that are found in all 
-genomes for a particular taxonomic rank.  Some marker sets may be 
+Marker sets are a list of genes/protein domains that are found in all
+genomes for a particular taxonomic rank.  Some marker sets may be
 universal or be specific to a family or genus.  There are two marker
 sets that get used routinely; one from
 [phylosift](http://phylosift.wordpress.com) that contains 37 markers
@@ -69,7 +69,7 @@ view of contamination and completeness of a genome bin may be achieved
 by using markers that are targeted to a particular microbial lineage.
 
 
-## Generation of taxon specific marker sets 
+## Generation of taxon specific marker sets
 The taxon specific marker sets that are used by CheckM were generated
 using the metadata from the IMG 4.0 release.  First all of the complete
 genomes were separated based on the taxonomy string found in the
@@ -81,7 +81,7 @@ whether that pfam was strictly single copy in each genome or not.
 ### Caveats
   * These lists use pfams, which means that a marker may not represent a whole
     gene.  For example there may be two markers, one from the C-terminal and
-    the other from the N-terminal domain of the same protein. 
+    the other from the N-terminal domain of the same protein.
   * using a minimum of 5 genomes for a taxon is probably too low.  Be careful
     about how specific a marker set you use.  Think about the total number of
     genomes that the list was constructed against, if in doubt use a Domain
@@ -90,7 +90,7 @@ whether that pfam was strictly single copy in each genome or not.
   * I haven't done any annotations myself, I'm relying solely on the annotation
     pipeline in IMG
   * The taxonomy is also straight from IMG and this may be inaccurate (maybe?),
-    which would throw off all of the calculations 
+    which would throw off all of the calculations
 
 ## Using Taxon Specific Marker Sets
 Taxon specific marker sets can be invoked by using the `-T` option on
@@ -107,16 +107,16 @@ contamination of all of my genome bins.  First start by using one of the
 universal marker sets such as the markers used by phylosift or by
 specifying the taxonomy as 'universal' in the `-T` flag of `checkM.
 ```
-checkM build -T universal <OUTPUT_FOLDER> genome.fna 
-    
-checkM qa -T universal <OUTPUT> 
+checkM build -T universal <OUTPUT_FOLDER> genome.fna
+
+checkM qa -T universal <OUTPUT>
 ```
 
 From the output of the `qa` command you should be able to see which bins
 are 'near complete'.  As a general rule I only look genome bins that are
 at least 80% complete and less than 10% contamination.  From this point
 I make a tree using the concatenation of the  markers and determine the
-putative taxonomy of my genome bins. 
+putative taxonomy of my genome bins.
 
 For example lets assume that one of your genome bins is a
 __Rhodocyclacae__ based on the taxonomy in the tree.  Now we can use the
@@ -126,11 +126,11 @@ __Rhodocyclacae__ specific single copy genes, verses the 39 universal)
 ```
 checkM build -T 'k__Bacteria;p__Proteobacteria;c__Betaproteobacteria;o__Rhodocyclales;f__Rhodocyclaceae' <OUTPUT_FOLDER> genome.fna
 
-checkM qa -T 'k__Bacteria;p__Proteobacteria;c__Betaproteobacteria;o__Rhodocyclales;f__Rhodocyclaceae' <OUTPUT_FOLDER> 
+checkM qa -T 'k__Bacteria;p__Proteobacteria;c__Betaproteobacteria;o__Rhodocyclales;f__Rhodocyclaceae' <OUTPUT_FOLDER>
 ```
 This output should be a more accurate view of the contamination and completeness of your genome.
 
-# Manual 
+# Manual
 ## Build
 ```
 checkM build [-h] [-T TAXONOMY] [-d DATABASE] [-H HMM] [-b BIN_FOLDER]
@@ -181,11 +181,11 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -o OUT_FORMAT, --output-format OUT_FORMAT
-                        Change the output format to one of the following: 
+                        Change the output format to one of the following:
                         1. Simple Summary showing bin name, counts, completeness
-                           and contamination 
+                           and contamination
                         2. List of marker names and their counts
-                        3. Matrix of marker counts 
+                        3. Matrix of marker counts
                         4. Tabular list of bin name, marker name, contig name
                         5. Tabular list showing contigs that contain more than
                            one copy of the same marker. Format: bin name,
@@ -296,8 +296,8 @@ Project home page, info on the source tree, documentation, issues and
 how to contribute, see http://github.com/Ecogenomics/CheckM
 
 This software is currently unpublished. Please contact me at
-m_dot_imelfort_at_uq_dot_edu_dot_au for more information about
+donovan_parks_at_gmail_dot_com for more information about
 referencing this software.
 
-Copyright © 2012, 2013 Michael Imelfort, Connor Skennerton. See LICENSE.txt
+Copyright © 2012, 2013 Donovan Parks, Michael Imelfort, Connor Skennerton. See LICENSE.txt
 for further details.
