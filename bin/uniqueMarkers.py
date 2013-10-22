@@ -82,7 +82,7 @@ def getMarkersFromTaxon(cursor, taxid):
 
 def getMarkersNotInTaxon(cursor, taxid):
     result = cursor.execute('''SELECT Marker, "Count" FROM marker_mapping WHERE Taxon != ?''', (taxid,))
-    return result.fetchall()   
+    return result.fetchall()
 
 def countAllGenomes(cursor):
     result = cursor.execute('''SELECT Id, "Count" FROM taxons''')
@@ -101,7 +101,7 @@ def doWork(args):
     taxon_ranks = parseTaxonomy(args.taxonomy)
     con = sqlite3.connect(args.database)
     cur = con.cursor()
-    
+
     taxon_ids = getTaxonId(cur, *taxon_ranks)
     if len(taxon_ids) > 1:
         raise RuntimeError("Taxon string returns more than one lineage "\
@@ -140,16 +140,10 @@ def doWork(args):
         for des_acc, des_name in des_markers:
             print des_acc, des_name
 
-
-
-
-
-
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    #parser.add_argument('positional_arg', help="Required")
-    #parser.add_argument('positional_arg2', type=int, help="Integer argument")
+
     parser.add_argument('-t', '--taxon-string',
             default='k__Bacteria;p__Proteobacteria',
             dest='taxonomy', help="specify the taxonomy")
@@ -161,6 +155,7 @@ if __name__ == '__main__':
             "all other non-target taxons")
     parser.add_argument('-d', '--database', dest='database',
         default='markers.db', help='specify path to database')
+
     # parse the arguments
     args = parser.parse_args()
 

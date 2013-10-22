@@ -1,3 +1,0 @@
-#!/bin/sh
-echo "\nWARNING:\nmetachecka2000 is a depreciated command. In the future please use \"checkM\"\n\n" 1>&2
-checkM "$@"

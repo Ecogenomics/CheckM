@@ -1,15 +1,15 @@
 from distutils.core import setup
 
 setup(
-    name='checkM',
-    version='0.3.4',
-    author='Michael Imelfort',
-    author_email='mike@mikeimelfort.com',
-    packages=['metachecka2000', 'metachecka2000.test'],
-    scripts=['bin/metachecka2000', 'bin/checkM', 'bin/uniqueMarkers.py'],
-    url='http://pypi.python.org/pypi/MetaChecka2000/',
+    name='CheckM',
+    version='1.0.0',
+    author='Donovan Parks, Connor Skennerton, Michael Imelfort',
+    author_email='donovan.parks@gmail.com',
+    packages=['checkm', 'checkm.test'],
+    scripts=['bin/checkm', 'bin/uniqueMarkers.py'],
+    url='http://pypi.python.org/pypi/checkm/',
     license='GPL3',
-    description='Beta check your meta before you wreck your meta',
+    description='Estimated completeness and contamination of putative genomes.',
     long_description=open('README.md').read(),
     install_requires=[
                       'simplehmmer >= 0.2.4',
