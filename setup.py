@@ -11,7 +11,5 @@ setup(
     license='GPL3',
     description='Estimate completeness and contamination of putative genomes.',
     long_description=open('README.md').read(),
-    install_requires=[
-                      'biopython >= 1.58'
-                      ],
+    install_requires=[],
 )
