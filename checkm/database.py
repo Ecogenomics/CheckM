@@ -1,23 +1,9 @@
 #!/usr/bin/env python
+
 ###############################################################################
-#                                                                             #
-#    database.py                                                              #
-#                                                                             #
-#    Interface to a database of taxon specific markers                        #
-#                                                                             #
-#    Copyright (C) Connor Skennerton                                          #
-#                                                                             #
-###############################################################################
-#                                                                             #
-#                888b     d888  .d8888b.   .d8888b.  888    d8P               #
-#                8888b   d8888 d88P  Y88b d88P  Y88b 888   d8P                #
-#                88888b.d88888 888    888        888 888  d8P                 #
-#                888Y88888P888 888             .d88P 888d88K                  #
-#                888 Y888P 888 888         .od888P"  8888888b                 #
-#                888  Y8P  888 888    888 d88P"      888  Y88b                #
-#                888   "   888 Y88b  d88P 888"       888   Y88b               #
-#                888       888  "Y8888P"  888888888  888    Y88b              #
-#                                                                             #
+#
+# database.py - 
+#
 ###############################################################################
 #                                                                             #
 #    This program is free software: you can redistribute it and/or modify     #
@@ -34,24 +20,12 @@
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.     #
 #                                                                             #
 ###############################################################################
-__author__ = "Connor Skennerton"
-__copyright__ = "Copyright 2012, 2013"
-__credits__ = ["Connor Skennerton"]
-__license__ = "GPL3"
-__maintainer__ = "Connor Skennerton"
-__email__ = "c.skennerton@gmail.com"
-__status__ = "Development"
 
-import sys
 import sqlite3
 import os
 import re
 from simplehmmer.hmmmodelparser import HmmModelParser, HmmModel
 from collections import defaultdict
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
 
 class Annotation(object):
     """Representation of a Pfam annotation from IMG"""
@@ -60,8 +34,7 @@ class Annotation(object):
         self.pfam_id = Id
         self.pfam_name = Name
         self.pfam_length = int(Length)
-        self.count = count
-
+        self.count = Count
 
 class Marker(object):
     def __init__(self):
@@ -229,8 +202,6 @@ class MarkerDB(object):
                 return result[0]
             else:
                 return result[0]
-                #raise RuntimeError("A marker with Name=%s and Acc=%s already exists in"\
-                #    "the database.  Use -f to force overwriting" % (model.name, model.acc))
         else:
             cur.execute('''INSERT INTO markers (Name, Acc, Model) VALUES (?, ?, ?);''', (model.name, model.acc,
                 str(model)))
@@ -259,10 +230,8 @@ class MarkerDB(object):
             cur.execute('''INSERT INTO taxons (Domain, Phylum, Class, "Order",
                     Family, Genus, Species, "Count") VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
                     tuple(input_data))
-            #print "%s\t%d" % (str(taxonRanks), cur.lastrowid)
             return cur.lastrowid
         else:
-            #print "%s\t%d" % (str(taxonRanks), result[0])
             return result[0]
 
     def addMarkerToTaxon(self, cur, taxonId, markerId, Count, singleCopy=True):
@@ -312,11 +281,9 @@ class MarkerDB(object):
         conserved_single_markers = {}
         conserved_all_markers = {}
         for marker_name, (single_count, total_count) in markerCounts.items():
-            #(single_count, total_count) = data
             single_fraction = float(single_count) / float(totalGenomes)
             total_fraction = float(total_count) / float(totalGenomes)
-            #if verbose:
-            #    print marker_name, single_fraction, total_fraction, single_count, total_count, totalGenomes
+
             if single_fraction >= minimumConservation:
                 conserved_single_markers['PF' + marker_name[4:]] = single_count
                 if verbose:
@@ -368,26 +335,20 @@ class MarkerDB(object):
         
         cur = self.con.cursor()
         if args.make:
-            #print "making tables..."
             self.makeTables()
             self.con.commit()
 
         all_markers = set()
         marker_map = {}
-        #sorted_taxons = sorted(genome_taxon_mapping.keys())
-        #for t in sorted_taxons:
-        #    print t
+
         for taxon, genomes in genome_taxon_mapping.items():    
             if len(genomes) < int(args.min_genome):
-                #print "skipping %s, not enough genomes (%d < %d)" % (taxon,
-                #        len(genomes), int(args.min_genome))
                 continue
             
             verbose = False
             taxon_id = self.addTaxon(cur, taxon, len(genomes))
             self.con.commit()
-            #if taxon_id == 180:
-            #    verbose = True
+
             if verbose:
                 print taxon
             cons_single, cons_all = self.getMarkersForTaxonomy(per_genome_counts, genomes, args.min_cons, verbose=verbose)
@@ -399,7 +360,6 @@ class MarkerDB(object):
                     marker_map[marker] = Marker()
                     marker_map[marker].name = marker
                     marker_map[marker].taxon_data(taxon_id, cons_all[marker], marker in cons_single)
-                #all_taxon_markers[taxon][marker] = marker in cons_single
 
         # extract all models from pfam
         parser = HmmModelParser(args.pfam)

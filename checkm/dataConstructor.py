@@ -1,23 +1,9 @@
 #!/usr/bin/env python
+
 ###############################################################################
-#                                                                             #
-#    dataConstructor                                                          #
-#                                                                             #
-#    Wrap prodical and hmmer to make data!                                    #
-#                                                                             #
-#    Copyright (C) Michael Imelfort                                           #
-#                                                                             #
-###############################################################################
-#                                                                             #
-#                888b     d888  .d8888b.   .d8888b.  888    d8P               #  
-#                8888b   d8888 d88P  Y88b d88P  Y88b 888   d8P                #  
-#                88888b.d88888 888    888        888 888  d8P                 #
-#                888Y88888P888 888             .d88P 888d88K                  #
-#                888 Y888P 888 888         .od888P"  8888888b                 #
-#                888  Y8P  888 888    888 d88P"      888  Y88b                #
-#                888   "   888 Y88b  d88P 888"       888   Y88b               #
-#                888       888  "Y8888P"  888888888  888    Y88b              #
-#                                                                             #
+#
+# dataConstructor.py - 
+#
 ###############################################################################
 #                                                                             #
 #    This program is free software: you can redistribute it and/or modify     #
@@ -35,48 +21,25 @@
 #                                                                             #
 ###############################################################################
 
-__author__ = "Michael Imelfort"
-__copyright__ = "Copyright 2012, 2013"
-__credits__ = ["Michael Imelfort", "Connor Skennerton"]
-__license__ = "GPL3"
-__maintainer__ = "Michael Imelfort"
-__email__ = "mike@mikeimelfort.com"
-__status__ = "Development"
-
-###############################################################################
-
 import sys
-from os import system, listdir, mkdir
+from os import mkdir
 import os.path
 import threading
 import time
 
-# MetaChecka2000 imports
 import defaultValues
 
-# other local imports
 from simplehmmer.simplehmmer import HMMERRunner, checkForHMMER, makeSurePathExists
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-#from cogent import DNA, PROTEIN
-#from cogent.core.genetic_code import GeneticCodes
-#from cogent.parse.fasta import MinimalFastaParser
 
 
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
+class HMMERError(BaseException): 
+    pass
 
-class HMMERError(BaseException): pass
 
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
-
-class Mc2kHmmerDataConstructor():
+class HmmerDataConstructor():
     """This class runs prodigal and hmmer creating data for parsing"""
     def __init__(self, checkHmmer=True, threads=1):
         if checkHmmer:
@@ -132,12 +95,10 @@ class Mc2kHmmerDataConstructor():
     def processFasta(self, fasta, outFolder, hmm, prefix, verbose=False, quiet=False):
         """Thread safe fasta processing"""
         self.threadPool.acquire()
-        file_num = 0
         try:
             self.varLock.acquire()
             try:
                 self.num_files_started += 1
-                file_num = self.num_files_started
                 if not quiet:
                     print "Processing file %s (%d of %d)" % (fasta, self.num_files_started, self.num_files_total) 
             finally:
@@ -148,11 +109,11 @@ class Mc2kHmmerDataConstructor():
             makeSurePathExists(out_dir)
             try:
                 out_file = open(os.path.join(out_dir,
-                                 defaultValues.__MC2K_DEFAULT_TRANSLATE_FILE__),
+                                 defaultValues.__CHECKM_DEFAULT_TRANSLATE_FILE__),
                                  'w')
             except:
                 print "Cannot open file:", os.path.join(out_dir,
-                                 defaultValues.__MC2K_DEFAULT_TRANSLATE_FILE__)
+                                 defaultValues.__CHECKM_DEFAULT_TRANSLATE_FILE__)
                 sys.exit(1)
 
             # translate the fasta file in all six frames
@@ -189,9 +150,3 @@ class Mc2kHmmerDataConstructor():
             contig_file.close()
 
             self.threadPool.release()
-    
-    
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################

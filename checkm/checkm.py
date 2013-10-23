@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
 ###############################################################################
+#
+# checkm.py - wraps coarse workflows
+#
+###############################################################################
 #                                                                             #
 #    This program is free software: you can redistribute it and/or modify     #
 #    it under the terms of the GNU General Public License as published by     #
@@ -17,10 +21,7 @@
 #                                                                             #
 ###############################################################################
 
-import sys
 import os
-import argparse
-import tempfile
 import uuid
 
 import resultsParser

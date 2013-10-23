@@ -1,6 +1,10 @@
 #!/srv/whitlam/bio/apps/12.04/sw/python/2.7.4/bin/python
 
 ###############################################################################
+#
+# checkm - main program entry point. See checkm/checkm.py for internals.
+#
+###############################################################################
 #                                                                             #
 #    This program is free software: you can redistribute it and/or modify     #
 #    it under the terms of the GNU General Public License as published by     #
@@ -24,6 +28,7 @@ __license__ = "GPL3"
 __maintainer__ = "Donovan Parks"
 __email__ = "donovan.parks@gmail.com"
 __status__ = "Development"
+__version__ = "0.0.1"
 
 import argparse
 import sys
@@ -104,8 +109,8 @@ if __name__ == '__main__':
     qa_parser.add_argument('out_folder', help="folder specified during build command")
     qa_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     qa_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
-    qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
-    qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
+    qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="e value cut off")
+    qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
     qa_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
     qa_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
 
@@ -118,8 +123,8 @@ if __name__ == '__main__':
     align_parser.add_argument('out_folder', help="folder specified during build command")
     align_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     align_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
-    align_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
-    align_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
+    align_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="e value cut off")
+    align_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
     align_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
     align_parser.add_argument('-s', '--separate-files',action="store_true",
             dest="separate", default=False, help="Output a separate file for \
@@ -149,8 +154,8 @@ if __name__ == '__main__':
                                  help="used in conjuntion with -b to specify the extension used on files to be parsed")
     pipeline_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
     pipeline_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
-    pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__MC2K_DEFAULT_E_VAL__, help="e value cut off")
-    pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.__MC2K_DEFAULT_LENGTH__, help="percent overlap between target and query")
+    pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="e value cut off")
+    pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
     pipeline_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
     pipeline_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
 

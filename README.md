@@ -293,11 +293,11 @@ optional arguments:
 #Licence and referencing
 
 Project home page, info on the source tree, documentation, issues and
-how to contribute, see http://github.com/Ecogenomics/CheckM
+how to contribute, see https://github.com/dparks1134/CheckM
 
 This software is currently unpublished. Please contact me at
 donovan_parks_at_gmail_dot_com for more information about
 referencing this software.
 
-Copyright Â© 2012, 2013 Donovan Parks, Michael Imelfort, Connor Skennerton. See LICENSE.txt
+Copyright © 2013 Donovan Parks, Connor Skennerton, Michael Imelfort. See LICENSE.txt
 for further details.

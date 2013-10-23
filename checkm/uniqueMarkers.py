@@ -1,4 +1,5 @@
-#!/srv/whitlam/bio/apps/12.04/sw/python/2.7.4/bin/python
+#!/usr/bin/env python
+
 ###############################################################################
 #
 # uniqueMarkers.py - find a set of markers that are descriptive for a taxonomy
@@ -20,18 +21,7 @@
 #                                                                             #
 ###############################################################################
 
-__author__ = "Connor Skennerton"
-__copyright__ = "Copyright 2013"
-__credits__ = ["Connor Skennerton"]
-__license__ = "GPL3"
-__maintainer__ = "Connor Skennerton"
-__email__ = "c.skennerton@gmail.com"
-__status__ = "Development"
-
-###############################################################################
-
 import argparse
-import sys
 import sqlite3
 import re
 from collections import defaultdict
@@ -124,7 +114,7 @@ def doWork(args):
                 markers_from_others[Id] += count
 
         descriptive_markers = []
-        for marker_id, fraction in marker_in_taxon_mapping.items():
+        for marker_id, _ in marker_in_taxon_mapping.items():
             if marker_id in markers_from_others:
                 fraction_in_others = float(markers_from_others[marker_id]) / float(others_total_count)
                 if fraction_in_others <= args.exclude:

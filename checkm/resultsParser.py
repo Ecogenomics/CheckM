@@ -1,23 +1,9 @@
 #!/usr/bin/env python
+
 ###############################################################################
-#                                                                             #
-#    resultsParser.py                                                         #
-#                                                                             #
-#    Parse the output from a run of 'build'                                   #
-#                                                                             #
-#    Copyright (C) Michael Imelfort                                           #
-#                                                                             #
-###############################################################################
-#                                                                             #
-#                888b     d888  .d8888b.   .d8888b.  888    d8P               #  
-#                8888b   d8888 d88P  Y88b d88P  Y88b 888   d8P                #  
-#                88888b.d88888 888    888        888 888  d8P                 #
-#                888Y88888P888 888             .d88P 888d88K                  #
-#                888 Y888P 888 888         .od888P"  8888888b                 #
-#                888  Y8P  888 888    888 d88P"      888  Y88b                #
-#                888   "   888 Y88b  d88P 888"       888   Y88b               #
-#                888       888  "Y8888P"  888888888  888    Y88b              #
-#                                                                             #
+#
+# resultsParser.py - 
+#
 ###############################################################################
 #                                                                             #
 #    This program is free software: you can redistribute it and/or modify     #
@@ -34,37 +20,21 @@
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.     #
 #                                                                             #
 ###############################################################################
-from __future__ import print_function
-__author__ = "Michael Imelfort"
-__copyright__ = "Copyright 2012, 2013"
-__credits__ = ["Michael Imelfort", "Connor Skennerton"]
-__license__ = "GPL3"
-__maintainer__ = "Michael Imelfort"
-__email__ = "mike@mikeimelfort.com"
-__status__ = "Development"
 
-###############################################################################
+from __future__ import print_function
 
 import sys
 import os 
-import argparse
-from re import compile as re_compile, split as re_split
 import uuid
 import shutil
 from collections import defaultdict
-# MetaChecka2000 imports
+
 import defaultValues 
 
-# other local imports
 from simplehmmer.simplehmmer import HMMERRunner, HMMERParser, makeOutputFNs
 from simplehmmer.hmmmodelparser import HmmModel, HmmModelParser
 
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
-
-class Mc2kHmmerResultsParser():
+class HmmerResultsParser():
     """This class does the job of parsing through the txt output from a hmmer run"""
     def __init__(self, prefix=''):
         # make the output file names
@@ -77,8 +47,8 @@ class Mc2kHmmerResultsParser():
     def analyseResults(self,
                        directory,
                        hmmFile,
-                       eCO=defaultValues.__MC2K_DEFAULT_E_VAL__,
-                       lengthCO=defaultValues.__MC2K_DEFAULT_LENGTH__,
+                       eCO=defaultValues.__CHECKM_DEFAULT_E_VAL__,
+                       lengthCO=defaultValues.__CHECKM_DEFAULT_LENGTH__,
                        verbose=False,
                        outFile='',
                        ):
@@ -152,12 +122,6 @@ class Mc2kHmmerResultsParser():
         for fasta in self.results:
             self.results[fasta].printSummary(outputFormat=outputFormat,
                     singleCopy=singleCopy)
-
-        
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
 
 class HitManager():
     """Store all the results for a single bin"""
@@ -335,8 +299,8 @@ class HMMAligner:
     def makeAlignments(self,
                        directory,
                        hmm,
-                       eCO=defaultValues.__MC2K_DEFAULT_E_VAL__,
-                       lengthCO=defaultValues.__MC2K_DEFAULT_LENGTH__,
+                       eCO=defaultValues.__CHECKM_DEFAULT_E_VAL__,
+                       lengthCO=defaultValues.__CHECKM_DEFAULT_LENGTH__,
                        prefix='',
                        verbose=False,
                        bestHit=False,
@@ -365,7 +329,7 @@ class HMMAligner:
                 try:
                     HP = HMMERParser(hmmer_handle)
                 except:
-                    print("Error opening HMM file: ", fileName)
+                    print("Error opening HMM file: ", hmmer_file_name)
                     raise
                 
                 while True:
@@ -397,7 +361,7 @@ class HMMAligner:
         # now we need to go through each of the bins and extract the contigs which we need
         for folder in hit_lookup:
             genes_file_name = os.path.join(directory, folder,
-                    defaultValues.__MC2K_DEFAULT_TRANSLATE_FILE__) # the seqs to align
+                    defaultValues.__CHECKM_DEFAULT_TRANSLATE_FILE__) # the seqs to align
             if 0 < len(hit_lookup[folder]):
                 self.alignBin(HA, hit_lookup[folder], single_hmms,
                         single_hmm_consensi, genes_file_name, directory, folder)
@@ -419,7 +383,7 @@ class HMMAligner:
         # a hash of sequence names and sequences
         bin_genes = {}
         with open(fasta, 'r') as fh:
-            for cid,seq,qual in self.readfq(fh):
+            for cid, seq, _ in self.readfq(fh):
                 bin_genes[cid] = seq
 
         align_tmp_file = os.path.join('/tmp', str(uuid.uuid4()))
