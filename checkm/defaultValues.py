@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 ###############################################################################
 #
 # defaultValues.py - store default values used in many places in CheckM
@@ -23,5 +21,6 @@
 
 __CHECKM_DEFAULT_E_VAL__ = 1e-10
 __CHECKM_DEFAULT_LENGTH__ = 0.7
-__CHECKM_DEFAULT_PROD_FN__ = 'prodigal_out.faa'
-__CHECKM_DEFAULT_TRANSLATE_FILE__ = 'translated_seqs.faa'
+__CHECKM_DEFAULT_PRODIGAL_AA__ = 'prodigal.faa'
+__CHECKM_DEFAULT_PRODIGAL_NT__ = 'prodigal.fna'
+__CHECKM_DEFAULT_PRODIGAL_GFF__ = 'prodigal.gff'

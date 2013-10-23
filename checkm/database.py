@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 ###############################################################################
 #
 # database.py - 
@@ -24,7 +22,7 @@
 import sqlite3
 import os
 import re
-from simplehmmer.hmmmodelparser import HmmModelParser, HmmModel
+from hmmerModelParser import HmmModelParser
 from collections import defaultdict
 
 class Annotation(object):

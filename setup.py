@@ -12,7 +12,6 @@ setup(
     description='Estimate completeness and contamination of putative genomes.',
     long_description=open('README.md').read(),
     install_requires=[
-                      'simplehmmer >= 0.2.4',
                       'biopython >= 1.58'
                       ],
 )

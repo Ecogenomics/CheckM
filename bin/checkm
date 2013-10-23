@@ -36,9 +36,9 @@ import sys
 from checkm import checkm, defaultValues
 
 def printHelp():
+    print ''
+    print '           ...::: CheckM v' + __version__ + ' :::...'''
     print '''\
-
-             ...::: CheckM :::...
 
     Estimate completeness and contamination of putative genomes.
 
@@ -53,14 +53,11 @@ def printHelp():
 
 if __name__ == '__main__':
 
-    # intialise the options parser
+    # initialize the options parser
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers(help="--", dest='subparser_name')
     taxon_parser = argparse.ArgumentParser(add_help=False)
     taxon_parser.add_argument('-T', '--tax-string', dest='taxonomy', required=False,
-        help='Specify a Greengenes taxonomy string for the lineage of interest')
-    taxon_parser.add_argument('-A', '--all-markers', dest='all_markers', required=False,
-        default=False, action='store_true',
         help='Specify a Greengenes taxonomy string for the lineage of interest')
     taxon_parser.add_argument('-d', '--database', dest='database',
         help='Specify a different path for the marker database. The default '\
@@ -92,13 +89,12 @@ if __name__ == '__main__':
     build_parser.add_argument('out_folder', help="a place to write output files")
     build_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     build_parser.add_argument('infiles', nargs='*', metavar="FASTA",
-                              help="A list of fasta formatted files to be used as the input")
+                              help="(Optional) A list of fasta formatted files to be used as the input")
     build_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
     build_parser.add_argument('-x', '--extension', default='fa',
                              help="used in conjuntion with -b to specify the extension used on files to be parsed")
     build_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
-    build_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
-    build_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
+    build_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
 
     # do QA on pre-processed contigs
     qa_parser = subparsers.add_parser('qa',
@@ -108,11 +104,10 @@ if __name__ == '__main__':
                                         description='Do QA on pre-processed contigs')
     qa_parser.add_argument('out_folder', help="folder specified during build command")
     qa_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
-    qa_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
-    qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="e value cut off")
+    qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="E-value cut off")
     qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
     qa_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
-    qa_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
+    qa_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
 
     # produce alignments of matches
     align_parser = subparsers.add_parser('align',
@@ -122,10 +117,9 @@ if __name__ == '__main__':
                                          description='Create alignments of hmms to the matched markers')
     align_parser.add_argument('out_folder', help="folder specified during build command")
     align_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
-    align_parser.add_argument('-p', '--prefix', default='', help="prefix which was used for naming output files")
-    align_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="e value cut off")
+    align_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="E-value cut off")
     align_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
-    align_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
+    align_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
     align_parser.add_argument('-s', '--separate-files',action="store_true",
             dest="separate", default=False, help="Output a separate file for \
             each of the hits to a HMM model.")
@@ -148,16 +142,15 @@ if __name__ == '__main__':
     pipeline_parser.add_argument('out_folder', help="a place to write output files")
     pipeline_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     pipeline_parser.add_argument('infiles', nargs='*', metavar="FASTA",
-                                 help="A list of fasta formatted files to be used as the input")
+                                 help="(Optional) A list of fasta formatted files to be used as the input")
     pipeline_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
     pipeline_parser.add_argument('-x', '--extension', default='fa',
                                  help="used in conjuntion with -b to specify the extension used on files to be parsed")
     pipeline_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
-    pipeline_parser.add_argument('-p', '--prefix', default='', help="prefix used for naming output files")
-    pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="e value cut off")
+    pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="E-value cut off")
     pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
     pipeline_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
-    pipeline_parser.add_argument('-v', '--verbose', action="store_true", default=False, help="print more")
+    pipeline_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
 
     # debug and development
     if False:
@@ -177,7 +170,7 @@ if __name__ == '__main__':
 
     # do what we came here to do
     try:
-        checkmParser = checkm.optionsParser()
+        checkmParser = checkm.OptionsParser()
         if(False):
             #import pstats
             #p = pstats.Stats('prof')

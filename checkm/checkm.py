@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 ###############################################################################
 #
 # checkm.py - wraps coarse workflows
@@ -25,26 +23,28 @@ import os
 import uuid
 
 import resultsParser
-import dataConstructor
+import markerGeneFinder
 import database as chmdb
 
 def connectToDatabase(database_name):
-    ''' Return a database object based on name
-    '''
+    """ Return a database object based on name """
     if database_name is None:
         database_name = os.getenv("CHECKM_DB")
         if database_name is None:
             raise RuntimeError('Cannot connect to DB')
 
-    return database.MarkerDB(db=database_name)
+    return chmdb.MarkerDB(db=database_name)
 
 
 class OptionsParser():
     def __init__(self): pass
 
-    def Build(self, options, db=None):
+    def build(self, options, db=None):
         """Build command"""
-        DC = dataConstructor.Mc2kHmmerDataConstructor(threads=options.threads)
+        if not options.quiet:
+            print "Building data prior to checking."
+                
+        mgf = markerGeneFinder.MarkerGeneFinder(threads=options.threads)
         target_files = []
         if options.bin_folder is not None:
             all_files = os.listdir(options.bin_folder)
@@ -57,36 +57,32 @@ class OptionsParser():
 
         if not target_files:
             raise "No input files!"
-        DC.buildData(target_files,
-                     options.out_folder,
-                     options.hmm,
-                     options.prefix,
-                     verbose=options.verbose
-                     )
+        mgf.find(target_files, options.out_folder, options.hmm, quiet=options.quiet)
 
-    def Qa(self, options):
+    def qa(self, options):
         """QA Command"""
-        RP = resultsParser.Mc2kHmmerResultsParser(prefix=options.prefix)
+        if not options.quiet:
+            print "Analysing bins."
+                
+        RP = resultsParser.HmmerResultsParser()
         RP.analyseResults(options.out_folder,
                           options.hmm,
                           eCO=options.e_value,
                           lengthCO=options.length,
-                          verbose=options.verbose,
+                          quiet=options.quiet,
                           outFile=options.file
                           )
-        RP.printSummary(outputFormat=options.out_format,
-                singleCopy=(not options.all_markers))
+        RP.printSummary(outputFormat=options.out_format)
 
-    def Align(self, options):
+    def align(self, options):
         """Align Command"""
+        if not options.quiet:
+            print "Constructing alignments."
+                
         if hasattr(options, 'separate'):
-            HA = resultsParser.HMMAligner(options.prefix,
-                      options.separate,
-                      options.consensus,
-                      options.out_format
-                      )
+            HA = resultsParser.HMMAligner(options.separate, options.consensus, options.out_format)
         else:
-            HA = resultsParser.HMMAligner(options.prefix)
+            HA = resultsParser.HMMAligner()
         bh = False
         if hasattr(options, 'best_alignment'):
             bh=True
@@ -94,12 +90,11 @@ class OptionsParser():
                           options.hmm,
                           eCO=options.e_value,
                           lengthCO=options.length,
-                          verbose=options.verbose,
-                          prefix=options.prefix,
+                          quiet=options.quiet,
                           bestHit=bh
                           )
 
-    def MakeDB(self, options):
+    def makeDB(self, options):
         DB = chmdb.MarkerDB()
         DB.makeDB(options)
 
@@ -112,7 +107,7 @@ class OptionsParser():
             pass
 
         if(options.subparser_name == 'makeDB'):
-            self.Mc2kMakeDB(options)
+            self.makeDB(options)
             return 0
 
         database_name=None
@@ -125,46 +120,24 @@ class OptionsParser():
 
                 database = chmdb.MarkerDB(db=options.database)
                 tmp = os.path.join('/tmp', str(uuid.uuid4()))
-                if options.verbose:
-                    if options.all_markers:
-                        print 'Analysing with all taxonomic markers'
-                    else:
-                        print 'Analysing with single-copy taxonomic markers'
-                database.generateModelFiles(options.taxonomy, tmp,
-                        singleCopy=( not options.all_markers) )
+                database.generateModelFiles(options.taxonomy, tmp)
                 options.hmm = tmp
         except AttributeError, e:
             raise e
 
         if(options.subparser_name == 'build'):
-            # build prodigal and hmm result
-
-            if options.verbose:
-                print "Building data prior to checking..."
-            self.Mc2kBuild(options)
+            self.build(options)
 
         elif(options.subparser_name == 'qa'):
-            # do qa analysis
-            if options.verbose:
-                print "Analysing bins..."
-            self.Mc2kQa(options)
+            self.qa(options)
 
         elif(options.subparser_name == 'all'):
-            # all in one
-            print "Building data prior to checking..."
-            self.Mc2kBuild(options)
-            print "Analysing bins..."
-            self.Mc2kQa(options)
-            print "Constructing alignments..."
-            self.Mc2kAlign(options)
+            self.build(options)
+            self.qa(options)
+            self.align(options)
 
         elif(options.subparser_name == 'align'):
-
-            # make alignments
-            if options.verbose:
-                print "Constructing alignments..."
-            self.Mc2kAlign(options)
-
+            self.align(options)
 
         if database_name is not None:
             os.remove(tmp)

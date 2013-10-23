@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 ###############################################################################
 #
 # resultsParser.py - 
@@ -31,16 +29,15 @@ from collections import defaultdict
 
 import defaultValues 
 
-from simplehmmer.simplehmmer import HMMERRunner, HMMERParser, makeOutputFNs
-from simplehmmer.hmmmodelparser import HmmModel, HmmModelParser
+from hmmer import HMMERRunner, HMMERParser, makeOutputFNs
+from hmmerModelParser import HmmModelParser
 
 class HmmerResultsParser():
     """This class does the job of parsing through the txt output from a hmmer run"""
-    def __init__(self, prefix=''):
+    def __init__(self):
         # make the output file names
-        (self.txtOut, self.hmmOut) = makeOutputFNs(prefix)
+        (self.txtOut, self.hmmOut) = makeOutputFNs()
         self.results = {}
-#        self.qLengths = {}
         self.models = {}
         self.numQs = 0
     
@@ -49,7 +46,7 @@ class HmmerResultsParser():
                        hmmFile,
                        eCO=defaultValues.__CHECKM_DEFAULT_E_VAL__,
                        lengthCO=defaultValues.__CHECKM_DEFAULT_LENGTH__,
-                       verbose=False,
+                       quiet=False,
                        outFile='',
                        ):
         """Parse the results in the output directory"""
@@ -59,7 +56,7 @@ class HmmerResultsParser():
                 # redirect stdout to a file
                 sys.stdout = open(outFile, 'w')
             except:
-                print("Error diverting stout to file: ", exc_info()[0])
+                print("Error diverting stout to file: ", sys.exc_info()[0])
                 raise
 
         # parse the hmm file itself so we can determine the length
@@ -78,7 +75,7 @@ class HmmerResultsParser():
             # we can now build the hmmer_file_name
             hmmer_file_name = os.path.join(directory, folder, self.txtOut)
             # and then we can parse it
-            self.parseHmmerResults(hmmer_file_name, storage, verbose)
+            self.parseHmmerResults(hmmer_file_name, storage, quiet)
             self.results[folder] = storage
         
         # restore stdout        
@@ -87,10 +84,10 @@ class HmmerResultsParser():
                 # redirect stdout to a file
                 sys.stdout = old_stdout
             except:
-                print("Error restoring stdout ", exc_info()[0])
+                print("Error restoring stdout ", sys.exc_info()[0])
                 raise
         
-    def parseHmmerResults(self, fileName, storage, verbose):
+    def parseHmmerResults(self, fileName, storage, quiet):
         """Parse through a hmmer file and see what's what"""
         try:
             with open(fileName, 'r') as hmmer_handle:
@@ -116,12 +113,12 @@ class HmmerResultsParser():
         elif outputFormat == 3:
             print('\t', '\t'.join(self.models.keys()))
     
-    def printSummary(self, outputFormat=1, singleCopy=True):
+    def printSummary(self, outputFormat=1):
         if outputFormat == 1 or outputFormat == 3:
             self.printHeader(outputFormat)
+            
         for fasta in self.results:
-            self.results[fasta].printSummary(outputFormat=outputFormat,
-                    singleCopy=singleCopy)
+            self.results[fasta].printSummary(outputFormat=outputFormat)
 
 class HitManager():
     """Store all the results for a single bin"""
@@ -206,21 +203,15 @@ class HitManager():
             gene_counts.append(perc_cont)
             return gene_counts
 
-    def printSummary(self, outputFormat=1, singleCopy=True):
+    def printSummary(self, outputFormat=1):
         """print out some information about this bin"""
 
         if outputFormat == 1:
             data = self.calculateMarkers(verbose=False)
-            if singleCopy:
-                print("%s\t%s\t%0.2f\t%0.2f" % (self.name,
+            print("%s\t%s\t%0.2f\t%0.2f" % (self.name,
                                                 "\t".join([str(data[i]) for i in range(6)]),
                                                 data[6],
                                                 data[7]
-                                                ))
-            else:
-                print("%s\t%s\t%0.2f\tNA" % (self.name,
-                                                "\t".join([str(data[i]) for i in range(6)]),
-                                                data[6]
                                                 ))
         elif outputFormat == 2:
             data = self.calculateMarkers(verbose=True)
@@ -288,21 +279,20 @@ class HitManager():
 ###############################################################################
 
 class HMMAligner:
-    def __init__(self, prefix='', individualFile=False, includeConsensus=True, outputFormat='PSIBLAST'):
+    def __init__(self, individualFile=False, includeConsensus=True, outputFormat='PSIBLAST'):
         # make output file names
         self.individualFile = individualFile
         self.includeConsensus = includeConsensus
         self.outputFormat = outputFormat
-        (self.txtOut, self.hmmOut) = makeOutputFNs(prefix=prefix)
-        (txtOut, self.hmmAlign) = makeOutputFNs(prefix=prefix, mode='align')
+        (self.txtOut, self.hmmOut) = makeOutputFNs()
+        (_, self.hmmAlign) = makeOutputFNs(mode='align')
         
     def makeAlignments(self,
                        directory,
                        hmm,
                        eCO=defaultValues.__CHECKM_DEFAULT_E_VAL__,
                        lengthCO=defaultValues.__CHECKM_DEFAULT_LENGTH__,
-                       prefix='',
-                       verbose=False,
+                       quiet=False,
                        bestHit=False,
                        generateModelFiles=True
                        ):
@@ -353,19 +343,19 @@ class HMMAligner:
         # make temporary files and write the extracted hmms
         single_hmms = {}
         single_hmm_consensi = {}
-        HA = HMMERRunner(mode='align', prefix=prefix)
+        HA = HMMERRunner(mode='align')
         if generateModelFiles:
-            HF = HMMERRunner(mode='fetch', prefix=prefix)
+            HF = HMMERRunner(mode='fetch')
             self.makeAlignmentModels(HF, hmm, unique_hits.keys(), single_hmms, single_hmm_consensi)
         
         # now we need to go through each of the bins and extract the contigs which we need
         for folder in hit_lookup:
             genes_file_name = os.path.join(directory, folder,
-                    defaultValues.__CHECKM_DEFAULT_TRANSLATE_FILE__) # the seqs to align
+                    defaultValues.__CHECKM_DEFAULT_PRODIGAL_AA__) # the seqs to align
             if 0 < len(hit_lookup[folder]):
                 self.alignBin(HA, hit_lookup[folder], single_hmms,
                         single_hmm_consensi, genes_file_name, directory, folder)
-            elif verbose:
+            elif not quiet:
                 print("Skipping alignment for", folder, ": no hits found")
                 
         
