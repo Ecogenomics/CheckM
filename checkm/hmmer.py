@@ -19,10 +19,10 @@
 #                                                                             #
 ###############################################################################
 
-from re import split as re_split
-from os import system
-from os.path import join as osp_join
+import os
 import sys
+from re import split as re_split
+
 
 from common import makeSurePathExists
 
@@ -57,12 +57,12 @@ class HMMERRunner():
             raise HMMMERModeError("Mode %s not compatible with search" % self.mode)
         
         makeSurePathExists(outputDir)
-        txt_file = osp_join(outputDir, self.txtOut)
-        hmm_file = osp_join(outputDir, self.hmmOut)
+        txt_file = os.path.join(outputDir, self.txtOut)
+        hmm_file = os.path.join(outputDir, self.hmmOut)
 
         # run hmmer!
         cmd = ('hmmsearch --%s %s %s %s %s > %s' % (self.mode, txt_file, cmdline_options, db, query, hmm_file))
-        system(cmd)
+        os.system(cmd)
 
     def align(self, db, query, outputFile, writeMode='>',
             outputFormat='PSIBLAST', allcol=True, trim=True):
@@ -79,7 +79,7 @@ class HMMERRunner():
             
         # run hmmer
         cmd = 'hmmalign%s--outformat %s %s %s %s %s' % (opts, outputFormat, db, query, writeMode, outputFile)
-        system(cmd)
+        os.system(cmd)
 
     def fetch(self, db, key, fetchFileName, emitFileName=''):
         """Run hmmfetch and possible hmmemit"""
@@ -87,11 +87,11 @@ class HMMERRunner():
             raise HMMMERModeError("Mode %s not compatible with fetch" % self.mode)
         
         # run hmmer
-        system('hmmfetch %s %s > %s' % (db, key, fetchFileName))
+        os.system('hmmfetch %s %s > %s' % (db, key, fetchFileName))
         
         # run emit if we have been told to
         if emitFileName != '':
-            system('hmmemit -c %s > %s' % (fetchFileName, emitFileName))
+            os.system('hmmemit -c %s > %s' % (fetchFileName, emitFileName))
 
     def checkForHMMER(self):
         """Check to see if HMMER is on the system before we try fancy things
@@ -101,7 +101,7 @@ class HMMERRunner():
         """
         # redirect stdout so we don't get mess!
         try:
-            exit_status = system('hmmsearch -h > /dev/null')
+            exit_status = os.system('hmmsearch -h > /dev/null')
         except:
             print "Unexpected error!", sys.exc_info()[0]
             raise
@@ -184,11 +184,6 @@ NODE_925902_length_6780_cov_18.428171_754_2 -            399 PGK                
                     return HmmerHitDOM(refined_match)
             except IndexError:
                 return {}
-
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
 
 class HmmerHitTBL():
     """Encapsulate a hmmer hit given in tblout format"""

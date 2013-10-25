@@ -19,9 +19,8 @@
 #                                                                             #
 ###############################################################################
 
-from os import system
+import os
 import sys
-from os.path import join as osp_join
 
 import defaultValues
 
@@ -38,12 +37,12 @@ class ProdigalRunner():
     def run(self, query, outputDir, translationTable=11):
         makeSurePathExists(outputDir)
         
-        aaFile = osp_join(outputDir, defaultValues.__CHECKM_DEFAULT_PRODIGAL_AA__)
-        ntFile = osp_join(outputDir, defaultValues.__CHECKM_DEFAULT_PRODIGAL_NT__)
-        gffFile = osp_join(outputDir, defaultValues.__CHECKM_DEFAULT_PRODIGAL_GFF__)
+        aaFile = os.path.join(outputDir, defaultValues.__CHECKM_DEFAULT_PRODIGAL_AA__)
+        ntFile = os.path.join(outputDir, defaultValues.__CHECKM_DEFAULT_PRODIGAL_NT__)
+        gffFile = os.path.join(outputDir, defaultValues.__CHECKM_DEFAULT_PRODIGAL_GFF__)
         
         cmd = ('prodigal -q -c -m -f gff -t %s -a %s -d %s -i %s > %s' % (str(translationTable), aaFile, ntFile, query, gffFile))
-        system(cmd)
+        os.system(cmd)
         
         return aaFile
 
@@ -55,7 +54,7 @@ class ProdigalRunner():
         """
         # redirect stdout so we don't get mess!
         try:
-            exit_status = system('prodigal -h 2> /dev/null')
+            exit_status = os.system('prodigal -h 2> /dev/null')
         except:
             print "Unexpected error!", sys.exc_info()[0]
             raise

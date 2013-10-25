@@ -24,6 +24,7 @@ import uuid
 
 import resultsParser
 import markerGeneFinder
+import binStatistics
 import database as chmdb
 
 def connectToDatabase(database_name):
@@ -39,12 +40,8 @@ def connectToDatabase(database_name):
 class OptionsParser():
     def __init__(self): pass
 
-    def build(self, options, db=None):
-        """Build command"""
-        if not options.quiet:
-            print "Building data prior to checking."
-                
-        mgf = markerGeneFinder.MarkerGeneFinder(threads=options.threads)
+    def analyze(self, options, db=None):
+        """Analyze command"""        
         target_files = []
         if options.bin_folder is not None:
             all_files = os.listdir(options.bin_folder)
@@ -57,14 +54,34 @@ class OptionsParser():
 
         if not target_files:
             raise "No input files!"
+        
+        # find marker genes in genome bins
+        if not options.quiet:
+            print ''
+            print '*******************************************************************************'
+            print ' [CheckM - analyze] Identifying marker genes in bins.'
+            print '*******************************************************************************'
+        mgf = markerGeneFinder.MarkerGeneFinder(threads=options.threads)
         mgf.find(target_files, options.out_folder, options.hmm, quiet=options.quiet)
+        
+        # calculate statistics for each genome bin
+        if not options.quiet:
+            print ''
+            print '*******************************************************************************'
+            print ' [CheckM - analyze] Calculating genome statistics (e.g., GC, coding density).'
+            print '*******************************************************************************'
+        binStats = binStatistics.BinStatistics(threads=options.threads)
+        binStats.calculate(target_files, options.out_folder, quiet=options.quiet)
 
     def qa(self, options):
         """QA Command"""
         if not options.quiet:
-            print "Analysing bins."
-                
-        RP = resultsParser.HmmerResultsParser()
+            print ''
+            print '*******************************************************************************'
+            print ' [CheckM - qa] Tabulating genome statistics.'
+            print '*******************************************************************************'
+
+        RP = resultsParser.ResultsParser()
         RP.analyseResults(options.out_folder,
                           options.hmm,
                           eCO=options.e_value,
@@ -72,20 +89,25 @@ class OptionsParser():
                           quiet=options.quiet,
                           outFile=options.file
                           )
-        RP.printSummary(outputFormat=options.out_format)
+        RP.printSummary(outputFormat=options.out_format, outFile=options.file)
 
     def align(self, options):
         """Align Command"""
         if not options.quiet:
-            print "Constructing alignments."
+            print ''
+            print '*******************************************************************************'
+            print ' [CheckM - align] Creating alignments for identified marker genes.'
+            print '*******************************************************************************'
                 
         if hasattr(options, 'separate'):
             HA = resultsParser.HMMAligner(options.separate, options.consensus, options.out_format)
         else:
             HA = resultsParser.HMMAligner()
+            
         bh = False
         if hasattr(options, 'best_alignment'):
             bh=True
+            
         HA.makeAlignments(options.out_folder,
                           options.hmm,
                           eCO=options.e_value,
@@ -125,14 +147,14 @@ class OptionsParser():
         except AttributeError, e:
             raise e
 
-        if(options.subparser_name == 'build'):
-            self.build(options)
+        if(options.subparser_name == 'analyze'):
+            self.analyze(options)
 
         elif(options.subparser_name == 'qa'):
             self.qa(options)
 
         elif(options.subparser_name == 'all'):
-            self.build(options)
+            self.analyze(options)
             self.qa(options)
             self.align(options)
 

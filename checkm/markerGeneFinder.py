@@ -41,9 +41,6 @@ class MarkerGeneFinder():
         self.numFiles = 0
         self.numFilesStarted = 0
         self.numFilesParsed = 0
-        
-        self.threadSafeData = threading.local()
-
 
     def find(self, inFiles, outFolder, hmm, quiet=False):
         """Identify marker genes in each input fasta file using prodigal and HMMER."""
@@ -57,7 +54,7 @@ class MarkerGeneFinder():
         self.numFiles = len(inFiles)
         self.threadsPerSearch = max(1, int(self.totalThreads / self.numFiles))
         if not quiet:
-            print "Processing %d files with %d threads." % (self.numFiles, self.totalThreads)
+            print "  Processing %d files with %d threads:" % (self.numFiles, self.totalThreads)
         
         for fasta in inFiles:
             t = threading.Thread(target=self.__processFasta, args=(fasta, outFolder, hmm, quiet))
@@ -83,35 +80,21 @@ class MarkerGeneFinder():
         try:
             self.varLock.acquire()
             try:
+                # create output directory for fasta file
+                outDir = os.path.join(outFolder, os.path.basename(fasta))
+                makeSurePathExists(outDir)
+                
                 self.numFilesStarted += 1
                 if not quiet:
-                    print "Processing file %s (%d of %d)" % (fasta, self.numFilesStarted, self.numFiles) 
+                    print "    Processing %s (%d of %d)" % (fasta, self.numFilesStarted, self.numFiles) 
             finally:
                 self.varLock.release()
-                
-            # create output directory for fasta file
-            self.threadSafeData.outDir = os.path.join(outFolder, os.path.basename(fasta))
-            makeSurePathExists(self.threadSafeData.outDir)
-            
-            # run Prodigal
-            if not quiet:
-                self.varLock.acquire()
-                try:
-                    print "    Running prodigal on file %s." % fasta
-                finally:
-                    self.varLock.release()
-                    
-                self.threadSafeData.aaGeneFile = self.prodigal.run(fasta, self.threadSafeData.outDir)
+
+            # run Prodigal       
+            aaGeneFile = self.prodigal.run(fasta, outDir)
 
             # run HMMER
-            if not quiet:
-                self.varLock.acquire()
-                try:
-                    print "    Running hmmer on file %s with %d threads." % (fasta, self.threadsPerSearch)
-                finally:
-                    self.varLock.release()
-                   
-            self.hmmer.search(hmm, self.threadSafeData.aaGeneFile, self.threadSafeData.outDir, '--cpu ' + str(self.threadsPerSearch))
+            self.hmmer.search(hmm, aaGeneFile, outDir, '--cpu ' + str(self.threadsPerSearch))
 
             # let the world know we've parsed this file
             self.varLock.acquire()

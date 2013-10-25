@@ -25,6 +25,7 @@ import sys
 import os 
 import uuid
 import shutil
+import ast
 from collections import defaultdict
 
 import defaultValues 
@@ -32,7 +33,7 @@ import defaultValues
 from hmmer import HMMERRunner, HMMERParser, makeOutputFNs
 from hmmerModelParser import HmmModelParser
 
-class HmmerResultsParser():
+class ResultsParser():
     """This class does the job of parsing through the txt output from a hmmer run"""
     def __init__(self):
         # make the output file names
@@ -47,46 +48,41 @@ class HmmerResultsParser():
                        eCO=defaultValues.__CHECKM_DEFAULT_E_VAL__,
                        lengthCO=defaultValues.__CHECKM_DEFAULT_LENGTH__,
                        quiet=False,
-                       outFile='',
+                       outFile=''
                        ):
         """Parse the results in the output directory"""
-        old_stdout = sys.stdout
-        if("" != outFile):
-            try:
-                # redirect stdout to a file
-                sys.stdout = open(outFile, 'w')
-            except:
-                print("Error diverting stout to file: ", sys.exc_info()[0])
-                raise
 
-        # parse the hmm file itself so we can determine the length
-        # of the queries
+        # parse the hmm file itself so we can determine the length of the queries
         model_parser = HmmModelParser(hmmFile)
         for model in model_parser.parse():
             self.models[model.name] = model
         
         self.numQs = len(self.models)
+        
+        # read bin and scaffold stats into dictionaries
+        binStatsFile = os.path.join(directory, defaultValues.__CHECKM_DEFAULT_BIN_STATS_FILE__)
+        with open(binStatsFile, 'r') as f:
+            s = f.read()
+            binStats = ast.literal_eval(s)
+        
+        scaffoldStatsFile = os.path.join(directory, defaultValues.__CHECKM_DEFAULT_SCAFFOLD_STATS_FILE__)
+        with open(scaffoldStatsFile, 'r') as f:
+            s = f.read()
+            scaffoldStats = ast.literal_eval(s)
 
-        # we expect directory to contain a collection of folders
-        # names after the original bins
-        for folder in os.listdir(directory):
-            # somewhere to store results
-            storage = HitManager(folder, lengthCO, eCO, self.models)
-            # we can now build the hmmer_file_name
-            hmmer_file_name = os.path.join(directory, folder, self.txtOut)
-            # and then we can parse it
-            self.parseHmmerResults(hmmer_file_name, storage, quiet)
-            self.results[folder] = storage
-        
-        # restore stdout        
-        if("" != outFile):
-            try:
-                # redirect stdout to a file
-                sys.stdout = old_stdout
-            except:
-                print("Error restoring stdout ", sys.exc_info()[0])
-                raise
-        
+        # we expect directory to contain a collection of folders names after the original bins
+        for folder in os.listdir(directory): 
+            if os.path.isdir(os.path.join(directory, folder)):
+                # somewhere to store results
+                resultsManager = ResultsManager(folder, lengthCO, eCO, self.models, binStats[folder], scaffoldStats[folder])
+                
+                # we can now build the hmmer_file_name
+                hmmer_file_name = os.path.join(directory, folder, self.txtOut)
+                
+                # and then we can parse it
+                self.parseHmmerResults(hmmer_file_name, resultsManager, quiet)
+                self.results[folder] = resultsManager
+            
     def parseHmmerResults(self, fileName, storage, quiet):
         """Parse through a hmmer file and see what's what"""
         try:
@@ -109,25 +105,69 @@ class HmmerResultsParser():
         """Print the NON_VERBOSE header"""
         # keep count of single, double, triple genes etc...
         if outputFormat == 1:
-            print("\t".join(['Bin_name','0','1','2','3','4','5+','comp','cont']))
-        elif outputFormat == 3:
-            print('\t', '\t'.join(self.models.keys()))
-    
-    def printSummary(self, outputFormat=1):
-        if outputFormat == 1 or outputFormat == 3:
-            self.printHeader(outputFormat)
+            header = ['Bin Id']
+            header += ['Completeness','Contamination']
+            header += ['Genome size (bp)', '# scaffolds', '# contigs', 'N50', 'Longest scaffold (bp)', 'Shortest scaffold (bp)']
+            header += ['GC', 'GC std (scaffolds > 1Kbps)']
+            header += ['Coding density (translation table 11)', '# predicted ORFs']
+            header += ['0','1','2','3','4','5+']
+            print('\t'.join(header))
             
+            if defaultValues.__CHECKM_DEFAULT_MIN_SEQ_LEN_GC_STD__ != 1000:
+                print('[Error] Labeling error: GC std (scaffolds > 1Kbps)', sys.exc_info()[0])
+                raise
+                
+        elif outputFormat == 2:
+            print('\t'.join(['Bin Id','0','1','2','3','4','5+','Completeness','Contamination']))
+        elif outputFormat == 4:
+            print('\t', '\t'.join(self.models.keys()))
+        elif outputFormat == 5:
+            print('Bin Id\tMarker Id\tScaffold Id')
+        elif outputFormat == 6:
+            print('Bin Id\tMarker Id\tScaffold Ids')
+        elif outputFormat == 7:
+            print('Bin Id\tScaffold Id\t{Marker Id, Count}')
+        elif outputFormat == 8:
+            print('Scaffold Id\tBin Id\tLength\tGC\tMarker Ids')
+    
+    def printSummary(self, outputFormat=1, outFile=''):
+        print('  Tabulating results for %d bins in output format %d' % (len(self.results), outputFormat))
+        
+        # redirect output
+        old_stdout = sys.stdout
+        if(outFile != ''):
+            try:
+                # redirect stdout to a file
+                sys.stdout = open(outFile, 'w')
+            except:
+                print("Error diverting stout to file: ", sys.exc_info()[0])
+                raise
+            
+        self.printHeader(outputFormat)  
         for fasta in self.results:
             self.results[fasta].printSummary(outputFormat=outputFormat)
+            
+        # restore stdout        
+        if(outFile != ''):
+            try:
+                # redirect stdout to a file
+                sys.stdout = old_stdout
+            except:
+                print("Error restoring stdout ", sys.exc_info()[0])
+                raise
 
-class HitManager():
+            print('  Results written to: ' + outFile)
+
+class ResultsManager():
     """Store all the results for a single bin"""
-    def __init__(self, name, lengthCO, eCO, models=None):
+    def __init__(self, name, lengthCO, eCO, models=None, binStats=None, scaffoldStats=None):
         self.name = name
         self.markers = {}
         self.eCO = eCO
         self.lengthCO = lengthCO
         self.models = models
+        self.binStats = binStats
+        self.scaffoldStats = scaffoldStats
     
     def vetHit(self, hit):
         """See if this hit meets our exacting standards"""
@@ -205,15 +245,28 @@ class HitManager():
 
     def printSummary(self, outputFormat=1):
         """print out some information about this bin"""
-
         if outputFormat == 1:
+            data = self.calculateMarkers(verbose=False)
+            row = self.name
+            row += '\t%0.2f\t%0.2f' % (data[6], data[7])
+            row += '\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# scaffolds'], 
+                                             self.binStats['# contigs'], self.binStats['N50'], 
+                                             self.binStats['Longest scaffold'], self.binStats['Shortest scaffold'])
+            row += '\t%.3f\t%.4f' % (self.binStats['GC'], self.binStats['GC std'])
+            row += '\t%.3f\t%d' % (self.binStats['Coding density'], self.binStats['# predicted ORFs'])
+            row += '\t' + '\t'.join([str(data[i]) for i in xrange(6)])
+            
+            print(row)
+            
+        elif outputFormat == 2:
             data = self.calculateMarkers(verbose=False)
             print("%s\t%s\t%0.2f\t%0.2f" % (self.name,
                                                 "\t".join([str(data[i]) for i in range(6)]),
                                                 data[6],
                                                 data[7]
                                                 ))
-        elif outputFormat == 2:
+            
+        elif outputFormat == 3:
             data = self.calculateMarkers(verbose=True)
             print("--------------------")
             print(self.name)
@@ -224,12 +277,11 @@ class HitManager():
                                               len(self.models),
                                               100*float(len(self.markers))/float(len(self.models))
                                               )+"%)")
-        elif outputFormat == 3:
+        elif outputFormat == 4:
             # matrix of bin vs marker counts
             data = self.calculateMarkers(verbose=True)
             columns = self.models.keys()
             print(self.name, end='\t')
-            #print('\t','\t'.join(columns))
             for marker in columns:
                 count = 0
                 try:
@@ -240,13 +292,24 @@ class HitManager():
                     print(count, end='\t')
             print()
 
-        elif outputFormat == 4:
+        elif outputFormat == 5:
             # tabular of bin_id, marker, contig_id
             for marker, hit_list in self.markers.items():
                 for hit in hit_list:
                     print(self.name, marker, hit.target_name, sep='\t', end='\n')
+                    
+        elif outputFormat == 6:
+            for marker, hit_list in self.markers.items():
+                if len(hit_list) >= 2:
+                    print(self.name, marker, sep='\t', end='\t')
+                    
+                    scaffoldIds = []
+                    for hit in hit_list:
+                        scaffoldIds.append(hit.target_name)
+                        
+                    print(','.join(scaffoldIds), end='\n')
 
-        elif outputFormat == 5:
+        elif outputFormat == 7:
             # tabular - print only contigs that have more than one copy 
             # of the same marker on them
             contigs = defaultdict(dict)
@@ -267,16 +330,24 @@ class HitManager():
                         print(marker_name, marker_count, sep=',', end='\t')
                 if not first_time:
                     print()
-
+                    
+        elif outputFormat == 8:
+            markersInScaffold = {}
+            for marker, hit_list in self.markers.items():
+                for hit in hit_list:
+                    scaffoldId = hit.target_name[0:hit.target_name.rfind('_')]
+                    markersInScaffold[scaffoldId] = markersInScaffold.get(scaffoldId, []) + [marker]
+            
+            for scaffoldId, data in self.scaffoldStats.iteritems():
+                print(scaffoldId, self.name, str(data['length']), str(data['GC']), sep='\t', end='\t')
+                
+                if scaffoldId in markersInScaffold:
+                    markerStr = ','.join(sorted(markersInScaffold[scaffoldId]))
+                    print(markerStr, end='\n')
+                else:
+                    print()
         else:
             print("Unknown output format: ", outputFormat)
-
-
-
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
 
 class HMMAligner:
     def __init__(self, individualFile=False, includeConsensus=True, outputFormat='PSIBLAST'):
@@ -308,10 +379,13 @@ class HMMAligner:
         for model in model_parser.parse():
             models[model.name] = model
 
-        HM = HitManager('', lengthCO, eCO, models)
+        resultsManager = ResultsManager('', lengthCO, eCO, models)
         hit_lookup = {}
         unique_hits = {}
         for folder in os.listdir(directory):
+            if not os.path.isdir(os.path.join(directory, folder)):
+                continue
+            
             # we can now build the hmmer_file_name
             hmmer_file_name = os.path.join(directory, folder, self.txtOut)
             hit_lookup[folder] = {}
@@ -326,7 +400,7 @@ class HMMAligner:
                     hit = HP.next()
                     if hit is None:
                         break
-                    if HM.vetHit(hit): # we only want good hits
+                    if resultsManager.vetHit(hit): # we only want good hits
                         try:
                             if bestHit:
                                 if hit_lookup[folder][hit.query_name][0].full_e_value > hit.full_e_value:
@@ -458,8 +532,3 @@ class HMMAligner:
                 if last: # reach EOF before reading enough quality
                     yield name, seq, None # yield a fasta record instead
                     break
-                
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################

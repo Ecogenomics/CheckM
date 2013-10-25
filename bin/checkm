@@ -40,13 +40,31 @@ def printHelp():
     print '           ...::: CheckM v' + __version__ + ' :::...'''
     print '''\
 
-    Estimate completeness and contamination of putative genomes.
+  Estimate completeness and contamination of putative genome bins.
+    
+  Standard workflow:
 
-    checkm build   -> Create the underlying data needed for testing
-    checkm qa      -> Test for bin contamination and completeness
-    checkm align   -> Create alignments of hmms to the matched markers
+    checkm analyze     -> Identify marker genes in genome bins
+    checkm qa          -> Assess bins for contamination and completeness
+    checkm align       -> Create alignments of matched marker genes
 
-    checkm all     -> Build and test in one step
+
+  Combined workflow:
+
+    checkm all         -> Build and test in one step
+    
+    
+  Plotting functions:
+    
+    checkm Nx_plot     -> Create Nx-plot 
+    checkm GC_plot     -> Create GC histogram
+    checkm Marker_plot -> Plot position of marker genes on sequences
+    
+    
+  Utility functions:
+
+    checkm unbinned    -> Identify unbinned sequences  
+    checkm coverage    -> Calculate coverage for all sequences
 
     USE: checkm OPTION -h to see detailed options
     '''
@@ -58,98 +76,88 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(help="--", dest='subparser_name')
     taxon_parser = argparse.ArgumentParser(add_help=False)
     taxon_parser.add_argument('-T', '--tax-string', dest='taxonomy', required=False,
-        help='Specify a Greengenes taxonomy string for the lineage of interest')
+        help='specify a Greengenes taxonomy string for the lineage of interest')
     taxon_parser.add_argument('-d', '--database', dest='database',
-        help='Specify a different path for the marker database. The default '\
-        'is to use the value of the environmental variable "CHECKM_DB"')
+        help='specify a different path for the marker database. The default is to use the value of the environmental variable "CHECKM_DB"')
 
     output_parser = argparse.ArgumentParser(add_help=False)
     output_parser.add_argument('-o', '--output-format', dest='out_format',
             type=int,
-            help='''Change the output format to one of the following:
-                 1. Simple Summary showing bin name, counts, completeness and
-                    contamination
-                 2. List of marker names and their counts
-                 3. Matrix of marker counts
-                 4. Tabular list of bin name, marker name, contig name
-                 5. Tabular list showing contigs that contain more than one
-                     copy of the same marker. Format: bin name, contig name,
-                     {Marker name, count}...''', default=1)
+            help='''change the output format to one of the following:
+                1. summary statistics for each genome bin including GC distribution, genome size, completeness estimation, and contamination estimation
+                2. brief summary of genome bin completeness and contamination
+                3. list of marker names and their counts
+                4. matrix of marker counts
+                5. list of bin name, marker name, scaffold name
+                6. list of markers present multiple times in a bin
+                7. list showing scaffold that contain more than one copy of the same marker
+                8. list of scaffold name, bin name, length, GC, marker name(s)''', 
+            default=1, choices=[1, 2, 3, 4, 5, 6, 7, 8])
+    output_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
 
-    ##################################################
-    # Typical workflow
-    ##################################################
-
-    # parse binned contigs
-    build_parser = subparsers.add_parser('build',
+    # identify marker genes within binned contigs and calculate genome statistics
+    analyze_parser = subparsers.add_parser('analyze',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='parse binned contigs',
+                                        help='Identify marker genes in bins and calculate genome statistics.',
                                         parents=[taxon_parser],
-                                        description='Parse binned contigs')
-    build_parser.add_argument('out_folder', help="a place to write output files")
-    build_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
-    build_parser.add_argument('infiles', nargs='*', metavar="FASTA",
-                              help="(Optional) A list of fasta formatted files to be used as the input")
-    build_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
-    build_parser.add_argument('-x', '--extension', default='fa',
+                                        description='Identify marker genes in bins and calculate genome statistics.')
+    analyze_parser.add_argument('out_folder', help="a place to write output files")
+    analyze_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
+    analyze_parser.add_argument('infiles', nargs='*', metavar="FASTA",
+                              help="(Optional) a list of fasta formatted files to be used as the input")
+    analyze_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
+    analyze_parser.add_argument('-x', '--extension', default='fa',
                              help="used in conjuntion with -b to specify the extension used on files to be parsed")
-    build_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
-    build_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
+    analyze_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
+    analyze_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
 
     # do QA on pre-processed contigs
     qa_parser = subparsers.add_parser('qa',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='do QA on pre-processed contigs',
+                                        help='Assess genome bin for contamination and completeness.',
                                         parents=[output_parser, taxon_parser],
-                                        description='Do QA on pre-processed contigs')
+                                        description='Assess genome bin for contamination and completeness.')
     qa_parser.add_argument('out_folder', help="folder specified during build command")
     qa_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="E-value cut off")
     qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
-    qa_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
     qa_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
 
     # produce alignments of matches
     align_parser = subparsers.add_parser('align',
                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                         help='create alignments of hmms to the matched markers',
+                                         help='Create alignments of matched marker genes.',
                                          parents=[taxon_parser],
-                                         description='Create alignments of hmms to the matched markers')
+                                         description='Create alignments of matched marker genes.')
     align_parser.add_argument('out_folder', help="folder specified during build command")
     align_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     align_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="E-value cut off")
     align_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
     align_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
     align_parser.add_argument('-s', '--separate-files',action="store_true",
-            dest="separate", default=False, help="Output a separate file for \
-            each of the hits to a HMM model.")
-    align_parser.add_argument('-o', '--output-format',default='PSIBLAST',
-            dest="out_format", help="The output format passed to hmmalign")
-    align_parser.add_argument('-c','--include-consensus',action="store_true",
-            default=False, dest="consensus", help="Include the HMM \
+            dest="separate", default=False, help="output a separate file for each of the hits to a HMM model.")
+    align_parser.add_argument('-o', '--output-format',default='PSIBLAST', dest="out_format", help="the output format passed to hmmalign")
+    align_parser.add_argument('-c','--include-consensus',action="store_true", default=False, dest="consensus", help="include the HMM \
             consensus sequence (generated by hmmemit) in the alignment")
-    align_parser.add_argument('-b', '--best-hit', action="store_true",
-            default=False, dest="best_alignment", help="Only align the best \
-            match to the HMM even if there are multiple matches that pass the \
-            threshold")
+    align_parser.add_argument('-b', '--best-hit', action="store_true", default=False, dest="best_alignment", help="only align the best \
+            match to the HMM even if there are multiple matches that pass the threshold")
 
     # Build + align in one step
     pipeline_parser = subparsers.add_parser('all',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='build + qa + align in one step',
+                                        help='Run find + qa + align in one step.',
                                         parents=[taxon_parser, output_parser],
-                                        description='Build + qa in one step')
+                                        description='Run find + qa + align in one step.')
     pipeline_parser.add_argument('out_folder', help="a place to write output files")
     pipeline_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     pipeline_parser.add_argument('infiles', nargs='*', metavar="FASTA",
-                                 help="(Optional) A list of fasta formatted files to be used as the input")
+                                 help="(Optional) a list of fasta formatted files to be used as the input")
     pipeline_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
     pipeline_parser.add_argument('-x', '--extension', default='fa',
                                  help="used in conjuntion with -b to specify the extension used on files to be parsed")
     pipeline_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
     pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="E-value cut off")
     pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
-    pipeline_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
     pipeline_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
 
     # debug and development
@@ -186,9 +194,4 @@ if __name__ == '__main__':
     except:
         print "Unexpected error:", sys.exc_info()[0]
         raise
-
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
 

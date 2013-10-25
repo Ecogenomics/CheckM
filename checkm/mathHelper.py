@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# common.py - utility functions used in many places in CheckM
+# mathHelper.py - simple commonly used math functions
 #
 ###############################################################################
 #                                                                             #
@@ -19,23 +19,15 @@
 #                                                                             #
 ###############################################################################
 
-from os import makedirs
-import errno
+import math
 
-def makeSurePathExists(path):
-    try:
-        makedirs(path)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            raise
-        
-def readFasta(fastaFile):
-    seqs = {}
-    for line in open(fastaFile):
-        if line[0] == '>':
-            seqId = line[1:].split()[0]
-            seqs[seqId] = ''
-        else:
-            seqs[seqId] += line.rstrip()
-            
-    return seqs
+def mean(x):
+    return float(sum(x)) / len(x)
+    
+def variance(x):
+    m = mean(x)
+    var = map(lambda v: (v - m)**2, x)  
+    return mean(var)
+
+def std(x):
+    return math.sqrt(variance(x))
