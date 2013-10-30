@@ -22,10 +22,16 @@
 import os
 import uuid
 
-import resultsParser
-import markerGeneFinder
-import binStatistics
+from timeKeeper import TimeKeeper
+from resultsParser import ResultsParser, HMMAligner
+from markerGeneFinder import MarkerGeneFinder
+from binStatistics import BinStatistics
+from coverage import Coverage
 import database as chmdb
+
+from plot.gcPlots import gcPlots
+from plot.nxPlot import nxPlot
+from plot.seqLenPlot import seqLenPlot
 
 def connectToDatabase(database_name):
     """ Return a database object based on name """
@@ -36,73 +42,80 @@ def connectToDatabase(database_name):
 
     return chmdb.MarkerDB(db=database_name)
 
-
 class OptionsParser():
     def __init__(self): pass
-
-    def analyze(self, options, db=None):
-        """Analyze command"""        
-        target_files = []
+    
+    def binFiles(self, options):
+        targetFiles = []
         if options.bin_folder is not None:
             all_files = os.listdir(options.bin_folder)
-            for j in all_files:
-                if j.endswith(options.extension):
-                    target_files.append(os.path.join(options.bin_folder,j))
-
-        if options.infiles:
-            target_files.extend(options.infiles)
-
-        if not target_files:
+            for f in all_files:
+                if f.endswith(options.extension):
+                    targetFiles.append(os.path.join(options.bin_folder, f))
+                    
+        if not targetFiles:
             raise "No input files!"
         
+        return targetFiles
+
+    def analyze(self, options, db=None):
+        """Analyze command"""    
+        
+        targetFiles = self.binFiles(options)    
+
         # find marker genes in genome bins
-        if not options.quiet:
+        if not options.bQuiet:
             print ''
             print '*******************************************************************************'
             print ' [CheckM - analyze] Identifying marker genes in bins.'
             print '*******************************************************************************'
-        mgf = markerGeneFinder.MarkerGeneFinder(threads=options.threads)
-        mgf.find(target_files, options.out_folder, options.hmm, quiet=options.quiet)
+        mgf = MarkerGeneFinder(threads=options.threads)
+        mgf.find(targetFiles, options.out_folder, options.hmm, bQuiet=options.bQuiet)
+        
+        self.timeKeeper.printTimeStamp()
         
         # calculate statistics for each genome bin
-        if not options.quiet:
+        if not options.bQuiet:
             print ''
             print '*******************************************************************************'
             print ' [CheckM - analyze] Calculating genome statistics (e.g., GC, coding density).'
             print '*******************************************************************************'
-        binStats = binStatistics.BinStatistics(threads=options.threads)
-        binStats.calculate(target_files, options.out_folder, quiet=options.quiet)
+        binStats = BinStatistics(threads=options.threads)
+        binStats.calculate(targetFiles, options.out_folder, bQuiet=options.bQuiet)
+        
+        self.timeKeeper.printTimeStamp()
 
     def qa(self, options):
         """QA Command"""
-        if not options.quiet:
+        if not options.bQuiet:
             print ''
             print '*******************************************************************************'
             print ' [CheckM - qa] Tabulating genome statistics.'
             print '*******************************************************************************'
 
-        RP = resultsParser.ResultsParser()
+        RP = ResultsParser()
         RP.analyseResults(options.out_folder,
                           options.hmm,
                           eCO=options.e_value,
                           lengthCO=options.length,
-                          quiet=options.quiet,
+                          bQuiet=options.bQuiet,
                           outFile=options.file
                           )
         RP.printSummary(outputFormat=options.out_format, outFile=options.file)
+        self.timeKeeper.printTimeStamp()
 
     def align(self, options):
         """Align Command"""
-        if not options.quiet:
+        if not options.bQuiet:
             print ''
             print '*******************************************************************************'
             print ' [CheckM - align] Creating alignments for identified marker genes.'
             print '*******************************************************************************'
                 
         if hasattr(options, 'separate'):
-            HA = resultsParser.HMMAligner(options.separate, options.consensus, options.out_format)
+            HA = HMMAligner(options.separate, options.consensus, options.out_format)
         else:
-            HA = resultsParser.HMMAligner()
+            HA = HMMAligner()
             
         bh = False
         if hasattr(options, 'best_alignment'):
@@ -112,16 +125,117 @@ class OptionsParser():
                           options.hmm,
                           eCO=options.e_value,
                           lengthCO=options.length,
-                          quiet=options.quiet,
+                          bQuiet=options.bQuiet,
                           bestHit=bh
                           )
-
+        
+        self.timeKeeper.printTimeStamp()
+        
+    def gc_plot(self, options):
+        """GC Plot Command"""
+        if not options.bQuiet:
+            print ''
+            print '*******************************************************************************'
+            print ' [CheckM - gc_plot] Creating GC histograms.'
+            print '*******************************************************************************'
+            
+        targetFiles = self.binFiles(options) 
+        
+        if not os.path.exists(options.plot_folder):
+            os.mkdir(options.plot_folder)
+            
+        plots = gcPlots(options)
+        filesProcessed = 1
+        for f in targetFiles:  
+            if not options.bQuiet:
+                print '  Plotting GC plots for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
+                filesProcessed += 1
+            plots.plot(f)
+            
+            outputFile = os.path.join(options.plot_folder, os.path.basename(f[0:f.rfind('.')])) + '.gc_plots.' + options.image_type
+            plots.savePlot(outputFile, dpi=options.dpi)
+            if not options.bQuiet:
+                print '    Plot written to: ' + outputFile
+            
+        self.timeKeeper.printTimeStamp()
+            
+    def nx_plot(self, options):
+        """Nx-plot Command"""
+        if not options.bQuiet:
+            print ''
+            print '*******************************************************************************'
+            print ' [CheckM - nx_plot] Creating Nx-plots.'
+            print '*******************************************************************************'
+            
+        targetFiles = self.binFiles(options) 
+        
+        if not os.path.exists(options.plot_folder):
+            os.mkdir(options.plot_folder)
+            
+        nx = nxPlot(options)
+        filesProcessed = 1
+        for f in targetFiles:  
+            if not options.bQuiet:
+                print '  Plotting Nx-plot for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
+                filesProcessed += 1
+            nx.plot(f)
+            
+            outputFile = os.path.join(options.plot_folder, os.path.basename(f[0:f.rfind('.')])) + '.nx_plot.' + options.image_type
+            nx.savePlot(outputFile, dpi=options.dpi)
+            if not options.bQuiet:
+                print '    Plot written to: ' + outputFile
+            
+        self.timeKeeper.printTimeStamp()
+        
+    def len_plot(self, options):
+        """Cumulative sequence length plot Command"""
+        if not options.bQuiet:
+            print ''
+            print '*******************************************************************************'
+            print ' [CheckM - len_plot] Creating cumulative sequence length plot.'
+            print '*******************************************************************************'
+            
+        targetFiles = self.binFiles(options) 
+        
+        if not os.path.exists(options.plot_folder):
+            os.mkdir(options.plot_folder)
+            
+        plot = seqLenPlot(options)
+        filesProcessed = 1
+        for f in targetFiles:  
+            if not options.bQuiet:
+                print '  Plotting cumulative sequence length plot for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
+                filesProcessed += 1
+            plot.plot(f)
+            
+            outputFile = os.path.join(options.plot_folder, os.path.basename(f[0:f.rfind('.')])) + '.seq_len_plot.' + options.image_type
+            plot.savePlot(outputFile, dpi=options.dpi)
+            if not options.bQuiet:
+                print '    Plot written to: ' + outputFile
+            
+        self.timeKeeper.printTimeStamp()
+        
+    def coverage(self, options):
+        """Coverage Command"""
+        if not options.bQuiet:
+            print ''
+            print '*******************************************************************************'
+            print ' [CheckM - coverage] Calculate coverage of sequences.'
+            print '*******************************************************************************'
+  
+        coverage = Coverage(threads = options.threads)
+        coverage.calculate(options.bam_files, options.out_file, bPairsOnly = options.pairs_only, bQuiet = options.bQuiet)
+        
+        self.timeKeeper.printTimeStamp()
+        
     def makeDB(self, options):
         DB = chmdb.MarkerDB()
         DB.makeDB(options)
 
     def parseOptions(self, options):
         """Parse user options and call the correct pipeline(s)"""
+        self.timeKeeper = TimeKeeper(options.bQuiet)
+        
         try:
             if options.file == "STDOUT":
                 options.file = ''
@@ -134,32 +248,38 @@ class OptionsParser():
 
         database_name=None
         try:
-            if options.hmm is None and options.taxonomy is not None:
-                if options.database is None:
-                    options.database = os.getenv("CHECKM_DB")
+            if options.subparser_name in ['analyze', 'qa', 'all']: 
+                if options.hmm is None and options.taxonomy is not None:
                     if options.database is None:
-                        raise RuntimeError('Cannot connect to DB')
-
-                database = chmdb.MarkerDB(db=options.database)
-                tmp = os.path.join('/tmp', str(uuid.uuid4()))
-                database.generateModelFiles(options.taxonomy, tmp)
-                options.hmm = tmp
+                        options.database = os.getenv("CHECKM_DB")
+                        if options.database is None:
+                            raise RuntimeError('Cannot connect to DB')
+    
+                    database = chmdb.MarkerDB(db=options.database)
+                    tmp = os.path.join('/tmp', str(uuid.uuid4()))
+                    database.generateModelFiles(options.taxonomy, tmp)
+                    options.hmm = tmp
         except AttributeError, e:
             raise e
 
         if(options.subparser_name == 'analyze'):
             self.analyze(options)
-
         elif(options.subparser_name == 'qa'):
             self.qa(options)
-
         elif(options.subparser_name == 'all'):
             self.analyze(options)
             self.qa(options)
             self.align(options)
-
         elif(options.subparser_name == 'align'):
             self.align(options)
+        elif(options.subparser_name == 'gc_plot'):
+            self.gc_plot(options)
+        elif(options.subparser_name == 'nx_plot'):
+            self.nx_plot(options)
+        elif(options.subparser_name == 'len_plot'):
+            self.len_plot(options)
+        elif(options.subparser_name == 'coverage'):
+            self.coverage(options)
 
         if database_name is not None:
             os.remove(tmp)

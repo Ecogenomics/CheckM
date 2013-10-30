@@ -56,15 +56,17 @@ def printHelp():
     
   Plotting functions:
     
-    checkm Nx_plot     -> Create Nx-plot 
-    checkm GC_plot     -> Create GC histogram
-    checkm Marker_plot -> Plot position of marker genes on sequences
+    checkm nx_plot     -> Create Nx-plots
+    checkm len_plot    -> Cumulative sequence length plot
+    checkm gc_plot     -> Create GC histogram and delta-GC plot
+    checkm marker_plot -> Plot position of marker genes on sequences
     
     
   Utility functions:
 
     checkm unbinned    -> Identify unbinned sequences  
-    checkm coverage    -> Calculate coverage for all sequences
+    checkm coverage    -> Calculate coverage of sequences
+    checkm profile     -> Calculate percentage of reads mapped to each bin
 
     USE: checkm OPTION -h to see detailed options
     '''
@@ -78,7 +80,7 @@ if __name__ == '__main__':
     taxon_parser.add_argument('-T', '--tax-string', dest='taxonomy', required=False,
         help='specify a Greengenes taxonomy string for the lineage of interest')
     taxon_parser.add_argument('-d', '--database', dest='database',
-        help='specify a different path for the marker database. The default is to use the value of the environmental variable "CHECKM_DB"')
+        help='specify path to marker database (default is the environmental variable "CHECKM_DB")')
 
     output_parser = argparse.ArgumentParser(add_help=False)
     output_parser.add_argument('-o', '--output-format', dest='out_format',
@@ -100,28 +102,28 @@ if __name__ == '__main__':
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         help='Identify marker genes in bins and calculate genome statistics.',
                                         parents=[taxon_parser],
-                                        description='Identify marker genes in bins and calculate genome statistics.')
-    analyze_parser.add_argument('out_folder', help="a place to write output files")
+                                        description='''Identify marker genes in bins and calculate genome statistics. 
+                                                        The set of marker genes to use is specified with either -T or -H.''')
+    analyze_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
+    analyze_parser.add_argument('out_folder', help="folder to write output files")
+    analyze_parser.add_argument('infiles', nargs='*', metavar="FASTA", help="(Optional) a list of fasta formatted files to be used as the input")
     analyze_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
-    analyze_parser.add_argument('infiles', nargs='*', metavar="FASTA",
-                              help="(Optional) a list of fasta formatted files to be used as the input")
-    analyze_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
-    analyze_parser.add_argument('-x', '--extension', default='fa',
-                             help="used in conjuntion with -b to specify the extension used on files to be parsed")
+    analyze_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
     analyze_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
-    analyze_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
+    analyze_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # do QA on pre-processed contigs
     qa_parser = subparsers.add_parser('qa',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         help='Assess genome bin for contamination and completeness.',
                                         parents=[output_parser, taxon_parser],
-                                        description='Assess genome bin for contamination and completeness.')
-    qa_parser.add_argument('out_folder', help="folder specified during build command")
+                                        description='''Assess genome bin for contamination and completeness. 
+                                                        The set of marker genes used must be specified with -T or -H.''')
+    qa_parser.add_argument('out_folder', help="folder specified during analyze command")
     qa_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="E-value cut off")
     qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
-    qa_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
+    qa_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # produce alignments of matches
     align_parser = subparsers.add_parser('align',
@@ -129,11 +131,11 @@ if __name__ == '__main__':
                                          help='Create alignments of matched marker genes.',
                                          parents=[taxon_parser],
                                          description='Create alignments of matched marker genes.')
-    align_parser.add_argument('out_folder', help="folder specified during build command")
+    align_parser.add_argument('out_folder', help="folder specified during analyze command")
     align_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     align_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="E-value cut off")
     align_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
-    align_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
+    align_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     align_parser.add_argument('-s', '--separate-files',action="store_true",
             dest="separate", default=False, help="output a separate file for each of the hits to a HMM model.")
     align_parser.add_argument('-o', '--output-format',default='PSIBLAST', dest="out_format", help="the output format passed to hmmalign")
@@ -142,23 +144,84 @@ if __name__ == '__main__':
     align_parser.add_argument('-b', '--best-hit', action="store_true", default=False, dest="best_alignment", help="only align the best \
             match to the HMM even if there are multiple matches that pass the threshold")
 
-    # Build + align in one step
+    # Standard workflow in one step
     pipeline_parser = subparsers.add_parser('all',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='Run find + qa + align in one step.',
+                                        help='Run analyze + qa + align in one step.',
                                         parents=[taxon_parser, output_parser],
-                                        description='Run find + qa + align in one step.')
-    pipeline_parser.add_argument('out_folder', help="a place to write output files")
+                                        description='''Run analyze + qa + align in one step. 
+                                                        The set of marker genes to use is specified with either -T or -H.''')
+    pipeline_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
+    pipeline_parser.add_argument('out_folder', help="folder to write output files")
     pipeline_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
-    pipeline_parser.add_argument('infiles', nargs='*', metavar="FASTA",
-                                 help="(Optional) a list of fasta formatted files to be used as the input")
-    pipeline_parser.add_argument('-b', '--bin_folder', help="folder containing bins to check (fasta formatted)")
-    pipeline_parser.add_argument('-x', '--extension', default='fa',
-                                 help="used in conjuntion with -b to specify the extension used on files to be parsed")
+    pipeline_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
     pipeline_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
     pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="E-value cut off")
     pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
-    pipeline_parser.add_argument('-q', '--quiet', action="store_true", default=False, help="suppress console output")
+    pipeline_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # generic arguments for plots
+    plot_parser = argparse.ArgumentParser(add_help=False)
+    plot_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
+    plot_parser.add_argument('plot_folder', help="folder to hold plots")
+    plot_parser.add_argument('--fig_padding', type = float, default = 0.2, help='white space to place around figure (in inches)')
+    plot_parser.add_argument('--image_type', default = 'png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
+    plot_parser.add_argument('--dpi', type = int, default = 600, help='desired DPI of output image')
+    plot_parser.add_argument('--font_size', type = int, default = 8, help='Desired font size')
+    plot_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    
+    plot_single_parser = argparse.ArgumentParser('plot_single',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        parents=[plot_parser], add_help=False)
+    plot_single_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
+    plot_single_parser.add_argument('--height', type = float, default = 6.5, help='height of output image')
+    
+    plot_double_parser = argparse.ArgumentParser('plot_double',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        parents=[plot_parser], add_help=False)
+    plot_double_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
+    plot_double_parser.add_argument('--height', type = float, default = 3.5, help='height of output image')
+    
+    # GC histogram
+    plot_gc_parser = subparsers.add_parser('gc_plot',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        help= 'Create GC histogram and delta-GC plot.',
+                                        parents=[plot_double_parser],
+                                        description= 'Create GC histogram and delta-GC plot.')
+    
+    plot_gc_parser.add_argument('-w', '--window_size', help="non-overlapping window size used to calculate GC", type=int, default=1000)
+    plot_gc_parser.add_argument('-g', '--gc_bin_width', help="width of GC bars in histogram", type=float, default=0.01) 
+    plot_gc_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Nx-plot
+    plot_nx_parser = subparsers.add_parser('nx_plot',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        help='Create Nx-plots.',
+                                        parents=[plot_single_parser],
+                                        description='Create Nx-plots.')
+    
+    plot_nx_parser.add_argument('-s', '--step_size', help="x step size for calculating Nx", type=float, default=0.05)
+    plot_nx_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Cumulative sequence length plot
+    plot_len_parser = subparsers.add_parser('len_plot',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        help='Cumulative sequence length plot.',
+                                        parents=[plot_single_parser],
+                                        description='Cumulative sequence length plot.')
+
+    plot_len_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Calculate coverage
+    coverage_parser = subparsers.add_parser('coverage',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            help='Calculate coverage of sequences.',
+                                            description='Calculate coverage of sequences.')
+    coverage_parser.add_argument('out_file', help="print results to file")
+    coverage_parser.add_argument('bam_files', nargs='+', help="BAM files to parse")
+    coverage_parser.add_argument('-p', '--pairs_only', action='store_true', default=False, help="ignore reads that are not properly paired")
+    coverage_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
+    coverage_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # debug and development
     if False:

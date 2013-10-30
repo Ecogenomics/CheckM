@@ -42,7 +42,7 @@ class MarkerGeneFinder():
         self.numFilesStarted = 0
         self.numFilesParsed = 0
 
-    def find(self, inFiles, outFolder, hmm, quiet=False):
+    def find(self, inFiles, outFolder, hmm, bQuiet=False):
         """Identify marker genes in each input fasta file using prodigal and HMMER."""
         if not os.path.exists(outFolder):
             mkdir(outFolder)
@@ -53,11 +53,11 @@ class MarkerGeneFinder():
         # process each fasta file
         self.numFiles = len(inFiles)
         self.threadsPerSearch = max(1, int(self.totalThreads / self.numFiles))
-        if not quiet:
+        if not bQuiet:
             print "  Processing %d files with %d threads:" % (self.numFiles, self.totalThreads)
         
         for fasta in inFiles:
-            t = threading.Thread(target=self.__processFasta, args=(fasta, outFolder, hmm, quiet))
+            t = threading.Thread(target=self.__processFasta, args=(fasta, outFolder, hmm, bQuiet))
             t.start()
             
         while True:
@@ -74,7 +74,7 @@ class MarkerGeneFinder():
             else:
                 time.sleep(1)
               
-    def __processFasta(self, fasta, outFolder, hmm, quiet=False):
+    def __processFasta(self, fasta, outFolder, hmm, bQuiet=False):
         """Thread safe fasta processing"""
         self.threadPool.acquire()
         try:
@@ -85,7 +85,7 @@ class MarkerGeneFinder():
                 makeSurePathExists(outDir)
                 
                 self.numFilesStarted += 1
-                if not quiet:
+                if not bQuiet:
                     print "    Processing %s (%d of %d)" % (fasta, self.numFilesStarted, self.numFiles) 
             finally:
                 self.varLock.release()

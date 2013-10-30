@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# common.py - utility functions used in many places in CheckM
+# seqUtils.py - Common functions for interacting with sequences
 #
 ###############################################################################
 #                                                                             #
@@ -19,12 +19,36 @@
 #                                                                             #
 ###############################################################################
 
-from os import makedirs
-import errno
+def readFasta(fastaFile):
+    seqs = {}
+    for line in open(fastaFile):
+        if line[0] == '>':
+            seqId = line[1:].split()[0]
+            seqs[seqId] = ''
+        else:
+            seqs[seqId] += line.rstrip()
+            
+    return seqs
 
-def makeSurePathExists(path):
-    try:
-        makedirs(path)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            raise
+def baseCount(seq):
+    testSeq = seq.upper()
+    a = testSeq.count('A')
+    c = testSeq.count('C')
+    g = testSeq.count('G') 
+    t = testSeq.count('T') + testSeq.count('U')
+    
+    return a, c, g, t
+
+def calculateN50(seqLens):
+    thresholdN50 = sum(seqLens) / 2.0
+    
+    seqLens.sort(reverse=True)
+    
+    testSum = 0
+    for seqLen in seqLens:
+        testSum += seqLen
+        if testSum >= thresholdN50:
+            N50 = seqLen
+            break
+        
+    return N50

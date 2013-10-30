@@ -20,17 +20,16 @@
 ###############################################################################
 
 import os
-import sys
 import threading
 import time
 import math
 
 import defaultValues
-from common import readFasta
+from seqUtils import readFasta, baseCount, calculateN50
 from mathHelper import mean
 
 class BinStatistics():
-    """Calculate statistics (GC, coding density, etc.) for putative genome bins."""
+    """Calculate statistics (GC, coding density, etc.) for genome bins."""
     def __init__(self, threads=1):         
         # thready stuff            
         self.varLock = threading.Lock() # we don't have many variables here, so use one lock for everything    
@@ -42,22 +41,22 @@ class BinStatistics():
         self.numFilesStarted = 0
         self.numFilesParsed = 0
 
-    def calculate(self, inFiles, outFolder, quiet=False):
+    def calculate(self, inFiles, outFolder, bQuiet=False):
         """Calculate statistics for each putative genome bin."""
 
         # process each fasta file
         self.numFiles = len(inFiles)
-        if not quiet:
+        if not bQuiet:
             print "  Processing %d files with %d threads:" % (self.numFiles, self.totalThreads)
         
         binStats = {}
-        scaffoldStats = {}
+        seqStats = {}
         for fasta in inFiles:
             binName = os.path.basename(fasta)
             binStats[binName] = {}
-            scaffoldStats[binName] = {}
+            seqStats[binName] = {}
             
-            t = threading.Thread(target=self.__processBin, args=(fasta, outFolder, binStats[binName], scaffoldStats[binName], quiet))
+            t = threading.Thread(target=self.__processBin, args=(fasta, outFolder, binStats[binName], seqStats[binName], bQuiet))
             t.start()
             
         while True:
@@ -77,18 +76,18 @@ class BinStatistics():
         fout.write(str(binStats))
         fout.close()
         
-        fout = open(os.path.join(outFolder, defaultValues.__CHECKM_DEFAULT_SCAFFOLD_STATS_FILE__), 'w')
-        fout.write(str(scaffoldStats))
+        fout = open(os.path.join(outFolder, defaultValues.__CHECKM_DEFAULT_SEQ_STATS_FILE__), 'w')
+        fout.write(str(seqStats))
         fout.close()
               
-    def __processBin(self, fasta, outFolder, binStats, scaffoldStats, quiet=False):
+    def __processBin(self, fasta, outFolder, binStats, seqStats, bQuiet=False):
         """Thread safe fasta processing"""
         self.threadPool.acquire()
         try:
             self.varLock.acquire()
             try:
                 self.numFilesStarted += 1
-                if not quiet:
+                if not bQuiet:
                     print '    Processing %s (%d of %d)' % (fasta, self.numFilesStarted, self.numFiles) 
             finally:
                 self.varLock.release()
@@ -98,24 +97,25 @@ class BinStatistics():
             # read seqs
             seqs = readFasta(fasta)
             for seqId in seqs:
-                scaffoldStats[seqId] = {}
+                seqStats[seqId] = {}
                 
             # calculate GC statistics
-            GC, stdGC = self.calculateGC(seqs, scaffoldStats) 
+            GC, stdGC = self.calculateGC(seqs, seqStats) 
             binStats['GC'] = GC
             binStats['GC std'] = stdGC
             
             # calculate statistics related to scaffold lengths
-            minSeqLen, maxSeqLen, genomeSize, N50, numContigs  = self.calculateScaffoldLengthStats(seqs, scaffoldStats)  
+            maxScaffoldLen, maxContigLen, genomeSize, scaffold_N50, contig_N50, numContigs = self.calculateSeqLengthStats(seqs, seqStats)  
             binStats['# scaffolds'] = len(seqs)
             binStats['# contigs'] = numContigs
-            binStats['Shortest scaffold'] = minSeqLen
-            binStats['Longest scaffold'] = maxSeqLen
+            binStats['Longest scaffold'] = maxScaffoldLen
+            binStats['Longest contig'] = maxContigLen
             binStats['Genome size'] = genomeSize
-            binStats['N50'] = N50
+            binStats['N50 (scaffolds)'] = scaffold_N50
+            binStats['N50 (contigs)'] = contig_N50
             
             # calculate coding density statistics
-            codingDensity, numORFs = self.calculateCodingDensity(outDir, genomeSize)
+            codingDensity, numORFs = self.calculateCodingDensity(outDir, genomeSize, seqStats)
             binStats['Coding density'] = codingDensity
             binStats['# predicted ORFs'] = numORFs
 
@@ -129,21 +129,22 @@ class BinStatistics():
         finally:
             self.threadPool.release()
             
-    def calculateGC(self, seqs, scaffoldStats):
+    def calculateGC(self, seqs, seqStats):
         """Calculate fraction of nucleotides that are G or C."""
         totalGC = 0
         totalAT = 0
         gcPerSeq = []
         for seqId, seq in seqs.iteritems():  
-            testSeq = seq.upper()
-            gc = testSeq.count('G') + testSeq.count('C')
-            at = testSeq.count('A') + testSeq.count('T') + testSeq.count('U')
+            a, c, g, t = baseCount(seq)
+            
+            gc = g + c
+            at = a + t
             
             totalGC += gc
             totalAT += at
             
             gcContent = float(gc) / (gc + at) 
-            scaffoldStats[seqId]['GC'] = gcContent
+            seqStats[seqId]['GC'] = gcContent
             
             if len(seq) > defaultValues.__CHECKM_DEFAULT_MIN_SEQ_LEN_GC_STD__:
                 gcPerSeq.append(gcContent)
@@ -154,42 +155,44 @@ class BinStatistics():
 
         return GC, math.sqrt(varGC)
     
-    def calculateScaffoldLengthStats(self, seqs, scaffoldStats):
+    def calculateSeqLengthStats(self, seqs, seqStats):
         """Calculate scaffold length statistics (min length, max length, total length, N50, # contigs)."""
-        seqLens = []
-        totalLen = 0
-        numContigs = 0
-        for seqId, seq in seqs.iteritems():
-            seqLen = len(seq)
-            seqLens.append(seqLen)
-            totalLen += seqLen
+        scaffoldLens = []
+        contigLens = []
+        for scaffoldId, scaffold in seqs.iteritems():
+            scaffoldLen = len(scaffold)
+            scaffoldLens.append(scaffoldLen)
+                        
+            splitScaffold = scaffold.split(defaultValues.__CHECKM_DEFAULT_CONTIG_BREAK__)
+            lenContigsInScaffold = []
+            for contig in splitScaffold:
+                contigLen = len(contig.replace('N', ''))
+                if contigLen > 0:
+                    lenContigsInScaffold.append(contigLen)
+
+            contigLens += lenContigsInScaffold
             
-            scaffoldStats[seqId]['length'] = seqLen
+            seqStats[scaffoldId]['Length'] = scaffoldLen
+            seqStats[scaffoldId]['Total contig length'] = sum(lenContigsInScaffold)
+            seqStats[scaffoldId]['# contigs'] = len(lenContigsInScaffold)
             
-            splitSeq = seq.split(defaultValues.__CHECKM_DEFAULT_CONTIG_BREAK__)
-            numContigs += len([x for x in splitSeq if len(x) > len(defaultValues.__CHECKM_DEFAULT_CONTIG_BREAK__)])
+        scaffold_N50 = calculateN50(scaffoldLens)
+        contig_N50 = calculateN50(contigLens)
             
-        thresholdN50 = totalLen / 2.0
-            
-        seqLens.sort(reverse=True)
+        return max(scaffoldLens), max(contigLens), sum(scaffoldLens), scaffold_N50, contig_N50, len(contigLens)
         
-        testSum = 0
-        for seqLen in seqLens:
-            testSum += seqLen
-            if testSum >= thresholdN50:
-                N50 = seqLen
-                break
-            
-        return min(seqLens), max(seqLens), sum(seqLens), N50, numContigs
-    
-    def calculateCodingDensity(self, outDir, genomeSize):
+    def calculateCodingDensity(self, outDir, genomeSize, seqStats):
         """Calculate coding density of putative genome bin."""
         ntFile = os.path.join(outDir, defaultValues.__CHECKM_DEFAULT_PRODIGAL_NT__)
         ntGenes = readFasta(ntFile)
         
         codingBasePairs = 0
-        for _, gene in ntGenes.iteritems():
+        for geneId, gene in ntGenes.iteritems():
             codingBasePairs += len(gene)
+            
+            scaffoldId = geneId[0:geneId.rfind('_')]
+            seqStats[scaffoldId]['# ORFs'] = seqStats[scaffoldId].get('# ORFs', 0) + 1
+            seqStats[scaffoldId]['Coding bases'] = seqStats[scaffoldId].get('Coding bases', 0) + len(gene)
             
         return float(codingBasePairs) / genomeSize, len(ntGenes)
         

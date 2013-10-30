@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# defaultValues.py - store default values used in many places in CheckM
+# timeKeeper.py - lass for creating time stamps
 #
 ###############################################################################
 #                                                                             #
@@ -19,16 +19,30 @@
 #                                                                             #
 ###############################################################################
 
-__CHECKM_DEFAULT_E_VAL__ = 1e-10
-__CHECKM_DEFAULT_LENGTH__ = 0.7
+import time
 
-__CHECKM_DEFAULT_PRODIGAL_AA__ = 'prodigal.faa'
-__CHECKM_DEFAULT_PRODIGAL_NT__ = 'prodigal.fna'
-__CHECKM_DEFAULT_PRODIGAL_GFF__ = 'prodigal.gff'
+class TimeKeeper:
+    def __init__(self, bQuiet):
+        self.startTime = time.time()
+        self.lastLogTime = self.startTime 
+        self.bQuiet = bQuiet
+    
+    def startTimer(self):
+        """Restart the timer"""
+        self.startTime = time.time()
+        self.lastLogTime = self.startTime 
 
-__CHECKM_DEFAULT_BIN_STATS_FILE__ = 'bin_stats.tsv'
-__CHECKM_DEFAULT_SEQ_STATS_FILE__ = 'seq_stats.tsv'
-
-__CHECKM_DEFAULT_CONTIG_BREAK__ = 'NNNNNNNNNN'
-
-__CHECKM_DEFAULT_MIN_SEQ_LEN_GC_STD__ = 1000
+    def getTimeStamp(self):
+        """Make a time stamp"""
+        now = time.time()
+        ret_str = "\n  { Current stage: %s || Total: %s }" % (self.secondsToStr(now - self.lastLogTime), self.secondsToStr(now - self.startTime))
+        self.lastLogTime = now
+        return ret_str  
+    
+    def printTimeStamp(self):
+        if not self.bQuiet:
+            print self.getTimeStamp()
+        
+    def secondsToStr(self, t):
+        rediv = lambda ll,b : list(divmod(ll[0],b)) + ll[1:]
+        return "%d:%02d:%02d.%03d" % tuple(reduce(rediv,[[t*1000,],1000,60,60]))

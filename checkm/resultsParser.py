@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# resultsParser.py - 
+# resultsParser.py - Parse and output results.
 #
 ###############################################################################
 #                                                                             #
@@ -47,7 +47,7 @@ class ResultsParser():
                        hmmFile,
                        eCO=defaultValues.__CHECKM_DEFAULT_E_VAL__,
                        lengthCO=defaultValues.__CHECKM_DEFAULT_LENGTH__,
-                       quiet=False,
+                       bQuiet=False,
                        outFile=''
                        ):
         """Parse the results in the output directory"""
@@ -65,25 +65,25 @@ class ResultsParser():
             s = f.read()
             binStats = ast.literal_eval(s)
         
-        scaffoldStatsFile = os.path.join(directory, defaultValues.__CHECKM_DEFAULT_SCAFFOLD_STATS_FILE__)
-        with open(scaffoldStatsFile, 'r') as f:
+        seqStatsFile = os.path.join(directory, defaultValues.__CHECKM_DEFAULT_SEQ_STATS_FILE__)
+        with open(seqStatsFile, 'r') as f:
             s = f.read()
-            scaffoldStats = ast.literal_eval(s)
+            seqStats = ast.literal_eval(s)
 
         # we expect directory to contain a collection of folders names after the original bins
         for folder in os.listdir(directory): 
             if os.path.isdir(os.path.join(directory, folder)):
                 # somewhere to store results
-                resultsManager = ResultsManager(folder, lengthCO, eCO, self.models, binStats[folder], scaffoldStats[folder])
+                resultsManager = ResultsManager(folder, lengthCO, eCO, self.models, binStats[folder], seqStats[folder])
                 
                 # we can now build the hmmer_file_name
                 hmmer_file_name = os.path.join(directory, folder, self.txtOut)
                 
                 # and then we can parse it
-                self.parseHmmerResults(hmmer_file_name, resultsManager, quiet)
+                self.parseHmmerResults(hmmer_file_name, resultsManager, bQuiet)
                 self.results[folder] = resultsManager
             
-    def parseHmmerResults(self, fileName, storage, quiet):
+    def parseHmmerResults(self, fileName, storage, bQuiet):
         """Parse through a hmmer file and see what's what"""
         try:
             with open(fileName, 'r') as hmmer_handle:
@@ -107,7 +107,7 @@ class ResultsParser():
         if outputFormat == 1:
             header = ['Bin Id']
             header += ['Completeness','Contamination']
-            header += ['Genome size (bp)', '# scaffolds', '# contigs', 'N50', 'Longest scaffold (bp)', 'Shortest scaffold (bp)']
+            header += ['Genome size (bp)', '# scaffolds', '# contigs', 'N50 (scaffolds)', 'N50 (contigs)', 'Longest scaffold (bp)', 'Longest contig (bp)']
             header += ['GC', 'GC std (scaffolds > 1Kbps)']
             header += ['Coding density (translation table 11)', '# predicted ORFs']
             header += ['0','1','2','3','4','5+']
@@ -128,7 +128,7 @@ class ResultsParser():
         elif outputFormat == 7:
             print('Bin Id\tScaffold Id\t{Marker Id, Count}')
         elif outputFormat == 8:
-            print('Scaffold Id\tBin Id\tLength\tGC\tMarker Ids')
+            print('Scaffold Id\tBin Id\tLength\t# contigs\tGC\t# ORFs\tCoding density\tMarker Ids')
     
     def printSummary(self, outputFormat=1, outFile=''):
         print('  Tabulating results for %d bins in output format %d' % (len(self.results), outputFormat))
@@ -339,7 +339,10 @@ class ResultsManager():
                     markersInScaffold[scaffoldId] = markersInScaffold.get(scaffoldId, []) + [marker]
             
             for scaffoldId, data in self.scaffoldStats.iteritems():
-                print(scaffoldId, self.name, str(data['length']), str(data['GC']), sep='\t', end='\t')
+                print(scaffoldId, self.name, str(data['Length']), str(data['# contigs']), 
+                      '%.3f' % (data['GC']), str(data['# ORFs']), 
+                      '%.3f' % (float(data['Coding bases']) / data['Total contig length']), 
+                      sep='\t', end='\t')
                 
                 if scaffoldId in markersInScaffold:
                     markerStr = ','.join(sorted(markersInScaffold[scaffoldId]))
@@ -363,7 +366,7 @@ class HMMAligner:
                        hmm,
                        eCO=defaultValues.__CHECKM_DEFAULT_E_VAL__,
                        lengthCO=defaultValues.__CHECKM_DEFAULT_LENGTH__,
-                       quiet=False,
+                       bQuiet=False,
                        bestHit=False,
                        generateModelFiles=True
                        ):
@@ -429,10 +432,9 @@ class HMMAligner:
             if 0 < len(hit_lookup[folder]):
                 self.alignBin(HA, hit_lookup[folder], single_hmms,
                         single_hmm_consensi, genes_file_name, directory, folder)
-            elif not quiet:
+            elif not bQuiet:
                 print("Skipping alignment for", folder, ": no hits found")
                 
-        
         # remove the tmp files
         for file_name in single_hmms:
             os.remove(single_hmms[file_name])
