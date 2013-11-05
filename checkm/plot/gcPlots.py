@@ -19,7 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-import matplotlib as mpl
 import matplotlib.pyplot as pylab
 
 import numpy as np
@@ -32,15 +31,7 @@ class gcPlots(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
     
-    def plot(self, fastaFile):
-        # Global plot settings
-        mpl.rcParams['font.size'] = self.options.font_size
-        mpl.rcParams['axes.titlesize'] = self.options.font_size
-        mpl.rcParams['axes.labelsize'] = self.options.font_size
-        mpl.rcParams['xtick.labelsize'] = self.options.font_size
-        mpl.rcParams['ytick.labelsize'] = self.options.font_size
-        mpl.rcParams['legend.fontsize'] = self.options.font_size
-        
+    def plot(self, fastaFile):            
         # Set size of figure
         self.fig.clear()
         self.fig.set_size_inches(self.options.width, self.options.height)

@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# seqLenPlot.py - Create a cumulative sequence length plot. 
+# markerGenePosPlot.py - Create a plot showing the position of marker genes.
 #
 ###############################################################################
 #                                                                             #
@@ -19,17 +19,55 @@
 #                                                                             #
 ###############################################################################
 
-import numpy as np
+import os
+import sys
 
 from AbstractPlot import AbstractPlot
 
 from checkm.seqUtils import readFasta
 
-class seqLenPlot(AbstractPlot):
+import checkm.defaultValues as defaultValues
+from checkm.hmmer import HMMERParser
+
+class markerGenePosPlot(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
+        
+    def getMarkerGenePositions(self, fastaFile, resultsDir):
+        markerGenePositions = {}
+        
+        inputFile = resultsDir + '/' + fastaFile + '/' + defaultValues.__CHECKM_DEFAULT_HMMER_TXT_OUT__
+        if not os.path.exists(inputFile):
+            sys.stderr.write('[Error] Expected input file does not exists: ' + inputFile)
+            sys.exit()
+        
+        with open(inputFile, 'r') as hmmer_handle:
+                try:
+                    HP = HMMERParser(hmmer_handle)
+                except:
+                    sys.stderr.write("Error opening HMM file: ", inputFile)
+                    raise
+                
+                while True:
+                    hit = HP.next()
+                    if hit is None:
+                        break
+                    
+                    seqId = hit.target_name[0:hit.target_name.rfind('_')]
+                    markerGenePositions[seqId] = markerGenePositions.get(seqId, []) + [hit.ali_to]
+        
+        return markerGenePositions
     
-    def plot(self, fastaFile):       
+    def plot(self, fastaFile, resultsDir):
+        # Get length of each sequence in bin
+        seqs = readFasta(fastaFile)
+        seqLens = {}
+        for seqId, seq in seqs.iteritems():
+            seqLens[seqId] = len(seq)
+            
+        # Get position of marker genes
+        markerGenePositions = self.getMarkerGenePositions(fastaFile, resultsDir)
+        
         # Set size of figure
         self.fig.clear()
         self.fig.set_size_inches(self.options.width, self.options.height)
@@ -39,42 +77,6 @@ class seqLenPlot(AbstractPlot):
                                                                         1.0-(widthSideLabel+self.options.fig_padding )/self.options.width,\
                                                                         1.0-(heightBottomLabels+self.options.fig_padding )/self.options.height])
         
-        # calculate cumulative sequence length
-        seqs = readFasta(fastaFile)
-        
-        seqLens = []
-        for seq in seqs.values():
-            seqLens.append(len(seq))
-            
-        seqLens.sort(reverse=True)
-        x = np.arange(0, len(seqLens))
-        
-        
-        y = []
-        cumLen = 0
-        for seqLen in seqLens:
-            cumLen += seqLen
-            y.append(cumLen)
-
-        # Create plot
-        axes.plot(x, y, 'k-',)    
-        axes.set_xlabel('Sequence index')
-        axes.set_ylabel('Cumulative sequence length (Mbps)')
-        
-        # ensure y-axis include zero
-        _, end = axes.get_ylim()
-        axes.set_ylim([0, end])
-        
-        # Change sequence lengths from bps to kbps
-        yticks = axes.get_yticks()
-        kbpLabels = []
-        for seqLen in yticks:
-            label = '%.2f' % (float(seqLen)/1e6)
-            label = label.replace('.00', '') # remove trailing zeros
-            if label[-1] == '0':
-                label = label[0:-1]
-            kbpLabels.append(label)
-        axes.set_yticklabels(kbpLabels)
             
         # Prettify plot     
         for a in axes.yaxis.majorTicks:

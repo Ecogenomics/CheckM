@@ -30,10 +30,12 @@ from coverage import Coverage
 from unbinned import Unbinned
 from profile import Profile
 import database as chmdb
+import defaultValues
 
 from plot.gcPlots import gcPlots
 from plot.nxPlot import nxPlot
 from plot.seqLenPlot import seqLenPlot
+from plot.markerGenePosPlot import markerGenePosPlot
 
 def connectToDatabase(database_name):
     """ Return a database object based on name """
@@ -88,7 +90,7 @@ class OptionsParser():
         self.timeKeeper.printTimeStamp()
 
     def qa(self, options):
-        """QA Command"""
+        """QA command"""
         if not options.bQuiet:
             print ''
             print '*******************************************************************************'
@@ -105,13 +107,16 @@ class OptionsParser():
                           )
         RP.printSummary(outputFormat=options.out_format, outFile=options.file, bQuiet=options.bQuiet)
         
+        # save marker gene stats needs for down-stream plots
+        RP.printSummary(outputFormat=8, outFile=options.out_folder + '/' + defaultValues.__CHECKM_DEFAULT_MARKER_GENE_STATS__, bQuiet=True)
+        
         if not options.bQuiet and options.file != '':
             print '  QA information written to: ' + options.file
         
         self.timeKeeper.printTimeStamp()
 
     def align(self, options):
-        """Align Command"""
+        """Align command"""
         if not options.bQuiet:
             print ''
             print '*******************************************************************************'
@@ -138,7 +143,7 @@ class OptionsParser():
         self.timeKeeper.printTimeStamp()
         
     def gc_plot(self, options):
-        """GC Plot Command"""
+        """GC plot command"""
         if not options.bQuiet:
             print ''
             print '*******************************************************************************'
@@ -166,7 +171,7 @@ class OptionsParser():
         self.timeKeeper.printTimeStamp()
             
     def nx_plot(self, options):
-        """Nx-plot Command"""
+        """Nx-plot command"""
         if not options.bQuiet:
             print ''
             print '*******************************************************************************'
@@ -194,7 +199,7 @@ class OptionsParser():
         self.timeKeeper.printTimeStamp()
         
     def len_plot(self, options):
-        """Cumulative sequence length plot Command"""
+        """Cumulative sequence length plot command"""
         if not options.bQuiet:
             print ''
             print '*******************************************************************************'
@@ -215,6 +220,34 @@ class OptionsParser():
             plot.plot(f)
             
             outputFile = os.path.join(options.plot_folder, os.path.basename(f[0:f.rfind('.')])) + '.seq_len_plot.' + options.image_type
+            plot.savePlot(outputFile, dpi=options.dpi)
+            if not options.bQuiet:
+                print '    Plot written to: ' + outputFile
+            
+        self.timeKeeper.printTimeStamp()
+        
+    def marker_plot(self, options):
+        """Marker gene position plot command"""
+        if not options.bQuiet:
+            print ''
+            print '*******************************************************************************'
+            print ' [CheckM - marker_plot] Creating marker gene position plot.'
+            print '*******************************************************************************'
+            
+        targetFiles = self.binFiles(options) 
+        
+        if not os.path.exists(options.plot_folder):
+            os.mkdir(options.plot_folder)
+            
+        plot = markerGenePosPlot(options)
+        filesProcessed = 1
+        for f in targetFiles:  
+            if not options.bQuiet:
+                print '  Plotting marker gene positions for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
+                filesProcessed += 1
+            plot.plot(f, options.results_folder)
+            
+            outputFile = os.path.join(options.plot_folder, os.path.basename(f[0:f.rfind('.')])) + '.marker_position_plot.' + options.image_type
             plot.savePlot(outputFile, dpi=options.dpi)
             if not options.bQuiet:
                 print '    Plot written to: ' + outputFile
@@ -325,6 +358,8 @@ class OptionsParser():
             self.nx_plot(options)
         elif(options.subparser_name == 'len_plot'):
             self.len_plot(options)
+        elif(options.subparser_name == 'marker_plot'):
+            self.marker_plot(options)
         elif(options.subparser_name == 'unbinned'):
             self.unbinned(options)
         elif(options.subparser_name == 'coverage'):

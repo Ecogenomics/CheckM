@@ -56,7 +56,7 @@ class DeltaGC(object):
         
         return float(gc) / totalBases
     
-    def run(self, metadataFile, genomeDir, gcStepSize, gcWidth, minLen, maxLen, lenStepSize, numWindows, minGenomes):
+    def run(self, metadataFile, genomeDir, gcStepSize, gcWidth, gcStart, gcEnd, minLen, maxLen, lenStepSize, numWindows, minGenomes):
         # read metadata file
         print 'Determining finished prokaryotic reference genomes.'
         genomeGC = {}
@@ -79,21 +79,10 @@ class DeltaGC(object):
                     
         print '  Identified reference genomes: ' + str(len(genomeGC))
 
-        # sanity check calculate GC for each genome
-        if False:
-            print 'Calculating GC of each genome.'
-            for genomeId in genomeGC:
-                gc = self.calculateGC(genomeId, genomeDir)
-                
-                print gc, genomeGC[genomeId]
-                if gc < genomeGC[genomeId] - 0.01 or gc > genomeGC[genomeId] + 0.01:
-                    sys.stderr.write('[Error] GC in metadata is incorrect from genome: ' + genomeId)
-                    sys.exit()
-        
         # calculate delta-GC distribution for genomes with different mean GC and
         # over varying window sizes
         print '\nCalculating delta-GC statistics:'
-        for gc in np.arange(0.0, 1.0 + 0.5*gcStepSize, gcStepSize):
+        for gc in np.arange(gcStart, gcEnd, gcStepSize):
             print '  GC = ' + str(gc)
             
             # get genomes for each GC step
@@ -107,7 +96,7 @@ class DeltaGC(object):
                 print '  ----------------------------------------------------------'
                 continue
             
-            fout = open('./deltaGC/gc_' + str(gc) + '.txt', 'w')
+            fout = open('./deltaGC/gc_' + str(gc) + '_step_' + str(lenStepSize) + '.txt', 'w')
             fout.write('Mean GC = ' + str(gc) + '\n')
             fout.write('Genomes = ' + str(len(genomeIds)) + '\n')
             fout.write('GC Width = ' + str(gcWidth) + '\n')
@@ -131,8 +120,13 @@ class DeltaGC(object):
                 trans = string.maketrans('CGATUNRYMKBDHVWS', '0011122222222222')
                 transGenomeSeq = genomeSeq.translate(trans)
                 genomeList = np.array(map(int, transGenomeSeq), dtype=np.int)
+                
+                # calcualte GC of genome
+                counts = np.bincount(genomeList)
+                gc = counts[0]
+                totalBases = gc + counts[1]
                   
-                meanGC = genomeGC[genomeId]
+                meanGC = float(gc) / totalBases
                 for windowSize in xrange(minLen, maxLen + 1, lenStepSize):
                     endWindowPos = len(genomeSeq) - windowSize
                     requiredBasePairs = 0.9*windowSize
@@ -164,7 +158,9 @@ if __name__ == '__main__':
     parser.add_argument('metadata_file', help='IMG metadata file.')
     parser.add_argument('genome_dir', help='IMG genome directory.')
     parser.add_argument('-g', '--gc_step_size', help='GC step size', type = float, default = 0.01)
-    parser.add_argument('-w', '--gc_width', help='GC bin width', type = float, default = 0.02)
+    parser.add_argument('-w', '--gc_width', help='GC bin width', type = float, default = 0.015)
+    parser.add_argument('--gc_start', help='Minimum GC (inclusive)', type = float, default = 0.0)
+    parser.add_argument('--gc_end', help='Maximum GC (exclusive)', type = float, default = 1.0)
     parser.add_argument('--min_len', help='Minimum fragment length', type = int, default = 500)
     parser.add_argument('--max_len', help='Maximum fragment length', type = int, default = 10000)
     parser.add_argument('--len_step_size', help='Length step size', type = int, default = 500)
@@ -174,4 +170,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     deltaGC = DeltaGC()
-    deltaGC.run(args.metadata_file, args.genome_dir, args.gc_step_size, args.gc_width, args.min_len, args.max_len, args.len_step_size, args.num_windows, args.min_genomes)
+    deltaGC.run(args.metadata_file, args.genome_dir, args.gc_step_size, args.gc_width, args.gc_start, args.gc_end, args.min_len, args.max_len, args.len_step_size, args.num_windows, args.min_genomes)

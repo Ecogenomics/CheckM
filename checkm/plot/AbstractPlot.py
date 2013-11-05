@@ -23,6 +23,8 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.transforms as mtransforms
 
+import matplotlib as mpl
+
 import numpy as np
 
 class AbstractPlot(FigureCanvas):
@@ -32,10 +34,18 @@ class AbstractPlot(FigureCanvas):
 	def __init__(self, options):	
 		self.options = options
 		
+		# Global plot settings
+		mpl.rcParams['font.size'] = self.options.font_size
+		mpl.rcParams['axes.titlesize'] = self.options.font_size
+		mpl.rcParams['axes.labelsize'] = self.options.font_size
+		mpl.rcParams['xtick.labelsize'] = self.options.font_size
+		mpl.rcParams['ytick.labelsize'] = self.options.font_size
+		mpl.rcParams['legend.fontsize'] = self.options.font_size
+		
 		self.fig = Figure(facecolor='white', dpi=options.dpi)
 		
 		FigureCanvas.__init__(self, self.fig)
-		
+
 		self.cid = None
 		
 		self.type = '<none>'
@@ -43,12 +53,6 @@ class AbstractPlot(FigureCanvas):
 		
 		self.axesColour = (0.5, 0.5, 0.5)
 		
-	def plot(self, profile, statsResults):
-		pass
-	
-	def configure(self, profile, statsResults):
-		pass
-	
 	def savePlot(self, filename, dpi=300):
 		imgFormat = filename[filename.rfind('.')+1:len(filename)]
 		if imgFormat in ['png', 'pdf', 'ps', 'eps','svg']:			

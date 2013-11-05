@@ -22,12 +22,17 @@
 __CHECKM_DEFAULT_E_VAL__ = 1e-10
 __CHECKM_DEFAULT_LENGTH__ = 0.7
 
+__CHECKM_DEFAULT_HMMER_TXT_OUT__ = 'hmmer_out.txt'
+__CHECKM_DEFAULT_HMMER_OUT__ = 'hmmer_out.hmmer3'
+__CHECKM_DEFAULT_HMMER_ALIGN_OUT__ = 'hmmer_out.align'
+
 __CHECKM_DEFAULT_PRODIGAL_AA__ = 'prodigal.faa'
 __CHECKM_DEFAULT_PRODIGAL_NT__ = 'prodigal.fna'
 __CHECKM_DEFAULT_PRODIGAL_GFF__ = 'prodigal.gff'
 
 __CHECKM_DEFAULT_BIN_STATS_FILE__ = 'bin_stats.tsv'
 __CHECKM_DEFAULT_SEQ_STATS_FILE__ = 'seq_stats.tsv'
+__CHECKM_DEFAULT_MARKER_GENE_STATS__ = 'marker_gene_stats.tsv'
 
 __CHECKM_DEFAULT_CONTIG_BREAK__ = 'NNNNNNNNNN'
 

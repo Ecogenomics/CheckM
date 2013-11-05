@@ -116,8 +116,7 @@ class ResultsParser():
             
             if defaultValues.__CHECKM_DEFAULT_MIN_SEQ_LEN_GC_STD__ != 1000:
                 print('[Error] Labeling error: GC std (scaffolds > 1Kbps)', sys.exc_info()[0])
-                raise
-                
+                raise 
         elif outputFormat == 2:
             print('\t'.join(['Bin Id','0','1','2','3','4','5+','Completeness','Contamination']))
         elif outputFormat == 4:
@@ -129,10 +128,13 @@ class ResultsParser():
         elif outputFormat == 7:
             print('Bin Id\tScaffold Id\t{Marker Id, Count}')
         elif outputFormat == 8:
+            print('Bin Id\tScaffold Id\t{Marker Id, Start position, End position}')
+        elif outputFormat == 9:
             print('Scaffold Id\tBin Id\tLength\t# contigs\tGC\t# ORFs\tCoding density\tMarker Ids')
     
     def printSummary(self, outputFormat=1, outFile='', bQuiet=False):
-        print('  Tabulating results for %d bins in output format %d' % (len(self.results), outputFormat))
+        if not bQuiet:
+            print('  Tabulating results for %d bins in output format %d' % (len(self.results), outputFormat))
         
         # redirect output
         oldStdOut = reassignStdOut(outFile)
@@ -318,6 +320,14 @@ class ResultsManager():
                     print()
                     
         elif outputFormat == 8:
+            # tabular - print only position of marker genes
+            for marker, hit_list in self.markers.items():
+                print(self.name, marker, sep='\t', end='\t')
+                for hit in hit_list:
+                    print(hit.target_name, hit.ali_from, hit.ali_to, sep=',', end='\t')
+                print()
+                    
+        elif outputFormat == 9:
             markersInScaffold = {}
             for marker, hit_list in self.markers.items():
                 for hit in hit_list:
@@ -326,8 +336,8 @@ class ResultsManager():
             
             for scaffoldId, data in self.scaffoldStats.iteritems():
                 print(scaffoldId, self.name, str(data['Length']), str(data['# contigs']), 
-                      '%.3f' % (data['GC']), str(data['# ORFs']), 
-                      '%.3f' % (float(data['Coding bases']) / data['Total contig length']), 
+                      '%.3f' % (data['GC']), str(data.get('# ORFs', 0)), 
+                      '%.3f' % (float(data.get('Coding bases', 0)) / data['Total contig length']), 
                       sep='\t', end='\t')
                 
                 if scaffoldId in markersInScaffold:
@@ -398,6 +408,7 @@ class HMMAligner:
                                 hit_lookup[folder][hit.query_name].append(hit)
                         except KeyError:
                             hit_lookup[folder][hit.query_name] = [hit]
+                            
                         try:
                             unique_hits[hit.query_name] += 1
                         except KeyError:

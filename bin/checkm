@@ -40,7 +40,7 @@ def printHelp():
     print '           ...::: CheckM v' + __version__ + ' :::...'''
     print '''\
 
-  Estimate completeness and contamination of putative genome bins.
+  Assess completeness and contamination of putative genome bins.
     
   Standard workflow:
 
@@ -72,7 +72,6 @@ def printHelp():
     '''
 
 if __name__ == '__main__':
-
     # initialize the options parser
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers(help="--", dest='subparser_name')
@@ -93,8 +92,9 @@ if __name__ == '__main__':
                 5. list of bin name, marker name, scaffold name
                 6. list of markers present multiple times in a bin
                 7. list showing scaffold that contain more than one copy of the same marker
-                8. list of scaffold name, bin name, length, GC, marker name(s)''', 
-            default=1, choices=[1, 2, 3, 4, 5, 6, 7, 8])
+                8. list indicating position of marker genes within each bin 
+                9. list of scaffold name, bin name, length, GC, marker name(s)''', 
+            default=1, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9])
     output_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
 
     # identify marker genes within binned contigs and calculate genome statistics
@@ -161,6 +161,9 @@ if __name__ == '__main__':
     pipeline_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # generic arguments for plots
+    plot_need_qa_results_parser = argparse.ArgumentParser(add_help=False)
+    plot_need_qa_results_parser.add_argument('results_folder', help="folder holding QA results (see qa or all command)")
+    
     plot_parser = argparse.ArgumentParser(add_help=False)
     plot_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
     plot_parser.add_argument('plot_folder', help="folder to hold plots")
@@ -211,6 +214,15 @@ if __name__ == '__main__':
                                         description='Cumulative sequence length plot.')
 
     plot_len_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Marker position plot
+    marker_plot_parser = subparsers.add_parser('marker_plot',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        help='Plot position of marker genes on sequences.',
+                                        parents=[plot_need_qa_results_parser, plot_single_parser],
+                                        description='Plot position of marker genes on sequences.')
+
+    marker_plot_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Identify unbinned sequences
     unbinned_parser = subparsers.add_parser('unbinned',

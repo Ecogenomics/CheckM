@@ -23,8 +23,9 @@ import os
 import sys
 from re import split as re_split
 
-
 from common import makeSurePathExists
+
+import defaultValues
 
 class FormatError(BaseException): pass
 class HMMERError(BaseException): pass
@@ -111,11 +112,11 @@ class HMMERRunner():
         
 def makeOutputFNs(mode='domtblout'):
     """Consistent interface for making output filenames"""
-    txtOut = 'hmmer_out.txt'
+    txtOut = defaultValues.__CHECKM_DEFAULT_HMMER_TXT_OUT__
     if mode == 'align':
-        hmmOut = 'hmmer_out.align'
+        hmmOut = defaultValues.__CHECKM_DEFAULT_HMMER_ALIGN_OUT__
     else:
-        hmmOut = 'hmmer_out.hmmer3'
+        hmmOut = defaultValues.__CHECKM_DEFAULT_HMMER_OUT__
     return (txtOut, hmmOut)
 
 class HMMERParser():
