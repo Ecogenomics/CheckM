@@ -27,6 +27,8 @@ from resultsParser import ResultsParser, HMMAligner
 from markerGeneFinder import MarkerGeneFinder
 from binStatistics import BinStatistics
 from coverage import Coverage
+from unbinned import Unbinned
+from profile import Profile
 import database as chmdb
 
 from plot.gcPlots import gcPlots
@@ -101,7 +103,11 @@ class OptionsParser():
                           bQuiet=options.bQuiet,
                           outFile=options.file
                           )
-        RP.printSummary(outputFormat=options.out_format, outFile=options.file)
+        RP.printSummary(outputFormat=options.out_format, outFile=options.file, bQuiet=options.bQuiet)
+        
+        if not options.bQuiet and options.file != '':
+            print '  QA information written to: ' + options.file
+        
         self.timeKeeper.printTimeStamp()
 
     def align(self, options):
@@ -215,6 +221,24 @@ class OptionsParser():
             
         self.timeKeeper.printTimeStamp()
         
+    def unbinned(self, options):
+        """Unbinned Command"""
+        if not options.bQuiet:
+            print ''
+            print '*******************************************************************************'
+            print ' [CheckM - unbinned] Identify unbinned sequences.'
+            print '*******************************************************************************'
+  
+        binFiles = self.binFiles(options) 
+  
+        unbinned = Unbinned()
+        unbinned.run(binFiles, options.seq_file, options.file, options.min_seq_len, options.bQuiet)
+        
+        if not options.bQuiet and options.file != '':
+            print '  Unbinned sequences written to: ' + options.file
+
+        self.timeKeeper.printTimeStamp()
+        
     def coverage(self, options):
         """Coverage Command"""
         if not options.bQuiet:
@@ -223,9 +247,32 @@ class OptionsParser():
             print ' [CheckM - coverage] Calculate coverage of sequences.'
             print '*******************************************************************************'
   
-        coverage = Coverage(threads = options.threads)
-        coverage.calculate(options.bam_files, options.out_file, bPairsOnly = options.pairs_only, bQuiet = options.bQuiet)
         
+        binFiles = self.binFiles(options) 
+        
+        coverage = Coverage(threads = options.threads)
+        coverage.calculate(binFiles, options.bam_files, options.file, bPairsOnly = options.pairs_only, bQuiet = options.bQuiet)
+        
+        if not options.bQuiet and options.file != '':
+            print '  Coverage information written to: ' + options.file
+            
+        self.timeKeeper.printTimeStamp()
+        
+    def profile(self, options):
+        """Profile Command"""
+        if not options.bQuiet:
+            print ''
+            print '*******************************************************************************'
+            print ' [CheckM - profile] Calculate percentage of reads mapped to each bin.'
+            print '*******************************************************************************'
+  
+  
+        profile = Profile()
+        profile.run(options.coverage_file, options.file, bQuiet = options.bQuiet)
+        
+        if not options.bQuiet and options.file != '':
+            print '  Profile information written to: ' + options.file
+            
         self.timeKeeper.printTimeStamp()
         
     def makeDB(self, options):
@@ -278,8 +325,12 @@ class OptionsParser():
             self.nx_plot(options)
         elif(options.subparser_name == 'len_plot'):
             self.len_plot(options)
+        elif(options.subparser_name == 'unbinned'):
+            self.unbinned(options)
         elif(options.subparser_name == 'coverage'):
             self.coverage(options)
+        elif(options.subparser_name == 'profile'):
+            self.profile(options)
 
         if database_name is not None:
             os.remove(tmp)

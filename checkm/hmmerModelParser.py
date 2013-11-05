@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# hmmer.py - parse a HMMER model file
+# hmmerModelParser.py - parse a HMMER model file
 #
 ###############################################################################
 #                                                                             #
@@ -25,7 +25,6 @@ class HmmModelError(Exception):
 class HmmModel(object):
     """Parse a HMMER model file."""
     def __init__(self, keys, model=None):
-        super(HmmModel, self).__init__()
         for key, value in keys.items():
             setattr(self, key, value)
         self.model = model
@@ -120,24 +119,20 @@ class HmmModel(object):
         ret += "//\n"
         return ret
 
-
 class HmmModelParser(object):
     """HmmModelParser holds a file object for a HMM model and a custom iterator
        for getting the values out"""
     def __init__(self, hmmfile):
-        super(HmmModelParser, self).__init__()
         self.hmmfile = open(hmmfile)
 
     def parse(self):
         fields = []
         header_keys = dict()
         for current_line in self.hmmfile:
-            # line should be: HMMER3/b [3.0b2 | June 2009]
             if current_line.startswith("HMMER"):
                 header_keys['format'] = current_line.rstrip()
-
             elif current_line.startswith("HMM"):
-                # begining of the model hmm
+                # beginning of the model hmm
                 # parsing not implemented at the moment - iterate through till
                 # the end of this model
                 model = ""
@@ -147,11 +142,10 @@ class HmmModelParser(object):
                         break
                     else:
                         model += current_line
-
             else:
                 # header sections
                 fields = current_line.rstrip().split(None, 1)
-                if 2 != len(fields):
+                if len(fields) != 2:
                     raise HmmModelError
                 else:
                     # transform some data based on some of the header tags

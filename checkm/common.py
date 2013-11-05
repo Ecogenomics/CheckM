@@ -19,12 +19,40 @@
 #                                                                             #
 ###############################################################################
 
-from os import makedirs
+import os
 import errno
+import sys
+
+def checkFileExists(inputFile):
+    if not os.path.exists(inputFile):
+        sys.stderr.write('[Error] Input file does not exists: ' + inputFile)
+        sys.exit()
 
 def makeSurePathExists(path):
     try:
-        makedirs(path)
+        os.makedirs(path)
     except OSError as exception:
         if exception.errno != errno.EEXIST:
+            raise
+        
+def reassignStdOut(outFile):
+    oldStdOut = sys.stdout
+    if(outFile != ''):
+        try:
+            # redirect stdout to a file
+            sys.stdout = open(outFile, 'w')
+        except:
+            print("Error diverting stout to file: ", sys.exc_info()[0])
+            raise
+            
+    return oldStdOut
+
+def restoreStdOut(outFile, oldStdOut, bQuiet=False):
+    if(outFile != ''):
+        try:
+            # redirect stdout to a file
+            sys.stdout.close()
+            sys.stdout = oldStdOut
+        except:
+            print("Error restoring stdout ", sys.exc_info()[0])
             raise

@@ -29,6 +29,7 @@ import ast
 from collections import defaultdict
 
 import defaultValues 
+from common import reassignStdOut, restoreStdOut
 
 from hmmer import HMMERRunner, HMMERParser, makeOutputFNs
 from hmmerModelParser import HmmModelParser
@@ -84,7 +85,7 @@ class ResultsParser():
                 self.results[folder] = resultsManager
             
     def parseHmmerResults(self, fileName, storage, bQuiet):
-        """Parse through a hmmer file and see what's what"""
+        """Parse HMMER results."""
         try:
             with open(fileName, 'r') as hmmer_handle:
                 try:
@@ -130,33 +131,18 @@ class ResultsParser():
         elif outputFormat == 8:
             print('Scaffold Id\tBin Id\tLength\t# contigs\tGC\t# ORFs\tCoding density\tMarker Ids')
     
-    def printSummary(self, outputFormat=1, outFile=''):
+    def printSummary(self, outputFormat=1, outFile='', bQuiet=False):
         print('  Tabulating results for %d bins in output format %d' % (len(self.results), outputFormat))
         
         # redirect output
-        old_stdout = sys.stdout
-        if(outFile != ''):
-            try:
-                # redirect stdout to a file
-                sys.stdout = open(outFile, 'w')
-            except:
-                print("Error diverting stout to file: ", sys.exc_info()[0])
-                raise
+        oldStdOut = reassignStdOut(outFile)
             
         self.printHeader(outputFormat)  
         for fasta in self.results:
             self.results[fasta].printSummary(outputFormat=outputFormat)
             
-        # restore stdout        
-        if(outFile != ''):
-            try:
-                # redirect stdout to a file
-                sys.stdout = old_stdout
-            except:
-                print("Error restoring stdout ", sys.exc_info()[0])
-                raise
-
-            print('  Results written to: ' + outFile)
+        # restore stdout   
+        restoreStdOut(outFile, oldStdOut, bQuiet)     
 
 class ResultsManager():
     """Store all the results for a single bin"""
@@ -249,9 +235,9 @@ class ResultsManager():
             data = self.calculateMarkers(verbose=False)
             row = self.name
             row += '\t%0.2f\t%0.2f' % (data[6], data[7])
-            row += '\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# scaffolds'], 
-                                             self.binStats['# contigs'], self.binStats['N50'], 
-                                             self.binStats['Longest scaffold'], self.binStats['Shortest scaffold'])
+            row += '\t%d\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# scaffolds'], 
+                                             self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'], 
+                                             self.binStats['Longest scaffold'], self.binStats['Longest contig'])
             row += '\t%.3f\t%.4f' % (self.binStats['GC'], self.binStats['GC std'])
             row += '\t%.3f\t%d' % (self.binStats['Coding density'], self.binStats['# predicted ORFs'])
             row += '\t' + '\t'.join([str(data[i]) for i in xrange(6)])

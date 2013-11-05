@@ -81,7 +81,7 @@ class BinStatistics():
         fout.close()
               
     def __processBin(self, fasta, outFolder, binStats, seqStats, bQuiet=False):
-        """Thread safe fasta processing"""
+        """Thread safe processing of FASTA file."""
         self.threadPool.acquire()
         try:
             self.varLock.acquire()

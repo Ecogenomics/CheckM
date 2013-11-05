@@ -104,7 +104,7 @@ if __name__ == '__main__':
                                         parents=[taxon_parser],
                                         description='''Identify marker genes in bins and calculate genome statistics. 
                                                         The set of marker genes to use is specified with either -T or -H.''')
-    analyze_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
+    analyze_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     analyze_parser.add_argument('out_folder', help="folder to write output files")
     analyze_parser.add_argument('infiles', nargs='*', metavar="FASTA", help="(Optional) a list of fasta formatted files to be used as the input")
     analyze_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
@@ -151,7 +151,7 @@ if __name__ == '__main__':
                                         parents=[taxon_parser, output_parser],
                                         description='''Run analyze + qa + align in one step. 
                                                         The set of marker genes to use is specified with either -T or -H.''')
-    pipeline_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
+    pipeline_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     pipeline_parser.add_argument('out_folder', help="folder to write output files")
     pipeline_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     pipeline_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
@@ -212,16 +212,40 @@ if __name__ == '__main__':
 
     plot_len_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
+    # Identify unbinned sequences
+    unbinned_parser = subparsers.add_parser('unbinned',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            help='Identify unbinned sequences.',
+                                            description='Identify unbinned sequences.')
+    unbinned_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
+    unbinned_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
+    unbinned_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    unbinned_parser.add_argument('-l', '--min_seq_len', type=int, default=0, help="required length of sequence")
+    unbinned_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
+    unbinned_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
     # Calculate coverage
     coverage_parser = subparsers.add_parser('coverage',
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                             help='Calculate coverage of sequences.',
                                             description='Calculate coverage of sequences.')
-    coverage_parser.add_argument('out_file', help="print results to file")
+    
+    coverage_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     coverage_parser.add_argument('bam_files', nargs='+', help="BAM files to parse")
+    coverage_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
     coverage_parser.add_argument('-p', '--pairs_only', action='store_true', default=False, help="ignore reads that are not properly paired")
-    coverage_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
+    coverage_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads (for best performance set this to the number of input BAM files)")
+    coverage_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
     coverage_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Calculate community profile
+    profile_parser = subparsers.add_parser('profile',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            help='Calculate percentage of reads mapped to each bin.',
+                                            description='Calculate percentage of reads mapped to each bin.')
+    profile_parser.add_argument('coverage_file', help="Calculated coverage of each sequence (see coverage command)")
+    profile_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
+    profile_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # debug and development
     if False:

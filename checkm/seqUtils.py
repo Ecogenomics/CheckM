@@ -23,10 +23,13 @@ def readFasta(fastaFile):
     seqs = {}
     for line in open(fastaFile):
         if line[0] == '>':
-            seqId = line[1:].split()[0]
-            seqs[seqId] = ''
+            seqId = line[1:].partition(' ')[0]
+            seqs[seqId] = []
         else:
-            seqs[seqId] += line.rstrip()
+            seqs[seqId].append(line[0:-1])
+            
+    for seqId, seq in seqs.iteritems():
+        seqs[seqId] = ''.join(seq)
             
     return seqs
 
