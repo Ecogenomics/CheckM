@@ -128,7 +128,7 @@ class ResultsParser():
         elif outputFormat == 7:
             print('Bin Id\tScaffold Id\t{Marker Id, Count}')
         elif outputFormat == 8:
-            print('Bin Id\tScaffold Id\t{Marker Id, Start position, End position}')
+            print('Bin Id\tGene Id\t{Marker Id, Start position, End position}')
         elif outputFormat == 9:
             print('Scaffold Id\tBin Id\tLength\t# contigs\tGC\t# ORFs\tCoding density\tMarker Ids')
     
@@ -150,6 +150,7 @@ class ResultsManager():
     """Store all the results for a single bin"""
     def __init__(self, name, lengthCO, eCO, models=None, binStats=None, scaffoldStats=None):
         self.name = name
+        self.binId = name[0:name.rfind('.')]
         self.markers = {}
         self.eCO = eCO
         self.lengthCO = lengthCO
@@ -235,7 +236,7 @@ class ResultsManager():
         """print out some information about this bin"""
         if outputFormat == 1:
             data = self.calculateMarkers(verbose=False)
-            row = self.name
+            row = self.binId
             row += '\t%0.2f\t%0.2f' % (data[6], data[7])
             row += '\t%d\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# scaffolds'], 
                                              self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'], 
@@ -248,7 +249,7 @@ class ResultsManager():
             
         elif outputFormat == 2:
             data = self.calculateMarkers(verbose=False)
-            print("%s\t%s\t%0.2f\t%0.2f" % (self.name,
+            print("%s\t%s\t%0.2f\t%0.2f" % (self.binId,
                                                 "\t".join([str(data[i]) for i in range(6)]),
                                                 data[6],
                                                 data[7]
@@ -257,7 +258,7 @@ class ResultsManager():
         elif outputFormat == 3:
             data = self.calculateMarkers(verbose=True)
             print("--------------------")
-            print(self.name)
+            print(self.binId)
             for marker,count in data.iteritems():
                 print("%s\t%d" % (marker, count))
 
@@ -269,7 +270,8 @@ class ResultsManager():
             # matrix of bin vs marker counts
             data = self.calculateMarkers(verbose=True)
             columns = self.models.keys()
-            print(self.name, end='\t')
+            
+            rowStr = self.binId
             for marker in columns:
                 count = 0
                 try:
@@ -277,19 +279,19 @@ class ResultsManager():
                 except KeyError:
                     pass
                 else:
-                    print(count, end='\t')
-            print()
+                    rowStr += '\t' + str(count)
+            print(rowStr)
 
         elif outputFormat == 5:
             # tabular of bin_id, marker, contig_id
             for marker, hit_list in self.markers.items():
                 for hit in hit_list:
-                    print(self.name, marker, hit.target_name, sep='\t', end='\n')
+                    print(self.binId, marker, hit.target_name, sep='\t', end='\n')
                     
         elif outputFormat == 6:
             for marker, hit_list in self.markers.items():
                 if len(hit_list) >= 2:
-                    print(self.name, marker, sep='\t', end='\t')
+                    print(self.binId, marker, sep='\t', end='\t')
                     
                     scaffoldIds = []
                     for hit in hit_list:
@@ -314,18 +316,23 @@ class ResultsManager():
                     if marker_count > 1:
                         if first_time:
                             first_time = False
-                            print(self.name, contig_name, sep='\t', end='\t')
+                            print(self.binId, contig_name, sep='\t', end='\t')
                         print(marker_name, marker_count, sep=',', end='\t')
                 if not first_time:
                     print()
                     
         elif outputFormat == 8:
             # tabular - print only position of marker genes
+            genesWithMarkers = {}
             for marker, hit_list in self.markers.items():
-                print(self.name, marker, sep='\t', end='\t')
                 for hit in hit_list:
-                    print(hit.target_name, hit.ali_from, hit.ali_to, sep=',', end='\t')
-                print()
+                    genesWithMarkers[hit.target_name] = genesWithMarkers.get(hit.target_name, []) + [hit]
+                    
+            for geneId, hits in genesWithMarkers.iteritems():
+                rowStr = self.binId + '\t' + geneId
+                for hit in hits:
+                    rowStr += '\t' + hit.query_name + ',' + str(hit.ali_from) + ',' + str(hit.ali_to)
+                print(rowStr)
                     
         elif outputFormat == 9:
             markersInScaffold = {}
@@ -335,7 +342,7 @@ class ResultsManager():
                     markersInScaffold[scaffoldId] = markersInScaffold.get(scaffoldId, []) + [marker]
             
             for scaffoldId, data in self.scaffoldStats.iteritems():
-                print(scaffoldId, self.name, str(data['Length']), str(data['# contigs']), 
+                print(scaffoldId, self.binId, str(data['Length']), str(data['# contigs']), 
                       '%.3f' % (data['GC']), str(data.get('# ORFs', 0)), 
                       '%.3f' % (float(data.get('Coding bases', 0)) / data['Total contig length']), 
                       sep='\t', end='\t')

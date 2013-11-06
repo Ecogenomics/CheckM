@@ -24,7 +24,7 @@ import sys
 
 import defaultValues
 
-from common import makeSurePathExists
+from common import makeSurePathExists, checkFileExists
 
 class ProdigalError(BaseException): pass
 
@@ -62,12 +62,24 @@ class ProdigalRunner():
         if exit_status != 0:
             raise ProdigalError("Error attempting to run prodigal, is it in your path?")
 
-class ProdigalParser():
-    """Parses tabular output"""
-    def __init__(self, fileHandle):
-        """Give this guy an open file!"""
-        self.handle = fileHandle
-
-    def next(self):
-        """Get the next result in the file"""
+class ProdigalFastaParser():
+    """Parses prodigal FASTA output."""
+    def __init__(self):
         pass
+    
+    def genePositions(self, filename):
+        checkFileExists(filename)
+        
+        gp = {}
+        for line in open(filename):
+            if line[0] == '>':
+                lineSplit = line[1:].split()
+
+                geneId = lineSplit[0]
+                startPos = int(lineSplit[2])
+                endPos = int(lineSplit[4])
+        
+                gp[geneId] = [startPos, endPos]
+        
+        return gp
+    

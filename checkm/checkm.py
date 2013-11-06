@@ -31,6 +31,7 @@ from unbinned import Unbinned
 from profile import Profile
 import database as chmdb
 import defaultValues
+from common import makeSurePathExists
 
 from plot.gcPlots import gcPlots
 from plot.nxPlot import nxPlot
@@ -152,8 +153,7 @@ class OptionsParser():
             
         targetFiles = self.binFiles(options) 
         
-        if not os.path.exists(options.plot_folder):
-            os.mkdir(options.plot_folder)
+        makeSurePathExists(options.plot_folder)
             
         plots = gcPlots(options)
         filesProcessed = 1
@@ -180,8 +180,7 @@ class OptionsParser():
             
         targetFiles = self.binFiles(options) 
         
-        if not os.path.exists(options.plot_folder):
-            os.mkdir(options.plot_folder)
+        makeSurePathExists(options.plot_folder)
             
         nx = nxPlot(options)
         filesProcessed = 1
@@ -208,8 +207,7 @@ class OptionsParser():
             
         targetFiles = self.binFiles(options) 
         
-        if not os.path.exists(options.plot_folder):
-            os.mkdir(options.plot_folder)
+        makeSurePathExists(options.plot_folder)
             
         plot = seqLenPlot(options)
         filesProcessed = 1
@@ -233,21 +231,21 @@ class OptionsParser():
             print '*******************************************************************************'
             print ' [CheckM - marker_plot] Creating marker gene position plot.'
             print '*******************************************************************************'
-            
+                        
+        # generate plot for each bin    
         targetFiles = self.binFiles(options) 
         
-        if not os.path.exists(options.plot_folder):
-            os.mkdir(options.plot_folder)
+        makeSurePathExists(options.plot_folder)
             
         plot = markerGenePosPlot(options)
         filesProcessed = 1
         for f in targetFiles:  
             if not options.bQuiet:
-                print '  Plotting marker gene positions for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
+                print '  Plotting marker gene position plot for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
                 filesProcessed += 1
-            plot.plot(f, options.results_folder)
+            plot.plot(f)
             
-            outputFile = os.path.join(options.plot_folder, os.path.basename(f[0:f.rfind('.')])) + '.marker_position_plot.' + options.image_type
+            outputFile = os.path.join(options.plot_folder, os.path.basename(f[0:f.rfind('.')])) + '.marker_pos_plot.' + options.image_type
             plot.savePlot(outputFile, dpi=options.dpi)
             if not options.bQuiet:
                 print '    Plot written to: ' + outputFile
