@@ -37,6 +37,7 @@ from plot.gcPlots import gcPlots
 from plot.nxPlot import nxPlot
 from plot.seqLenPlot import seqLenPlot
 from plot.markerGenePosPlot import markerGenePosPlot
+from plot.parallelCoordPlot import parallelCoordPlot
 
 def connectToDatabase(database_name):
     """ Return a database object based on name """
@@ -251,6 +252,66 @@ class OptionsParser():
                 print '    Plot written to: ' + outputFile
             
         self.timeKeeper.printTimeStamp()
+
+    def parallel_coord_plot(self, options):
+        """Parallel coordinate plot command"""
+        if not options.bQuiet:
+            print ''
+            print '*******************************************************************************'
+            print ' [CheckM - par_plot] Parallel coordinate plot of GC and coverage.'
+            print '*******************************************************************************'  
+
+        makeSurePathExists(options.plot_folder)
+        checkFileExists(options.coverage_file)
+
+        # read sequence stats file
+        seqStatsFile = os.path.join(options.results_folder, defaultValues.__CHECKM_DEFAULT_SEQ_STATS_FILE__)
+        with open(seqStatsFile, 'r') as f:
+            s = f.read()
+            seqStats = ast.literal_eval(s)
+
+        # read coverage stats file
+        coverageStats = {}
+        bHeader = True
+        for line in open(options.coverage_file):
+            if bHeader:
+                bHeader = False
+                continue
+
+            lineSplit = line.split('\t')
+			seqId = lineSplit[0]
+			binId = lineSplit[1]
+			seqLen = lineSplit[2]
+			
+			if binId not in coverageStats:
+				coverageStats[binId] = {}
+				
+			if seqId not in coverageStats[binId]:
+				coverageStats[binId][seqId] = {}
+			
+			for i in xrange(3, len(lineSplit), 3):
+				bamId = lineSplit[i]
+				coverage = lineSplit[i+1]
+				mappedReads = lineSplit[i+2]
+				
+				coverageStats[binId][seqId][bamId] = coverage
+        
+        # create plot for each bin
+        plot = parallelCoordPlot(options)
+        filesProcessed = 1
+        for f in targetFiles:  
+            if not options.bQuiet:
+                print '  Plotting marker gene position plot for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
+                filesProcessed += 1
+            binId = os.path.basename(f)
+            plot.plot(seqStats[binId], coverageStats[binId])
+            
+            outputFile = os.path.join(options.plot_folder, os.path.basename(f[0:f.rfind('.')])) + '.paralel_coord_plot.' + options.image_type
+            plot.savePlot(outputFile, dpi=options.dpi)
+            if not options.bQuiet:
+                print '    Plot written to: ' + outputFile
+            
+        self.timeKeeper.printTimeStamp()
         
     def unbinned(self, options):
         """Unbinned Command"""
@@ -358,6 +419,8 @@ class OptionsParser():
             self.len_plot(options)
         elif(options.subparser_name == 'marker_plot'):
             self.marker_plot(options)
+        elif(options.subparser_name == 'par_plot'):
+            self.parallel_coord_plot(options)
         elif(options.subparser_name == 'unbinned'):
             self.unbinned(options)
         elif(options.subparser_name == 'coverage'):

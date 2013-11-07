@@ -60,7 +60,7 @@ def printHelp():
     checkm len_plot    -> Cumulative sequence length plot
     checkm gc_plot     -> Create GC histogram and delta-GC plot
     checkm marker_plot -> Plot position of marker genes on sequences
-    
+    checkm par_plot    -> Parallel coordinate plot of GC and coverage
     
   Utility functions:
 
@@ -223,6 +223,16 @@ if __name__ == '__main__':
                                         description='Plot position of marker genes on sequences.')
 
     marker_plot_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+
+    # Parallel coordinate plot
+    parallel_coord_plot_parser = subparsers.add_parser('par_plot',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        help='Parallel coordinate plot of GC and coverage.',
+                                        parents=[plot_need_qa_results_parser, plot_single_parser],
+                                        description='Parallel coordinate plot of GC and coverage.')
+    parallel_coord_plot_parser.add_argument('coverage_file', help="File indicating coverage of each sequence (see coverage command)")
+    parallel_coord_plot_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+
     
     # Identify unbinned sequences
     unbinned_parser = subparsers.add_parser('unbinned',
@@ -255,7 +265,7 @@ if __name__ == '__main__':
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                             help='Calculate percentage of reads mapped to each bin.',
                                             description='Calculate percentage of reads mapped to each bin.')
-    profile_parser.add_argument('coverage_file', help="Calculated coverage of each sequence (see coverage command)")
+    profile_parser.add_argument('coverage_file', help="File indicating coverage of each sequence (see coverage command)")
     profile_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
     profile_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
