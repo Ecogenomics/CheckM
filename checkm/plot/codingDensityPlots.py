@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# gcPlots.py - Create a GC histogram and delta-GC plot. 
+# codingDensityPlots.py - Create a GC histogram and a delta-CD plot. 
 #
 ###############################################################################
 #                                                                             #
@@ -19,69 +19,78 @@
 #                                                                             #
 ###############################################################################
 
+import os
+
 import matplotlib.pyplot as pylab
 
 import numpy as np
 
 from AbstractPlot import AbstractPlot
 
-from checkm.binTools import BinTools
+from checkm.prodigal import ProdigalGeneFeatureParser
 from checkm.seqUtils import readFasta, baseCount
-from checkm.common import findNearest, readDistribution
+from checkm.common import readDistribution, findNearest
+from checkm.binTools import BinTools
 
-class GcPlots(AbstractPlot):
+class CodingDensityPlots(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
-    
-    def plot(self, fastaFile, distributionsToPlot): 
+
+    def plot(self, fastaFile, distributionsToPlot):   
         # Set size of figure
         self.fig.clear()
         self.fig.set_size_inches(self.options.width, self.options.height)
 
         axesHist = self.fig.add_subplot(121)
-        axesDeltaGC = self.fig.add_subplot(122)
-
-        self.plotOnAxes(fastaFile, distributionsToPlot, axesHist, axesDeltaGC)
+        axesDeltaCD = self.fig.add_subplot(122)
+        
+        self.plotOnAxes(fastaFile, distributionsToPlot, axesHist, axesDeltaCD)
         
         self.fig.tight_layout(pad=5, w_pad=10)
         self.draw()
         
-    def plotOnAxes(self, fastaFile, distributionsToPlot, axesHist, axesDeltaGC):
+    def plotOnAxes(self, fastaFile, distributionsToPlot, axesHist, axesDeltaCD):
         # Read reference distributions from file
         dist = {}
         for d in distributionsToPlot:
-            dist[d] = readDistribution(d, 'gc_dist')
+            dist[d] = readDistribution(d, 'cd_dist')
         
-        # get GC for windows
+        # parse Prodigal output
+        gffFile = os.path.join(self.options.out_folder, os.path.basename(fastaFile), 'prodigal.gff')
+        prodigalParser = ProdigalGeneFeatureParser(gffFile)
+        
+        # get coding density for windows
         seqs = readFasta(fastaFile)
 
         data = []
         seqLens = []
-        for _, seq in seqs.iteritems():
+        for seqId, seq in seqs.iteritems():            
             start = 0
-            end = self.options.gc_window_size
+            end = self.options.cd_window_size
             
             seqLen = len(seq)
             seqLens.append(seqLen)
             
             while(end < seqLen):
+                codingBases = prodigalParser.codingBases(seqId, start, end)
+                
                 a, c, g, t = baseCount(seq[start:end])
-                data.append(float(g + c) / (a + c + g + t))
+                data.append(float(codingBases) / (a + c + g + t))
                 
                 start = end
-                end += self.options.gc_window_size
+                end += self.options.cd_window_size
             
         # Histogram plot 
         bins = [0.0]
-        binWidth = self.options.gc_bin_width
+        binWidth = self.options.cd_bin_width
         binEnd = binWidth
         while binEnd <= 1.0:
             bins.append(binEnd)
             binEnd += binWidth
             
         axesHist.hist(data, bins=bins, normed=True, color=(0.5,0.5,0.5))    
-        axesHist.set_xlabel('% GC')
-        axesHist.set_ylabel('% windows (' + str(self.options.gc_window_size) + ' bp)')
+        axesHist.set_xlabel('% coding density')
+        axesHist.set_ylabel('% windows (' + str(self.options.cd_window_size) + ' bp)')
             
         # Prettify plot     
         for a in axesHist.yaxis.majorTicks:
@@ -104,26 +113,26 @@ class GcPlots(AbstractPlot):
             else:
                 spine.set_color(self.axesColour)
                 
-        # get GC bin statistics
+        # get CD bin statistics
         binTools = BinTools()
-        meanGC, deltaGCs, _ = binTools.gcDist(seqs)
-                
-        # Delta-GC vs Sequence length plot 
-        axesDeltaGC.scatter(deltaGCs, seqLens, c=abs(deltaGCs), s=10, lw=0.5, cmap=pylab.cm.Greys)    
-        axesDeltaGC.set_xlabel(r'$\Delta$ GC (mean GC = %.1f)' % (meanGC*100))
-        axesDeltaGC.set_ylabel('Sequence length (Kbps)')
+        meanCD, deltaCDs, _ = binTools.codingDensityDist(seqs, prodigalParser)
+           
+        # Delta-CD vs sequence length plot 
+        axesDeltaCD.scatter(deltaCDs, seqLens, c=abs(deltaCDs), s=10, lw=0.5, cmap=pylab.cm.Greys)    
+        axesDeltaCD.set_xlabel(r'$\Delta$ CD (mean coding density = %.1f)' % (meanCD*100))
+        axesDeltaCD.set_ylabel('Sequence length (Kbps)')
         
-        _, yMaxSeqs = axesDeltaGC.get_ylim()
-        xMinSeqs, xMaxSeqs = axesDeltaGC.get_xlim()
+        _, yMaxSeqs = axesDeltaCD.get_ylim()
+        xMinSeqs, xMaxSeqs = axesDeltaCD.get_xlim()
         
         # plot reference distributions
-        for distGC in dist.values():
-            closestGC = findNearest(np.array(distGC.keys()), meanGC)
+        for distCD in dist.values():
+            closestCD = findNearest(np.array(distCD.keys()), meanCD)
             
             xL = []
             xU = []
             y = []
-            for windowSize, bounds in distGC[closestGC].iteritems():
+            for windowSize, bounds in distCD[closestCD].iteritems():
                 xL.append(bounds[0])
                 xU.append(bounds[1])
                 y.append(windowSize)
@@ -133,43 +142,43 @@ class GcPlots(AbstractPlot):
             xL = np.array(xL)[sortIndexY]
             xU = np.array(xU)[sortIndexY]
             y = np.array(y)[sortIndexY]
-            axesDeltaGC.plot(xL, y, 'r--', lw=0.5, zorder=0)
-            axesDeltaGC.plot(xU, y, 'r--', lw=0.5, zorder=0)
+            axesDeltaCD.plot(xL, y, 'r--', lw=0.5, zorder=0)
+            axesDeltaCD.plot(xU, y, 'r--', lw=0.5, zorder=0)
 
         # ensure y-axis include zero and covers all sequences    
-        axesDeltaGC.set_ylim([0, yMaxSeqs])
+        axesDeltaCD.set_ylim([0, yMaxSeqs])
         
         # ensure x-axis is set appropriately for sequences
-        axesDeltaGC.set_xlim([xMinSeqs, xMaxSeqs])
+        axesDeltaCD.set_xlim([xMinSeqs, xMaxSeqs])
         
         # draw vertical line at x=0
-        axesDeltaGC.vlines(0, 0, yMaxSeqs, linestyle='dashed', color=self.axesColour, zorder=0)
+        axesDeltaCD.vlines(0, 0, yMaxSeqs, linestyle='dashed', color=self.axesColour, zorder=0)
         
         # Change sequence lengths from bps to kbps
-        yticks = axesDeltaGC.get_yticks()
+        yticks = axesDeltaCD.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
             label = '%.1f' % (float(seqLen)/1000)
             label = label.replace('.0', '') # remove trailing zero
             kbpLabels.append(label)
-        axesDeltaGC.set_yticklabels(kbpLabels)
+        axesDeltaCD.set_yticklabels(kbpLabels)
             
         # Prettify plot     
-        for a in axesDeltaGC.yaxis.majorTicks:
+        for a in axesDeltaCD.yaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
                 
-        for a in axesDeltaGC.xaxis.majorTicks:
+        for a in axesDeltaCD.xaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
             
-        for line in axesDeltaGC.yaxis.get_ticklines(): 
+        for line in axesDeltaCD.yaxis.get_ticklines(): 
             line.set_color(self.axesColour)
                 
-        for line in axesDeltaGC.xaxis.get_ticklines(): 
+        for line in axesDeltaCD.xaxis.get_ticklines(): 
             line.set_color(self.axesColour)
             
-        for loc, spine in axesDeltaGC.spines.iteritems():
+        for loc, spine in axesDeltaCD.spines.iteritems():
             if loc in ['right','top']:
                 spine.set_color('none') 
             else:

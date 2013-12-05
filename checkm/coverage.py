@@ -28,7 +28,7 @@ import pysam
 
 import defaultValues
 
-from common import reassignStdOut, restoreStdOut
+from common import reassignStdOut, restoreStdOut, binIdFromFilename
 from seqUtils import readFasta
 
 class CoverageStruct():
@@ -59,8 +59,7 @@ class Coverage():
             
         seqIdToBinId = {}
         for binFile in binFiles:
-            binId = os.path.basename(binFile)
-            binId = binId[0:binId.rfind('.')]
+            binId = binIdFromFilename(binFile)
             
             seqs = readFasta(binFile)
             for seqId in seqs.keys():
@@ -74,7 +73,7 @@ class Coverage():
         self.numFiles = len(bamFiles)
         for bamFile in bamFiles: 
             if not os.path.exists(bamFile + '.bai'):
-                sys.stderr.write('[Error] BAM file is not sorted: ' + bamFile)
+                sys.stderr.write('[Error] BAM file is not sorted: ' + bamFile + '\n')
                 sys.exit()
  
         # calculate coverage of each BAM file
@@ -101,8 +100,7 @@ class Coverage():
         for seqId in coverageInfo[coverageInfo.keys()[0]].keys():
             rowStr = seqId + '\t' + seqIdToBinId.get(seqId, defaultValues.__CHECKM_DEFAULT_UNBINNED__) + '\t' + str(coverageInfo[coverageInfo.keys()[0]][seqId].seqLen)
             for bamFile in bamFiles:
-                bamId = os.path.basename(bamFile)
-                bamId = bamId[0:bamId.rfind('.')]
+                bamId = binIdFromFilename(bamFile)
                 rowStr += '\t' + bamId + '\t' + str(coverageInfo[bamFile][seqId].coverage) + '\t' + str(coverageInfo[bamFile][seqId].mappedReads)
             print(rowStr)
         
@@ -147,7 +145,7 @@ class Coverage():
                     coverage += read.rlen
                 else:
                     refLength = refLen[curRef]
-                    coverage = float(mappedReads) / refLength
+                    coverage = float(coverage) / refLength
                     coverageInfo[curRef] = CoverageStruct(seqLen = refLength, mappedReads = mappedReads, coverage = coverage)
                     
                     mappedReads = 1
@@ -156,7 +154,7 @@ class Coverage():
                 
             # results for final reference sequence    
             refLength = refLen[curRef]
-            coverage = float(mappedReads) / refLength
+            coverage /= refLength
             coverageInfo[curRef] = CoverageStruct(seqLen = refLength, mappedReads = mappedReads, coverage = coverage)
 
             bamIn.close()
@@ -164,3 +162,30 @@ class Coverage():
         finally:
             self.threadPool.release()
 
+    def parseCoverage(self, coverageFile):
+        """Read coverage information from file."""
+        coverageStats = {}
+        bHeader = True
+        for line in open(coverageFile):
+            if bHeader:
+                bHeader = False
+                continue
+
+            lineSplit = line.split('\t')
+            seqId = lineSplit[0]
+            binId = lineSplit[1]
+            #seqLen = lineSplit[2]
+            
+            if binId not in coverageStats:
+                coverageStats[binId] = {}
+                    
+            if seqId not in coverageStats[binId]:
+                coverageStats[binId][seqId] = {}
+                
+            for i in xrange(3, len(lineSplit), 3):
+                bamId = lineSplit[i]
+                coverage = float(lineSplit[i+1])
+                #mappedReads = int(lineSplit[i+2])
+                coverageStats[binId][seqId][bamId] = coverage
+                
+        return coverageStats

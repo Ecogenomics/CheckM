@@ -25,7 +25,7 @@ from AbstractPlot import AbstractPlot
 
 from checkm.seqUtils import readFasta
 
-class nxPlot(AbstractPlot):
+class NxPlot(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
         
@@ -60,11 +60,7 @@ class nxPlot(AbstractPlot):
         # Set size of figure
         self.fig.clear()
         self.fig.set_size_inches(self.options.width, self.options.height)
-        heightBottomLabels = 0.3 + self.options.fig_padding   # inches
-        widthSideLabel = 0.5 + self.options.fig_padding       # inches 
-        axes = self.fig.add_axes([widthSideLabel/self.options.width,heightBottomLabels/self.options.height,\
-                                                                        1.0-(widthSideLabel+self.options.fig_padding )/self.options.width,\
-                                                                        1.0-(heightBottomLabels+self.options.fig_padding )/self.options.height])
+        axes = self.fig.add_subplot(111)
         
         # calculate Nx
         seqs = readFasta(fastaFile)
@@ -105,5 +101,6 @@ class nxPlot(AbstractPlot):
                 spine.set_color('none') 
             else:
                 spine.set_color(self.axesColour)
-                          
+                   
+        self.fig.tight_layout(pad=5)       
         self.draw()

@@ -19,35 +19,47 @@
 #                                                                             #
 ###############################################################################
 
-import numpy as np
+from matplotlib.collections import LineCollection
+import matplotlib.ticker as ticker
+from matplotlib.cm import get_cmap
 
 from AbstractPlot import AbstractPlot
 
-class parallelCoordPlot(AbstractPlot):
+class ParallelCoordPlot(AbstractPlot):
 	def __init__(self, options):
 		AbstractPlot.__init__(self, options)
+		
+	def createColorMapGC(self):
+		return get_cmap('RdYlBu')
 
-	def plot(self, seqStats, converageStats):       
+	def plot(self, binIdToHighlight, seqStats, coverageStats):       
 		# Set size of figure
 		self.fig.clear()
 		self.fig.set_size_inches(self.options.width, self.options.height)
-		#heightBottomLabels = self.options.fig_padding   # inches
-		#widthSideLabel = self.options.fig_padding       # inches 
-		#axes = self.fig.add_axes([widthSideLabel/self.options.width,heightBottomLabels/self.options.height,\
-		#																1.0-(widthSideLabel+self.options.fig_padding )/self.options.width,\
-		#																1.0-(heightBottomLabels+self.options.fig_padding )/self.options.height])
-																		
+															
 		# create data points for each sequence
 		data = []
-		for seqId, seqStat in seqStats:
-			data.append([seqStat['GC']] + coverageStats[seqId].values())
+		xlabels = ['GC']
+		bHighlight = []
+		for binId in seqStats:
+			for seqId in seqStats[binId]:
+				data.append([seqStats[binId][seqId]['GC']] + coverageStats[binId][seqId].values())
+				
+				if binId == binIdToHighlight:
+					bHighlight.append(True)
+				else:
+					bHighlight.append(False)
+				
+				if len(xlabels) == 1:
+					for bamId in coverageStats[binId][seqId]:
+						xlabels.append(bamId)
 			
 		dims = len(data[0])
 		x = range(dims)
-		fig, axes = self.fig.add_subplots(1, dims-1, sharey=False)
-
-		if style is None:
-			style = ['r-']*len(data)
+		axes = []
+		for i in xrange(1, dims):
+			a = self.fig.add_subplot(1, dims-1, i)
+			axes.append(a)
 
 		# Calculate the limits on the data
 		min_max_range = list()
@@ -68,14 +80,32 @@ class parallelCoordPlot(AbstractPlot):
 					for dimension,value in enumerate(ds)]
 			norm_data_sets.append(nds)
 		data = norm_data_sets
+		
+		for ax in axes:
+			ax.set_ylim(0, 1)
 
 		# Plot the datasets on all the subplots
+		colourMapGC = self.createColorMapGC()
 		for i, ax in enumerate(axes):
-			for dsi, d in enumerate(data):
-				ax.plot(x, d, style[dsi])
+			colourList = []
+			lines = []
+			
+			highlightColourList = []
+			highlightLines = []
+			for dsi, d in enumerate(data):			
+				if bHighlight[dsi]:
+					highlightLines.append(((x[0], d[0]), (x[1], d[1])))
+					highlightColourList.append(colourMapGC(d[0]))
+				else:
+					lines.append(((x[0], d[0]), (x[1], d[1])))
+					colourList.append((0.9, 0.9, 0.9, 0.1))
+				
+			ax.add_collection(LineCollection(lines, colors = colourList, zorder = 0))
+			ax.add_collection(LineCollection(highlightLines, colors = highlightColourList, zorder = 1))
+				
 			ax.set_xlim([x[i], x[i+1]])
 
-		# Set the x axis ticks 
+		# Set the y axis labels 
 		for dimension, (axx,xx) in enumerate(zip(axes, x[:-1])):
 			axx.xaxis.set_major_locator(ticker.FixedLocator([xx]))
 			ticks = len(axx.get_yticklabels())
@@ -85,40 +115,36 @@ class parallelCoordPlot(AbstractPlot):
 			for i in xrange(ticks):
 				v = mn + i*step
 				labels.append('%4.2f' % v)
+
 			axx.set_yticklabels(labels)
+			axx.set_xticklabels(xlabels[dimension:dimension+1])
+			for label in axx.get_xticklabels():
+				label.set_rotation(90)
+				
+			for loc, spine in axx.spines.iteritems():
+				if loc in ['bottom','top']:
+					spine.set_color('none') 
+				else:
+					spine.set_color(self.axesColour)
 
 		# Move the final axis' ticks to the right-hand side
-		axx = plt.twinx(axes[-1])
+		axx = axes[-1].twinx()
 		dimension += 1
 		axx.xaxis.set_major_locator(ticker.FixedLocator([x[-2], x[-1]]))
 		ticks = len(axx.get_yticklabels())
 		step = min_max_range[dimension][2] / (ticks - 1)
 		mn   = min_max_range[dimension][0]
 		labels = ['%4.2f' % (mn + i*step) for i in xrange(ticks)]
+
 		axx.set_yticklabels(labels)
+		for tick in axx.yaxis.get_major_ticks():
+			tick.set_pad(-6)
+			tick.label2.set_horizontalalignment('right')
+
+		axx.set_xticklabels(xlabels[-2:])
 
 		# Stack the subplots 
-		plt.subplots_adjust(wspace=0)
-	
-		# Prettify plot     
-		for a in axes.yaxis.majorTicks:
-			a.tick1On=True
-			a.tick2On=False
-				
-		for a in axes.xaxis.majorTicks:
-			a.tick1On=True
-			a.tick2On=False
-			
-		for line in axes.yaxis.get_ticklines(): 
-			line.set_color(self.axesColour)
-				
-		for line in axes.xaxis.get_ticklines(): 
-			line.set_color(self.axesColour)
-			
-		for loc, spine in axes.spines.iteritems():
-			if loc in ['right','top']:
-				spine.set_color('none') 
-			else:
-				spine.set_color(self.axesColour)
-						  
+		self.fig.tight_layout()
+		self.fig.subplots_adjust(wspace=0)
+
 		self.draw()

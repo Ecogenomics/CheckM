@@ -1,7 +1,5 @@
-###############################################################################
-#
-# defaultValues.py - store default values used in many places in CheckM
-#
+#!/usr/bin/env python
+
 ###############################################################################
 #                                                                             #
 #    This program is free software: you can redistribute it and/or modify     #
@@ -19,24 +17,12 @@
 #                                                                             #
 ###############################################################################
 
-__CHECKM_DEFAULT_E_VAL__ = 1e-10
-__CHECKM_DEFAULT_LENGTH__ = 0.7
+import os
 
-__CHECKM_DEFAULT_HMMER_TXT_OUT__ = 'hmmer_out.txt'
-__CHECKM_DEFAULT_HMMER_OUT__ = 'hmmer_out.hmmer3'
-__CHECKM_DEFAULT_HMMER_ALIGN_OUT__ = 'hmmer_out.align'
+from lib.img import IMG
 
-__CHECKM_DEFAULT_PRODIGAL_AA__ = 'prodigal.faa'
-__CHECKM_DEFAULT_PRODIGAL_NT__ = 'prodigal.fna'
-__CHECKM_DEFAULT_PRODIGAL_GFF__ = 'prodigal.gff'
+img = IMG()
 
-__CHECKM_DEFAULT_BIN_STATS_FILE__ = 'bin_stats.tsv'
-__CHECKM_DEFAULT_BIN_STATS_EXT_FILE__ = 'bin_stats_ext.tsv'
-__CHECKM_DEFAULT_SEQ_STATS_FILE__ = 'seq_stats.tsv'
-__CHECKM_DEFAULT_MARKER_GENE_STATS__ = 'marker_gene_stats.tsv'
-
-__CHECKM_DEFAULT_CONTIG_BREAK__ = 'NNNNNNNNNN'
-
-__CHECKM_DEFAULT_UNBINNED__ = 'unbinned'
-
-__CHECKM_DEFAULT_MIN_SEQ_LEN_GC_STD__ = 1000
+lineages = img.lineagesSorted(4)
+for lineage in lineages:
+  os.system("./markerSetTest.py -T '" + lineage + "'")

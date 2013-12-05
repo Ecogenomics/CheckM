@@ -20,10 +20,11 @@
 ###############################################################################
 
 def readFasta(fastaFile):
+    '''Read sequences from FASTA file.'''
     seqs = {}
     for line in open(fastaFile):
         if line[0] == '>':
-            seqId = line[1:].partition(' ')[0]
+            seqId = line[1:].partition(' ')[0].rstrip()
             seqs[seqId] = []
         else:
             seqs[seqId].append(line[0:-1])
@@ -32,6 +33,45 @@ def readFasta(fastaFile):
         seqs[seqId] = ''.join(seq)
             
     return seqs
+
+def readFastaSeqIds(fastaFile):
+    '''Read sequence ids from FASTA file.'''
+    seqIds = []
+    for line in open(fastaFile):
+        if line[0] == '>':
+            seqId = line[1:].partition(' ')[0].rstrip()
+            seqIds.append(seqId)
+            
+    return seqIds
+
+def readGenomicSeqsFromFasta(fastaFile, seqToIgnore=None):
+    '''Read genomic sequences from FASTA file. Explicitly ignores sequences marked as plasmids.'''
+    seqs = {}
+    bRead = False
+    for line in open(fastaFile):
+        if line[0] == '>':
+            if 'plasmid' in line.lower():
+                bRead = False
+            else:
+                seqId = line[1:].partition(' ')[0]
+                seqs[seqId] = []
+                bRead = True
+        elif bRead:
+            seqs[seqId].append(line[0:-1])
+            
+    for seqId, seq in seqs.iteritems():
+        seqs[seqId] = ''.join(seq)
+            
+    return seqs
+
+def writeFasta(seqs, outputFile):
+    '''Write sequences from FASTA file.'''
+    fout = open(outputFile, 'w')
+    
+    for seqId, seq in seqs.iteritems():
+        fout.write('>' + seqId + '\n')
+        fout.write(seq + '\n')
+    fout.close()
 
 def baseCount(seq):
     testSeq = seq.upper()

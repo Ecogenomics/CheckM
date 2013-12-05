@@ -2,7 +2,8 @@
 
 ###############################################################################
 #
-# distributionDeltaGC.py - delta GC distribution over reference genomes
+# distributionDeltaCodingDensity.py - calculate coding density distribution
+#                                        over reference genomes
 #
 ###############################################################################
 #                                                                             #
@@ -24,28 +25,26 @@
 import sys
 import os
 import argparse
-import string
 from random import randint
 import multiprocessing as mp
+import string
 
 import numpy as np
 
 from checkm.seqUtils import readGenomicSeqsFromFasta
+from checkm.prodigal import ProdigalGeneFeatureParser
 
-class DeltaGC(object):
+class DeltaCodingDensity(object):
     def __init__(self):
         pass
-        
-    def __createNumericGenome(self, genome):
-        # for simplicity, create a single sequence from all scaffolds/contigs
-        genomeSeq = ''.join(genome.values()).upper()
-        
+    
+    def __createNumericScaffold(self, scaffold):
         # create numpy array of genome with G and C as 0, A and T as 1, and degenerate/ambiguous bases as 2
-        trans = string.maketrans('CGATUNRYMKBDHVWS', '0011122222222222')
-        transGenomeSeq = genomeSeq.translate(trans)
-        numericGenome = np.array(map(int, transGenomeSeq), dtype=np.int)
+        trans = string.maketrans('CGATUNRYMKBDHVWS', '0000011111111111')
+        transScaffold= scaffold.translate(trans)
+        numericScaffold = np.array(map(int, transScaffold), dtype=np.int)
         
-        return numericGenome
+        return numericScaffold
     
     def __calculateResults(self, windowSizes, numWindows, genomeDir, queueIn, queueOut):
         while True:
@@ -54,45 +53,63 @@ class DeltaGC(object):
                 break
             
             seqs = readGenomicSeqsFromFasta(os.path.join(genomeDir, genomeId, genomeId + '.fna'))
+
+            # for simplicity, create a single scaffold from all sequences
+            genomeFile = os.path.join('./deltaCD/genomes', genomeId + '.single_scaffold.fna')
+            genomeScaffold = 'NNNNNNNNNN'.join(seqs.values()).upper()
+            fout = open(genomeFile, 'w')
+            fout.write('>' + genomeId + '\n')
+            fout.write(genomeScaffold)
+            fout.close()
             
-            # calculate GC of genome
-            numericGenome = self.__createNumericGenome(seqs)
-            counts = np.bincount(numericGenome)
-            gc = counts[0]
-            totalBases = gc + counts[1]  
-            meanGC = float(gc) / totalBases    
+            # run prodigal on genome 
+            ntFile = os.path.join('./deltaCD/prodigal', genomeId + '.genes.fna')
+            gffFile = os.path.join('./deltaCD/prodigal', genomeId + '.gff')
             
-            fout = open('./deltaGC/' + genomeId + '.tsv', 'w')
-            fout.write('# Mean GC = ' + str(meanGC) + '\n')
+            cmd = ('prodigal -q -c -m -f gff -d %s -i %s > %s' % (ntFile, genomeFile, gffFile))
+            os.system(cmd)
+
+            # calculate mean coding density of genome
+            numericScaffold = self.__createNumericScaffold(genomeScaffold)
             
-            # calculate GC distribution for different window sizes
+            prodigalParser = ProdigalGeneFeatureParser(gffFile)
+            
+            codingBases = prodigalParser.codingBases(genomeId)
+            
+            counts = np.bincount(numericScaffold)
+            totalBases = counts[0]
+            
+            meanCD = float(codingBases) / totalBases
+            
+            fout = open('./deltaCD/' + genomeId + '.tsv', 'w')
+            fout.write('# Mean CD = ' + str(meanCD) + '\n')
+            
+            # calculate coding density distribution for different window sizes
             for windowSize in windowSizes:
-                endWindowPos = len(numericGenome) - windowSize
+                endWindowPos = len(genomeScaffold) - windowSize
                 if endWindowPos <= 0:
                     # This might occur for the largest window sizes and smallest genomes
                     break
                 
-                requiredBasePairs = 0.9*windowSize
-                
-                deltaGCs = []
-                while len(deltaGCs) != numWindows:
+                deltaCDs = []
+                while len(deltaCDs) != numWindows:
                     # pick random window
                     startWindow = randint(0, endWindowPos)
                     
-                    # calculate GC
-                    counts = np.bincount(numericGenome[startWindow:(startWindow+windowSize)])
-                    gc = counts[0]
-                    totalBases = gc + counts[1]
+                    # calculate coding density
+                    codingBases = prodigalParser.codingBases(genomeId, startWindow, startWindow+windowSize)
+                    counts = np.bincount(numericScaffold[startWindow:(startWindow+windowSize)])
+                    totalBases = counts[0]
                     
-                    if totalBases < requiredBasePairs:
+                    if totalBases != windowSize:
                         # there are N's in the window so skip it
                         continue
                     
-                    gcPer = float(gc) / totalBases
-                    deltaGCs.append(gcPer - meanGC)
+                    cdPer = float(codingBases) / totalBases
+                    deltaCDs.append(cdPer - meanCD)
                     
                 fout.write('Windows Size = ' + str(windowSize) + '\n')
-                fout.write(','.join(map(str, deltaGCs)) + '\n')
+                fout.write(','.join(map(str, deltaCDs)) + '\n')
             fout.close()
         
             queueOut.put(genomeId)
@@ -169,7 +186,7 @@ class DeltaGC(object):
         writeProc.join()
                     
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Calculate GC distribution over reference genomes.')
+    parser = argparse.ArgumentParser(description='Calculate coding density distribution over reference genomes.')
     parser.add_argument('metadata_file', help='IMG metadata file.')
     parser.add_argument('genome_dir', help='IMG genome directory.')
     parser.add_argument('--num_windows', help='number of windows to sample', type = int, default = 10000)
@@ -177,5 +194,5 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     
-    deltaGC = DeltaGC()
-    deltaGC.run(args.metadata_file, args.genome_dir, args.num_windows, args.threads)
+    deltaCodingDensity = DeltaCodingDensity()
+    deltaCodingDensity.run(args.metadata_file, args.genome_dir, args.num_windows, args.threads)

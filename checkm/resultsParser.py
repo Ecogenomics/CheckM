@@ -29,13 +29,13 @@ import ast
 from collections import defaultdict
 
 import defaultValues 
-from common import reassignStdOut, restoreStdOut
+from common import reassignStdOut, restoreStdOut, checkFileExists, binIdFromFilename
 
 from hmmer import HMMERRunner, HMMERParser, makeOutputFNs
 from hmmerModelParser import HmmModelParser
 
 class ResultsParser():
-    """This class does the job of parsing through the txt output from a hmmer run"""
+    """Parse output of Prodigal+HMMER run and derived statistics."""
     def __init__(self):
         # make the output file names
         (self.txtOut, self.hmmOut) = makeOutputFNs()
@@ -60,29 +60,95 @@ class ResultsParser():
         
         self.numQs = len(self.models)
         
-        # read bin and scaffold stats into dictionaries
-        binStatsFile = os.path.join(directory, defaultValues.__CHECKM_DEFAULT_BIN_STATS_FILE__)
-        with open(binStatsFile, 'r') as f:
-            s = f.read()
-            binStats = ast.literal_eval(s)
-        
-        seqStatsFile = os.path.join(directory, defaultValues.__CHECKM_DEFAULT_SEQ_STATS_FILE__)
-        with open(seqStatsFile, 'r') as f:
-            s = f.read()
-            seqStats = ast.literal_eval(s)
+        # read bin and sequence stats into dictionaries
+        binStats = self.parseBinStats(directory)
+        seqStats = self.parseSeqStats(directory)
 
         # we expect directory to contain a collection of folders names after the original bins
         for folder in os.listdir(directory): 
             if os.path.isdir(os.path.join(directory, folder)):
                 # somewhere to store results
-                resultsManager = ResultsManager(folder, lengthCO, eCO, self.models, binStats[folder], seqStats[folder])
+                binId = binIdFromFilename(folder)
+                resultsManager = ResultsManager(folder, lengthCO, eCO, self.models, binStats[binId], seqStats[binId])
                 
                 # we can now build the hmmer_file_name
                 hmmer_file_name = os.path.join(directory, folder, self.txtOut)
                 
                 # and then we can parse it
                 self.parseHmmerResults(hmmer_file_name, resultsManager, bQuiet)
-                self.results[folder] = resultsManager
+                self.results[binId] = resultsManager
+                
+        # cache critical results to file
+        self.writeBinStatsExt(directory)
+        self.writeMarkerGeneStats(directory)
+
+    def writeBinStatsExt(self, directory):
+        binStatsExt = {}
+        for binId in self.results:
+            binStatsExt[binId] = self.results[binId].getSummary(outputFormat=1)
+           
+        binStatsExtFile = os.path.join(directory, defaultValues.__CHECKM_DEFAULT_BIN_STATS_EXT_FILE__) 
+        fout = open(binStatsExtFile, 'w')
+        fout.write(str(binStatsExt))
+        fout.close
+        
+    def writeMarkerGeneStats(self, directory):
+        markerGenes = {}
+        for binId in self.results:
+            markerGenes[binId] = self.results[binId].getSummary(outputFormat=8)
+           
+        markerGenesFile = os.path.join(directory, defaultValues.__CHECKM_DEFAULT_MARKER_GENE_STATS__)
+        fout = open(markerGenesFile, 'w')
+        fout.write(str(markerGenes))
+        fout.close
+                         
+    def parseBinStats(self, resultsFolder):
+        """Read bin statistics from file."""
+        binStatsFile = os.path.join(resultsFolder, defaultValues.__CHECKM_DEFAULT_BIN_STATS_FILE__)
+        
+        checkFileExists(binStatsFile)
+        
+        with open(binStatsFile, 'r') as f:
+            s = f.read()
+            binStats = ast.literal_eval(s)
+            
+        return binStats
+    
+    def parseBinStatsExt(self, resultsFolder):
+        """Read bin statistics from file."""
+        binStatsExtFile = os.path.join(resultsFolder, defaultValues.__CHECKM_DEFAULT_BIN_STATS_EXT_FILE__)
+        
+        checkFileExists(binStatsExtFile)
+        
+        with open(binStatsExtFile, 'r') as f:
+            s = f.read()
+            binStatsExt = ast.literal_eval(s)
+            
+        return binStatsExt
+    
+    def parseMarkerGeneStats(self, resultsFolder):
+        """Read bin statistics from file."""
+        markerGeneStatsFile = os.path.join(resultsFolder, defaultValues.__CHECKM_DEFAULT_MARKER_GENE_STATS__)
+        
+        checkFileExists(markerGeneStatsFile)
+        
+        with open(markerGeneStatsFile, 'r') as f:
+            s = f.read()
+            markerGeneStats = ast.literal_eval(s)
+            
+        return markerGeneStats
+            
+    def parseSeqStats(self, resultsFolder):
+        """Read sequence statistics from file."""
+        seqStatsFile = os.path.join(resultsFolder, defaultValues.__CHECKM_DEFAULT_SEQ_STATS_FILE__)
+        
+        checkFileExists(seqStatsFile)
+        
+        with open(seqStatsFile, 'r') as f:
+            s = f.read()
+            seqStats = ast.literal_eval(s)
+            
+        return seqStats
             
     def parseHmmerResults(self, fileName, storage, bQuiet):
         """Parse HMMER results."""
@@ -140,8 +206,8 @@ class ResultsParser():
         oldStdOut = reassignStdOut(outFile)
             
         self.printHeader(outputFormat)  
-        for fasta in self.results:
-            self.results[fasta].printSummary(outputFormat=outputFormat)
+        for binId in self.results:
+            self.results[binId].printSummary(outputFormat=outputFormat)
             
         # restore stdout   
         restoreStdOut(outFile, oldStdOut, bQuiet)     
@@ -150,7 +216,7 @@ class ResultsManager():
     """Store all the results for a single bin"""
     def __init__(self, name, lengthCO, eCO, models=None, binStats=None, scaffoldStats=None):
         self.name = name
-        self.binId = name[0:name.rfind('.')]
+        self.binId = os.path.splitext(name)[0]
         self.markers = {}
         self.eCO = eCO
         self.lengthCO = lengthCO
@@ -231,9 +297,98 @@ class ResultsManager():
             gene_counts.append(perc_comp)
             gene_counts.append(perc_cont)
             return gene_counts
+        
+    def getSummary(self, outputFormat=1):
+        """Get dictionary containing information about bin."""
+        summary = {}
+        
+        if outputFormat == 1:
+            data = self.calculateMarkers(verbose=False)
+            summary['0'] = data[0]
+            summary['1'] = data[1]
+            summary['2'] = data[2]
+            summary['3'] = data[3]
+            summary['4'] = data[4]
+            summary['5+'] = data[5]
+            summary['Completeness'] = data[6]
+            summary['Contamination'] = data[7]
+            summary.update(self.binStats)
+               
+        elif outputFormat == 2:
+            data = self.calculateMarkers(verbose=False)
+            summary['0'] = data[0]
+            summary['1'] = data[1]
+            summary['2'] = data[2]
+            summary['3'] = data[3]
+            summary['4'] = data[4]
+            summary['5+'] = data[5]
+            summary['Completeness'] = data[6]
+            summary['Contamination'] = data[7]
+            
+        elif outputFormat == 3:
+            data = self.calculateMarkers(verbose=True)
+            for marker,count in data.iteritems():
+                summary[marker] = count
+
+        elif outputFormat == 4:
+            data = self.calculateMarkers(verbose=True)
+            for marker,count in data.iteritems():
+                summary[marker] = count
+
+        elif outputFormat == 5:
+            # tabular of bin_id, marker, contig_id
+            for marker, hit_list in self.markers.items():
+                summary[marker] = []
+                for hit in hit_list:
+                    summary[marker].append(hit.target_name)
+                    
+        elif outputFormat == 6:
+            for marker, hit_list in self.markers.items():
+                if len(hit_list) >= 2:
+                    summary[marker] = []
+                    for hit in hit_list:
+                        summary[marker].append(hit.target_name)
+
+        elif outputFormat == 7:
+            # tabular - print only contigs that have more than one copy 
+            # of the same marker on them
+            contigs = defaultdict(dict)
+            for marker, hit_list in self.markers.items():
+                for hit in hit_list:
+                    try:
+                        contigs[hit.target_name][marker] += 1
+                    except KeyError:
+                        contigs[hit.target_name][marker] = 1
+            
+            for contig_name, marker_counts in contigs.items():
+                for marker_name, marker_count in marker_counts.items():
+                    if marker_count > 1:
+                        if contig_name not in summary:
+                            summary[contig_name] = {}
+                            
+                        summary[contig_name][marker_name] = marker_count
+    
+        elif outputFormat == 8:
+            # tabular - print only position of marker genes
+            genesWithMarkers = {}
+            for marker, hit_list in self.markers.items():
+                for hit in hit_list:
+                    genesWithMarkers[hit.target_name] = genesWithMarkers.get(hit.target_name, []) + [hit]
+                    
+            for geneId, hits in genesWithMarkers.iteritems():
+                summary[geneId] = {}
+                for hit in hits:
+                    summary[geneId][hit.query_name] = summary[geneId].get(hit.query_name, []) + [[hit.ali_from, hit.ali_to]]
+                    
+        elif outputFormat == 9:
+            pass
+        else:
+            print("Unknown output format: ", outputFormat)
+            
+        return summary
 
     def printSummary(self, outputFormat=1):
-        """print out some information about this bin"""
+        """Print out information about bin."""
         if outputFormat == 1:
             data = self.calculateMarkers(verbose=False)
             row = self.binId

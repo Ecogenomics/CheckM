@@ -2,7 +2,8 @@
 
 ###############################################################################
 #
-# distributionDeltaGC.py - delta GC distribution over reference genomes
+# distributionDeltaTetra.py - calculate distribution of tetranucleotide 
+#                             distances for all reference genomes
 #
 ###############################################################################
 #                                                                             #
@@ -21,31 +22,21 @@
 #                                                                             #
 ###############################################################################
 
+import time
 import sys
 import os
 import argparse
-import string
 from random import randint
 import multiprocessing as mp
 
 import numpy as np
 
 from checkm.seqUtils import readGenomicSeqsFromFasta
+from checkm.genomicSignatures import GenomicSignatures
 
-class DeltaGC(object):
+class DeltaTetraDiff(object):
     def __init__(self):
         pass
-        
-    def __createNumericGenome(self, genome):
-        # for simplicity, create a single sequence from all scaffolds/contigs
-        genomeSeq = ''.join(genome.values()).upper()
-        
-        # create numpy array of genome with G and C as 0, A and T as 1, and degenerate/ambiguous bases as 2
-        trans = string.maketrans('CGATUNRYMKBDHVWS', '0011122222222222')
-        transGenomeSeq = genomeSeq.translate(trans)
-        numericGenome = np.array(map(int, transGenomeSeq), dtype=np.int)
-        
-        return numericGenome
     
     def __calculateResults(self, windowSizes, numWindows, genomeDir, queueIn, queueOut):
         while True:
@@ -53,49 +44,47 @@ class DeltaGC(object):
             if genomeId == None:
                 break
             
+            start = time.time()
+            
             seqs = readGenomicSeqsFromFasta(os.path.join(genomeDir, genomeId, genomeId + '.fna'))
+            genomeScaffold = 'NNNN'.join(seqs.values())
             
-            # calculate GC of genome
-            numericGenome = self.__createNumericGenome(seqs)
-            counts = np.bincount(numericGenome)
-            gc = counts[0]
-            totalBases = gc + counts[1]  
-            meanGC = float(gc) / totalBases    
+            # calculate tetranucleotide signature of genome
+            gsCalculator = GenomicSignatures(4)
+            genomeSig = gsCalculator.seqSignature(genomeScaffold)
             
-            fout = open('./deltaGC/' + genomeId + '.tsv', 'w')
-            fout.write('# Mean GC = ' + str(meanGC) + '\n')
+            fout = open('./deltaTD/' + genomeId + '.tsv', 'w')
+            fout.write('# Tetra signature = ' + str(genomeSig) + '\n')
+            fout.close()
+            sys.exit()
             
-            # calculate GC distribution for different window sizes
+            # calculate tetranucleotide distance distribution for different window sizes
+            startW = time.time()
             for windowSize in windowSizes:
-                endWindowPos = len(numericGenome) - windowSize
+                endWindowPos = len(genomeScaffold) - windowSize
                 if endWindowPos <= 0:
                     # This might occur for the largest window sizes and smallest genomes
                     break
                 
-                requiredBasePairs = 0.9*windowSize
-                
-                deltaGCs = []
-                while len(deltaGCs) != numWindows:
+                deltaTDs = []
+                while len(deltaTDs) != numWindows:
                     # pick random window
                     startWindow = randint(0, endWindowPos)
                     
-                    # calculate GC
-                    counts = np.bincount(numericGenome[startWindow:(startWindow+windowSize)])
-                    gc = counts[0]
-                    totalBases = gc + counts[1]
-                    
-                    if totalBases < requiredBasePairs:
-                        # there are N's in the window so skip it
-                        continue
-                    
-                    gcPer = float(gc) / totalBases
-                    deltaGCs.append(gcPer - meanGC)
+                    windowSig = gsCalculator.seqSignature(genomeScaffold[startWindow:(startWindow+windowSize)])
+                    dist = gsCalculator.distance(genomeSig, windowSig)
+                    deltaTDs.append(dist)
                     
                 fout.write('Windows Size = ' + str(windowSize) + '\n')
-                fout.write(','.join(map(str, deltaGCs)) + '\n')
+                fout.write(','.join(map(str, deltaTDs)) + '\n')
             fout.close()
+            endW = time.time()
+            print endW - startW
         
             queueOut.put(genomeId)
+            
+            end = time.time()
+            print end - start
 
     def __storeResults(self, queue, numGenomes):
         processedRef = 0
@@ -129,6 +118,8 @@ class DeltaGC(object):
                 
                 if os.path.exists(os.path.join(genomeDir, genomeId, genomeId + '.fna')):
                     genomeIds.append(genomeId)
+                    
+        genomeIds = genomeIds[0:1]
                     
         print '  Identified reference genomes: ' + str(len(genomeIds))
         
@@ -177,5 +168,5 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     
-    deltaGC = DeltaGC()
-    deltaGC.run(args.metadata_file, args.genome_dir, args.num_windows, args.threads)
+    deltaTetraDiff = DeltaTetraDiff()
+    deltaTetraDiff.run(args.metadata_file, args.genome_dir, args.num_windows, args.threads)

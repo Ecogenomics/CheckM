@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name='checkm-ACE',
     version='1.0.0',
-    author='Donovan Parks, Connor Skennerton, Michael Imelfort',
+    author='Donovan Parks, Michael Imelfort, Connor Skennerton',
     author_email='donovan.parks@gmail.com',
     packages=['checkm', 'checkm.plot', 'checkm.test'],
     scripts=['bin/checkm'],
@@ -15,5 +15,6 @@ setup(
         "numpy >= 1.6.1",
         "scipy >= 0.10.1",
         "matplotlib >= 1.1.0",
-        "pysam >= 0.7.4",],
+        "pysam >= 0.7.4",
+        "sqlite3 >= 2.6.0"],
 )

@@ -31,9 +31,9 @@ class AbstractPlot(FigureCanvas):
 	'''
 	Abstract base class for plotting.
 	'''
-	def __init__(self, options):	
+	def __init__(self, options):
 		self.options = options
-		
+
 		# Global plot settings
 		mpl.rcParams['font.size'] = self.options.font_size
 		mpl.rcParams['axes.titlesize'] = self.options.font_size
@@ -41,94 +41,94 @@ class AbstractPlot(FigureCanvas):
 		mpl.rcParams['xtick.labelsize'] = self.options.font_size
 		mpl.rcParams['ytick.labelsize'] = self.options.font_size
 		mpl.rcParams['legend.fontsize'] = self.options.font_size
-		
+
 		self.fig = Figure(facecolor='white', dpi=options.dpi)
-		
+
 		FigureCanvas.__init__(self, self.fig)
 
 		self.cid = None
-		
+
 		self.type = '<none>'
 		self.name = '<none>'
-		
+
 		self.axesColour = (0.5, 0.5, 0.5)
-		
+
 	def savePlot(self, filename, dpi=300):
 		imgFormat = filename[filename.rfind('.')+1:len(filename)]
-		if imgFormat in ['png', 'pdf', 'ps', 'eps','svg']:			
+		if imgFormat in ['png', 'pdf', 'ps', 'eps','svg']:
 			self.fig.savefig(filename,format=imgFormat,dpi=dpi,facecolor='white',edgecolor='white')
 		else:
 			pass
 
 	def labelExtents(self, xLabels, xFontSize, xRotation, yLabels, yFontSize, yRotation):
 		self.fig.clear()
-		
-		tempAxes = self.fig.add_axes([0,0,1.0,1.0])	
-		
-		tempAxes.set_xticks(np.arange(len(xLabels)))	
-		tempAxes.set_yticks(np.arange(len(yLabels)))	
-		
+
+		tempAxes = self.fig.add_axes([0,0,1.0,1.0])
+
+		tempAxes.set_xticks(np.arange(len(xLabels)))
+		tempAxes.set_yticks(np.arange(len(yLabels)))
+
 		xText = tempAxes.set_xticklabels(xLabels, size=xFontSize, rotation=xRotation)
 		yText = tempAxes.set_yticklabels(yLabels, size=yFontSize, rotation=yRotation)
-		
+
 		bboxes = []
 		for label in xText:
 			bbox = label.get_window_extent(self.get_renderer())
 			bboxi = bbox.inverse_transformed(self.fig.transFigure)
 			bboxes.append(bboxi)
 		xLabelBounds = mtransforms.Bbox.union(bboxes)
-		
+
 		bboxes = []
 		for label in yText:
 			bbox = label.get_window_extent(self.get_renderer())
 			bboxi = bbox.inverse_transformed(self.fig.transFigure)
-			bboxes.append(bboxi)		
-		yLabelBounds = mtransforms.Bbox.union(bboxes)			
-		
+			bboxes.append(bboxi)
+		yLabelBounds = mtransforms.Bbox.union(bboxes)
+
 		self.fig.clear()
-		
+
 		return xLabelBounds, yLabelBounds
-		
+
 	def xLabelExtents(self, labels, fontSize, rotation=0):
 		self.fig.clear()
-		
-		tempAxes = self.fig.add_axes([0,0,1.0,1.0])	
-		tempAxes.set_xticks(np.arange(len(labels)))	
+
+		tempAxes = self.fig.add_axes([0,0,1.0,1.0])
+		tempAxes.set_xticks(np.arange(len(labels)))
 		xLabels = tempAxes.set_xticklabels(labels, size=fontSize, rotation=rotation)
-		
+
 		bboxes = []
 		for label in xLabels:
 			bbox = label.get_window_extent(self.get_renderer())
 			bboxi = bbox.inverse_transformed(self.fig.transFigure)
-			bboxes.append(bboxi)		
-		xLabelBounds = mtransforms.Bbox.union(bboxes)		
-		
+			bboxes.append(bboxi)
+		xLabelBounds = mtransforms.Bbox.union(bboxes)
+
 		self.fig.clear()
-		
+
 		return xLabelBounds
-	
+
 	def yLabelExtents(self, labels, fontSize, rotation=0):
 		self.fig.clear()
 
-		tempAxes = self.fig.add_axes([0,0,1.0,1.0])	
-		tempAxes.set_yticks(np.arange(len(labels)))	
+		tempAxes = self.fig.add_axes([0,0,1.0,1.0])
+		tempAxes.set_yticks(np.arange(len(labels)))
 		yLabels = tempAxes.set_yticklabels(labels, size=fontSize, rotation=rotation)
-		
+
 		bboxes = []
 		for label in yLabels:
 			bbox = label.get_window_extent(self.get_renderer())
 			bboxi = bbox.inverse_transformed(self.fig.transFigure)
-			bboxes.append(bboxi)		
-		yLabelBounds = mtransforms.Bbox.union(bboxes)		
-		
+			bboxes.append(bboxi)
+		yLabelBounds = mtransforms.Bbox.union(bboxes)
+
 		self.fig.clear()
-		
+
 		return yLabelBounds
 
-	def formatLabels(self, labels): 
-		formattedLabels = []     
-		for label in labels: 
-			value = float(label.get_text())    
+	def formatLabels(self, labels):
+		formattedLabels = []
+		for label in labels:
+			value = float(label.get_text())
 			if value < 0.01:
 				valueStr = '%.2e' % value
 				if 'e-00' in valueStr:
@@ -137,9 +137,18 @@ class AbstractPlot(FigureCanvas):
 					valueStr = valueStr.replace('e-0', 'e-')
 			else:
 				valueStr = '%.3f' % value
-				
+
 			formattedLabels.append(valueStr)
-				
+
 		return formattedLabels
-	
+
+	def removeExtraZeros(self, label):
+		if '.' in label:
+			while label[-1] == '0':
+				label = label[0:-1]		
 				
+		if label[-1] == '.':	# remove potential trailing decimal point
+			label = label[0:-1]	
+				
+		return label
+

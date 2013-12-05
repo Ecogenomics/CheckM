@@ -1,9 +1,6 @@
-#!/usr/bin/env python
-
 ###############################################################################
 #
-# runDistDeltaGC.py - calculate delta GC distribution of reference genomes
-#                     in parallel
+# markerSet.py - Calculate and process marker sets.
 #
 ###############################################################################
 #                                                                             #
@@ -23,20 +20,14 @@
 ###############################################################################
 
 import os
+import sys
 
-if __name__ == '__main__':
-    numProcessors = 24
+from common import makeSurePathExists
 
-    startGC = 0.0
-    endGC = 1.0
-    gcStep = 0.01
-
-    curGC = startGC
-    cmdList = open('cmdList.txt', 'w')
-    while curGC < endGC:
-        cmdList.write('python distributionDeltaGC.py --len_step_size 200 --max_len 5000 --gc_start ' + str(curGC) + ' --gc_end ' + str(curGC + gcStep) + ' /srv/db/img/4.1/metadata/img_metadata_4_1.dhp.tsv  /srv/db/img/4.1/genomes/' + '\n')
-        curGC += gcStep
-
-    cmdList.close()
-
-    os.system('cat cmdList.txt | parallel --max-procs ' + str(numProcessors))
+class MarkerSet():
+    """Calculate and process marker sets."""
+    def __init__(self):
+        pass
+   
+    def checkBin(self):
+        pass

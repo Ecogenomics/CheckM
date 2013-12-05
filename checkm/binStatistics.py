@@ -26,6 +26,7 @@ import math
 
 import defaultValues
 from seqUtils import readFasta, baseCount, calculateN50
+from common import binIdFromFilename
 from mathHelper import mean
 
 class BinStatistics():
@@ -52,11 +53,12 @@ class BinStatistics():
         binStats = {}
         seqStats = {}
         for fasta in inFiles:
-            binName = os.path.basename(fasta)
-            binStats[binName] = {}
-            seqStats[binName] = {}
+            binId = binIdFromFilename(fasta)
             
-            t = threading.Thread(target=self.__processBin, args=(fasta, outFolder, binStats[binName], seqStats[binName], bQuiet))
+            binStats[binId] = {}
+            seqStats[binId] = {}
+            
+            t = threading.Thread(target=self.__processBin, args=(fasta, outFolder, binStats[binId], seqStats[binId], bQuiet))
             t.start()
             
         while True:

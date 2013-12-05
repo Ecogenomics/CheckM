@@ -37,38 +37,47 @@ from checkm import checkm, defaultValues
 
 def printHelp():
     print ''
-    print '           ...::: CheckM v' + __version__ + ' :::...'''
+    print '                ...::: CheckM v' + __version__ + ' :::...'''
     print '''\
 
   Assess completeness and contamination of putative genome bins.
     
   Standard workflow:
-
-    checkm analyze     -> Identify marker genes in genome bins
-    checkm qa          -> Assess bins for contamination and completeness
-    checkm align       -> Create alignments of matched marker genes
-
+    analyze     -> Identify marker genes in genome bins
+    qa          -> Assess bins for contamination and completeness
+    align       -> Create alignments of matched marker genes
 
   Combined workflow:
-
-    checkm all         -> Build and test in one step
+    all         -> Build and test in one step
+         
+  General plots:
+    nx_plot     -> Create Nx-plots
+    len_plot    -> Cumulative sequence length plot
+    marker_plot -> Plot position of marker genes on sequences
+    par_plot    -> Parallel coordinate plot of GC and coverage
+       
+  Reference distribution plots:  
+    gc_plot     -> Create GC histogram and delta-GC plot
+    coding_plot -> Create coding density (CD) histogram and delta-CD plot
+    tetra_plot  -> Create tetranucleotide distance (TD) histogram and delta-TD plot
+    dist_plot   -> Create image with GC, CD, and TD distribution plots together
     
+  Sequence subspace plots:
+    cov_pca     -> PCA plot of coverage profiles
+    tetra_pca   -> PCA plot of tetranucleotide signatures
     
-  Plotting functions:
-    
-    checkm nx_plot     -> Create Nx-plots
-    checkm len_plot    -> Cumulative sequence length plot
-    checkm gc_plot     -> Create GC histogram and delta-GC plot
-    checkm marker_plot -> Plot position of marker genes on sequences
-    checkm par_plot    -> Parallel coordinate plot of GC and coverage
-    
+  Bin exploration and modification:
+    outliers    -> identify outlier in bins relative to reference distributions
+    modify      -> modify sequences in a bin
+    unique      -> ensure no sequences are assigned to multiple bins
+     
   Utility functions:
+    unbinned    -> Identify unbinned sequences  
+    coverage    -> Calculate coverage of sequences
+    tetra       -> Calculate tetranucleotide signature of sequences
+    profile     -> Calculate percentage of reads mapped to each bin
 
-    checkm unbinned    -> Identify unbinned sequences  
-    checkm coverage    -> Calculate coverage of sequences
-    checkm profile     -> Calculate percentage of reads mapped to each bin
-
-    USE: checkm OPTION -h to see detailed options
+  Use: checkm <command> -h for command specific help
     '''
 
 if __name__ == '__main__':
@@ -100,7 +109,6 @@ if __name__ == '__main__':
     # identify marker genes within binned contigs and calculate genome statistics
     analyze_parser = subparsers.add_parser('analyze',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='Identify marker genes in bins and calculate genome statistics.',
                                         parents=[taxon_parser],
                                         description='''Identify marker genes in bins and calculate genome statistics. 
                                                         The set of marker genes to use is specified with either -T or -H.''')
@@ -115,7 +123,6 @@ if __name__ == '__main__':
     # do QA on pre-processed contigs
     qa_parser = subparsers.add_parser('qa',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='Assess genome bin for contamination and completeness.',
                                         parents=[output_parser, taxon_parser],
                                         description='''Assess genome bin for contamination and completeness. 
                                                         The set of marker genes used must be specified with -T or -H.''')
@@ -128,7 +135,6 @@ if __name__ == '__main__':
     # produce alignments of matches
     align_parser = subparsers.add_parser('align',
                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                         help='Create alignments of matched marker genes.',
                                          parents=[taxon_parser],
                                          description='Create alignments of matched marker genes.')
     align_parser.add_argument('out_folder', help="folder specified during analyze command")
@@ -147,7 +153,6 @@ if __name__ == '__main__':
     # Standard workflow in one step
     pipeline_parser = subparsers.add_parser('all',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='Run analyze + qa + align in one step.',
                                         parents=[taxon_parser, output_parser],
                                         description='''Run analyze + qa + align in one step. 
                                                         The set of marker genes to use is specified with either -T or -H.''')
@@ -162,12 +167,11 @@ if __name__ == '__main__':
     
     # generic arguments for plots
     plot_need_qa_results_parser = argparse.ArgumentParser(add_help=False)
-    plot_need_qa_results_parser.add_argument('results_folder', help="folder holding QA results (see qa or all command)")
+    plot_need_qa_results_parser.add_argument('out_folder', help="folder specified during analyze and qa command")
     
     plot_parser = argparse.ArgumentParser(add_help=False)
     plot_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
     plot_parser.add_argument('plot_folder', help="folder to hold plots")
-    plot_parser.add_argument('--fig_padding', type = float, default = 0.2, help='white space to place around figure (in inches)')
     plot_parser.add_argument('--image_type', default = 'png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
     plot_parser.add_argument('--dpi', type = int, default = 600, help='desired DPI of output image')
     plot_parser.add_argument('--font_size', type = int, default = 8, help='Desired font size')
@@ -185,21 +189,88 @@ if __name__ == '__main__':
     plot_double_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
     plot_double_parser.add_argument('--height', type = float, default = 3.5, help='height of output image')
     
-    # GC histogram
+    # GC plot
     plot_gc_parser = subparsers.add_parser('gc_plot',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         help= 'Create GC histogram and delta-GC plot.',
                                         parents=[plot_double_parser],
                                         description= 'Create GC histogram and delta-GC plot.')
     
-    plot_gc_parser.add_argument('-w', '--window_size', help="non-overlapping window size used to calculate GC", type=int, default=1000)
-    plot_gc_parser.add_argument('-g', '--gc_bin_width', help="width of GC bars in histogram", type=float, default=0.01) 
+    plot_gc_parser.add_argument('distributions', help='reference distributions to plot', nargs='+', choices=['80', '90', '95', '98', '99', '99.5', '99.9', '100'])
+    plot_gc_parser.add_argument('-w', '--gc_window_size', help="window size used to calculate GC histogram", type=int, default=5000)
+    plot_gc_parser.add_argument('-b', '--gc_bin_width', help="width of GC bars in histogram", type=float, default=0.01) 
     plot_gc_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Coding density plot
+    plot_coding_parser = subparsers.add_parser('coding_plot',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        parents=[plot_need_qa_results_parser, plot_double_parser],
+                                        description= 'Create coding density (CD) histogram and delta-CD plot.')
+    
+    plot_coding_parser.add_argument('distributions', help='reference distributions to plot', nargs='+', choices=['80', '90', '95', '98', '99', '99.5', '99.9', '100'])
+    plot_coding_parser.add_argument('-w', '--cd_window_size', help="window size used to calculate CD histogram", type=int, default=10000)
+    plot_coding_parser.add_argument('-b', '--cd_bin_width', help="width of CD bars in histogram", type=float, default=0.01) 
+    plot_coding_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Tetranucleotide distance  plot
+    plot_tetra_parser = subparsers.add_parser('tetra_plot',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        parents=[plot_need_qa_results_parser, plot_double_parser],
+                                        description= 'Create tetranucleotide distance (TD) histogram and delta-TD plot.')
+    plot_tetra_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each bin (see tetra command)')
+    plot_tetra_parser.add_argument('distributions', help='reference distributions to plot', nargs='+', choices=['80', '90', '95', '98', '99', '99.5', '99.9', '100'])
+    plot_tetra_parser.add_argument('-w', '--td_window_size', help="window size used to calculate TD histogram", type=int, default=5000)
+    plot_tetra_parser.add_argument('-b', '--td_bin_width', help="width of TD bars in histogram", type=float, default=0.01) 
+    plot_tetra_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Reference distribution  plot
+    plot_dist_parser = subparsers.add_parser('dist_plot',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        description= 'Create image with GC, CD, and TD distribution plots together.')
+    plot_dist_parser.add_argument('out_folder', help="folder specified during analyze command")
+    plot_dist_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
+    plot_dist_parser.add_argument('plot_folder', help="folder to hold plots")
+    plot_dist_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
+    plot_dist_parser.add_argument('distributions', help='reference distributions to plot', nargs='+', choices=['80', '90', '95', '98', '99', '99.5', '99.9', '100'])
+    
+    plot_dist_parser.add_argument('--image_type', default = 'png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
+    plot_dist_parser.add_argument('--dpi', type = int, default = 600, help='desired DPI of output image')
+    plot_dist_parser.add_argument('--font_size', type = int, default = 8, help='Desired font size')
+    plot_dist_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    plot_dist_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
+    plot_dist_parser.add_argument('--height', type = float, default = 8, help='height of output image')
+    
+    plot_dist_parser.add_argument('-a', '--gc_window_size', help="window size used to calculate GC histogram", type=int, default=5000)
+    plot_dist_parser.add_argument('-b', '--td_window_size', help="window size used to calculate TD histogram", type=int, default=5000)
+    plot_dist_parser.add_argument('-c', '--cd_window_size', help="window size used to calculate CD histogram", type=int, default=10000)
+    plot_dist_parser.add_argument('-1', '--gc_bin_width', help="width of GC bars in histogram", type=float, default=0.01)
+    plot_dist_parser.add_argument('-2', '--td_bin_width', help="width of TD bars in histogram", type=float, default=0.01) 
+    plot_dist_parser.add_argument('-3', '--cd_bin_width', help="width of CD bars in histogram", type=float, default=0.01) 
+    plot_dist_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # PCA plot of tetranucleotide signatures
+    plot_tetra_pca_parser = subparsers.add_parser('tetra_pca',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        parents=[plot_parser],
+                                        description= 'PCA plot of tetranucleotide signatures.')
+    plot_tetra_pca_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
+    plot_tetra_pca_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
+    plot_tetra_pca_parser.add_argument('--height', type = float, default = 6.5, help='height of output image')
+    plot_tetra_pca_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # PCA plot of coverage profiles
+    plot_cov_pca_parser = subparsers.add_parser('cov_pca',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        parents=[plot_parser],
+                                        description= 'PCA plot of coverage profiles.')
+    plot_cov_pca_parser.add_argument('coverage_file', help="file indicating coverage of each sequence (see coverage command)")
+    plot_cov_pca_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
+    plot_cov_pca_parser.add_argument('--height', type = float, default = 6.5, help='height of output image')
+    plot_cov_pca_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Nx-plot
     plot_nx_parser = subparsers.add_parser('nx_plot',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='Create Nx-plots.',
                                         parents=[plot_single_parser],
                                         description='Create Nx-plots.')
     
@@ -209,7 +280,6 @@ if __name__ == '__main__':
     # Cumulative sequence length plot
     plot_len_parser = subparsers.add_parser('len_plot',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='Cumulative sequence length plot.',
                                         parents=[plot_single_parser],
                                         description='Cumulative sequence length plot.')
 
@@ -218,26 +288,24 @@ if __name__ == '__main__':
     # Marker position plot
     marker_plot_parser = subparsers.add_parser('marker_plot',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='Plot position of marker genes on sequences.',
                                         parents=[plot_need_qa_results_parser, plot_single_parser],
                                         description='Plot position of marker genes on sequences.')
 
+    marker_plot_parser.add_argument('--fig_padding', type = float, default = 0.2, help='white space to place around figure (in inches)')
     marker_plot_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # Parallel coordinate plot
     parallel_coord_plot_parser = subparsers.add_parser('par_plot',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        help='Parallel coordinate plot of GC and coverage.',
                                         parents=[plot_need_qa_results_parser, plot_single_parser],
                                         description='Parallel coordinate plot of GC and coverage.')
-    parallel_coord_plot_parser.add_argument('coverage_file', help="File indicating coverage of each sequence (see coverage command)")
+    parallel_coord_plot_parser.add_argument('coverage_file', help="file indicating coverage of each sequence (see coverage command)")
     parallel_coord_plot_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     
     # Identify unbinned sequences
     unbinned_parser = subparsers.add_parser('unbinned',
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            help='Identify unbinned sequences.',
                                             description='Identify unbinned sequences.')
     unbinned_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     unbinned_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
@@ -249,32 +317,72 @@ if __name__ == '__main__':
     # Calculate coverage
     coverage_parser = subparsers.add_parser('coverage',
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            help='Calculate coverage of sequences.',
                                             description='Calculate coverage of sequences.')
     
     coverage_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     coverage_parser.add_argument('bam_files', nargs='+', help="BAM files to parse")
+    coverage_parser.add_argument('output_file', help="print results to file")
     coverage_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
     coverage_parser.add_argument('-p', '--pairs_only', action='store_true', default=False, help="ignore reads that are not properly paired")
     coverage_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads (for best performance set this to the number of input BAM files)")
-    coverage_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
     coverage_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Calculate tetranucleotide signatures
+    tetra_parser = subparsers.add_parser('tetra',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            description='Calculate tetranucleotide signature of sequences.')
+    
+    tetra_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
+    tetra_parser.add_argument('output_file', help="print results to file")
+    tetra_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    tetra_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads (for best performance set this to the number of input BAM files)")
+    tetra_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Calculate community profile
     profile_parser = subparsers.add_parser('profile',
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            help='Calculate percentage of reads mapped to each bin.',
                                             description='Calculate percentage of reads mapped to each bin.')
-    profile_parser.add_argument('coverage_file', help="File indicating coverage of each sequence (see coverage command)")
+    profile_parser.add_argument('coverage_file', help="file indicating coverage of each sequence (see coverage command)")
     profile_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
     profile_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Identify outlier sequences
+    outlier_parser = subparsers.add_parser('outliers',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            parents=[plot_need_qa_results_parser],
+                                            description='Identify outliers in bins relative to reference distributions.')
+    outlier_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
+    outlier_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
+    outlier_parser.add_argument('output_file', help="print results to file")
+    outlier_parser.add_argument('-d', '--distribution', help='reference distribution used to identify outliers', choices=['80', '90', '95', '98', '99', '99.5', '99.9', '100'], default='99')
+    outlier_parser.add_argument('-r', '--report_type', help="report sequences that are outliers in 'all' or 'any' reference distribution", choices=['any', 'all'], default='any')
+    outlier_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    outlier_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Modify a bin
+    modify_parser = subparsers.add_parser('modify',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            description='Modify sequences in a bin.')
+    modify_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
+    modify_parser.add_argument('bin_file', help="bin to be modified")
+    modify_parser.add_argument('output_file', help="modified bin")
+    modify_parser.add_argument('-a', '--add', action='append', help="ID of sequence to add to bin (may specify multiple times)")
+    modify_parser.add_argument('-r', '--remove', action='append', help="ID of sequence to remove from bin (may specify multiple times)")
+    modify_parser.add_argument('-x', '--outlier_file', help="remove all sequences marked as outliers in the bin (see outlier command)")
+    modify_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Ensure uniqueness of bins 
+    unique_parser = subparsers.add_parser('unique',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            description='Ensure no sequences are assigned to multiple bins.')
+    unique_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
+    unique_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
 
     # debug and development
     if False:
         debug_parser = subparsers.add_parser('debug',
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            help='rogue mode for use in testing new features',
-                                            description='Rogue mode for use in testing new features')
+                                            description='Rogue mode for use in testing new features.')
         debug_parser.add_argument('data', help="some data")
 
     # get and check options
@@ -300,7 +408,9 @@ if __name__ == '__main__':
             pdb.run(checkmParser.parseOptions(args))
         else:
             checkmParser.parseOptions(args)
+    except SystemExit:
+        print "\nControlled exit resulting from an unrecoverable error or warning."
     except:
-        print "Unexpected error:", sys.exc_info()[0]
+        print "\nUnexpected error:", sys.exc_info()[0]
         raise
 
