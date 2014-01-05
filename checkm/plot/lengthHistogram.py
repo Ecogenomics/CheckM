@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# seqLenPlot.py - Create a cumulative sequence length plot. 
+# seqLenPlot.py - Create a sequence length distribution histogram. 
 #
 ###############################################################################
 #                                                                             #
@@ -23,9 +23,11 @@ import numpy as np
 
 from AbstractPlot import AbstractPlot
 
+from matplotlib.ticker import MaxNLocator
+
 from checkm.seqUtils import readFasta
 
-class SeqLenPlot(AbstractPlot):
+class LengthHistogram(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
     
@@ -35,42 +37,31 @@ class SeqLenPlot(AbstractPlot):
         self.fig.set_size_inches(self.options.width, self.options.height)
         axes = self.fig.add_subplot(111)
         
-        # calculate cumulative sequence length
+        # calculate sequence lengths (in kb)
         seqs = readFasta(fastaFile)
         
         seqLens = []
         for seq in seqs.values():
-            seqLens.append(len(seq))
-            
-        seqLens.sort(reverse=True)
-        x = np.arange(0, len(seqLens))
-        
-        
-        y = []
-        cumLen = 0
-        for seqLen in seqLens:
-            cumLen += seqLen
-            y.append(cumLen)
+            seqLens.append(float(len(seq))/1e3)
 
-        # Create plot
-        axes.plot(x, y, 'k-',)    
-        axes.set_xlabel('Sequence index')
-        axes.set_ylabel('Cumulative sequence length (Mbps)')
+        # set unequal bin sizes (in kb)
+        bins = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1e12] 
+        counts, edges = np.histogram(seqLens, bins=bins)
+
+        # create histogram
+        axes.bar(left=np.arange(0.1, len(counts)), height=counts, width=0.8, color=(0.5, 0.5, 0.5))
+        axes.set_xlabel('Sequence length (kbps)')
+        axes.set_ylabel('Number sequences (out of %d)' % len(seqs))
         
         # ensure y-axis include zero
         _, end = axes.get_ylim()
         axes.set_ylim([0, end])
+        axes.get_yaxis().set_major_locator(MaxNLocator(integer=True))
         
         # Change sequence lengths from bps to kbps
-        yticks = axes.get_yticks()
-        kbpLabels = []
-        for seqLen in yticks:
-            label = '%.2f' % (float(seqLen)/1e6)
-            label = label.replace('.00', '') # remove trailing zeros
-            if label[-1] == '0':
-                label = label[0:-1]
-            kbpLabels.append(label)
-        axes.set_yticklabels(kbpLabels)
+        axes.set_xlim([0, len(counts)])
+        axes.set_xticks(np.arange(0.5, len(counts)))
+        axes.set_xticklabels(['<1', '1-2', '2-5', '5-10', '10-20', '20-50', '50-100', '100-200', '200-500', '>500'])
             
         # Prettify plot     
         for a in axes.yaxis.majorTicks:

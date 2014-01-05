@@ -21,6 +21,7 @@
 
 import os
 import sys
+import logging
 
 import numpy as np
 
@@ -31,14 +32,14 @@ from prodigal import ProdigalGeneFeatureParser
 
 class BinTools():
     """Functions for exploring and modifying bins."""
-    def __init__(self, threads=1):         
-        pass
+    def __init__(self, threads):         
+        self.logger = logging.getLogger()
     
     def __removeSeqs(self, seqs, seqsToRemove):
         """ Remove sequences. """
         missingSeqIds = set(seqsToRemove).difference(set(seqs.keys()))
         if len(missingSeqIds) > 0:
-            sys.stderr.write('[Error] Missing sequence(s) specified for removal: ' + ', '.join(missingSeqIds) + '\n')
+            self.logger.error('  [Error] Missing sequence(s) specified for removal: ' + ', '.join(missingSeqIds) + '\n')
             sys.exit()
             
         for seqId in seqsToRemove:
@@ -48,7 +49,7 @@ class BinTools():
         """ Add sequences. """
         missingSeqIds = set(seqsToAdd).difference(set(refSeqs.keys()))
         if len(missingSeqIds) > 0:
-            sys.stderr.write('[Error] Missing sequence(s) specified for addition: ' + ', '.join(missingSeqIds) + '\n')
+            self.logger.error('  [Error] Missing sequence(s) specified for addition: ' + ', '.join(missingSeqIds) + '\n')
             sys.exit()
         
         for seqId in seqsToAdd:
@@ -192,8 +193,10 @@ class BinTools():
         
         return np.mean(deltaTDs), deltaTDs
             
-    def identifyOutliers(self, outFolder, binFiles, tetraProfileFile, distribution, reportType, outputFile, bQuiet):
+    def identifyOutliers(self, outFolder, binFiles, tetraProfileFile, distribution, reportType, outputFile):
         """Identify sequences that are outliers."""   
+        logger = logging.getLogger()
+        
         gcBounds = readDistribution(distribution, 'gc_dist')
         cdBounds = readDistribution(distribution, 'cd_dist')
         tdBounds = readDistribution(distribution, 'td_dist')
@@ -207,15 +210,15 @@ class BinTools():
         processedBins = 0
         for binFile in binFiles:
             binId = binIdFromFilename(binFile)
-            if not bQuiet:
-                processedBins += 1
-                print '  Finding outliers in bin %s (%d of %d)' % (binId, processedBins, len(binFiles))
+            
+            processedBins += 1
+            self.logger.info('  Finding outliers in bin %s (%d of %d)' % (binId, processedBins, len(binFiles)))
                 
             seqs = readFasta(binFile)
             
             meanGC, deltaGCs, seqGC = self.gcDist(seqs)
             
-            genomicSig = GenomicSignatures(4)
+            genomicSig = GenomicSignatures(K=4, threads=1)
             tetraSigs = genomicSig.read(tetraProfileFile)
             binSig = self.binTetraSig(seqs, tetraSigs)
             meanTD, deltaTDs = self.tetraDiffDist(seqs, genomicSig, tetraSigs, binSig)

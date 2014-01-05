@@ -24,19 +24,17 @@
 import os
 import sys
 import argparse
+import json
 import multiprocessing as mp
 
 import numpy as np
 
 class CalculateBounds(object):
     def __init__(self):
-        self.manager = mp.Manager()
-        self.dist = self.manager.dict()
-        
         self.lock = mp.Lock()
-        self.counter = self.manager.Value('i', 0)
+        self.counter = mp.Manager().Value('i', 0)
         
-    def run(self, genomeDir, outputDir, stepSize, width, minGenomes, threads):
+    def run(self, genomeDir, outputFile, stepSize, width, minGenomes, threads):
         """Process central values in parallel."""  
         
         # get mean value of all genomes
@@ -49,27 +47,26 @@ class CalculateBounds(object):
                 continue
             
             with open(os.path.join(genomeDir, f), 'r') as fin:
-                gcLine = fin.readline()
+                dataLine = fin.readline()
                 
                 genomeId = f[0:f.rfind('.')]
-                meanValue = float(gcLine.split('=')[1])
+                meanValue = float(dataLine.split('=')[1])
                 meanValues[genomeId] = meanValue
                   
         # process different mean values in parallel   
-        CIs = [0.1, 0.05, 0.025, 0.01, 0.005, 0.0025, 0.0005, 0]
-        centreValues = np.arange(0.0, 1.0 + 0.5*stepSize, stepSize)
-
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
 
+        centreValues = np.arange(0.0, 1.0 + 0.5*stepSize, stepSize)
         for v in centreValues:
             workerQueue.put(v)
 
         for _ in range(threads):
             workerQueue.put(None)
 
+        CIs = np.arange(0, 100 + 0.5, 0.5).tolist()
         calcProc = [mp.Process(target = self.__calculateResults, args = (genomeDir, CIs, meanValues, width, minGenomes, workerQueue, writerQueue)) for _ in range(threads)]
-        writeProc = mp.Process(target = self.__storeResults, args = (writerQueue, len(centreValues)))
+        writeProc = mp.Process(target = self.__storeResults, args = (outputFile, len(centreValues), writerQueue))
 
         writeProc.start()
 
@@ -79,20 +76,13 @@ class CalculateBounds(object):
         for p in calcProc:
             p.join()
 
-        writerQueue.put((None, None, None, None, None))
+        writerQueue.put((None, None))
         writeProc.join()
-        
-        for ci in CIs:
-            ciStr = '%.2f' % ((1.0 - 2*ci)*100)
-            ciStr = ciStr.rstrip('0').rstrip('.')
-            fout = open(outputDir + '/distribution_%s.txt' % ciStr, 'w')
-            fout.write(str(self.dist[ci]))
-            fout.close()
         
     def __getGenomesInRange(self, meanValues, minValue, maxValue):
         genomeIds = []
-        for genomeId, gc in meanValues.iteritems():
-            if gc >= minValue and gc <= maxValue:
+        for genomeId, value in meanValues.iteritems():
+            if value >= minValue and value <= maxValue:
                 genomeIds.append(genomeId)
                 
         return genomeIds
@@ -104,21 +94,23 @@ class CalculateBounds(object):
             for line in open(os.path.join(genomeDir, genomeId + '.tsv')):
                 if 'Windows Size' in line:
                     windowSize = int(line.split('=')[1].strip())
+                    if windowSize not in d:
+                        d[windowSize] = []
                     bReadDist = True
                 elif bReadDist:
                     bReadDist = False
-                    d[windowSize] = d.get(windowSize, []) + [float(x) for x in line.split(',')]
+                    d[windowSize].extend([float(x) for x in line.split(',')])
                 
         return d
             
     def __calculateResults(self, genomeDir, CIs, meanValues, width, minGenomes, queueIn, queueOut):
-        """Calculate confidence interval for a specific mean GC and different sequence lengths."""
+        """Calculate confidence interval for a specific mean value (e.g., GC) and different sequence lengths."""
         while True:
             meanValue = queueIn.get(block=True, timeout=None) 
             if meanValue == None:
                 break
 
-            # get genomes within GC width of mean GC
+            # get genomes within a given width of mean value
             genomeIds = self.__getGenomesInRange(meanValues, meanValue-width, meanValue+width)
             
             if len(genomeIds) < minGenomes:
@@ -126,54 +118,54 @@ class CalculateBounds(object):
                     self.counter.value += 1
                 continue
             
-            windows = self.__getDeltaForWindows(genomeDir, genomeIds)     
-            for windowSize in windows:
-                sortedWindows = sorted(windows[windowSize])
+            windows = self.__getDeltaForWindows(genomeDir, genomeIds)  
+            d = {} # Note: defaultdict doesn't play well with 'ast' library
+            for windowSize, testPts in windows.iteritems():
+                testPts = np.array(testPts)
                 
-                for ci in CIs:
-                    if ci == 0:
-                        lowerIndex = 0
-                        upperIndex = len(sortedWindows) - 1
-                    else:
-                        lowerIndex = int(ci * len(sortedWindows)) - 1
-                        upperIndex = int((1.0 - ci) * len(sortedWindows) + 0.5) - 1
+                d[windowSize] = {}
+                percentiles = np.percentile(testPts, CIs)
+                for ci, p in zip(CIs, percentiles):
+                    d[windowSize][ci] = p
                 
-                    queueOut.put((ci, meanValue, windowSize, sortedWindows[lowerIndex], sortedWindows[upperIndex]))
+            queueOut.put((meanValue, d))
                     
             with self.lock:
                 self.counter.value += 1
 
-    def __storeResults(self, queue, totalItems):
+    def __storeResults(self, outputFile, totalItems, queue):
         """Store confidence intervals (i.e., to shared memory)."""
         print 'Calculating distributions for %d mean values.' % totalItems
+        
+        globalDist = {} # Note: defaultdict doesn't play well with 'ast' library
         while True:
-            ci, meanValue, windowSize, lowerGC, upperGC = queue.get(block=True, timeout=None)
-            if ci == None:
+            meanValue, dist = queue.get(block=True, timeout=None)
+            if meanValue == None:
                 break
 
-            statusStr = '  Finished processing %d of %d (%.2f%%) steps; last value = %.2f' % (self.counter.value, totalItems, float(self.counter.value)*100/totalItems, meanValue)
+            statusStr = '  Finished processing %d of %d (%.2f%%) steps.' % (self.counter.value, totalItems, float(self.counter.value)*100/totalItems)
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
-
-            # this pattern is necessary for the Manager to serialize data
-            valueDict = self.dist.get(ci, {})
-            windowDict = valueDict.get(meanValue, {})
-            windowDict[windowSize] = [lowerGC, upperGC]
-            valueDict[meanValue] = windowDict
-            self.dist[ci] = valueDict       
+            
+            globalDist[meanValue] = dist 
 
         sys.stdout.write('\n')
+        
+        fout = open(outputFile, 'w')
+        fout.write(str(globalDist))
+        fout.close()
               
 if __name__ == '__main__':  
-    parser = argparse.ArgumentParser(description='Calculate distribution bounds.')
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            description='Calculate distribution bounds.')
     parser.add_argument('genome_dir', help='directory with distributions for each genome')
-    parser.add_argument('output_dir', help='directory to write out distributions')
+    parser.add_argument('output_file', help='output file for distributions')
     parser.add_argument('-s', '--step_size', help='step size for calculating distribution', type = float, default = 0.01)
     parser.add_argument('-w', '--width', help='width around mean of distribution', type = float, default = 0.015)
-    parser.add_argument('--min_genomes', help='minimum genomes to calculate delta GC statistics', type = int, default = 5)
+    parser.add_argument('--min_genomes', help='minimum genomes to calculate statistics', type = int, default = 5)
     parser.add_argument('-t', '--threads', help='number of threads', type = int, default = 16)
     
     args = parser.parse_args()
     
     calculateBounds = CalculateBounds()
-    calculateBounds.run(args.genome_dir, args.output_dir, args.step_size, args.width, args.min_genomes, args.threads)
+    calculateBounds.run(args.genome_dir, args.output_file, args.step_size, args.width, args.min_genomes, args.threads)

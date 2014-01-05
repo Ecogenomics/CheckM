@@ -23,6 +23,7 @@ import os
 import errno
 import sys
 import ast
+import logging
 
 import numpy as np
 
@@ -36,15 +37,16 @@ def readDistribution(distPer, dirPostfix):
         d = ast.literal_eval(s)
         
     return d
-
+    
 def findNearest(array, value):
     '''Find nearest array element to a given value.'''
-    idx = (np.abs(array-value)).argmin()
+    idx = (np.abs(np.array(array)-value)).argmin()
     return array[idx]
 
 def checkFileExists(inputFile):
     if not os.path.exists(inputFile):
-        sys.stderr.write('[Error] Input file does not exists: ' + inputFile + '\n')
+        logger = logging.getLogger()
+        logger.error('  [Error] Input file does not exists: ' + inputFile + '\n')
         sys.exit()
 
 def makeSurePathExists(path):
@@ -52,7 +54,9 @@ def makeSurePathExists(path):
         os.makedirs(path)
     except OSError as exception:
         if exception.errno != errno.EEXIST:
-            raise
+            logger = logging.getLogger()
+            logger.error('  [Error] Specified path does not exist: ' + path + '\n')
+            sys.exit()
         
 def binIdFromFilename(filename):
     binId = os.path.basename(filename)
@@ -67,17 +71,19 @@ def reassignStdOut(outFile):
             # redirect stdout to a file
             sys.stdout = open(outFile, 'w')
         except:
-            print("Error diverting stout to file: ", sys.exc_info()[0])
-            raise
+            logger = logging.getLogger()
+            logger.error("   [Error] Error diverting stout to file: " + outFile)
+            sys.exit()
             
     return oldStdOut
 
-def restoreStdOut(outFile, oldStdOut, bQuiet=False):
+def restoreStdOut(outFile, oldStdOut):
     if(outFile != ''):
         try:
             # redirect stdout to a file
             sys.stdout.close()
             sys.stdout = oldStdOut
         except:
-            print("Error restoring stdout ", sys.exc_info()[0])
-            raise
+            logger = logging.getLogger()
+            logger.error("   [Error] Error restoring stdout ", outFile)
+            sys.exit()

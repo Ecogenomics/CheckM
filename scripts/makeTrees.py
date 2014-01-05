@@ -44,19 +44,19 @@ class MakeTrees(object):
         for f in files:
             if f.endswith(extension):
                 # replace any '*' amino acids with an 'X' as many downstream programs do not like asterisk
-                fin = open(alignDir + '/' + file)
+                fin = open(os.path.join(alignDir, f))
                 data = fin.readlines()
                 fin.close()
         
-                fout = open(alignDir + '/' + file, 'w')
+                fout = open(os.path.join(alignDir, f), 'w')
                 for line in data:
                     if line[0] != '>':
                         line = line.replace('*', 'X')
                     fout.write(line)
                 fout.close()
             
-                prefix = file[0:file.rfind('.')]
-                cmd = 'FastTree -quiet -nosupport -wag -gamma -log ' + outputDir + '/' + prefix + '.log ' + alignDir + '/' + file + ' > ' + outputDir + '/' + prefix + '.tree'
+                prefix = f[0:f.rfind('.')]
+                cmd = 'FastTree -quiet -nosupport -wag -gamma -log ' + outputDir + '/' + prefix + '.log ' + alignDir + '/' + f + ' > ' + outputDir + '/' + prefix + '.tre'
                 treeList.write(cmd + '\n')
     
         treeList.close()

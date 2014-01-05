@@ -24,38 +24,42 @@
 
 import os
 import sys
+import random
 import argparse
-import multiprocessing as mp
+import pickle
+
+import numpy as np
 
 class CalculateBoundsTD(object):
     def __init__(self):
-        self.manager = mp.Manager()
-        self.dist = self.manager.dict()
+        pass
         
-        self.lock = mp.Lock()
-        self.counter = self.manager.Value('i', 0)
-        
-    def run(self, genomeDir, outputDir):
+    def run(self, genomeDir, outputFile):
         
         # get all genome ids
         print 'Determine genome IDs.'
         files = os.listdir(genomeDir)
         genomeIds = []
+        
+        # for unknown reasons these genomes have NaN values so
+        # are being ignored
         for f in files:
-            genomeIds.append(f[0:f.rfind('.')])
+            genomeId = f[0:f.rfind('.')]
+            genomeIds.append(genomeId)
             
         print '  Total genomes: ' + str(len(genomeIds))
 
         # get tetranucleotide signature differences for each window size
         print 'Reading windows.'
-        windows = {}
+        windows = {} # Note: defaultdict doesn't play well with 'ast' library
         processedGenomes = 0
+        badGenomes = set()
         for genomeId in genomeIds:
             processedGenomes += 1
             statusStr = '  Finished processing %d of %d (%.2f%%) genomes' % (processedGenomes, len(genomeIds), float(processedGenomes)*100/len(genomeIds))
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
-            
+
             bReadDist = False
             for line in open(os.path.join(genomeDir, genomeId + '.txt')):
                 if 'Windows Size' in line:
@@ -63,48 +67,74 @@ class CalculateBoundsTD(object):
                     bReadDist = True
                 elif bReadDist:
                     bReadDist = False
-                    windows[windowSize] = windows.get(windowSize, []) + [float(x) for x in line.split(',')]
+                    
+                    # minimize influence of any given genome and 
+                    # keep number of samples to a reasonable level
+                    testPts = [float(x) for x in line.split(',')]
+                    
+                    # there are a few genomes with NaN's in there data file
+                    # (these are currently just being ignored)
+                    if np.isnan(np.sum(testPts)):
+                        badGenomes.add(genomeId)
+                        continue
+                        
+                    rndTestPts = random.sample(testPts, min(10000, testPts)) 
+                    
+                    if windowSize not in windows:
+                        windows[windowSize] = []
+                    windows[windowSize].extend(rndTestPts)
         sys.stdout.write('\n')
+        
+        print ''
+        print '# bad genomes: ' + str(len(badGenomes))
+        print badGenomes
+        print ''
                 
         # get CI for each window size
         print 'Determining CI for each window size.'
-        CIs = [0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.001, 0]
-        dist = {}
+        CIs = np.arange(0, 100 + 0.5, 0.5).tolist()
+        d = {} # Note: defaultdict doesn't play well with 'ast' library
         processedWindows = 0
-        for windowSize in windows:    
+        for windowSize, testPts in windows.iteritems():  
             processedWindows += 1
             statusStr = '  Finished processing %d of %d (%.2f%%) window sizes; number of windows = %d' % (processedWindows, len(windows), float(processedWindows)*100/len(windows), len(windows[windowSize]))
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
             
-            sortedWindows = sorted(windows[windowSize])
+            testPts = np.array(testPts)
             
-            for ci in CIs:
-                if ci == 0:
-                    upperIndex = len(sortedWindows) - 1
-                else:
-                    upperIndex = int((1.0 - ci) * len(sortedWindows) + 0.5) - 1
-                          
-                windowDict = dist.get(ci, {})
-                windowDict[windowSize] = sortedWindows[upperIndex]
-                dist[ci] = windowDict          
+            # where are the nan's coming from??
+            if np.isnan(np.sum(rndTestPts)):
+                print 'Sneaky NaN: ' + windowSize
+                sys.exit()
+            
+            d[windowSize] = {}
+            percentiles = np.percentile(testPts, CIs)
+            
+            # where are the nan's coming from??
+            if np.isnan(np.sum(percentiles)):
+                print 'NaN in percentiles: ' + windowSize
+                print len(testPts)
+                print percentiles
+                sys.exit()
+            
+            for ci, p in zip(CIs, percentiles):
+                d[windowSize][ci] = p
+                                
         sys.stdout.write('\n')               
                     
         # save results to file
         print 'Writing results to file.'
-        for ci in CIs:
-            ciStr = '%.2f' % ((1.0 - ci)*100)
-            ciStr = ciStr.rstrip('0').rstrip('.')
-            fout = open(outputDir + '/distribution_%s.txt' % ciStr, 'w')
-            fout.write(str(dist[ci]))
-            fout.close()
+        fout = open(outputFile, 'w')
+        fout.write(str(d))
+        fout.close()
             
 if __name__ == '__main__':  
     parser = argparse.ArgumentParser(description='Calculate distribution bounds.')
     parser.add_argument('genome_dir', help='directory with distributions for each genome')
-    parser.add_argument('output_dir', help='directory to write out distributions')
+    parser.add_argument('output_file', help='output file for distributions')
     
     args = parser.parse_args()
     
     calculateBoundsTD = CalculateBoundsTD()
-    calculateBoundsTD.run(args.genome_dir, args.output_dir)
+    calculateBoundsTD.run(args.genome_dir, args.output_file)

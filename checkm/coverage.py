@@ -22,14 +22,59 @@
 import sys
 import os
 import multiprocessing as mp
-import collections
+import logging
+import ntpath
 
 import pysam
 
 import defaultValues
-
 from common import reassignStdOut, restoreStdOut, binIdFromFilename
 from seqUtils import readFasta
+
+class ReadLoader:
+    """Callback for counting aligned reads with pysam.fetch"""
+
+    def __init__(self, refLength, bAllReads, minAlignPer, maxEditDistPer):
+        self.bAllReads = bAllReads
+        self.minAlignPer = minAlignPer
+        self.maxEditDistPer = maxEditDistPer
+
+        self.numReads = 0
+        self.numMappedReads = 0
+        self.numDuplicates = 0
+        self.numSecondary = 0
+        self.numFailedQC = 0
+        self.numFailedAlignLen = 0
+        self.numFailedEditDist = 0
+        self.numFailedProperPair = 0
+
+        self.coverage = 0
+
+    def __call__(self, read):
+        self.numReads += 1
+
+        if read.is_unmapped:
+            pass
+        elif read.is_duplicate:
+            self.numDuplicates += 1
+        elif read.is_secondary:
+            self.numSecondary += 1
+        elif read.is_qcfail:
+            self.numFailedQC += 1
+        elif read.alen < self.minAlignPer*read.rlen:
+            self.numFailedAlignLen += 1
+        elif read.opt('NM') > self.maxEditDistPer*read.rlen:
+            self.numFailedEditDist += 1
+        elif not self.bAllReads and not read.is_proper_pair:
+            self.numFailedProperPair += 1
+        else:
+            self.numMappedReads += 1
+
+            # Note: the alignment length (alen) is used instead of the
+            # read length (rlen) as this bring the calculated coverage
+            # in line with 'samtools depth' (at least when the min
+            # alignment length and edit distance thresholds are zero).
+            self.coverage += read.alen
 
 class CoverageStruct():
     def __init__(self, seqLen, mappedReads, coverage):
@@ -39,23 +84,16 @@ class CoverageStruct():
 
 class Coverage():
     """Calculate coverage of all sequences."""
-    def __init__(self, threads=1):
-        # thready stuff
-        self.totalThreads = threads
-        self.varLock = mp.Lock()
-        self.threadPool = mp.BoundedSemaphore(self.totalThreads)
+    def __init__(self, threads):
+        self.logger = logging.getLogger()
         
-        self.numFilesStarted = mp.Value('i', 0)
-        self.numFiles = 0
-        
-        self.CoverageStruct = collections.namedtuple("CoverageInfo", "seqLen mappedReads coverage")
+        self.totalThreads = threads 
 
-    def calculate(self, binFiles, bamFiles, outFile, bPairsOnly=False, bQuiet=False):
+    def run(self, binFiles, bamFiles, outFile, bAllReads, minAlignPer, maxEditDistPer):
         """Calculate coverage of sequences for each BAM file."""
         
         # determine bin assignment of each sequence
-        if not bQuiet:
-            print '  Determining bin assignment of each sequence.'
+        self.logger.info('  Determining bin assignment of each sequence.')
             
         seqIdToBinId = {}
         for binFile in binFiles:
@@ -66,27 +104,24 @@ class Coverage():
                 seqIdToBinId[seqId] = binId
         
         # process each fasta file
-        if not bQuiet:
-            print "  Processing %d file(s) with %d threads:" % (len(bamFiles), self.totalThreads)
+        self.logger.info("  Processing %d file(s) with %d threads.\n" % (len(bamFiles), self.totalThreads))
             
         # make sure all BAM files are sorted
         self.numFiles = len(bamFiles)
         for bamFile in bamFiles: 
             if not os.path.exists(bamFile + '.bai'):
-                sys.stderr.write('[Error] BAM file is not sorted: ' + bamFile + '\n')
+                self.logger.error('  [Error] BAM file is not sorted: ' + bamFile + '\n')
                 sys.exit()
  
         # calculate coverage of each BAM file
-        processes = []
         coverageInfo = {}
+        numFilesStarted = 0
         for bamFile in bamFiles: 
-            coverageInfo[bamFile] = mp.Manager().dict()
-            p = mp.Process(target=self.__processBam, args=(bamFile, coverageInfo[bamFile], bPairsOnly, bQuiet))
-            p.start()
-            processes.append(p)
+            numFilesStarted += 1
+            self.logger.info('  Processing %s (%d of %d):' % (ntpath.basename(bamFile), numFilesStarted, len(bamFiles)))
             
-        for p in processes:
-            p.join()
+            coverageInfo[bamFile] = mp.Manager().dict()
+            coverageInfo[bamFile] = self.__processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, coverageInfo[bamFile]) 
             
         # redirect output
         oldStdOut = reassignStdOut(outFile)
@@ -105,63 +140,133 @@ class Coverage():
             print(rowStr)
         
         # restore stdout
-        restoreStdOut(outFile, oldStdOut, bQuiet)  
+        restoreStdOut(outFile, oldStdOut)  
 
-    def __processBam(self, bamFile, coverageInfo, bPairsOnly, bQuiet):
+    def __processBam(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, coverageInfo):
         """Calculate coverage of sequences in BAM file."""
-        self.threadPool.acquire()
-        try:
-            self.varLock.acquire()
-            try:
-                self.numFilesStarted.value += 1
-                if not bQuiet:
-                    print '    Processing %s (%d of %d)' % (bamFile, self.numFilesStarted.value, self.numFiles)
-            finally:
-                self.varLock.release()
 
-            bamIn = pysam.Samfile(bamFile, 'rb')
-            
-            refLen = {}
-            for refName, length in zip(bamIn.references, bamIn.lengths):
-                refLen[refName] = length
-    
-            # read entire sorted BAM file and determine coverage for each reference sequence
-            mappedReads = 0
-            coverage = 0
-            curRef = None
-            for read in bamIn.fetch(until_eof = True):
-                if read.is_unmapped or read.is_duplicate or read.is_qcfail or read.is_secondary:
-                    continue
-    
-                if bPairsOnly and not read.is_proper_pair:
-                    continue
+        # determine coverage for each reference sequence
+        workerQueue = mp.Queue()
+        writerQueue = mp.Queue()
+
+        bamfile = pysam.Samfile(bamFile, 'rb')
+        refSeqIds = bamfile.references
+        refSeqLens = bamfile.lengths
+
+        # populate each thread with reference sequence to process
+        # Note: reference sequences are sorted by number of mapped reads
+        # so it is important to distribute reads in a sensible way to each
+        # of the threads
+        refSeqLists = [[] for _ in range(self.totalThreads)]
+        refLenLists = [[] for _ in range(self.totalThreads)]
+
+        threadIndex = 0
+        incDir = 1
+        for refSeqId, refLen in zip(refSeqIds, refSeqLens):
+            refSeqLists[threadIndex].append(refSeqId)
+            refLenLists[threadIndex].append(refLen)
+
+            threadIndex += incDir
+            if threadIndex == self.totalThreads:
+                threadIndex = self.totalThreads - 1
+                incDir = -1
+            elif threadIndex == -1:
+                threadIndex = 0
+                incDir = 1
+
+        for i in range(self.totalThreads):
+            workerQueue.put((refSeqLists[i], refLenLists[i]))
+
+        for _ in range(self.totalThreads):
+            workerQueue.put((None, None))
+
+        workerProc = [mp.Process(target = self.__workerThread, args = (bamFile, bAllReads, minAlignPer, maxEditDistPer, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        writeProc = mp.Process(target = self.__writerThread, args = (coverageInfo, len(refSeqIds), writerQueue))
+
+        writeProc.start()
+
+        for p in workerProc:
+            p.start()
+
+        for p in workerProc:
+            p.join()
+
+        writerQueue.put((None, None, None, None, None, None, None, None, None, None, None))
+        writeProc.join()
+               
+        return coverageInfo
+                   
+    def __workerThread(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, queueIn, queueOut):
+        """Process each data item in parallel."""
+        while True:
+            seqIds, seqLens = queueIn.get(block=True, timeout=None)
+            if seqIds == None:
+                break
+
+            bamfile = pysam.Samfile(bamFile, 'rb')
+
+            for seqId, seqLen in zip(seqIds, seqLens):
+                readLoader = ReadLoader(seqLen, bAllReads, minAlignPer, maxEditDistPer)
+                bamfile.fetch(seqId, 0, seqLen, callback = readLoader)
+
+                coverage = float(readLoader.coverage) / seqLen
+
+                queueOut.put((seqId, seqLen, coverage, readLoader.numReads, 
+                                readLoader.numDuplicates, readLoader.numSecondary, readLoader.numFailedQC, 
+                                readLoader.numFailedAlignLen, readLoader.numFailedEditDist, 
+                                readLoader.numFailedProperPair, readLoader.numMappedReads))
+
+            bamfile.close()
+
+    def __writerThread(self, coverageInfo, numRefSeqs, writerQueue):
+        """Store or write results of worker threads in a single thread."""
+        totalReads = 0
+        totalDuplicates = 0
+        totalSecondary = 0
+        totalFailedQC = 0
+        totalFailedAlignLen = 0
+        totalFailedEditDist = 0
+        totalFailedProperPair = 0
+        totalMappedReads = 0
+
+        processedRefSeqs = 0
+        while True:
+            seqId, seqLen, coverage, numReads, numDuplicates, numSecondary, numFailedQC, numFailedAlignLen, numFailedEditDist, numFailedProperPair, numMappedReads = writerQueue.get(block=True, timeout=None)
+            if seqId == None:
+                break
+
+            if self.logger.getEffectiveLevel() <= logging.INFO:
+                processedRefSeqs += 1
+                statusStr = '    Finished processing %d of %d (%.2f%%) reference sequences.' % (processedRefSeqs, numRefSeqs, float(processedRefSeqs)*100/numRefSeqs)
+                sys.stdout.write('%s\r' % statusStr)
+                sys.stdout.flush()
+
+                totalReads += numReads
+                totalDuplicates += numDuplicates
+                totalSecondary += numSecondary
+                totalFailedQC += numFailedQC
+                totalFailedAlignLen += numFailedAlignLen
+                totalFailedEditDist += numFailedEditDist
+                totalFailedProperPair += numFailedProperPair
+                totalMappedReads += numMappedReads
                 
-                if curRef == None:
-                    curRef = bamIn.getrname(read.tid)
-                    
-                refName = bamIn.getrname(read.tid)
-                if curRef == refName:
-                    mappedReads += 1
-                    coverage += read.rlen
-                else:
-                    refLength = refLen[curRef]
-                    coverage = float(coverage) / refLength
-                    coverageInfo[curRef] = CoverageStruct(seqLen = refLength, mappedReads = mappedReads, coverage = coverage)
-                    
-                    mappedReads = 1
-                    coverage = read.rlen
-                    curRef = refName
-                
-            # results for final reference sequence    
-            refLength = refLen[curRef]
-            coverage /= refLength
-            coverageInfo[curRef] = CoverageStruct(seqLen = refLength, mappedReads = mappedReads, coverage = coverage)
+            coverageInfo[seqId] = CoverageStruct(seqLen = seqLen, mappedReads = numMappedReads, coverage = coverage)
 
-            bamIn.close()
+
+        if self.logger.getEffectiveLevel() <= logging.INFO:
+            statusStr = 'Finished processing %d of %d (%.2f%%) reference sequences.' % (processedRefSeqs, numRefSeqs, float(processedRefSeqs)*100/numRefSeqs)
+            sys.stdout.write('%s\n' % statusStr)
+            sys.stdout.flush()
+
+            print '    # total reads: %d' % totalReads
+            print '      # properly mapped reads: %d (%.1f%%)' % (totalMappedReads, float(totalMappedReads)*100/totalReads)
+            print '      # duplicate reads: %d (%.1f%%)' % (totalDuplicates, float(totalDuplicates)*100/totalReads)
+            print '      # secondary reads: %d (%.1f%%)' % (totalSecondary, float(totalSecondary)*100/totalReads)
+            print '      # reads failing QC: %d (%.1f%%)' % (totalFailedQC, float(totalFailedQC)*100/totalReads)
+            print '      # reads failing alignment length: %d (%.1f%%)' % (totalFailedAlignLen, float(totalFailedAlignLen)*100/totalReads)
+            print '      # reads failing edit distance: %d (%.1f%%)' % (totalFailedEditDist, float(totalFailedEditDist)*100/totalReads)
+            print '      # reads not properly paired: %d (%.1f%%)' % (totalFailedProperPair, float(totalFailedProperPair)*100/totalReads)
             
-        finally:
-            self.threadPool.release()
-
     def parseCoverage(self, coverageFile):
         """Read coverage information from file."""
         coverageStats = {}
@@ -174,7 +279,6 @@ class Coverage():
             lineSplit = line.split('\t')
             seqId = lineSplit[0]
             binId = lineSplit[1]
-            #seqLen = lineSplit[2]
             
             if binId not in coverageStats:
                 coverageStats[binId] = {}
@@ -185,7 +289,6 @@ class Coverage():
             for i in xrange(3, len(lineSplit), 3):
                 bamId = lineSplit[i]
                 coverage = float(lineSplit[i+1])
-                #mappedReads = int(lineSplit[i+2])
                 coverageStats[binId][seqId][bamId] = coverage
                 
         return coverageStats

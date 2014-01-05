@@ -20,20 +20,20 @@
 ###############################################################################
 
 import os
+import logging
 
 import defaultValues
 from common import checkFileExists, reassignStdOut, restoreStdOut
 
 class Profile():
     def __init__(self):
-        pass
+        self.logger = logging.getLogger()
     
-    def run(self, coverageFile, outFile, bQuiet):
+    def run(self, coverageFile, outFile):
         checkFileExists(coverageFile)
         
         # get number of reads mapped to each bin
-        if not bQuiet:
-            print '  Determining number of reads mapped to each bin.'
+        self.logger.info('  Determining number of reads mapped to each bin.')
             
         readsMappedToBin = {}
         binSize = {}
@@ -113,12 +113,12 @@ class Profile():
                     unbinnedPercentage = 0
                     
                 if binId == defaultValues.__CHECKM_DEFAULT_UNBINNED__:
-                   rowStr += '\t' + 'NA' 
-                   rowStr += '\t' + str(unbinnedPercentage*100.0)
+                    rowStr += '\t' + 'NA' 
+                    rowStr += '\t' + str(unbinnedPercentage*100.0)
                 else:
                     rowStr += '\t' + str(normBinCoverage[binId][bamId]*100.0)
                     rowStr += '\t' + str(normBinCoverage[binId][bamId]*100.0 * (1.0 - unbinnedPercentage))
             
             print(rowStr)
         
-        restoreStdOut(outFile, oldStdOut, bQuiet)
+        restoreStdOut(outFile, oldStdOut)

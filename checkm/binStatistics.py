@@ -23,6 +23,7 @@ import os
 import threading
 import time
 import math
+import logging
 
 import defaultValues
 from seqUtils import readFasta, baseCount, calculateN50
@@ -31,7 +32,9 @@ from mathHelper import mean
 
 class BinStatistics():
     """Calculate statistics (GC, coding density, etc.) for genome bins."""
-    def __init__(self, threads=1):         
+    def __init__(self, threads):   
+        self.logger = logging.getLogger()
+              
         # thready stuff            
         self.varLock = threading.Lock() # we don't have many variables here, so use one lock for everything    
         self.totalThreads = threads
@@ -42,13 +45,14 @@ class BinStatistics():
         self.numFilesStarted = 0
         self.numFilesParsed = 0
 
-    def calculate(self, inFiles, outFolder, bQuiet=False):
+    def calculate(self, inFiles, outFolder):
         """Calculate statistics for each putative genome bin."""
-
+        logger = logging.getLogger()
+        
         # process each fasta file
         self.numFiles = len(inFiles)
-        if not bQuiet:
-            print "  Processing %d files with %d threads:" % (self.numFiles, self.totalThreads)
+        
+        logger.info("  Processing %d files with %d threads:" % (self.numFiles, self.totalThreads))
         
         binStats = {}
         seqStats = {}
@@ -58,7 +62,7 @@ class BinStatistics():
             binStats[binId] = {}
             seqStats[binId] = {}
             
-            t = threading.Thread(target=self.__processBin, args=(fasta, outFolder, binStats[binId], seqStats[binId], bQuiet))
+            t = threading.Thread(target=self.__processBin, args=(fasta, outFolder, binStats[binId], seqStats[binId]))
             t.start()
             
         while True:
@@ -82,15 +86,16 @@ class BinStatistics():
         fout.write(str(seqStats))
         fout.close()
               
-    def __processBin(self, fasta, outFolder, binStats, seqStats, bQuiet=False):
+    def __processBin(self, fasta, outFolder, binStats, seqStats):
         """Thread safe processing of FASTA file."""
+        logger = logging.getLogger()
+        
         self.threadPool.acquire()
         try:
             self.varLock.acquire()
             try:
                 self.numFilesStarted += 1
-                if not bQuiet:
-                    print '    Processing %s (%d of %d)' % (fasta, self.numFilesStarted, self.numFiles) 
+                self.logger.info('    Processing %s (%d of %d)' % (fasta, self.numFilesStarted, self.numFiles)) 
             finally:
                 self.varLock.release()
 

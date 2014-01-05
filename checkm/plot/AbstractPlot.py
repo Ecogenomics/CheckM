@@ -23,6 +23,8 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.transforms as mtransforms
 
+from matplotlib.patches import Rectangle
+
 import matplotlib as mpl
 
 import numpy as np
@@ -151,4 +153,23 @@ class AbstractPlot(FigureCanvas):
 			label = label[0:-1]	
 				
 		return label
+	
+	def boundingBox(self, data, ax, label, bBoundingBoxes, bLabels):
+		''' Draw bounding box around data.'''
+		data = np.array(data)
+	
+		width = max(data[:,0]) - min(data[:,0])
+		height = max(data[:,1]) - min(data[:,1])
+		r = Rectangle((min(data[:,0]), min(data[:,1])), width, height)
+	
+		if bBoundingBoxes:
+			ax.add_artist(r)
+			r.set_clip_box(ax.bbox)
+			r.set_alpha(0.1)
+			r.set_facecolor((0.5, 0.5, 0.5))
+			
+		if bLabels:
+			ax.annotate(label, xy = (min(data[:,0]), max(data[:,1])), xytext = (0, 0),
+							textcoords = 'offset points', ha = 'right', va = 'bottom',
+							bbox = dict(boxstyle = 'round,pad=0.5', fc = (0.5, 0.5, 0.5), alpha = 0.1))
 

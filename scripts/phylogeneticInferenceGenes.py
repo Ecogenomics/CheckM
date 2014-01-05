@@ -33,6 +33,7 @@ __status__ = 'Development'
 import os
 import sys
 import argparse
+from collections import defaultdict
 
 from lib.img import IMG
 from lib.markerSet import MarkerSet
@@ -44,7 +45,15 @@ class PhylogeneticInferenceGenes(object):
     def __init__(self):
         pass
     
-    def run(self, phyloUbiquityThreshold, phyloSingleCopyThreshold, numThreads):   
+    def run(self, phyloUbiquityThreshold, phyloSingleCopyThreshold, numThreads, outputDir):
+        # make sure output directory is empty
+        if not os.path.exists(outputDir):
+            os.makedirs(outputDir)
+            
+        files = os.listdir(outputDir)
+        for f in files:
+            os.remove(os.path.join(outputDir, f))
+               
         img = IMG()
         markerset = MarkerSet()
         
@@ -75,9 +84,16 @@ class PhylogeneticInferenceGenes(object):
             phyloMarkerGenes[lineage] = markerGenes
         
         # universal marker genes
-        universalMarkerGenes = set()
+        universalMarkerGenes = None
         for markerGenes in phyloMarkerGenes.values():
-            universalMarkerGenes.update(markerGenes)
+            if universalMarkerGenes == None:
+                universalMarkerGenes = markerGenes
+            else:
+                universalMarkerGenes.intersection_update(markerGenes)
+
+        fout = open('./data/phylo_marker_set.txt', 'w')
+        fout.write(str(universalMarkerGenes))
+        fout.close()
         
         print ''
         print '  Universal marker genes: ' + str(len(universalMarkerGenes))
@@ -85,14 +101,14 @@ class PhylogeneticInferenceGenes(object):
         # get mapping of marker ids to gene ids for each genome
         genesInGenomes = {}
         for genomeId in allTrustedGenomeIds:
-            markerIdToGeneIds = {}
-            for line in open(img.genomeDir + '/' + genomeId + '/' + genomeId + '.pfam.tab.txt'):
+            markerIdToGeneIds = defaultdict(set)
+            for line in open(os.path.join(IMG.genomeDir, genomeId, genomeId + IMG.pfamExtension)):
                 lineSplit = line.split('\t')
-                markerIdToGeneIds[lineSplit[8]] = markerIdToGeneIds.get(lineSplit[8], []) + [lineSplit[0]]
+                markerIdToGeneIds[lineSplit[8]].add(lineSplit[0])
                 
-            for line in open(img.genomeDir + '/' + genomeId + '/' + genomeId + '.tigrfam.tab.txt'):
+            for line in open(os.path.join(IMG.genomeDir, genomeId, genomeId + IMG.tigrExtension)):
                 lineSplit = line.split('\t')
-                markerIdToGeneIds[lineSplit[6]] = markerIdToGeneIds.get(lineSplit[6], []) + [lineSplit[0]]
+                markerIdToGeneIds[lineSplit[6]].add(lineSplit[0])
                 
             genesInGenomes[genomeId] = markerIdToGeneIds
             
@@ -111,9 +127,9 @@ class PhylogeneticInferenceGenes(object):
         
         for markerId in universalMarkerGenes:
             if 'pfam' in markerId:
-                os.system('hmmfetch -o ./data/hmms/' + markerId + '.hmm /srv/whitlam/bio/db/pfam/27/Pfam-A.hmm ' + markerIdToName[markerId])    
+                os.system('hmmfetch -o ./data/phylo_hmms/' + markerId + '.hmm /srv/whitlam/bio/db/pfam/27/Pfam-A.hmm ' + markerIdToName[markerId] + ' &> /dev/null')    
             else:
-                os.system('cp /srv/whitlam/bio/db/tigrfam/13.0/' + markerId + '.HMM ./data/hmms/' + markerId + '.hmm')      
+                os.system('cp /srv/whitlam/bio/db/tigrfam/13.0/' + markerId + '.HMM ./data/phylo_hmms/' + markerId + '.hmm')      
         
         # align gene sequences and infer gene trees
         print ''
@@ -134,10 +150,18 @@ class PhylogeneticInferenceGenes(object):
                     fout.write(seqs[geneId] + '\n')
             fout.close()
             
-            hmmer.align('./data/hmms/' + markerId + '.hmm', markerSeqFile, './data/alignments/' + markerId + '.aln.faa', trim=False, outputFormat='Pfam')
-            self.maskAlignment('./data/alignments/' + markerId + '.aln.faa', './data/alignments/' + markerId + '.aln.masked.faa')
+            hmmer.align('./data/phylo_hmms/' + markerId + '.hmm', markerSeqFile, os.path.join(outputDir, markerId + '.aln.faa'), trim=False, outputFormat='Pfam')
+            self.maskAlignment('./data/alignments/' + markerId + '.aln.faa', os.path.join(outputDir, markerId + '.aln.masked.faa'))
 
         sys.stdout.write('\n')
+        
+        # make sure output directory is empty
+        if not os.path.exists(outputDir):
+            os.makedirs(outputDir)
+            
+        files = os.listdir(outputDir)
+        for f in files:
+            os.remove(os.path.join(outputDir, f))
          
     def maskAlignment(self, inputFile, outputFile):
         """Read HMMER alignment in STOCKHOLM format and output masked alignment in FASTA format."""
@@ -147,7 +171,7 @@ class PhylogeneticInferenceGenes(object):
             line = line.rstrip()
             if line == '' or line[0] == '#' or line == '//':
                 if 'GC RF' in line:
-                    mask = line.split()[1].rstrip()
+                    mask = line.split('GC RF')[1].rstrip()
                 continue
             else:
                 lineSplit = line.split()
@@ -158,7 +182,7 @@ class PhylogeneticInferenceGenes(object):
         for seqId, seq in seqs.iteritems():
             fout.write('>' + seqId + '\n')
             
-            maskedSeq = ''.join([mask[i] for i in xrange(0, len(seq)) if mask[i] == 'x'])
+            maskedSeq = ''.join([seq[i] for i in xrange(0, len(seq)) if mask[i] == 'x'])
             fout.write(maskedSeq + '\n')
         fout.close()
 
@@ -169,8 +193,9 @@ if __name__ == '__main__':
     parser.add_argument('-x', '--phylo_ubiquity', help='ubiquity threshold for defining phylogenetic marker genes', type=float, default = 0.90)
     parser.add_argument('-y', '--phylo_single_copy', help='single-copy threshold for defining phylogenetic marker genes', type=float, default = 0.90)
     parser.add_argument('-t', '--threads', help='number of threads', type = int, default = 16)
+    parser.add_argument('-o', '--output_dir', help='output directory for alignments', default = './data/alignments/')
     
     args = parser.parse_args()
     
     phylogeneticInferenceGenes = PhylogeneticInferenceGenes()
-    phylogeneticInferenceGenes.run(args.phylo_ubiquity, args.phylo_single_copy, args.threads)
+    phylogeneticInferenceGenes.run(args.phylo_ubiquity, args.phylo_single_copy, args.threads, args.output_dir)

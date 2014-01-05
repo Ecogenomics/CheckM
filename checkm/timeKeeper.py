@@ -20,12 +20,13 @@
 ###############################################################################
 
 import time
+import logging
 
 class TimeKeeper:
-    def __init__(self, bQuiet):
+    def __init__(self):
+        self.logger = logging.getLogger()
         self.startTime = time.time()
         self.lastLogTime = self.startTime 
-        self.bQuiet = bQuiet
     
     def startTimer(self):
         """Restart the timer"""
@@ -40,8 +41,7 @@ class TimeKeeper:
         return ret_str  
     
     def printTimeStamp(self):
-        if not self.bQuiet:
-            print self.getTimeStamp()
+        self.logger.info(self.getTimeStamp())
         
     def secondsToStr(self, t):
         rediv = lambda ll,b : list(divmod(ll[0],b)) + ll[1:]

@@ -27,6 +27,7 @@ import uuid
 import shutil
 import ast
 from collections import defaultdict
+import logging
 
 import defaultValues 
 from common import reassignStdOut, restoreStdOut, checkFileExists, binIdFromFilename
@@ -37,6 +38,8 @@ from hmmerModelParser import HmmModelParser
 class ResultsParser():
     """Parse output of Prodigal+HMMER run and derived statistics."""
     def __init__(self):
+        self.logger = logging.getLogger()
+        
         # make the output file names
         (self.txtOut, self.hmmOut) = makeOutputFNs()
         self.results = {}
@@ -48,7 +51,6 @@ class ResultsParser():
                        hmmFile,
                        eCO=defaultValues.__CHECKM_DEFAULT_E_VAL__,
                        lengthCO=defaultValues.__CHECKM_DEFAULT_LENGTH__,
-                       bQuiet=False,
                        outFile=''
                        ):
         """Parse the results in the output directory"""
@@ -75,7 +77,7 @@ class ResultsParser():
                 hmmer_file_name = os.path.join(directory, folder, self.txtOut)
                 
                 # and then we can parse it
-                self.parseHmmerResults(hmmer_file_name, resultsManager, bQuiet)
+                self.parseHmmerResults(hmmer_file_name, resultsManager)
                 self.results[binId] = resultsManager
                 
         # cache critical results to file
@@ -150,7 +152,7 @@ class ResultsParser():
             
         return seqStats
             
-    def parseHmmerResults(self, fileName, storage, bQuiet):
+    def parseHmmerResults(self, fileName, storage):
         """Parse HMMER results."""
         try:
             with open(fileName, 'r') as hmmer_handle:
@@ -181,8 +183,8 @@ class ResultsParser():
             print('\t'.join(header))
             
             if defaultValues.__CHECKM_DEFAULT_MIN_SEQ_LEN_GC_STD__ != 1000:
-                print('[Error] Labeling error: GC std (scaffolds > 1Kbps)', sys.exc_info()[0])
-                raise 
+                self.logger.error('  [Error] Labeling error: GC std (scaffolds > 1Kbps)')
+                sys.exit() 
         elif outputFormat == 2:
             print('\t'.join(['Bin Id','0','1','2','3','4','5+','Completeness','Contamination']))
         elif outputFormat == 4:
@@ -198,9 +200,8 @@ class ResultsParser():
         elif outputFormat == 9:
             print('Scaffold Id\tBin Id\tLength\t# contigs\tGC\t# ORFs\tCoding density\tMarker Ids')
     
-    def printSummary(self, outputFormat=1, outFile='', bQuiet=False):
-        if not bQuiet:
-            print('  Tabulating results for %d bins in output format %d' % (len(self.results), outputFormat))
+    def printSummary(self, outputFormat=1, outFile=''):
+        self.logger.info('  Tabulating results for %d bins in output format %d' % (len(self.results), outputFormat))
         
         # redirect output
         oldStdOut = reassignStdOut(outFile)
@@ -210,7 +211,7 @@ class ResultsParser():
             self.results[binId].printSummary(outputFormat=outputFormat)
             
         # restore stdout   
-        restoreStdOut(outFile, oldStdOut, bQuiet)     
+        restoreStdOut(outFile, oldStdOut)     
 
 class ResultsManager():
     """Store all the results for a single bin"""
@@ -524,7 +525,6 @@ class HMMAligner:
                        hmm,
                        eCO=defaultValues.__CHECKM_DEFAULT_E_VAL__,
                        lengthCO=defaultValues.__CHECKM_DEFAULT_LENGTH__,
-                       bQuiet=False,
                        bestHit=False,
                        generateModelFiles=True
                        ):
@@ -591,8 +591,8 @@ class HMMAligner:
             if 0 < len(hit_lookup[folder]):
                 self.alignBin(HA, hit_lookup[folder], single_hmms,
                         single_hmm_consensi, genes_file_name, directory, folder)
-            elif not bQuiet:
-                print("Skipping alignment for", folder, ": no hits found")
+            else:
+                self.logger.info("Skipping alignment for", folder, ": no hits found")
                 
         # remove the tmp files
         for file_name in single_hmms:

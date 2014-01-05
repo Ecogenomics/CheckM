@@ -53,6 +53,7 @@ def printHelp():
   General plots:
     nx_plot     -> Create Nx-plots
     len_plot    -> Cumulative sequence length plot
+    len_hist    -> Sequence length histogram
     marker_plot -> Plot position of marker genes on sequences
     par_plot    -> Parallel coordinate plot of GC and coverage
        
@@ -76,6 +77,7 @@ def printHelp():
     coverage    -> Calculate coverage of sequences
     tetra       -> Calculate tetranucleotide signature of sequences
     profile     -> Calculate percentage of reads mapped to each bin
+    ssu_finder  -> Identify SSU (16S/18S) rRNAs in sequences
 
   Use: checkm <command> -h for command specific help
     '''
@@ -84,6 +86,7 @@ if __name__ == '__main__':
     # initialize the options parser
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers(help="--", dest='subparser_name')
+    
     taxon_parser = argparse.ArgumentParser(add_help=False)
     taxon_parser.add_argument('-T', '--tax-string', dest='taxonomy', required=False,
         help='specify a Greengenes taxonomy string for the lineage of interest')
@@ -117,7 +120,7 @@ if __name__ == '__main__':
     analyze_parser.add_argument('infiles', nargs='*', metavar="FASTA", help="(Optional) a list of fasta formatted files to be used as the input")
     analyze_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     analyze_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
-    analyze_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
+    analyze_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     analyze_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # do QA on pre-processed contigs
@@ -160,7 +163,7 @@ if __name__ == '__main__':
     pipeline_parser.add_argument('out_folder', help="folder to write output files")
     pipeline_parser.add_argument('-H', '--hmm', dest='hmm', help="hmm used in the search")
     pipeline_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
-    pipeline_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads")
+    pipeline_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="E-value cut off")
     pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
     pipeline_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -285,6 +288,14 @@ if __name__ == '__main__':
 
     plot_len_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
+    # Sequence length distribution plot
+    hist_len_parser = subparsers.add_parser('len_hist',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        parents=[plot_single_parser],
+                                        description='Sequence length histogram.')
+
+    hist_len_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
     # Marker position plot
     marker_plot_parser = subparsers.add_parser('marker_plot',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -323,8 +334,10 @@ if __name__ == '__main__':
     coverage_parser.add_argument('bam_files', nargs='+', help="BAM files to parse")
     coverage_parser.add_argument('output_file', help="print results to file")
     coverage_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
-    coverage_parser.add_argument('-p', '--pairs_only', action='store_true', default=False, help="ignore reads that are not properly paired")
-    coverage_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads (for best performance set this to the number of input BAM files)")
+    coverage_parser.add_argument('-r', '--all_reads', action='store_true', help="use all reads to estimate coverage instead of just those in proper pairs")
+    coverage_parser.add_argument('-a', '--min_align', help='minimum alignment length as percentage of read length', type=float, default = 0.98)
+    coverage_parser.add_argument('-e', '--max_edit_dist', help='maximum edit distance as percentage of read length', type=float, default = 0.02)
+    coverage_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     coverage_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Calculate tetranucleotide signatures
@@ -334,8 +347,7 @@ if __name__ == '__main__':
     
     tetra_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
     tetra_parser.add_argument('output_file', help="print results to file")
-    tetra_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
-    tetra_parser.add_argument('-t', '--threads', type=int, default=1, help="max number of active threads (for best performance set this to the number of input BAM files)")
+    tetra_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     tetra_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Calculate community profile
@@ -345,6 +357,20 @@ if __name__ == '__main__':
     profile_parser.add_argument('coverage_file', help="file indicating coverage of each sequence (see coverage command)")
     profile_parser.add_argument('-f', '--file', default='STDOUT', help="print results to file")
     profile_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Find SSU rRNAs in sequences
+    ssu_finder_parser = subparsers.add_parser('ssu_finder',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            description='Identify SSU (16S/18S) rRNAs in sequences.')
+    ssu_finder_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
+    ssu_finder_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
+    ssu_finder_parser.add_argument('out_folder', help="folder specified during analyze command")
+
+    ssu_finder_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    ssu_finder_parser.add_argument('-e', '--evalue', help='e-value threshold for identifying hits', type=float, default = 1e-5)
+    ssu_finder_parser.add_argument('-c', '--concatenate', help='concatenate hits that are within the specified number of base pairs', type=int, default = 100)
+    ssu_finder_parser.add_argument('-t', '--threads', help='number of threads', type=int, default = 1)
+    ssu_finder_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Identify outlier sequences
     outlier_parser = subparsers.add_parser('outliers',
@@ -409,7 +435,7 @@ if __name__ == '__main__':
         else:
             checkmParser.parseOptions(args)
     except SystemExit:
-        print "\nControlled exit resulting from an unrecoverable error or warning."
+        print "\n  Controlled exit resulting from an unrecoverable error or warning."
     except:
         print "\nUnexpected error:", sys.exc_info()[0]
         raise

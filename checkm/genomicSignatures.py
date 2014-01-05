@@ -24,13 +24,16 @@
 import sys
 import multiprocessing as mp
 from string import maketrans
+import logging
 
 import numpy as np
 
 from seqUtils import readFasta
 
 class GenomicSignatures(object):
-    def __init__(self, K=4, threads=1):
+    def __init__(self, K, threads):
+        self.logger = logging.getLogger()
+        
         self.K = K
         self.compl = maketrans('ACGT', 'TGCA')
         self.kmerCols, self.kmerToCanonicalIndex = self.__makeKmerColNames()
@@ -90,7 +93,7 @@ class GenomicSignatures(object):
 
             queueOut.put((seqId, sig))
 
-    def __storeResults(self, seqFile, outputFile, totalSeqs, writerQueue, bQuiet):
+    def __storeResults(self, seqFile, outputFile, totalSeqs, writerQueue):
         """Store confidence intervals (i.e., to shared memory)."""
         
         # write header
@@ -106,18 +109,17 @@ class GenomicSignatures(object):
             if seqId == None:
                 break
             
-            if not bQuiet:
+            if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedSeq += 1
-                statusStr = '    Finished processing %d of %d (%.2f%%) sequences' % (numProcessedSeq, totalSeqs, float(numProcessedSeq)*100/totalSeqs)
+                statusStr = '    Finished processing %d of %d (%.2f%%) sequences.' % (numProcessedSeq, totalSeqs, float(numProcessedSeq)*100/totalSeqs)
                 sys.stdout.write('%s\r' % statusStr)
                 sys.stdout.flush()
             
-            fout.write('u\n')
             fout.write(seqId)
             fout.write('\t' + '\t'.join(map(str, sig)))
             fout.write('\n')
             
-        if not bQuiet:
+        if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stdout.write('\n')
             
         fout.close()
@@ -143,11 +145,10 @@ class GenomicSignatures(object):
   
         return sig
 
-    def calculate(self, seqFile, outputFile, bQuiet):
+    def calculate(self, seqFile, outputFile):
         """Calculate genomic signature of each sequence."""  
         
-        if not bQuiet:
-            print '  Determining tetranucleotide signatures of each sequence.'
+        self.logger.info('  Determining tetranucleotide signatures of each sequence.')
           
         # process each sequence in parallel
         workerQueue = mp.Queue()
@@ -162,7 +163,7 @@ class GenomicSignatures(object):
             workerQueue.put((None, None))
 
         calcProc = [mp.Process(target = self.__calculateResults, args = (workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target = self.__storeResults, args = (seqFile, outputFile, len(seqs), writerQueue, bQuiet))
+        writeProc = mp.Process(target = self.__storeResults, args = (seqFile, outputFile, len(seqs), writerQueue))
 
         writeProc.start()
 

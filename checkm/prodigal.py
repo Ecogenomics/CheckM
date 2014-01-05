@@ -22,6 +22,7 @@
 import os
 import sys
 import subprocess
+import logging
 
 import numpy as np
 
@@ -34,6 +35,8 @@ class ProdigalError(BaseException): pass
 class ProdigalRunner():
     """Wrapper for running HMMER3"""
     def __init__(self):
+        self.logger = logging.getLogger()
+        
         # make sure prodigal is installed
         self.checkForProdigal()
         
@@ -58,7 +61,7 @@ class ProdigalRunner():
         try:
             subprocess.call(['prodigal', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
         except:
-            print "[Error] Make sure prodigal is on your system path."
+            self.logger.error("  [Error] Make sure prodigal is on your system path.")
             sys.exit()
 
 class ProdigalFastaParser():

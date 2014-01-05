@@ -61,7 +61,7 @@ class TetraDistPlots(AbstractPlot):
         binSig = binTools.binTetraSig(seqs, tetraSigs)
                     
         # get tetranucleotide distances for windows
-        genomicSig = GenomicSignatures(4)
+        genomicSig = GenomicSignatures(K=4, threads=1)
         
         data = []
         seqLens = []

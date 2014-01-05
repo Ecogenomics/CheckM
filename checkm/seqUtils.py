@@ -19,19 +19,33 @@
 #                                                                             #
 ###############################################################################
 
+import sys
+import gzip
+import logging
+
 def readFasta(fastaFile):
     '''Read sequences from FASTA file.'''
-    seqs = {}
-    for line in open(fastaFile):
-        if line[0] == '>':
-            seqId = line[1:].partition(' ')[0].rstrip()
-            seqs[seqId] = []
+    try:
+        if fastaFile.endswith('.gz'):
+            openFile = gzip.open
         else:
-            seqs[seqId].append(line[0:-1])
+            openFile = open
             
-    for seqId, seq in seqs.iteritems():
-        seqs[seqId] = ''.join(seq)
-            
+        seqs = {}
+        for line in openFile(fastaFile):
+            if line[0] == '>':
+                seqId = line[1:].partition(' ')[0].rstrip()
+                seqs[seqId] = []
+            else:
+                seqs[seqId].append(line[0:-1])
+                
+        for seqId, seq in seqs.iteritems():
+            seqs[seqId] = ''.join(seq)
+    except:
+        logger = logging.getLogger()
+        logger.error("  [Error] Failed to process sequence file: " + fastaFile)
+        sys.exit()
+               
     return seqs
 
 def readFastaSeqIds(fastaFile):
@@ -66,8 +80,11 @@ def readGenomicSeqsFromFasta(fastaFile, seqToIgnore=None):
 
 def writeFasta(seqs, outputFile):
     '''Write sequences from FASTA file.'''
-    fout = open(outputFile, 'w')
-    
+    if outputFile.endswith('.gz'):
+        fout = gzip.open(outputFile, 'wb')
+    else:
+        fout = open(outputFile, 'w')
+        
     for seqId, seq in seqs.iteritems():
         fout.write('>' + seqId + '\n')
         fout.write(seq + '\n')

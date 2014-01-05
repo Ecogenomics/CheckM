@@ -20,40 +20,34 @@
 ###############################################################################
 
 from seqUtils import readFasta
+import logging
 
 from common import checkFileExists, reassignStdOut, restoreStdOut
 
 class Unbinned():
     def __init__(self):
-        pass
+        self.logger = logging.getLogger()
     
-    def run(self, binFiles, seqFile, outFile, minSeqLen, bQuiet):       
+    def run(self, binFiles, seqFile, outFile, minSeqLen):       
         checkFileExists(seqFile)
         
         # get list of sequences in bins
-        if not bQuiet:
-            print '  Reading binned sequences.'
+        self.logger.info('  Reading binned sequences.')
             
         binnedSeqs = {}
         for binFile in binFiles:
             seqs = readFasta(binFile)
             binnedSeqs.update(seqs)
             
-        if not bQuiet:
-            print '    Read %d binned sequences.' % (len(binnedSeqs))
+        self.logger.info('    Read %d binned sequences.' % (len(binnedSeqs)))
             
         # get list of all sequences
-        if not bQuiet:
-            print '  Reading all sequences.'
-        
+        self.logger.info('  Reading all sequences.')
         allSeqs = readFasta(seqFile)
-        
-        if not bQuiet:
-            print '    Read %d sequences.' % (len(allSeqs))
+        self.logger.info('    Read %d sequences.' % (len(allSeqs)))
         
         # write all unbinned sequences
-        if not bQuiet:
-            print '  Identifying unbinned sequences.'
+        self.logger.info('  Identifying unbinned sequences.')
         
         # redirect output
         oldStdOut = reassignStdOut(outFile)
@@ -67,8 +61,7 @@ class Unbinned():
                     print(seq)
                     
         # restore stdout   
-        restoreStdOut(outFile, oldStdOut, bQuiet)
+        restoreStdOut(outFile, oldStdOut)
         
-        if not bQuiet:
-            print '    Identified %d unbinned sequences.' % (unbinnedCount)
+        self.logger.info('    Identified %d unbinned sequences.' % (unbinnedCount))
                 

@@ -22,6 +22,7 @@
 import os
 import sys
 import uuid
+import logging
 
 import numpy as np
 
@@ -34,6 +35,7 @@ from genomicSignatures import GenomicSignatures
 from unbinned import Unbinned
 from profile import Profile
 from binTools import BinTools
+from ssuFinder import SSU_Finder
 from PCA import PCA
 import database as chmdb
 from common import makeSurePathExists, checkFileExists, binIdFromFilename
@@ -43,7 +45,8 @@ from plot.codingDensityPlots import CodingDensityPlots
 from plot.tetraDistPlots import TetraDistPlots
 from plot.distributionPlots import DistributionPlots
 from plot.nxPlot import NxPlot
-from plot.seqLenPlot import SeqLenPlot
+from plot.cumulativeLengthPlot import CumulativeLengthPlot
+from plot.lengthHistogram import LengthHistogram
 from plot.markerGenePosPlot import MarkerGenePosPlot
 from plot.parallelCoordPlot import ParallelCoordPlot
 from plot.pcaPlot import PcaPlot
@@ -58,7 +61,8 @@ def connectToDatabase(database_name):
     return chmdb.MarkerDB(db=database_name)
 
 class OptionsParser():
-    def __init__(self): pass
+    def __init__(self):
+        self.logger = logging.getLogger()   
     
     def binFiles(self, options):
         targetFiles = []
@@ -69,67 +73,63 @@ class OptionsParser():
                     targetFiles.append(os.path.join(options.bin_folder, f))
                     
         if not targetFiles:
-            raise "No input files!"
+            self.logger.error("  [Error] No bins found. Check the extension used to identify bins.")
+            sys.exit()
         
         return sorted(targetFiles)
 
     def analyze(self, options, db=None):
-        """Analyze command"""    
-        
+        """Analyze command"""       
         targetFiles = self.binFiles(options)    
 
         # find marker genes in genome bins
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - analyze] Identifying marker genes in bins.'
-            print '*******************************************************************************'
-        mgf = MarkerGeneFinder(threads=options.threads)
-        mgf.find(targetFiles, options.out_folder, options.hmm, bQuiet=options.bQuiet)
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - analyze] Identifying marker genes in bins.')
+        self.logger.info('*******************************************************************************')
+                    
+        mgf = MarkerGeneFinder(options.threads)
+        mgf.find(targetFiles, options.out_folder, options.hmm)
         
         self.timeKeeper.printTimeStamp()
         
         # calculate statistics for each genome bin
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - analyze] Calculating genome statistics (e.g., GC, coding density).'
-            print '*******************************************************************************'
-        binStats = BinStatistics(threads=options.threads)
-        binStats.calculate(targetFiles, options.out_folder, bQuiet=options.bQuiet)
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - analyze] Calculating genome statistics (e.g., GC, coding density).')
+        self.logger.info('*******************************************************************************')
+        binStats = BinStatistics(options.threads)
+        binStats.calculate(targetFiles, options.out_folder)
         
         self.timeKeeper.printTimeStamp()
 
     def qa(self, options):
         """QA command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - qa] Tabulating genome statistics.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - qa] Tabulating genome statistics.')
+        self.logger.info('*******************************************************************************')
 
         RP = ResultsParser()
         RP.analyseResults(options.out_folder,
                           options.hmm,
                           eCO=options.e_value,
                           lengthCO=options.length,
-                          bQuiet=options.bQuiet,
                           outFile=options.file
                           )
-        RP.printSummary(outputFormat=options.out_format, outFile=options.file, bQuiet=options.bQuiet)
+        RP.printSummary(outputFormat=options.out_format, outFile=options.file)
                 
-        if not options.bQuiet and options.file != '':
+        if options.file != '':
             print '  QA information written to: ' + options.file
         
         self.timeKeeper.printTimeStamp()
 
     def align(self, options):
         """Align command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - align] Creating alignments for identified marker genes.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - align] Creating alignments for identified marker genes.')
+        self.logger.info('*******************************************************************************')
                 
         if hasattr(options, 'separate'):
             HA = HMMAligner(options.separate, options.consensus, options.out_format)
@@ -144,7 +144,6 @@ class OptionsParser():
                           options.hmm,
                           eCO=options.e_value,
                           lengthCO=options.length,
-                          bQuiet=options.bQuiet,
                           bestHit=bh
                           )
         
@@ -152,11 +151,10 @@ class OptionsParser():
         
     def gcPlot(self, options):
         """GC plot command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - gc_plot] Create GC histogram and delta-GC plot.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - gc_plot] Create GC histogram and delta-GC plot.')
+        self.logger.info('*******************************************************************************')
             
         targetFiles = self.binFiles(options) 
         
@@ -165,26 +163,24 @@ class OptionsParser():
         plots = GcPlots(options)
         filesProcessed = 1
         for f in targetFiles:  
-            if not options.bQuiet:
-                print '  Plotting GC plots for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
-                filesProcessed += 1
+            self.logger.info('Plotting GC plots for %s (%d of %d)' % (f, filesProcessed, len(targetFiles)))
+            filesProcessed += 1
+            
             plots.plot(f, options.distributions)
             
             binId = binIdFromFilename(f)
             outputFile = os.path.join(options.plot_folder, binId) + '.gc_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
-            if not options.bQuiet:
-                print '    Plot written to: ' + outputFile
+            self.logger.info('    Plot written to: ' + outputFile)
             
         self.timeKeeper.printTimeStamp()
         
     def codingDensityPlot(self, options):
         """Coding density plot command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - coding_plot] Create coding density (CD) histogram and delta-CD plot.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - coding_plot] Create coding density (CD) histogram and delta-CD plot.')
+        self.logger.info('*******************************************************************************')
             
         targetFiles = self.binFiles(options) 
         
@@ -193,58 +189,53 @@ class OptionsParser():
         plots = CodingDensityPlots(options)
         filesProcessed = 1
         for f in targetFiles:  
-            if not options.bQuiet:
-                print '  Plotting coding density plots for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
-                filesProcessed += 1
+            self.logger.info('  Plotting coding density plots for %s (%d of %d)' % (f, filesProcessed, len(targetFiles)))
+            filesProcessed += 1
+            
             plots.plot(f, options.distributions)
             
             binId = binIdFromFilename(f) 
             outputFile = os.path.join(options.plot_folder, binId) + '.coding_density_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
-            if not options.bQuiet:
-                print '    Plot written to: ' + outputFile
+            self.logger.info('    Plot written to: ' + outputFile)
             
         self.timeKeeper.printTimeStamp()
         
     def tetraDistPlot(self, options):
         """Tetranucleotide distance plot command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - tetra_plot] Create tetra-distance (TD) histogram and delta-TD plot.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - tetra_plot] Create tetra-distance (TD) histogram and delta-TD plot.')
+        self.logger.info('*******************************************************************************')
             
         targetFiles = self.binFiles(options) 
         
         makeSurePathExists(options.plot_folder)
         
-        genomicSignatures = GenomicSignatures()
+        genomicSignatures = GenomicSignatures(K=4, threads=1)
         tetraSigs = genomicSignatures.read(options.tetra_profile)
             
         plots = TetraDistPlots(options)
         filesProcessed = 1
         for f in targetFiles:  
-            if not options.bQuiet:
-                print '  Plotting tetranuclotide distance plots for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
-                filesProcessed += 1
+            self.logger.info('  Plotting tetranuclotide distance plots for %s (%d of %d)' % (f, filesProcessed, len(targetFiles)))
+            filesProcessed += 1
                 
             binId = binIdFromFilename(f)
             plots.plot(f, tetraSigs, options.distributions)
             
             outputFile = os.path.join(options.plot_folder, binId) + '.tetra_dist_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
-            if not options.bQuiet:
-                print '    Plot written to: ' + outputFile
+            self.logger.info('    Plot written to: ' + outputFile)
             
         self.timeKeeper.printTimeStamp()
         
     def distributionPlots(self, options):
         """Reference distribution plot command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - dist_plot] Plot GC, CD, and TD distribution plots.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - dist_plot] Plot GC, CD, and TD distribution plots.')
+        self.logger.info('*******************************************************************************')
             
         targetFiles = self.binFiles(options) 
         
@@ -256,60 +247,54 @@ class OptionsParser():
         plots = DistributionPlots(options)
         filesProcessed = 1
         for f in targetFiles:  
-            if not options.bQuiet:
-                print '  Plotting reference distribution plots for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
-                filesProcessed += 1
+            self.logger.info('  Plotting reference distribution plots for %s (%d of %d)' % (f, filesProcessed, len(targetFiles)))
+            filesProcessed += 1
                 
             binId = binIdFromFilename(f)
             plots.plot(f, tetraSigs, options.distributions)
             
             outputFile = os.path.join(options.plot_folder, binId) + '.ref_dist_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
-            if not options.bQuiet:
-                print '    Plot written to: ' + outputFile
+            self.logger.info('    Plot written to: ' + outputFile)
             
         self.timeKeeper.printTimeStamp()
         
     def tetraPcaPlot(self, options):
         """PCA plot of tetranucleotide signatures"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - tetra_pca] PCA plot of tetranucleotide signatures.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - tetra_pca] PCA plot of tetranucleotide signatures.')
+        self.logger.info('*******************************************************************************')
             
         targetFiles = self.binFiles(options) 
         
         makeSurePathExists(options.plot_folder)
         
-        print '  Computing PCA of tetranuclotide signatures.\n'
+        self.logger.info('  Computing PCA of tetranuclotide signatures.\n')
         pca = PCA()
         seqIds, pc, variance = pca.pcaFile(options.tetra_profile, fraction=1.0, bCenter=True, bScale=False)
             
         plots = PcaPlot(options)
         filesProcessed = 1
         for f in targetFiles:  
-            if not options.bQuiet:
-                print '  Plotting PCA of tetranuclotide signatures for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
-                filesProcessed += 1
+            self.logger.info('  Plotting PCA of tetranuclotide signatures for %s (%d of %d)' % (f, filesProcessed, len(targetFiles)))
+            filesProcessed += 1
                     
             plots.plot(f, seqIds, pc, variance)
             
             binId = binIdFromFilename(f)
             outputFile = os.path.join(options.plot_folder, binId) + '.tetra_pca_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
-            if not options.bQuiet:
-                print '    Plot written to: ' + outputFile
+            self.logger.info('    Plot written to: ' + outputFile)
             
         self.timeKeeper.printTimeStamp()
         
     def coveragePcaPlot(self, options):
         """PCA plot of coverage profiles"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - cov_pca] PCA plot of coverage profiles.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - cov_pca] PCA plot of coverage profiles.')
+        self.logger.info('*******************************************************************************')
             
         targetFiles = self.binFiles(options) 
         
@@ -332,7 +317,7 @@ class OptionsParser():
                 
         coverageProfiles = np.array(coverageProfiles)
         if coverageProfiles.shape[1] < 2:
-            print '  [Warning] Coverage profile is 1 dimensional. PCA requires at least 2 dimensions.'
+            self.logger.error('  [Error] Coverage profile is 1 dimensional. PCA requires at least 2 dimensions.')
             sys.exit()
         
         print '  Computing PCA of coverage profiles.\n'
@@ -342,27 +327,24 @@ class OptionsParser():
         plots = PcaPlot(options)
         filesProcessed = 1
         for f in targetFiles:  
-            if not options.bQuiet:
-                print '  Plotting PCA of coverage profiles for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
-                filesProcessed += 1
+            self.logger.info('  Plotting PCA of coverage profiles for %s (%d of %d)' % (f, filesProcessed, len(targetFiles)))
+            filesProcessed += 1
                     
             plots.plot(f, seqIds, pc, variance)
             
             binId = binIdFromFilename(f)
             outputFile = os.path.join(options.plot_folder, binId) + '.cov_pca_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
-            if not options.bQuiet:
-                print '    Plot written to: ' + outputFile
+            self.logger.info('    Plot written to: ' + outputFile)
             
         self.timeKeeper.printTimeStamp()
             
     def nxPlot(self, options):
         """Nx-plot command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - nx_plot] Creating Nx-plots.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - nx_plot] Creating Nx-plots.')
+        self.logger.info('*******************************************************************************')
             
         targetFiles = self.binFiles(options) 
         
@@ -371,54 +353,73 @@ class OptionsParser():
         nx = NxPlot(options)
         filesProcessed = 1
         for f in targetFiles:  
-            if not options.bQuiet:
-                print '  Plotting Nx-plot for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
-                filesProcessed += 1
+            self.logger.info('  Plotting Nx-plot for %s (%d of %d)' % (f, filesProcessed, len(targetFiles)))
+            filesProcessed += 1
             nx.plot(f)
             
             binId = binIdFromFilename(f)
             outputFile = os.path.join(options.plot_folder, binId) + '.nx_plot.' + options.image_type
             nx.savePlot(outputFile, dpi=options.dpi)
-            if not options.bQuiet:
-                print '    Plot written to: ' + outputFile
+            self.logger.info('    Plot written to: ' + outputFile)
             
         self.timeKeeper.printTimeStamp()
         
-    def lenPlot(self, options):
+    def cumulativeLengthPlot(self, options):
         """Cumulative sequence length plot command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - len_plot] Creating cumulative sequence length plot.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - len_plot] Creating cumulative sequence length plot.')
+        self.logger.info('*******************************************************************************')
             
         targetFiles = self.binFiles(options) 
         
         makeSurePathExists(options.plot_folder)
             
-        plot = SeqLenPlot(options)
+        plot = CumulativeLengthPlot(options)
         filesProcessed = 1
         for f in targetFiles:  
-            if not options.bQuiet:
-                print '  Plotting cumulative sequence length plot for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
-                filesProcessed += 1
+            self.logger.info('  Plotting cumulative sequence length plot for %s (%d of %d)' % (f, filesProcessed, len(targetFiles)))
+            filesProcessed += 1
             plot.plot(f)
             
             binId = binIdFromFilename(f)
             outputFile = os.path.join(options.plot_folder, binId) + '.seq_len_plot.' + options.image_type
             plot.savePlot(outputFile, dpi=options.dpi)
-            if not options.bQuiet:
-                print '    Plot written to: ' + outputFile
+            self.logger.info('    Plot written to: ' + outputFile)
+            
+        self.timeKeeper.printTimeStamp()
+        
+    def lengthHistogram(self, options):
+        """Sequence length histogram command"""
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - len_hist] Creating sequence length histogram.')
+        self.logger.info('*******************************************************************************')
+            
+        targetFiles = self.binFiles(options) 
+        
+        makeSurePathExists(options.plot_folder)
+            
+        plot = LengthHistogram(options)
+        filesProcessed = 1
+        for f in targetFiles:  
+            self.logger.info('  Plotting sequence length histogram for %s (%d of %d)' % (f, filesProcessed, len(targetFiles)))
+            filesProcessed += 1
+            plot.plot(f)
+            
+            binId = binIdFromFilename(f)
+            outputFile = os.path.join(options.plot_folder, binId) + '.len_hist.' + options.image_type
+            plot.savePlot(outputFile, dpi=options.dpi)
+            self.logger.info('    Plot written to: ' + outputFile)
             
         self.timeKeeper.printTimeStamp()
         
     def markerPlot(self, options):
         """Marker gene position plot command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - marker_plot] Creating marker gene position plot.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - marker_plot] Creating marker gene position plot.')
+        self.logger.info('*******************************************************************************')
                         
         # generate plot for each bin    
         targetFiles = self.binFiles(options) 
@@ -432,27 +433,24 @@ class OptionsParser():
         plot = MarkerGenePosPlot(options)
         filesProcessed = 1
         for f in targetFiles:  
-            if not options.bQuiet:
-                print '  Plotting marker gene position plot for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
-                filesProcessed += 1
+            self.logger.info('  Plotting marker gene position plot for %s (%d of %d)' % (f, filesProcessed, len(targetFiles)))
+            filesProcessed += 1
             
             binId = binIdFromFilename(f)
             plot.plot(f, markerGeneStats[binId], binStats[binId])
             
             outputFile = os.path.join(options.plot_folder, binId) + '.marker_pos_plot.' + options.image_type
             plot.savePlot(outputFile, dpi=options.dpi)
-            if not options.bQuiet:
-                print '    Plot written to: ' + outputFile
+            self.logger.info('    Plot written to: ' + outputFile)
             
         self.timeKeeper.printTimeStamp()
 
     def parallelCoordPlot(self, options):
         """Parallel coordinate plot command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - par_plot] Parallel coordinate plot of GC and coverage.'
-            print '*******************************************************************************'  
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - par_plot] Parallel coordinate plot of GC and coverage.')
+        self.logger.info('*******************************************************************************')  
 
         targetFiles = self.binFiles(options) 
 
@@ -471,123 +469,111 @@ class OptionsParser():
         plot = ParallelCoordPlot(options)
         filesProcessed = 1
         for f in targetFiles:  
-            if not options.bQuiet:
-                print '  Plotting marker gene position plot for %s (%d of %d)' % (f, filesProcessed, len(targetFiles))
-                filesProcessed += 1
+            self.logger.info('  Plotting marker gene position plot for %s (%d of %d)' % (f, filesProcessed, len(targetFiles)))
+            filesProcessed += 1
                 
             binId = binIdFromFilename(f)
             plot.plot(binId, seqStats, coverageStats)
             
             outputFile = os.path.join(options.plot_folder, binId) + '.paralel_coord_plot.' + options.image_type
             plot.savePlot(outputFile, dpi=options.dpi)
-            if not options.bQuiet:
-                print '    Plot written to: ' + outputFile
+            self.logger.info('    Plot written to: ' + outputFile)
             
         self.timeKeeper.printTimeStamp()
         
     def unbinned(self, options):
         """Unbinned Command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - unbinned] Identify unbinned sequences.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - unbinned] Identify unbinned sequences.')
+        self.logger.info('*******************************************************************************')
   
         binFiles = self.binFiles(options) 
   
         unbinned = Unbinned()
-        unbinned.run(binFiles, options.seq_file, options.file, options.min_seq_len, options.bQuiet)
+        unbinned.run(binFiles, options.seq_file, options.file, options.min_seq_len)
         
-        if not options.bQuiet and options.file != '':
-            print '  Unbinned sequences written to: ' + options.file
+        if options.file != '':
+            self.logger.info('  Unbinned sequences written to: ' + options.file)
             
         self.timeKeeper.printTimeStamp()
         
     def coverage(self, options):
         """Coverage command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - coverage] Calculate coverage of sequences.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - coverage] Calculate coverage of sequences.')
+        self.logger.info('*******************************************************************************')
     
         binFiles = self.binFiles(options) 
         
         coverage = Coverage(options.threads)
-        coverage.calculate(binFiles, options.bam_files, options.output_file, bPairsOnly = options.pairs_only, bQuiet = options.bQuiet)
+        coverage.run(binFiles, options.bam_files, options.output_file, options.all_reads, options.min_align, options.max_edit_dist)
         
-        if not options.bQuiet:
-            print '  Coverage information written to: ' + options.output_file    
+        self.logger.info('  Coverage information written to: ' + options.output_file)
             
         self.timeKeeper.printTimeStamp()
         
     def tetraSignatures(self, options):
         """Tetranucleotide signature command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - tetra] Calculate tetranucleotide signature of sequences.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - tetra] Calculate tetranucleotide signature of sequences.')
+        self.logger.info('*******************************************************************************')
   
         checkFileExists(options.seq_file)
         
         tetraSig = GenomicSignatures(4, options.threads)
-        tetraSig.calculate(options.seq_file, options.output_file, bQuiet = options.bQuiet)
+        tetraSig.calculate(options.seq_file, options.output_file)
         
-        if not options.bQuiet:
-            print '  Tetranucletoide signatures written to: ' + options.output_file
+        self.logger.info('  Tetranucletoide signatures written to: ' + options.output_file)
             
         self.timeKeeper.printTimeStamp()
         
     def profile(self, options):
         """Profile command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - profile] Calculate percentage of reads mapped to each bin.'
-            print '*******************************************************************************'
-  
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - profile] Calculate percentage of reads mapped to each bin.')
+        self.logger.info('*******************************************************************************')
   
         profile = Profile()
-        profile.run(options.coverage_file, options.file, bQuiet = options.bQuiet)
+        profile.run(options.coverage_file, options.file)
         
-        if not options.bQuiet and options.file != '':
-            print '  Profile information written to: ' + options.file
+        if options.file != '':
+            self.logger.info('  Profile information written to: ' + options.file)
           
         self.timeKeeper.printTimeStamp()
             
     def outliers(self, options):
         """Outlier command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - outlier] Identify outliers in bins.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - outlier] Identify outliers in bins.')
+        self.logger.info('*******************************************************************************')
         
         binFiles = self.binFiles(options) 
         
         binTools = BinTools()
-        binTools.identifyOutliers(binFiles, options.distribution, options.report_type, options.output_file, options.bQuiet)
+        binTools.identifyOutliers(binFiles, options.distribution, options.report_type, options.output_file)
 
-        if not options.bQuiet:
-            print '\n  Outlier information written to: ' + options.output_file
+        self.logger.info('\n  Outlier information written to: ' + options.output_file)
             
         self.timeKeeper.printTimeStamp()
         
     def modify(self, options):
         """Modify command"""
-        if not options.bQuiet:
-            print ''
-            print '*******************************************************************************'
-            print ' [CheckM - modify] Modify sequences in a bin.'
-            print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - modify] Modify sequences in a bin.')
+        self.logger.info('*******************************************************************************')
         
         if not (options.add or options.remove or options.outlier_file):
-            sys.stderr.write('[Warning] No modification to bin requested.\n')
+            self.logger.warning('  [Warning] No modification to bin requested.\n')
             sys.exit()
             
         if (options.add or options.remove) and options.outlier_file:
-            sys.stderr.write("[Warning] The 'outlier_file' option cannot be specified with 'add' or 'remove'.\n")
+            self.logger.warning("  [Warning] The 'outlier_file' option cannot be specified with 'add' or 'remove'.\n")
             sys.exit()
                         
         binTools = BinTools()
@@ -597,17 +583,16 @@ class OptionsParser():
         elif options.outlier_file:
             binTools.removeOutliers(options.bin_file, options.outlier_file, options.output_file)
         
-        if not options.bQuiet:
-            print '  Modified bin written to: ' + options.output_file
+        self.logger.info('  Modified bin written to: ' + options.output_file)
             
         self.timeKeeper.printTimeStamp()
         
     def unique(self, options):
         """Unique command"""
-        print ''
-        print '*******************************************************************************'
-        print ' [CheckM - unique] Ensure no sequences are assigned to multiple bins.'
-        print '*******************************************************************************'
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info('[CheckM - unique] Ensure no sequences are assigned to multiple bins.')
+        self.logger.info('*******************************************************************************')
   
         binFiles = self.binFiles(options) 
         
@@ -616,17 +601,35 @@ class OptionsParser():
             
         self.timeKeeper.printTimeStamp()
         
+    def ssuFinder(self, options):
+        """SSU finder command"""
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info('[CheckM - ssu_finder] Identify SSU (16S/18S) rRNAs in sequences.')
+        self.logger.info('*******************************************************************************')
+  
+        binFiles = self.binFiles(options) 
+        
+        checkFileExists(options.seq_file)
+        makeSurePathExists(options.out_folder)
+        
+        ssuFinder = SSU_Finder(options.threads)
+        ssuFinder.run(options.seq_file, binFiles, options.out_folder, options.evalue, options.concatenate)
+            
+        self.timeKeeper.printTimeStamp()
+        
     def makeDB(self, options):
         DB = chmdb.MarkerDB()
         DB.makeDB(options)
 
     def parseOptions(self, options):
-        """Parse user options and call the correct pipeline(s)"""
-        try:
-            self.timeKeeper = TimeKeeper(options.bQuiet)
-        except:
-            # no option to make command quiet, so assume we want visible output
-            self.timeKeeper = TimeKeeper(False)
+        """Parse user options and call the correct pipeline(s)"""    
+        self.timeKeeper = TimeKeeper()
+         
+        if options.bQuiet:
+            logging.basicConfig(format='', level=logging.ERROR)
+        else:
+            logging.basicConfig(format='', level=logging.INFO)
         
         try:
             if options.file == "STDOUT":
@@ -675,7 +678,9 @@ class OptionsParser():
         elif(options.subparser_name == 'nx_plot'):
             self.nxPlot(options)
         elif(options.subparser_name == 'len_plot'):
-            self.lenPlot(options)
+            self.cumulativeLengthPlot(options)
+        elif(options.subparser_name == 'len_hist'):
+            self.lengthHistogram(options)
         elif(options.subparser_name == 'marker_plot'):
             self.markerPlot(options)
         elif(options.subparser_name == 'par_plot'):
@@ -698,8 +703,11 @@ class OptionsParser():
             self.modify(options)
         elif(options.subparser_name == 'unique'):
             self.unique(options)
+        elif(options.subparser_name == 'ssu_finder'):
+            self.ssuFinder(options)
         else:
-            sys.stderr.write('[Error] Unknown CheckM command: ' + options.subparser_name + '\n')
+            self.logger.error('  [Error] Unknown CheckM command: ' + options.subparser_name + '\n')
+            sys.exit()
 
         if database_name is not None:
             os.remove(tmp)
