@@ -49,8 +49,8 @@ class ResultsParser():
     def analyseResults(self,
                        directory,
                        hmmFile,
-                       eCO=defaultValues.__CHECKM_DEFAULT_E_VAL__,
-                       lengthCO=defaultValues.__CHECKM_DEFAULT_LENGTH__,
+                       evalueThreshold = defaultValues.__CHECKM_DEFAULT_E_VAL__,
+                       lengthThreshold = defaultValues.__CHECKM_DEFAULT_LENGTH__,
                        outFile=''
                        ):
         """Parse the results in the output directory"""
@@ -71,7 +71,7 @@ class ResultsParser():
             if os.path.isdir(os.path.join(directory, folder)):
                 # somewhere to store results
                 binId = binIdFromFilename(folder)
-                resultsManager = ResultsManager(folder, lengthCO, eCO, self.models, binStats[binId], seqStats[binId])
+                resultsManager = ResultsManager(folder, lengthThreshold, evalueThreshold, self.models, binStats[binId], seqStats[binId])
                 
                 # we can now build the hmmer_file_name
                 hmmer_file_name = os.path.join(directory, folder, self.txtOut)
@@ -89,7 +89,7 @@ class ResultsParser():
         for binId in self.results:
             binStatsExt[binId] = self.results[binId].getSummary(outputFormat=1)
            
-        binStatsExtFile = os.path.join(directory, defaultValues.__CHECKM_DEFAULT_BIN_STATS_EXT_FILE__) 
+        binStatsExtFile = os.path.join(directory, 'storage', defaultValues.__CHECKM_DEFAULT_BIN_STATS_EXT_FILE__) 
         fout = open(binStatsExtFile, 'w')
         fout.write(str(binStatsExt))
         fout.close
@@ -99,14 +99,14 @@ class ResultsParser():
         for binId in self.results:
             markerGenes[binId] = self.results[binId].getSummary(outputFormat=8)
            
-        markerGenesFile = os.path.join(directory, defaultValues.__CHECKM_DEFAULT_MARKER_GENE_STATS__)
+        markerGenesFile = os.path.join(directory, 'storage', defaultValues.__CHECKM_DEFAULT_MARKER_GENE_STATS__)
         fout = open(markerGenesFile, 'w')
         fout.write(str(markerGenes))
         fout.close
                          
     def parseBinStats(self, resultsFolder):
         """Read bin statistics from file."""
-        binStatsFile = os.path.join(resultsFolder, defaultValues.__CHECKM_DEFAULT_BIN_STATS_FILE__)
+        binStatsFile = os.path.join(resultsFolder, 'storage', defaultValues.__CHECKM_DEFAULT_BIN_STATS_FILE__)
         
         checkFileExists(binStatsFile)
         
@@ -118,7 +118,7 @@ class ResultsParser():
     
     def parseBinStatsExt(self, resultsFolder):
         """Read bin statistics from file."""
-        binStatsExtFile = os.path.join(resultsFolder, defaultValues.__CHECKM_DEFAULT_BIN_STATS_EXT_FILE__)
+        binStatsExtFile = os.path.join(resultsFolder, 'storage', defaultValues.__CHECKM_DEFAULT_BIN_STATS_EXT_FILE__)
         
         checkFileExists(binStatsExtFile)
         
@@ -130,7 +130,7 @@ class ResultsParser():
     
     def parseMarkerGeneStats(self, resultsFolder):
         """Read bin statistics from file."""
-        markerGeneStatsFile = os.path.join(resultsFolder, defaultValues.__CHECKM_DEFAULT_MARKER_GENE_STATS__)
+        markerGeneStatsFile = os.path.join(resultsFolder, 'storage', defaultValues.__CHECKM_DEFAULT_MARKER_GENE_STATS__)
         
         checkFileExists(markerGeneStatsFile)
         
@@ -142,7 +142,7 @@ class ResultsParser():
             
     def parseSeqStats(self, resultsFolder):
         """Read sequence statistics from file."""
-        seqStatsFile = os.path.join(resultsFolder, defaultValues.__CHECKM_DEFAULT_SEQ_STATS_FILE__)
+        seqStatsFile = os.path.join(resultsFolder, 'storage', defaultValues.__CHECKM_DEFAULT_SEQ_STATS_FILE__)
         
         checkFileExists(seqStatsFile)
         

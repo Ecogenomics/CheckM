@@ -22,9 +22,9 @@
 __CHECKM_DEFAULT_E_VAL__ = 1e-10
 __CHECKM_DEFAULT_LENGTH__ = 0.7
 
-__CHECKM_DEFAULT_HMMER_TXT_OUT__ = 'hmmer_out.txt'
-__CHECKM_DEFAULT_HMMER_OUT__ = 'hmmer_out.hmmer3'
-__CHECKM_DEFAULT_HMMER_ALIGN_OUT__ = 'hmmer_out.align'
+__CHECKM_DEFAULT_HMMER_TXT_OUT__ = 'hmmer.txt'
+__CHECKM_DEFAULT_HMMER_OUT__ = 'hmmer.hmmer3'
+__CHECKM_DEFAULT_HMMER_ALIGN_OUT__ = 'hmmer.align'
 
 __CHECKM_DEFAULT_PRODIGAL_AA__ = 'prodigal.faa'
 __CHECKM_DEFAULT_PRODIGAL_NT__ = 'prodigal.fna'

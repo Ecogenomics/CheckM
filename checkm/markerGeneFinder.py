@@ -19,13 +19,12 @@
 #                                                                             #
 ###############################################################################
 
-from os import mkdir
-import os.path
-import threading
-import time
+import os
+import sys
+import multiprocessing as mp
 import logging
 
-from common import makeSurePathExists
+from common import binIdFromFilename, makeSurePathExists
 
 from hmmer import HMMERRunner
 from prodigal import ProdigalRunner
@@ -33,76 +32,82 @@ from prodigal import ProdigalRunner
 class MarkerGeneFinder():
     """This class runs prodigal and hmmer creating data for parsing"""
     def __init__(self, threads):  
-        self.logger = logging.getLogger()
-               
-        # thready stuff            
-        self.varLock = threading.Lock() # we don't have many variables here, so use one lock for everything    
+        self.logger = logging.getLogger()                  
         self.totalThreads = threads
-        self.threadsPerSearch = 1
-        self.threadPool = threading.BoundedSemaphore(self.totalThreads)
 
-        self.numFiles = 0
-        self.numFilesStarted = 0
-        self.numFilesParsed = 0
-
-    def find(self, inFiles, outFolder, hmm):
-        """Identify marker genes in each input fasta file using prodigal and HMMER."""
-        if not os.path.exists(outFolder):
-            mkdir(outFolder)
-            
-        self.hmmer = HMMERRunner()
-        self.prodigal = ProdigalRunner()
-            
+    def find(self, binFiles, outDir, markerFile):
+        """Identify marker genes in each bin using prodigal and HMMER."""
+        makeSurePathExists(outDir)
+      
         # process each fasta file
-        self.numFiles = len(inFiles)
-        self.threadsPerSearch = max(1, int(self.totalThreads / self.numFiles))
-        self.logger.info("  Processing %d files with %d threads:" % (self.numFiles, self.totalThreads))
+        self.threadsPerSearch = max(1, int(self.totalThreads / len(binFiles)))
+        self.logger.info("  Identifying marker genes in %d bins with %d threads:" % (len(binFiles), self.totalThreads))
         
-        for fasta in inFiles:
-            t = threading.Thread(target=self.__processFasta, args=(fasta, outFolder, hmm))
-            t.start()
+        # process each bin in parallel
+        workerQueue = mp.Queue()
+        writerQueue = mp.Queue()
+
+        for binFile in binFiles:
+            workerQueue.put(binFile)
+
+        for _ in range(self.totalThreads):
+            workerQueue.put(None)
+
+        calcProc = [mp.Process(target = self.__processBin, args = (outDir, markerFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        writeProc = mp.Process(target = self.__reportProgress, args = (len(binFiles), writerQueue))
+
+        writeProc.start()
+        
+        for p in calcProc:
+            p.start()
+
+        for p in calcProc:
+            p.join()
             
-        while True:
-            # don't exit till we're done!
-            self.varLock.acquire()
-            doned = False
-            try:
-                doned = self.numFilesParsed >= self.numFiles
-            finally:
-                self.varLock.release()
-            
-            if doned:
-                break
-            else:
-                time.sleep(1)
+        writerQueue.put(None)
+        writeProc.join()
               
-    def __processFasta(self, fasta, outFolder, hmm):
-        """Thread safe fasta processing"""
-        self.threadPool.acquire()
-        try:
-            self.varLock.acquire()
-            try:
-                # create output directory for fasta file
-                outDir = os.path.join(outFolder, os.path.basename(fasta))
-                makeSurePathExists(outDir)
-                
-                self.numFilesStarted += 1
-                self.logger.info("    Processing %s (%d of %d)" % (fasta, self.numFilesStarted, self.numFiles))
-            finally:
-                self.varLock.release()
-
-            # run Prodigal       
-            aaGeneFile = self.prodigal.run(fasta, outDir)
-
-            # run HMMER
-            self.hmmer.search(hmm, aaGeneFile, outDir, '--cpu ' + str(self.threadsPerSearch))
-
-            # let the world know we've parsed this file
-            self.varLock.acquire()
-            try:
-                self.numFilesParsed += 1
-            finally:
-                self.varLock.release()
+    def __processBin(self, outDir, markerFile, queueIn, queueOut):
+        """Thread safe bin processing."""      
+        while True:    
+            binFile = queueIn.get(block=True, timeout=None) 
+            if binFile == None:
+                break   
             
-        finally:
-            self.threadPool.release()
+            binId = binIdFromFilename(binFile)
+            outDir = os.path.join(outDir, binId)
+            makeSurePathExists(outDir)
+    
+            # run Prodigal      
+            prodigal = ProdigalRunner() 
+            aaGeneFile = prodigal.run(binFile, outDir)
+    
+            # run HMMER
+            hmmer = HMMERRunner()
+            hmmer.search(markerFile, aaGeneFile, outDir, '--cpu ' + str(self.threadsPerSearch))
+    
+            queueOut.put(binId)
+            
+    def __reportProgress(self, numBins, queueIn):
+        """Report number of processed bins."""      
+        
+        numProcessedBins = 0
+        if self.logger.getEffectiveLevel() <= logging.INFO:
+            statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
+            sys.stdout.write('%s\r' % statusStr)
+            sys.stdout.flush()
+        
+        while True:
+            binId = queueIn.get(block=True, timeout=None)
+            if binId == None:
+                break
+            
+            if self.logger.getEffectiveLevel() <= logging.INFO:
+                numProcessedBins += 1
+                statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
+                sys.stdout.write('%s\r' % statusStr)
+                sys.stdout.flush()
+         
+        if self.logger.getEffectiveLevel() <= logging.INFO:
+            sys.stdout.write('\n')
+            

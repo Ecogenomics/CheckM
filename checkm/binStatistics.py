@@ -20,100 +20,79 @@
 ###############################################################################
 
 import os
-import threading
-import time
+import sys
+import multiprocessing as mp
 import math
 import logging
 
 import defaultValues
 from seqUtils import readFasta, baseCount, calculateN50
-from common import binIdFromFilename
+from common import binIdFromFilename, makeSurePathExists
 from mathHelper import mean
 
 class BinStatistics():
     """Calculate statistics (GC, coding density, etc.) for genome bins."""
     def __init__(self, threads):   
-        self.logger = logging.getLogger()
-              
-        # thready stuff            
-        self.varLock = threading.Lock() # we don't have many variables here, so use one lock for everything    
+        self.logger = logging.getLogger()        
         self.totalThreads = threads
-        self.threadsPerSearch = 1
-        self.threadPool = threading.BoundedSemaphore(self.totalThreads)
 
-        self.numFiles = 0
-        self.numFilesStarted = 0
-        self.numFilesParsed = 0
-
-    def calculate(self, inFiles, outFolder):
+    def calculate(self, binFiles, outDir):
         """Calculate statistics for each putative genome bin."""
-        logger = logging.getLogger()
+        makeSurePathExists(outDir)
         
-        # process each fasta file
-        self.numFiles = len(inFiles)
+        # process each bin
+        self.logger.info("  Calculating genome statistics (e.g., GC, coding density) for %d bins with %d threads:" % (len(binFiles), self.totalThreads))
+
+        workerQueue = mp.Queue()
+        writerQueue = mp.Queue()
+
+        for binFile in binFiles:
+            workerQueue.put(binFile)
+
+        for _ in range(self.totalThreads):
+            workerQueue.put(None)
+
+        calcProc = [mp.Process(target = self.__processBin, args = (outDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        writeProc = mp.Process(target = self.__reportProgress, args = (outDir, len(binFiles), writerQueue))
+
+        writeProc.start()
         
-        logger.info("  Processing %d files with %d threads:" % (self.numFiles, self.totalThreads))
-        
-        binStats = {}
-        seqStats = {}
-        for fasta in inFiles:
-            binId = binIdFromFilename(fasta)
+        for p in calcProc:
+            p.start()
+
+        for p in calcProc:
+            p.join()
             
-            binStats[binId] = {}
-            seqStats[binId] = {}
-            
-            t = threading.Thread(target=self.__processBin, args=(fasta, outFolder, binStats[binId], seqStats[binId]))
-            t.start()
-            
-        while True:
-            self.varLock.acquire()
-            bDone = False
-            try:
-                bDone = self.numFilesParsed >= self.numFiles
-            finally:
-                self.varLock.release()
-            
-            if bDone:
-                break
-            else:
-                time.sleep(1)
-                
-        fout = open(os.path.join(outFolder, defaultValues.__CHECKM_DEFAULT_BIN_STATS_FILE__), 'w')
-        fout.write(str(binStats))
-        fout.close()
-        
-        fout = open(os.path.join(outFolder, defaultValues.__CHECKM_DEFAULT_SEQ_STATS_FILE__), 'w')
-        fout.write(str(seqStats))
-        fout.close()
+        writerQueue.put((None, None, None))
+        writeProc.join()
               
-    def __processBin(self, fasta, outFolder, binStats, seqStats):
-        """Thread safe processing of FASTA file."""
-        logger = logging.getLogger()
-        
-        self.threadPool.acquire()
-        try:
-            self.varLock.acquire()
-            try:
-                self.numFilesStarted += 1
-                self.logger.info('    Processing %s (%d of %d)' % (fasta, self.numFilesStarted, self.numFiles)) 
-            finally:
-                self.varLock.release()
+    def __processBin(self, outDir, queueIn, queueOut):
+        """Thread safe bin processing."""
+        while True:    
+            binFile = queueIn.get(block=True, timeout=None) 
+            if binFile == None:
+                break   
+            
+            binStats = {}
+            scaffoldStats = {}
+            
+            binId = binIdFromFilename(binFile)
+            outDir = os.path.join(outDir, binId)
+            makeSurePathExists(outDir)
 
-            outDir = os.path.join(outFolder, os.path.basename(fasta))
-
-            # read seqs
-            seqs = readFasta(fasta)
-            for seqId in seqs:
-                seqStats[seqId] = {}
+            # read scaffolds
+            scaffolds = readFasta(binFile) 
+            for seqId in scaffolds:
+                scaffoldStats[seqId] = {}
                 
             # calculate GC statistics
-            GC, stdGC = self.calculateGC(seqs, seqStats) 
+            GC, stdGC = self.calculateGC(scaffolds, scaffoldStats) 
             binStats['GC'] = GC
             binStats['GC std'] = stdGC
             
             # calculate statistics related to scaffold lengths
-            maxScaffoldLen, maxContigLen, genomeSize, scaffold_N50, contig_N50, numContigs = self.calculateSeqLengthStats(seqs, seqStats)  
-            binStats['# scaffolds'] = len(seqs)
+            maxScaffoldLen, maxContigLen, genomeSize, scaffold_N50, contig_N50, numContigs = self.calculateScaffoldLengthStats(scaffolds, scaffoldStats)  
+            binStats['# scaffolds'] = len(scaffolds)
             binStats['# contigs'] = numContigs
             binStats['Longest scaffold'] = maxScaffoldLen
             binStats['Longest contig'] = maxContigLen
@@ -121,21 +100,53 @@ class BinStatistics():
             binStats['N50 (scaffolds)'] = scaffold_N50
             binStats['N50 (contigs)'] = contig_N50
             
-            # calculate coding density statistics
-            codingDensity, numORFs = self.calculateCodingDensity(outDir, genomeSize, seqStats)
+            # calculate coding density statistics            
+            codingDensity, numORFs = self.calculateCodingDensity(outDir, genomeSize, scaffoldStats)
             binStats['Coding density'] = codingDensity
             binStats['# predicted ORFs'] = numORFs
-
-            # let the world know we've parsed this file
-            self.varLock.acquire()
-            try:
-                self.numFilesParsed += 1
-            finally:
-                self.varLock.release()
             
-        finally:
-            self.threadPool.release()
+            queueOut.put((binId, binStats, scaffoldStats))
             
+    def __reportProgress(self, outDir, numBins, queueIn):
+        """Report number of processed bins and write statistics to file."""      
+        
+        numProcessedBins = 0
+        if self.logger.getEffectiveLevel() <= logging.INFO:
+            statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
+            sys.stdout.write('%s\r' % statusStr)
+            sys.stdout.flush()
+        
+        binStats = {}
+        seqStats = {}
+        while True:
+            binId, curBinStats, curSeqStats = queueIn.get(block=True, timeout=None)
+            if binId == None:
+                break
+            
+            binStats[binId] = curBinStats
+            seqStats[binId] = curSeqStats
+            
+            if self.logger.getEffectiveLevel() <= logging.INFO:
+                numProcessedBins += 1
+                statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
+                sys.stdout.write('%s\r' % statusStr)
+                sys.stdout.flush()
+                
+        if self.logger.getEffectiveLevel() <= logging.INFO:
+            sys.stdout.write('\n')
+       
+        # save results
+        storagePath = os.path.join(outDir, 'storage')  
+        makeSurePathExists(storagePath)
+        
+        fout = open(os.path.join(storagePath, defaultValues.__CHECKM_DEFAULT_BIN_STATS_FILE__), 'w')
+        fout.write(str(binStats))
+        fout.close()
+        
+        fout = open(os.path.join(storagePath, defaultValues.__CHECKM_DEFAULT_SEQ_STATS_FILE__), 'w')
+        fout.write(str(seqStats))
+        fout.close()
+         
     def calculateGC(self, seqs, seqStats):
         """Calculate fraction of nucleotides that are G or C."""
         totalGC = 0
@@ -162,11 +173,11 @@ class BinStatistics():
 
         return GC, math.sqrt(varGC)
     
-    def calculateSeqLengthStats(self, seqs, seqStats):
+    def calculateScaffoldLengthStats(self, scaffolds, scaffoldsStats):
         """Calculate scaffold length statistics (min length, max length, total length, N50, # contigs)."""
         scaffoldLens = []
         contigLens = []
-        for scaffoldId, scaffold in seqs.iteritems():
+        for scaffoldId, scaffold in scaffolds.iteritems():
             scaffoldLen = len(scaffold)
             scaffoldLens.append(scaffoldLen)
                         
@@ -179,9 +190,9 @@ class BinStatistics():
 
             contigLens += lenContigsInScaffold
             
-            seqStats[scaffoldId]['Length'] = scaffoldLen
-            seqStats[scaffoldId]['Total contig length'] = sum(lenContigsInScaffold)
-            seqStats[scaffoldId]['# contigs'] = len(lenContigsInScaffold)
+            scaffoldsStats[scaffoldId]['Length'] = scaffoldLen
+            scaffoldsStats[scaffoldId]['Total contig length'] = sum(lenContigsInScaffold)
+            scaffoldsStats[scaffoldId]['# contigs'] = len(lenContigsInScaffold)
             
         scaffold_N50 = calculateN50(scaffoldLens)
         contig_N50 = calculateN50(contigLens)

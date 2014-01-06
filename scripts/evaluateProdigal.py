@@ -36,7 +36,7 @@ __status__ = 'Development'
 import os
 
 from lib.img import IMG
-from lib.pfam import PFAM
+from checkm.pfam import PFAM
 from lib.markerSet import MarkerSet
 
 class EvaluateHMMs(object):
