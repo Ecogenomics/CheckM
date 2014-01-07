@@ -84,7 +84,7 @@ class MarkerGeneFinder():
     
             # run HMMER
             hmmer = HMMERRunner()
-            hmmer.search(markerFile, aaGeneFile, outDir, '--cpu ' + str(self.threadsPerSearch))
+            hmmer.search(markerFile, aaGeneFile, outDir, '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 1 --domE 1')
     
             queueOut.put(binId)
             

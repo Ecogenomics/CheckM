@@ -91,13 +91,13 @@ if __name__ == '__main__':
     output_parser.add_argument('-o', '--output-format', dest='out_format',
             type=int,
             help='''change the output format to one of the following:
-                1. summary statistics for each genome bin including GC distribution, genome size, completeness estimation, and contamination estimation
-                2. brief summary of genome bin completeness and contamination
+                1. brief summary of genome bin completeness and contamination
+                2. summary statistics for each genome bin including GC distribution, genome size, completeness estimation, and contamination estimation
                 3. list of marker names and their counts
                 4. matrix of marker counts
                 5. list of bin name, marker name, scaffold name
                 6. list of markers present multiple times in a bin
-                7. list showing scaffold that contain more than one copy of the same marker
+                7. list of markers present multiple times on the same scaffold
                 8. list indicating marker genes within each bin 
                 9. list of scaffold name, bin name, length, GC, marker name(s)''', 
             default=1, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9])
@@ -119,17 +119,20 @@ if __name__ == '__main__':
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[output_parser],
                                         description='''Assess genome bins for contamination and completeness.''')
-    qa_parser.add_argument('marker_file', help="markers to use for accessing genomes (marker file from tree command or an HMMER HMM file)")
+    qa_parser.add_argument('marker_file', help="markers use to analyze bins")
     qa_parser.add_argument('out_folder', help="folder specified during analyze command")
+    qa_parser.add_argument('--skip_orf_correction', dest='bSkipOrfCorrection', action="store_true", default=False, help="skip identification of ORF errors affecting marker genes")
+    qa_parser.add_argument('--ignore_thresholds', dest='bIgnoreThresholds', action="store_true", default=False, help="ignore model-specific score thresholds")
     qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="e-value cut off")
     qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")
+    qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print a strictly tab-separated values table")
     qa_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # produce alignments of matches
     align_parser = subparsers.add_parser('align',
                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Create alignments of matched marker genes.')
-    align_parser.add_argument('marker_file', help="markers to use for accessing genomes (marker file from tree command or an HMMER HMM file)")
+    align_parser.add_argument('marker_file', help="markers use to analyze bins")
     align_parser.add_argument('out_folder', help="folder specified during analyze command")
     align_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.__CHECKM_DEFAULT_E_VAL__, help="e-value cut off")
     align_parser.add_argument('-l', '--length', type=float, default=defaultValues.__CHECKM_DEFAULT_LENGTH__, help="percent overlap between target and query")

@@ -92,24 +92,24 @@ class OptionsParser():
 
     def qa(self, options):
         """QA command"""
-        self.logger.info('')
-        self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - qa] Tabulating genome statistics.')
-        self.logger.info('*******************************************************************************')
+        if options.file != '':
+            self.logger.info('')
+            self.logger.info('*******************************************************************************')
+            self.logger.info(' [CheckM - qa] Tabulating genome statistics.')
+            self.logger.info('*******************************************************************************')
 
         RP = ResultsParser()
         RP.analyseResults(options.out_folder,
                           options.marker_file,
+                          bIgnoreThresholds = options.bIgnoreThresholds,
                           evalueThreshold = options.e_value,
                           lengthThreshold = options.length,
-                          outFile = options.file
+                          bSkipOrfCorrection = options.bSkipOrfCorrection
                           )
-        RP.printSummary(outputFormat=options.out_format, outFile=options.file)
+        RP.printSummary(options.out_format, options.bTabTable, options.file)
                 
         if options.file != '':
             print '  QA information written to: ' + options.file
-        
-        self.timeKeeper.printTimeStamp()
 
     def align(self, options):
         """Align command"""

@@ -30,10 +30,12 @@ from collections import defaultdict
 import logging
 
 import defaultValues 
-from common import reassignStdOut, restoreStdOut, checkFileExists, binIdFromFilename
+from common import reassignStdOut, restoreStdOut, checkFileExists
 
 from hmmer import HMMERRunner, HMMERParser, makeOutputFNs
 from hmmerModelParser import HmmModelParser
+
+import prettytable
 
 class ResultsParser():
     """Parse output of Prodigal+HMMER run and derived statistics."""
@@ -41,26 +43,23 @@ class ResultsParser():
         self.logger = logging.getLogger()
         
         # make the output file names
-        (self.txtOut, self.hmmOut) = makeOutputFNs()
         self.results = {}
         self.models = {}
-        self.numQs = 0
     
     def analyseResults(self,
                        directory,
                        hmmFile,
+                       bIgnoreThresholds = False,
                        evalueThreshold = defaultValues.__CHECKM_DEFAULT_E_VAL__,
                        lengthThreshold = defaultValues.__CHECKM_DEFAULT_LENGTH__,
-                       outFile=''
+                       bSkipOrfCorrection = False,
                        ):
         """Parse the results in the output directory"""
 
         # parse the hmm file itself so we can determine the length of the queries
-        model_parser = HmmModelParser(hmmFile)
-        for model in model_parser.parse():
+        modelParser = HmmModelParser(hmmFile)
+        for model in modelParser.parse():
             self.models[model.name] = model
-        
-        self.numQs = len(self.models)
         
         # read bin and sequence stats into dictionaries
         binStats = self.parseBinStats(directory)
@@ -68,17 +67,17 @@ class ResultsParser():
 
         # we expect directory to contain a collection of folders names after the original bins
         for folder in os.listdir(directory): 
-            if os.path.isdir(os.path.join(directory, folder)):
-                # somewhere to store results
-                binId = binIdFromFilename(folder)
-                resultsManager = ResultsManager(folder, lengthThreshold, evalueThreshold, self.models, binStats[binId], seqStats[binId])
+            binFolder = os.path.join(directory, folder)
+            if os.path.isdir(binFolder):
+                # check if directory is a bin
+                hmmerFile = os.path.join(binFolder, defaultValues.__CHECKM_DEFAULT_HMMER_TXT_OUT__)
+                if not os.path.exists(hmmerFile):
+                    continue
                 
-                # we can now build the hmmer_file_name
-                hmmer_file_name = os.path.join(directory, folder, self.txtOut)
-                
-                # and then we can parse it
-                self.parseHmmerResults(hmmer_file_name, resultsManager)
-                self.results[binId] = resultsManager
+                resultsManager = ResultsManager(folder, bIgnoreThresholds, evalueThreshold, lengthThreshold, self.models, binStats[folder], seqStats[folder])
+                       
+                self.parseHmmerResults(hmmerFile, resultsManager, bSkipOrfCorrection)
+                self.results[folder] = resultsManager
                 
         # cache critical results to file
         self.writeBinStatsExt(directory)
@@ -152,12 +151,12 @@ class ResultsParser():
             
         return seqStats
             
-    def parseHmmerResults(self, fileName, storage):
+    def parseHmmerResults(self, fileName, storage, bSkipOrfCorrection):
         """Parse HMMER results."""
         try:
-            with open(fileName, 'r') as hmmer_handle:
+            with open(fileName, 'r') as hmmerHandle:
                 try:
-                    HP = HMMERParser(hmmer_handle)
+                    HP = HMMERParser(hmmerHandle)
                 except:
                     print("Error opening HMM file: ", fileName)
                     raise
@@ -167,110 +166,209 @@ class ResultsParser():
                     if hit is None:
                         break
                     storage.addHit(hit)
+                  
+            if not bSkipOrfCorrection:
+                storage.identifyOrfErrors()
+                      
         except IOError as detail:
             sys.stderr.write(str(detail)+"\n")
 
-    def printHeader(self, outputFormat):
-        """Print the NON_VERBOSE header"""
+    def getHeader(self, outputFormat):
+        """Get header for requested output table."""
+                
         # keep count of single, double, triple genes etc...
         if outputFormat == 1:
+            header = ['Bin Id','0','1','2','3','4','5+','Completeness','Contamination']
+        elif outputFormat == 2:
             header = ['Bin Id']
             header += ['Completeness','Contamination']
             header += ['Genome size (bp)', '# scaffolds', '# contigs', 'N50 (scaffolds)', 'N50 (contigs)', 'Longest scaffold (bp)', 'Longest contig (bp)']
             header += ['GC', 'GC std (scaffolds > 1Kbps)']
             header += ['Coding density (translation table 11)', '# predicted ORFs']
             header += ['0','1','2','3','4','5+']
-            print('\t'.join(header))
-            
+
             if defaultValues.__CHECKM_DEFAULT_MIN_SEQ_LEN_GC_STD__ != 1000:
                 self.logger.error('  [Error] Labeling error: GC std (scaffolds > 1Kbps)')
                 sys.exit() 
-        elif outputFormat == 2:
-            print('\t'.join(['Bin Id','0','1','2','3','4','5+','Completeness','Contamination']))
+        elif outputFormat == 3:
+            header = []
         elif outputFormat == 4:
-            print('\t', '\t'.join(self.models.keys()))
+            header = [''] + self.models.keys()
         elif outputFormat == 5:
-            print('Bin Id\tMarker Id\tScaffold Id')
+            header = ['Bin Id','Marker Id','Scaffold Id']
         elif outputFormat == 6:
-            print('Bin Id\tMarker Id\tScaffold Ids')
+            header = ['Bin Id','Marker Id','Scaffold Ids']
         elif outputFormat == 7:
-            print('Bin Id\tScaffold Id\t{Marker Id, Count}')
+            header = ['Bin Id','Scaffold Id','{Marker Id, Count}']
         elif outputFormat == 8:
-            print('Bin Id\tGene Id\t{Marker Id, Start position, End position}')
+            header = ['Bin Id','Gene Id','{Marker Id, Start position, End position}']
         elif outputFormat == 9:
-            print('Scaffold Id\tBin Id\tLength\t# contigs\tGC\t# ORFs\tCoding density\tMarker Ids')
-    
-    def printSummary(self, outputFormat=1, outFile=''):
-        self.logger.info('  Tabulating results for %d bins in output format %d' % (len(self.results), outputFormat))
+            header = ['Scaffold Id','Bin Id','Length','# contigs','GC','# ORFs','Coding density','Marker Ids']
+            
+        return header
         
+    def printSummary(self, outputFormat, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
+        
+        print('')
+        
+        prettyTableFormats = [1, 2]      
+          
+        header = self.getHeader(outputFormat) 
+        if bTabTable or outputFormat not in prettyTableFormats: 
+            bTabTable = True
+            pTable = None
+            print('\t'.join(header))
+        else:
+            pTable = prettytable.PrettyTable(header)
+            pTable.float_format = '.2'
+            pTable.align = 'c'
+            pTable.align[header[0]] = 'l'
+            pTable.hrules = prettytable.FRAME
+            pTable.vrules = prettytable.NONE
+
+        for binId in sorted(self.results.keys()):
+            self.results[binId].printSummary(outputFormat, pTable)
             
-        self.printHeader(outputFormat)  
-        for binId in self.results:
-            self.results[binId].printSummary(outputFormat=outputFormat)
+        if not bTabTable :  
+            print(pTable.get_string())
+        
+        print('') 
             
         # restore stdout   
         restoreStdOut(outFile, oldStdOut)     
 
 class ResultsManager():
     """Store all the results for a single bin"""
-    def __init__(self, name, lengthCO, eCO, models=None, binStats=None, scaffoldStats=None):
-        self.name = name
-        self.binId = os.path.splitext(name)[0]
+    def __init__(self, binId, bIgnoreThresholds, evalueThreshold, lengthThreshold, models=None, binStats=None, scaffoldStats=None):
+        self.binId = binId
         self.markers = {}
-        self.eCO = eCO
-        self.lengthCO = lengthCO
+        self.bIgnoreThresholds = bIgnoreThresholds
+        self.evalueThreshold = evalueThreshold
+        self.lengthThreshold = lengthThreshold
         self.models = models
         self.binStats = binStats
         self.scaffoldStats = scaffoldStats
     
     def vetHit(self, hit):
-        """See if this hit meets our exacting standards"""
-        # we should first check to see if this hit is spurious
-        # evalue is the easiest method
-        try:
-            if self.models[hit.query_name].tc[0] > hit.full_score:
+        """Check if hit meets required thresholds."""
+        
+        model = self.models[hit.query_name]
+        
+        # preferentially use model specific bit score thresholds, before
+        # using the user specified e-value and length criteria
+        if model.isGatheringThreshold and not self.bIgnoreThresholds:
+            if model.ga[0] <= hit.full_score and model.ga[1] <= hit.dom_score:
+                return True
+        elif model.isTrustedCutoff and not self.bIgnoreThresholds:
+            if model.tc[0] <= hit.full_score and model.tc[1] <= hit.dom_score:
+                return True
+        elif model.isNoiseCutoff and not self.bIgnoreThresholds:
+            if model.nc[0] <= hit.full_score and model.nc[1] <= hit.dom_score:
+                return True
+        else:
+            if hit.full_e_value > self.evalueThreshold:
                 return False
-        except:
-            if hit.full_e_value > self.eCO:
-                #print "BAD1:", hit.query_name
-                return False
+
+            alignment_length = float(hit.ali_to - hit.ali_from)
+            length_perc = alignment_length/float(hit.query_length)
+            if length_perc >= self.lengthThreshold:
+                return True
         
-        # also from the manual, if the bias is significantly large
-        # then we shouldn't trust the hit
-        if hit.full_bias > hit.full_score*0.5:
-            #print "BAD2:", hit.query_name
-            return False
-        
-        # now we can see if we have a long enough match
-        alignment_length = float(hit.ali_to - hit.ali_from)
-        length_perc = alignment_length/float(hit.query_length)
-        if length_perc < self.lengthCO:
-            #print "BAD3:", hit.query_name, length_perc, self.lengthCO
-            return False
-        
-        # this is presumably a good hit.
-        return True
+        return False
     
     def addHit(self, hit):
-        """process this hit and add to the markers if OK
-        
-        hit is an instance of simplehmmer.HmmerHit
-        """
+        """Process hit and add it to the set of markers if it passes filtering criteria."""
         if self.vetHit(hit):
             try:
-                self.markers[hit.query_name].append(hit)
+                # retain only the best domain hit for a given marker to a specific ORF
+                previousHitToORF = None
+                for h in self.markers[hit.query_name]:
+                    if h.target_name == hit.target_name:
+                        previousHitToORF = h
+                        break
+                    
+                if not previousHitToORF:
+                    self.markers[hit.query_name].append(hit)
+                else:
+                    if previousHitToORF.dom_score < hit.dom_score:
+                        self.markers[hit.query_name].append(hit)
+                        self.markers[hit.query_name].remove(previousHitToORF)
+                    
             except KeyError:
                 self.markers[hit.query_name] = [hit]
+                
+    def identifyOrfErrors(self):
+        """Identify ORF errors affecting marker genes."""
+ 
+        # check for adjacent ORFs with hits to the same marker gene
+        for markerId, hits in self.markers.iteritems():
+            
+            bCombined = True
+            while bCombined:
+                for i in xrange(0, len(hits)):
+                    orfI = hits[i].target_name
+                    scaffoldIdI = orfI[0:orfI.rfind('_')]
+                    
+                    bCombined = False
+                    for j in xrange(i+1, len(hits)):
+                        orfJ = hits[j].target_name
+                        scaffoldIdJ = orfJ[0:orfJ.rfind('_')]
+                        
+                        # check if hits are on adjacent ORFs
+                        if scaffoldIdI == scaffoldIdJ:
+                            orfNumI = int(orfI[orfI.rfind('_')+1:])
+                            orfNumJ = int(orfJ[orfJ.rfind('_')+1:])
+                            if abs(orfNumI - orfNumJ) == 1:
+                                # check if hits are to different parts of the HMM
+                                sI = hits[i].hmm_from
+                                eI = hits[i].hmm_to
+                                
+                                sJ = hits[j].hmm_from
+                                eJ = hits[j].hmm_to
+    
+                                if (sI <= sJ and eI > sJ) or (sJ <= sI and eJ > sI):
+                                    # models overlap so treat these as unique hits
+                                    # which may represent an assembly error or a true
+                                    # gene duplication
+                                    pass
+                                else:
+                                    # combine the two hits
+                                    bCombined = True
+                                    break
+                                    
+                    if bCombined:
+                        newHit = hits[i]
+                        newHit.target_name = '|'.join(sorted([orfI, orfJ]))
+                        
+                        newHit.target_length = hits[i].target_length + hits[j].target_length
+                        
+                        newHit.hmm_from = min(hits[i].hmm_from, hits[j].hmm_from)
+                        newHit.hmm_to = min(hits[i].hmm_to, hits[j].hmm_to)
+                        
+                        newHit.ali_from = min(hits[i].ali_from, hits[j].ali_from)
+                        newHit.ali_to = min(hits[i].ali_to, hits[j].ali_to)
+                        
+                        newHit.env_from = min(hits[i].env_from, hits[j].env_from)
+                        newHit.env_to = min(hits[i].env_to, hits[j].env_to)
+                        
+                        hits.remove(hits[i])
+                        hits.remove(hits[i])
+                        
+                        hits.append(newHit)
 
+                        break
+                    
+            self.markers[markerId] = hits
+                
     def calculateMarkers(self, verbose=False):
         """Returns an object containing summary information 
            When verbose is False a list is returned containing the counts of
            markers for the bin as well as the total completeness and
            contamination.  If the verbose flag is set to true, a dict is
            returned containing each marker as the key and the value as the
-           count
+           count.
         """
         if verbose:
             ret = dict()
@@ -281,23 +379,29 @@ class ResultsManager():
                     ret[marker] = 0
             return ret
         else:
-            gene_counts = [0]*6
+            geneCounts = [0]*6
+            multiCopyCount = 0
             for marker in self.models:
                 # we need to limit it form 0 to 5+
                 try:
                     if len(self.markers[marker]) > 5:
-                        marker_count = 5
+                        markerCount = 5
                     else:
-                        marker_count = len(self.markers[marker])
+                        markerCount = len(self.markers[marker])
+                        
+                    multiCopyCount += (len(self.markers[marker]) - 1)
                 except KeyError:
-                    marker_count = 0
+                    markerCount = 0
                 
-                gene_counts[marker_count] += 1
-            perc_comp = 100*float(len(self.markers))/float(len(self.models))
-            perc_cont = 100*float(gene_counts[2] + gene_counts[3] + gene_counts[4] + gene_counts[5])/float(len(self.models))  
-            gene_counts.append(perc_comp)
-            gene_counts.append(perc_cont)
-            return gene_counts
+                geneCounts[markerCount] += 1
+                
+            percComp = 100 * float(len(self.markers)) / float(len(self.models))
+            percCont = 100 * float(multiCopyCount) / float(len(self.models))  
+            
+            geneCounts.append(percComp)
+            geneCounts.append(percCont)
+            
+            return geneCounts
         
     def getSummary(self, outputFormat=1):
         """Get dictionary containing information about bin."""
@@ -313,9 +417,7 @@ class ResultsManager():
             summary['5+'] = data[5]
             summary['Completeness'] = data[6]
             summary['Contamination'] = data[7]
-            summary.update(self.binStats)
-               
-        elif outputFormat == 2:
+        elif outputFormat == 1:
             data = self.calculateMarkers(verbose=False)
             summary['0'] = data[0]
             summary['1'] = data[1]
@@ -325,7 +427,7 @@ class ResultsManager():
             summary['5+'] = data[5]
             summary['Completeness'] = data[6]
             summary['Contamination'] = data[7]
-            
+            summary.update(self.binStats)   
         elif outputFormat == 3:
             data = self.calculateMarkers(verbose=True)
             for marker,count in data.iteritems():
@@ -388,29 +490,45 @@ class ResultsManager():
             
         return summary
 
-    def printSummary(self, outputFormat=1):
+    def printSummary(self, outputFormat, table = None):
         """Print out information about bin."""
         if outputFormat == 1:
             data = self.calculateMarkers(verbose=False)
-            row = self.binId
-            row += '\t%0.2f\t%0.2f' % (data[6], data[7])
-            row += '\t%d\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# scaffolds'], 
-                                             self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'], 
-                                             self.binStats['Longest scaffold'], self.binStats['Longest contig'])
-            row += '\t%.3f\t%.4f' % (self.binStats['GC'], self.binStats['GC std'])
-            row += '\t%.3f\t%d' % (self.binStats['Coding density'], self.binStats['# predicted ORFs'])
-            row += '\t' + '\t'.join([str(data[i]) for i in xrange(6)])
-            
-            print(row)
-            
-        elif outputFormat == 2:
-            data = self.calculateMarkers(verbose=False)
-            print("%s\t%s\t%0.2f\t%0.2f" % (self.binId,
+            row = "%s\t%s\t%0.2f\t%0.2f" % (self.binId,
                                                 "\t".join([str(data[i]) for i in range(6)]),
                                                 data[6],
                                                 data[7]
-                                                ))
+                                                )
+            if table == None:
+                print(row)
+            else:  
+                table.add_row([self.binId] + data)
+        elif outputFormat == 2:
+            data = self.calculateMarkers(verbose=False)
             
+            if table == None:
+                row = self.binId
+                row += '\t%0.2f\t%0.2f' % (data[6], data[7])
+                row += '\t%d\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# scaffolds'], 
+                                                 self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'], 
+                                                 self.binStats['Longest scaffold'], self.binStats['Longest contig'])
+                row += '\t%.1f\t%.2f' % (self.binStats['GC']*100, self.binStats['GC std']*100)
+                row += '\t%.2f\t%d' % (self.binStats['Coding density'], self.binStats['# predicted ORFs'])
+                row += '\t' + '\t'.join([str(data[i]) for i in xrange(6)])
+            
+                print(row)
+            else:  
+                row = [self.binId]
+                row.extend([data[6], data[7]])
+                row.extend([self.binStats['Genome size'], self.binStats['# scaffolds'], 
+                                                 self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'], 
+                                                 self.binStats['Longest scaffold'], self.binStats['Longest contig']])
+                row.extend([self.binStats['GC']*100, self.binStats['GC std']*100])
+                row.extend([self.binStats['Coding density'], self.binStats['# predicted ORFs']])
+                row.extend(data[0:6])
+            
+                table.add_row(row)
+                    
         elif outputFormat == 3:
             data = self.calculateMarkers(verbose=True)
             print("--------------------")
@@ -445,37 +563,30 @@ class ResultsManager():
                     print(self.binId, marker, hit.target_name, sep='\t', end='\n')
                     
         elif outputFormat == 6:
-            for marker, hit_list in self.markers.items():
-                if len(hit_list) >= 2:
+            for marker, hitList in self.markers.items():
+                if len(hitList) >= 2:
                     print(self.binId, marker, sep='\t', end='\t')
                     
                     scaffoldIds = []
-                    for hit in hit_list:
+                    for hit in hitList:
                         scaffoldIds.append(hit.target_name)
                         
-                    print(','.join(scaffoldIds), end='\n')
+                    print(','.join(sorted(scaffoldIds)), end='\n')
 
         elif outputFormat == 7:
-            # tabular - print only contigs that have more than one copy 
-            # of the same marker on them
-            contigs = defaultdict(dict)
-            for marker, hit_list in self.markers.items():
-                for hit in hit_list:
-                    try:
-                        contigs[hit.target_name][marker] += 1
-                    except KeyError:
-                        contigs[hit.target_name][marker] = 1
-            
-            for contig_name, marker_counts in contigs.items():
-                first_time = True
-                for marker_name, marker_count in marker_counts.items():
-                    if marker_count > 1:
-                        if first_time:
-                            first_time = False
-                            print(self.binId, contig_name, sep='\t', end='\t')
-                        print(marker_name, marker_count, sep=',', end='\t')
-                if not first_time:
-                    print()
+            for marker, hitList in self.markers.items():
+                if len(hitList) >= 2:
+                    scaffoldsWithMultipleHits = set()
+                    for i in xrange(0, len(hitList)):
+                        scaffoldId = hitList[i].target_name[0:hitList[i].target_name.rfind('_')]
+                        for j in xrange(i+1, len(hitList)):
+                            if scaffoldId == hitList[j].target_name[0:hitList[j].target_name.rfind('_')]:
+                                scaffoldsWithMultipleHits.add(hitList[i].target_name)
+                                scaffoldsWithMultipleHits.add(hitList[j].target_name)
+
+                    if len(scaffoldsWithMultipleHits) >= 2:
+                        print(self.binId, marker, sep='\t', end='\t')
+                        print(','.join(sorted(list(scaffoldsWithMultipleHits))), end='\n')
                     
         elif outputFormat == 8:
             # tabular - print only position of marker genes
@@ -523,8 +634,8 @@ class HMMAligner:
     def makeAlignments(self,
                        directory,
                        hmm,
-                       eCO=defaultValues.__CHECKM_DEFAULT_E_VAL__,
-                       lengthCO=defaultValues.__CHECKM_DEFAULT_LENGTH__,
+                       evalueThreshold = defaultValues.__CHECKM_DEFAULT_E_VAL__,
+                       lengthThreshold = defaultValues.__CHECKM_DEFAULT_LENGTH__,
                        bestHit=False,
                        generateModelFiles=True
                        ):
@@ -540,7 +651,7 @@ class HMMAligner:
         for model in model_parser.parse():
             models[model.name] = model
 
-        resultsManager = ResultsManager('', lengthCO, eCO, models)
+        resultsManager = ResultsManager('', lengthThreshold, evalueThreshold, models)
         hit_lookup = {}
         unique_hits = {}
         for folder in os.listdir(directory):
@@ -550,9 +661,9 @@ class HMMAligner:
             # we can now build the hmmer_file_name
             hmmer_file_name = os.path.join(directory, folder, self.txtOut)
             hit_lookup[folder] = {}
-            with open(hmmer_file_name, 'r') as hmmer_handle:
+            with open(hmmer_file_name, 'r') as hmmerHandle:
                 try:
-                    HP = HMMERParser(hmmer_handle)
+                    HP = HMMERParser(hmmerHandle)
                 except:
                     print("Error opening HMM file: ", hmmer_file_name)
                     raise

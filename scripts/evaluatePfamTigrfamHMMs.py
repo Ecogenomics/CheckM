@@ -66,8 +66,7 @@ class EvaluateHMMs(object):
   def runPFAM(self, genomeId):
     print '  Running PFAM HMMs.'
     os.system('hmmsearch --notextw --noali --cpu 0 --cut_ga --domtblout ./hmm_test/' + genomeId + '.pfam.table.txt ./hmm/pfam_markers.hmm ' + IMG.genomeDir + genomeId + '/' + genomeId + '.genes.derep.faa > ./hmm_test/' + genomeId + '.pfam.tsv\n')  
-    #os.system('pfam_scan.pl -cpu 24 -fasta ' + IMG.genomeDir + genomeId + '/' + genomeId + '.genes.derep.faa -dir /srv/whitlam/bio/db/pfam/27 -outfile ./hmm_test/' + genomeId + '.pfam_scan.tsv\n')
-    
+
   def runTIGRFAM(self, genomeId):
     print '  Running TIGRFAM HMMs.'
     os.system('hmmsearch --notextw --noali --cpu 0 --cut_nc --domtblout ./hmm_test/' + genomeId + '.tigr.table.txt ./hmm/tigr_markers.hmm ' + IMG.genomeDir + genomeId + '/' + genomeId + '.genes.faa > ./hmm_test/' + genomeId + '.tigr.tsv\n')

@@ -34,7 +34,7 @@ class HMMMERModeError(BaseException): pass
 class HMMERRunner():
     """Wrapper for running HMMER3"""
     def __init__(self, mode="dom"):
-        # make sure HMMER is installed!
+        # make sure HMMER is installed
         self.checkForHMMER()
 
         # set the mode
@@ -48,21 +48,21 @@ class HMMERRunner():
             self.mode = 'fetch'
         else:
             raise HMMMERModeError("Mode %s not understood" % mode)
+        
         # make the output file names
         (self.txtOut, self.hmmOut) = makeOutputFNs(mode=self.mode)
     
-    def search(self, db, query, outputDir, cmdline_options=''):
+    def search(self, db, query, outputDir, cmdlineOptions=''):
         """Run hmmsearch"""
         # make the output dir and files
         if self.mode != 'domtblout' and self.mode != 'tblout':
             raise HMMMERModeError("Mode %s not compatible with search" % self.mode)
         
         makeSurePathExists(outputDir)
-        txt_file = os.path.join(outputDir, self.txtOut)
-        hmm_file = os.path.join(outputDir, self.hmmOut)
+        txtFile = os.path.join(outputDir, self.txtOut)
+        hmmFile = os.path.join(outputDir, self.hmmOut)
 
-        # run hmmer!
-        cmd = ('hmmsearch --%s %s %s %s %s > %s' % (self.mode, txt_file, cmdline_options, db, query, hmm_file))
+        cmd = ('hmmsearch --%s %s %s %s %s > %s' % (self.mode, txtFile, cmdlineOptions, db, query, hmmFile))
         os.system(cmd)
 
     def align(self, db, query, outputFile, writeMode='>', outputFormat='PSIBLAST', trim=True):
@@ -108,18 +108,19 @@ class HMMERRunner():
             raise HMMERError("Error attempting to run hmmsearch, is it in your path?")
         
 def makeOutputFNs(mode='domtblout'):
-    """Consistent interface for making output filenames"""
+    """Consistent interface for making output filenames."""
     txtOut = defaultValues.__CHECKM_DEFAULT_HMMER_TXT_OUT__
+    
     if mode == 'align':
         hmmOut = defaultValues.__CHECKM_DEFAULT_HMMER_ALIGN_OUT__
     else:
         hmmOut = defaultValues.__CHECKM_DEFAULT_HMMER_OUT__
     return (txtOut, hmmOut)
 
+
 class HMMERParser():
-    """Parses tabular output"""
+    """Parses tabular output."""
     def __init__(self, fileHandle, mode='dom'):
-        """Give this guy an open file!"""
         self.handle = fileHandle
         if mode == 'dom':
             self.mode = 'domtblout'
@@ -129,7 +130,7 @@ class HMMERParser():
             raise HMMERError("Mode %s not understood, please use 'dom' or 'tbl'" % mode)
 
     def next(self):
-        """Get the next result in the file"""
+        """Process each hit in the file."""
         while 1:
             if self.mode == 'domtblout':
                 hit = self.readHitsDOM()
@@ -143,10 +144,8 @@ class HMMERParser():
             else:
                 return hit
 
-    #-------------------------------------------------
-    # TBL mode
     def readHitsTBL(self):
-        """Look for the next hit in tblout format, package and return"""
+        """Process single hit in tblout format."""
         """
 We expect line to look like:
 NODE_110054_length_1926_cov_24.692627_41_3 -          Ribosomal_S9         PF00380.14   5.9e-48  158.7   0.0   6.7e-48  158.5   0.0   1.0   1   0   0   1   1   1   1 # 1370 # 1756 # 1 # ID=41_3;partial=00;start_type=ATG;rbs_motif=None;rbs_spacer=None
@@ -157,16 +156,14 @@ NODE_110054_length_1926_cov_24.692627_41_3 -          Ribosomal_S9         PF003
                 if line[0] != '#' and len(line) != 0:
                     dMatch = re_split( r'\s+', line.rstrip() )
                     if len(dMatch) < 19:
-                        raise FormatError( "Something is wrong with this line:\n%s" % (line) )
+                        raise FormatError( "Error processing line:\n%s" % (line) )
                     refined_match = dMatch[0:18] + [" ".join([str(i) for i in dMatch[18:]])]
                     return HmmerHitTBL(refined_match)
             except IndexError:
                 return {}
 
-    #-------------------------------------------------
-    # DOM mode
     def readHitsDOM(self):
-        """Look for the next hit in domtblout format, package and return"""
+        """Process single hit in domtblout format."""
         """
 We expect the line to look like:
 NODE_925902_length_6780_cov_18.428171_754_2 -            399 PGK                  PF00162.14   384  2.2e-164  543.7   0.1   1   1  1.3e-167  2.5e-164  543.5   0.1     1   384     9   386     9   386 1.00 # 1767 # 2963 # -1 # ID=754_2;partial=00;start_type=ATG;rbs_motif=AGGA;rbs_spacer=5-10bp
@@ -177,16 +174,15 @@ NODE_925902_length_6780_cov_18.428171_754_2 -            399 PGK                
                 if line[0] != '#' and len(line) != 0:
                     dMatch = re_split( r'\s+', line.rstrip() )
                     if len(dMatch) < 23:
-                        raise FormatError( "Something is wrong with this line:\n%s" % (line) )
+                        raise FormatError( "Error processing line:\n%s" % (line) )
                     refined_match = dMatch[0:22] + [" ".join([str(i) for i in dMatch[22:]])]
                     return HmmerHitDOM(refined_match)
             except IndexError:
                 return {}
 
 class HmmerHitTBL():
-    """Encapsulate a hmmer hit given in tblout format"""
+    """Encapsulate a HMMER hit given in tblout format."""
     def __init__(self, values):
-        """Load em' in"""
         if len(values) == 19:
             self.target_name = values[0]
             self.target_accession = values[1]
@@ -209,7 +205,6 @@ class HmmerHitTBL():
             self.target_description = values[18]
 
     def __str__(self):
-        """when we need to print"""
         return "\t".join([self.target_name,
                           self.target_accession,
                           self.query_name,
@@ -233,9 +228,8 @@ class HmmerHitTBL():
                          )
 
 class HmmerHitDOM():
-    """Encapsulate a hmmer hit given in domtblout format"""
+    """Encapsulate a HMMER hit given in domtblout format."""
     def __init__(self, values):
-        """Load em' in"""
         if len(values) == 23:
             self.target_name = values[0]
             self.target_accession = values[1]
@@ -262,7 +256,6 @@ class HmmerHitDOM():
             self.target_description = values[22]
 
     def __str__(self):
-        """when we need to print"""
         return "\t".join([self.target_name,
                           self.target_accession,
                           str(self.target_length),
