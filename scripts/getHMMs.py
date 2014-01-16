@@ -38,70 +38,69 @@ from lib.pfam import PFAM
 from lib.markerSet import MarkerSet
 
 class GetHMMs(object):
-  def __init__(self):
-    pass
+    def __init__(self):
+        pass
 
-  def run(self, minGenomes, minMarkerSets):
-    img = IMG()
-    pfam = PFAM()
-    
-    # get list of all marker genes
-    markerset = MarkerSet()
-    pfamIds, tigrIds = markerset.getCalculatedMarkerGenes()
-     
-    print 'TIGR marker genes: ' + str(len(tigrIds))   
-    print 'PFAM marker genes: ' + str(len(pfamIds))
-    
-    # get all PFAM HMMs that are in the same clan
-    # as any of the marker genes
-    pfamIdToClanId = pfam.pfamIdToClanId()
-    clans = set()
-    for pfamId in pfamIds:
-      if pfamId.replace('PF', 'pfam') in pfamIdToClanId:
-        clans.add(pfamIdToClanId[pfamId])
-      
-    for pfamId, clanId in pfamIdToClanId.iteritems():
-      if clanId in clans:
-        pfamIds.add(pfamId)
-        
-    print '  PFAM HMMs require to cover marker gene clans: ' + str(len(pfamIds))
-            
-    # get name of each PFAM HMM
-    fout = open('./hmm/pfam.keyfile.txt', 'w')
-    pfamNames = []
-    for line in open(img.pfamHMMs):
-      if 'NAME' in line:
-        name = line[line.find(' '):].strip()
-      elif 'ACC' in line:
-        acc = line[line.find(' '):line.rfind('.')].strip()
-        if acc.replace('PF', 'pfam') in pfamIds:
-          pfamNames.append(name)
-          fout.write(name + '\n')
-    fout.close()
-          
-    print 'PFAM names: ' + str(len(pfamNames))
-    
-    # extract each PFAM HMM
-    os.system('hmmfetch -f ' + img.pfamHMMs + ' ./hmm/pfam.keyfile.txt > ./hmm/pfam_markers.hmm')
-    
-    # get name of each PFAM HMM
-    fout = open('./hmm/tigr.keyfile.txt', 'w')
-    for tigrId in tigrIds:
-      fout.write(tigrId + '\n')
-    fout.close()
-    
-    # extract each PFAM HMM
-    os.system('hmmfetch -f ' + img.tigrHMMs + ' ./hmm/tigr.keyfile.txt > ./hmm/tigr_markers.hmm')   
-             
+    def run(self, minGenomes, minMarkerSets):
+        img = IMG()
+        pfam = PFAM()
+
+        # get list of all marker genes
+        markerset = MarkerSet()
+        pfamIds, tigrIds = markerset.getCalculatedMarkerGenes()
+
+        print 'TIGR marker genes: ' + str(len(tigrIds))
+        print 'PFAM marker genes: ' + str(len(pfamIds))
+
+        # get all PFAM HMMs that are in the same clan
+        # as any of the marker genes
+        pfamIdToClanId = pfam.pfamIdToClanId()
+        clans = set()
+        for pfamId in pfamIds:
+            if pfamId.replace('PF', 'pfam') in pfamIdToClanId:
+                clans.add(pfamIdToClanId[pfamId])
+
+        for pfamId, clanId in pfamIdToClanId.iteritems():
+            if clanId in clans:
+                pfamIds.add(pfamId)
+
+        print '  PFAM HMMs require to cover marker gene clans: ' + str(len(pfamIds))
+
+        # get name of each PFAM HMM
+        fout = open('./hmm/pfam.keyfile.txt', 'w')
+        pfamNames = []
+        for line in open(img.pfamHMMs):
+            if 'NAME' in line:
+                name = line[line.find(' '):].strip()
+            elif 'ACC' in line:
+                acc = line[line.find(' '):line.rfind('.')].strip()
+                if acc.replace('PF', 'pfam') in pfamIds:
+                    pfamNames.append(name)
+                    fout.write(name + '\n')
+        fout.close()
+
+        print 'PFAM names: ' + str(len(pfamNames))
+
+        # extract each PFAM HMM
+        os.system('hmmfetch -f ' + img.pfamHMMs + ' ./hmm/pfam.keyfile.txt > ./hmm/pfam_markers.hmm')
+
+        # get name of each PFAM HMM
+        fout = open('./hmm/tigr.keyfile.txt', 'w')
+        for tigrId in tigrIds:
+            fout.write(tigrId + '\n')
+        fout.close()
+
+        # extract each PFAM HMM
+        os.system('hmmfetch -f ' + img.tigrHMMs + ' ./hmm/tigr.keyfile.txt > ./hmm/tigr_markers.hmm')
+
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description="Get all PFAM HMMs.",
-                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description="Get all PFAM HMMs.",
+                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument('-m', '--min_genomes', help='Minimum genomes required to include in analysis', type=int, default = 20)
-  parser.add_argument('-x', '--min_markers', help='Minimum marker sets required to include in analysis', type=int, default = 20)
+    parser.add_argument('-m', '--min_genomes', help='Minimum genomes required to include in analysis', type=int, default = 20)
+    parser.add_argument('-x', '--min_markers', help='Minimum marker sets required to include in analysis', type=int, default = 20)
 
-  args = parser.parse_args()
-  
-  getHMMs = GetHMMs()
-  getHMMs.run(args.min_genomes, args.min_markers)
+    args = parser.parse_args()
 
+    getHMMs = GetHMMs()
+    getHMMs.run(args.min_genomes, args.min_markers)

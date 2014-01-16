@@ -195,7 +195,6 @@ class SSU_Finder(object):
 
     def run(self, contigFile, binFiles, outputDir, evalueThreshold, concatenateThreshold):
         # make sure output directory exists
-        outputDir = os.path.join(outputDir, 'ssu_finder')
         if not os.path.exists(outputDir):
             os.makedirs(outputDir)
 
@@ -252,7 +251,7 @@ class SSU_Finder(object):
             if seqId in seqIdToBinId:
                 binId = seqIdToBinId[seqId]
             else:
-                binId = defaultValues.__CHECKM_DEFAULT_UNBINNED__
+                binId = defaultValues.UNBINNED
 
             seqInfo = [origSeqId] + bestHits[origSeqId]
             hitsToBins[binId] = hitsToBins.get(binId, []) + [seqInfo]
@@ -265,7 +264,7 @@ class SSU_Finder(object):
 
                 seq = seqs[seqId]
                 summaryOut.write(binId + '\t' + '\t'.join(seqInfo) + '\t' + str(len(seq)) + '\n')
-                seqOut.write('>' + binId + '_' + seqInfo[0] + '\n')
+                seqOut.write('>' + binId + defaultValues.SEQ_CONCAT_CHAR + seqInfo[0] + '\n')
                 seqOut.write(seq[int(seqInfo[3]):int(seqInfo[4])] + '\n')
 
         summaryOut.close()

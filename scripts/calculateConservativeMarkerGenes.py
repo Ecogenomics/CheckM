@@ -39,14 +39,14 @@ class CalculateConservativeMarkerGenes(object):
     def __init__(self):
         pass
 
-    def run(self, ubiquityThreshold, singleCopyThreshold, rank):   
+    def run(self, ubiquityThreshold, singleCopyThreshold, rank):
         img = IMG()
         markerset = MarkerSet()
-        
+
         print 'Reading metadata.'
         metadata = img.genomeMetadata()
         print '  Genomes with metadata: ' + str(len(metadata))
-     
+
         # calculate marker set for each lineage at the specified rank
         sortedLineages = img.lineagesSorted(metadata, rank)
         markerGeneLists = {}
@@ -54,22 +54,22 @@ class CalculateConservativeMarkerGenes(object):
             taxonomy = lineage.split(';')
             if len(taxonomy) != rank+1:
                 continue
-      
+
         genomeIds = img.genomeIdsByTaxonomy(lineage, metadata, 'Final')
         countTable = img.countTable(genomeIds)
-        
+
         if len(genomeIds) < 3:
             continue
 
         print 'Lineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.'
-        
+
         markerGenes = markerset.markerGenes(genomeIds, countTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
-        
+
         print '  Marker genes: ' + str(len(markerGenes))
         print ''
-        
+
         markerGeneLists[lineage] = markerGenes
-      
+
         # calculate union of marker gene list for higher taxonomic groups
         for r in xrange(rank-1, -1, -1):
             print 'Processing rank ' + str(r)
@@ -78,7 +78,7 @@ class CalculateConservativeMarkerGenes(object):
                 taxonomy = lineage.split(';')
                 if len(taxonomy) != r+2:
                     continue
-              
+
                 curLineage = '; '.join(taxonomy[0:r+1])
                 if curLineage not in rankMarkerGeneLists:
                     rankMarkerGeneLists[curLineage] = markerGenes
@@ -86,23 +86,22 @@ class CalculateConservativeMarkerGenes(object):
                     curMarkerGenes = rankMarkerGeneLists[curLineage]
                     curMarkerGenes = curMarkerGenes.intersection(markerGenes)
                     rankMarkerGeneLists[curLineage] = curMarkerGenes
-                
+
             # combine marker gene list dictionaries
             markerGeneLists.update(rankMarkerGeneLists)
-      
+
     print 'Archaeal markers: ' + str(len(markerGeneLists['Archaea']))
     print 'Bacterial markers: ' + str(len(markerGeneLists['Bacteria']))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Calculate conservative list of marker genes for each lineage.",
                                       formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    
+
     parser.add_argument('-u', '--ubiquity', help='Ubiquity threshold for defining marker set', type=float, default = 0.97)
     parser.add_argument('-s', '--single_copy', help='Single-copy threshold for defining marker set', type=float, default = 0.97)
     parser.add_argument('-r', '--rank', help='Rank at which to build initial marker genes', type=int, default = 3)
-    
+
     args = parser.parse_args()
-    
+
     calculateConservativeMarkerGenes = CalculateConservativeMarkerGenes()
     calculateConservativeMarkerGenes.run(args.ubiquity, args.single_copy, args.rank)
-

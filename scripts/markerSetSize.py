@@ -38,47 +38,46 @@ from lib.img import IMG
 from lib.plots.lineplot import LinePlot
 
 class MarkerSetTest(object):
-  def __init__(self):
-    pass
+    def __init__(self):
+        pass
 
-  def run(self, taxonomyStr, minThreshold, maxThreshold, stepSize):
-    img = IMG()
-    
-    genomeIds = img.genomeIdsByTaxonomy(taxonomyStr, 'Final')
-      
-    print 'Lineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.'
-      
-    markerSetSizes = []
-   
-    countTable = img.countTable(genomeIds)
-    for threshold in arange(maxThreshold, minThreshold, -stepSize):
-      markerGenes = img.markerGenes(genomeIds, countTable, threshold*len(genomeIds), threshold*len(genomeIds))
-      
-      geneDistTable = img.geneDistTable(genomeIds, markerGenes)
-      colocatedGenes = img.colocatedGenes(geneDistTable)
-      colocatedSets = img.colocatedSets(colocatedGenes, markerGenes)
-      
-      markerSetSizes.append(len(colocatedSets))
-      
-      print '  Threshold = %.2f, marker set size = %d' % (threshold, len(markerGenes))
+    def run(self, taxonomyStr, minThreshold, maxThreshold, stepSize):
+        img = IMG()
 
-    # plot data
-    plot = LinePlot()
-    plotFilename = './images/markerSetSize.' + taxonomyStr.replace(';','_') + '.png'
-    title = taxonomyStr.replace(';', '; ')
-    plot.plot(plotFilename, arange(maxThreshold, minThreshold, -stepSize), markerSetSizes, 'Threshold', 'Marker Set Size', title)
-    
+        genomeIds = img.genomeIdsByTaxonomy(taxonomyStr, 'Final')
+
+        print 'Lineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.'
+
+        markerSetSizes = []
+
+        countTable = img.countTable(genomeIds)
+        for threshold in arange(maxThreshold, minThreshold, -stepSize):
+            markerGenes = img.markerGenes(genomeIds, countTable, threshold*len(genomeIds), threshold*len(genomeIds))
+
+            geneDistTable = img.geneDistTable(genomeIds, markerGenes)
+            colocatedGenes = img.colocatedGenes(geneDistTable)
+            colocatedSets = img.colocatedSets(colocatedGenes, markerGenes)
+
+            markerSetSizes.append(len(colocatedSets))
+
+            print '  Threshold = %.2f, marker set size = %d' % (threshold, len(markerGenes))
+
+        # plot data
+        plot = LinePlot()
+        plotFilename = './images/markerSetSize.' + taxonomyStr.replace(';','_') + '.png'
+        title = taxonomyStr.replace(';', '; ')
+        plot.plot(plotFilename, arange(maxThreshold, minThreshold, -stepSize), markerSetSizes, 'Threshold', 'Marker Set Size', title)
+
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description="Calculate size of marker set for specific lineage.",
-                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description="Calculate size of marker set for specific lineage.",
+                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument('-T', '--taxonomy', help='IMG taxonomy string indicating lineage of interest', default = 'prokaryotes')
-  parser.add_argument('-a', '--min_threshold', help='Minimum threshold for defining marker set', type=float, default = 0.85)
-  parser.add_argument('-b', '--max_threshold', help='Maximum threshold for defining marker set', type=float, default = 1.0)
-  parser.add_argument('-x', '--step_size', help='Step size for increasing number of genomes under consideration', type=int, default=0.01)
+    parser.add_argument('-T', '--taxonomy', help='IMG taxonomy string indicating lineage of interest', default = 'prokaryotes')
+    parser.add_argument('-a', '--min_threshold', help='Minimum threshold for defining marker set', type=float, default = 0.85)
+    parser.add_argument('-b', '--max_threshold', help='Maximum threshold for defining marker set', type=float, default = 1.0)
+    parser.add_argument('-x', '--step_size', help='Step size for increasing number of genomes under consideration', type=int, default=0.01)
 
-  args = parser.parse_args()
-  
-  markerSetTest = MarkerSetTest()
-  markerSetTest.run(args.taxonomy, args.min_threshold, args.max_threshold, args.step_size)
+    args = parser.parse_args()
 
+    markerSetTest = MarkerSetTest()
+    markerSetTest.run(args.taxonomy, args.min_threshold, args.max_threshold, args.step_size)

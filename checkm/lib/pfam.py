@@ -22,8 +22,9 @@
 import os
 import sys
 import operator
+from collections import defaultdict
 
-from common import checkFileExists
+from checkm.common import checkFileExists
 
 class PFAM(object):
     def __init__(self):
@@ -35,13 +36,12 @@ class PFAM(object):
     def __readClansAndNesting(self):     
         checkFileExists(self.pfamClanFile)
      
-        idNested = {}
+        idNested = defaultdict(list)
         for line in open(self.pfamClanFile):
             if '#=GF ID' in line:
                 ID = line.split()[2].strip()
             elif '#=GF AC' in line:
                 pfamAcc = line.split()[2].strip()
-                pfamAcc = pfamAcc.replace('PF', 'pfam')
                 pfamAcc = pfamAcc[0:pfamAcc.rfind('.')]
                 self.idToAcc[ID] = pfamAcc
             elif '#=GF CL' in line:
@@ -49,13 +49,7 @@ class PFAM(object):
                 self.clan[pfamAcc] = clanId
             elif '#=GF NE' in line:
                 nestedId = line.split()[2].strip()
-    
-                if nestedId not in idNested:
-                    idNested[nestedId] = []
                 idNested[nestedId].append(ID)
-    
-                if ID not in idNested:
-                    idNested[ID] = []
                 idNested[ID].append(nestedId)
     
         # set nested structure to use pfam accessions instead of IDs
@@ -70,7 +64,6 @@ class PFAM(object):
         for line in open(self.pfamClanFile):
             if '#=GF AC' in line:
                 pfamAcc = line.split()[2].strip()
-                pfamAcc = pfamAcc.replace('PF', 'pfam')
                 pfamAcc = pfamAcc[0:pfamAcc.rfind('.')]
             elif '#=GF CL' in line:
                 clanId = line.split()[2].strip()
@@ -78,7 +71,7 @@ class PFAM(object):
     
         return d
     
-    def filterHitsFromSameClan(self, pfamHits, pfamMarkers):
+    def filterHitsFromSameClanDeprecated(self, pfamHits, pfamMarkers):
         # check if clan and nesting need to be computer
         if len(self.clan) == 0:
             self.__readClansAndNesting()
@@ -86,7 +79,7 @@ class PFAM(object):
         # for each gene, take only the best hit for each PFAM clan
         hitsToPfamMarkers = {}
         for geneId, hits in pfamHits.iteritems():
-            # sort in ascending order of evalue
+            # sort in ascending order of e-value
             hits.sort(key=operator.itemgetter(1))
     
             filtered = set()
@@ -130,3 +123,64 @@ class PFAM(object):
                     hitsToPfamMarkers[pfamId] = s
     
         return hitsToPfamMarkers
+    
+    def filterHitsFromSameClan(self, markerHits):
+        # check if clan and nesting need to be computer
+        if len(self.clan) == 0:
+            self.__readClansAndNesting()
+
+        # determine all PFAM hits to each ORF and setup initial set of filtered markers
+        filteredMarkers = defaultdict(list)
+        hitsToORFs = defaultdict(list)
+        for markerId, hits in markerHits.iteritems():
+            if markerId.startswith('PF'):
+                for hit in hits:
+                    hitsToORFs[hit.target_name].append(hit)
+            else:
+                # retain all non-PFAM markers
+                filteredMarkers[markerId] = hits
+    
+        # for each gene, take only the best hit for each PFAM clan
+        for _, hits in hitsToORFs.iteritems():
+            # sort in ascending order of e-value
+            hits.sort(key = lambda x: x.full_e_value)
+    
+            filtered = set()
+            for i in xrange(0, len(hits)):
+                if i in filtered:
+                    continue
+    
+                pfamIdI = hits[i].query_accession
+                pfamIdI = pfamIdI[0:pfamIdI.rfind('.')]
+                clanI = self.clan.get(pfamIdI, None)
+                startI = hits[i].ali_from
+                endI = hits[i].ali_to
+    
+                for j in xrange(i+1, len(hits)):
+                    if j in filtered:
+                        continue
+    
+                    pfamIdJ = hits[j].query_accession
+                    pfamIdJ = pfamIdJ[0:pfamIdJ.rfind('.')]
+                    clanJ = self.clan.get(pfamIdJ, None)
+                    startJ = hits[j].ali_from
+                    endJ = hits[j].ali_to
+    
+                    # check if hits are from the same clan
+                    if pfamIdI != None and pfamIdJ != None and clanI == clanJ:
+                        # check if hits overlap
+                        if (startI <= startJ and endI > startJ) or (startJ <= startI and endJ > startI):
+                            # check if pfams are nested
+                            if not (pfamIdI in self.nested and pfamIdJ in self.nested[pfamIdI]):
+                                # hits should be filtered as it is from the same clan, overlaps, and is not
+                                # nested with a pfam hit with a lower e-value
+                                filtered.add(j)
+    
+            # tabulate unfiltered hits
+            for i in xrange(0, len(hits)):
+                if i in filtered:
+                    continue
+                
+                filteredMarkers[hits[i].query_accession].append(hits[i])
+    
+        return filteredMarkers

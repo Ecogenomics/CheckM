@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# hmmer.py - runs HMMER and provides functions for parsing output  
+# prodigal.py - runs prodigal and provides functions for parsing output  
 #
 ###############################################################################
 #                                                                             #
@@ -29,35 +29,42 @@ import numpy as np
 import defaultValues
 
 from common import makeSurePathExists, checkFileExists
+from seqUtils import readFastaBases
 
 class ProdigalError(BaseException): pass
 
 class ProdigalRunner():
-    """Wrapper for running HMMER3"""
-    def __init__(self):
+    """Wrapper for running prodigal."""
+    def __init__(self, outDir):
         self.logger = logging.getLogger()
         
         # make sure prodigal is installed
         self.checkForProdigal()
         
-    def run(self, query, outputDir, translationTable=11):
-        makeSurePathExists(outputDir)
+        makeSurePathExists(outDir)
+        self.aaGeneFile = os.path.join(outDir, defaultValues.PRODIGAL_AA)
+        self.ntGeneFile = os.path.join(outDir, defaultValues.PRODIGAL_NT)
+        self.gffFile = os.path.join(outDir, defaultValues.PRODIGAL_GFF)
         
-        aaFile = os.path.join(outputDir, defaultValues.__CHECKM_DEFAULT_PRODIGAL_AA__)
-        ntFile = os.path.join(outputDir, defaultValues.__CHECKM_DEFAULT_PRODIGAL_NT__)
-        gffFile = os.path.join(outputDir, defaultValues.__CHECKM_DEFAULT_PRODIGAL_GFF__)
+    def run(self, query, translationTable=11): 
+        binSize = readFastaBases(query)
         
-        cmd = ('prodigal -q -c -m -f gff -g %s -a %s -d %s -i %s > %s' % (str(translationTable), aaFile, ntFile, query, gffFile))
+        metaFlag = ''
+        if binSize < 100000:
+            # bin contain insufficient data to learn ORF model parameters, so use preset parameters
+            metaFlag = '-p meta'
+            
+        cmd = ('prodigal ' + metaFlag + ' -q -c -m -f gff -g %s -a %s -d %s -i %s > %s' % (str(translationTable), self.aaGeneFile, self.ntGeneFile, query, self.gffFile))
         os.system(cmd)
-        
-        return aaFile
+    
+    def areORFsCalled(self):
+        return os.path.exists(self.aaGeneFile)
 
     def checkForProdigal(self):
-        """Check to see if Prodigal is on the system before we try to run it.
+        """Check to see if Prodigal is on the system before we try to run it."""
     
-        We assume that a successful prodigal -h returns 0 and anything
-        else returns something non-zero
-        """
+        # Assume that a successful prodigal -h returns 0 and anything
+        # else returns something non-zero
         try:
             subprocess.call(['prodigal', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
         except:

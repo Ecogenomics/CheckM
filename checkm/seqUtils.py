@@ -50,13 +50,32 @@ def readFasta(fastaFile):
 
 def readFastaSeqIds(fastaFile):
     '''Read sequence ids from FASTA file.'''
+    if fastaFile.endswith('.gz'):
+        openFile = gzip.open
+    else:
+        openFile = open
+            
     seqIds = []
-    for line in open(fastaFile):
+    for line in openFile(fastaFile):
         if line[0] == '>':
             seqId = line[1:].partition(' ')[0].rstrip()
             seqIds.append(seqId)
             
     return seqIds
+
+def readFastaBases(fastaFile):
+    '''Determine number of bases in FASTA file.'''
+    if fastaFile.endswith('.gz'):
+        openFile = gzip.open
+    else:
+        openFile = open
+        
+    bases = 0
+    for line in openFile(fastaFile):
+        if line[0] != '>':
+            bases += len(line.rstrip())
+            
+    return bases
 
 def readGenomicSeqsFromFasta(fastaFile, seqToIgnore=None):
     '''Read genomic sequences from FASTA file. Explicitly ignores sequences marked as plasmids.'''

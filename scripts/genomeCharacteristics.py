@@ -40,288 +40,287 @@ from lib.img import IMG
 from numpy import mean, std
 
 class GenomeCharacteristics(object):
-  def __init__(self):
-    self.complements = string.maketrans('acgtrymkbdhvACGTRYMKBDHV', 'tgcayrkmvhdbTGCAYRKMVHDB')
-    pass
+    def __init__(self):
+        self.complements = string.maketrans('acgtrymkbdhvACGTRYMKBDHV', 'tgcayrkmvhdbTGCAYRKMVHDB')
+        pass
 
-  def revComp(self, dna):
-    return dna.translate(self.complements)[::-1]
+    def revComp(self, dna):
+        return dna.translate(self.complements)[::-1]
 
-  def runProdigal(self, genomeId):
-    print '  Running Prodigal.'
-    #os.system('prodigal -c -f gff -g 11 -d ./genome_characteristics/' + genomeId + '.genes.fna -a ./genome_characteristics/' + genomeId + '.genes.faa -i ' + IMG.genomeDir + genomeId + '/' + genomeId + '.fna > ./genome_characteristics/' + genomeId + '.prodigal.gff\n')
+    def runProdigal(self, genomeId):
+        print '  Running Prodigal.'
+        #os.system('prodigal -c -f gff -g 11 -d ./genome_characteristics/' + genomeId + '.genes.fna -a ./genome_characteristics/' + genomeId + '.genes.faa -i ' + IMG.genomeDir + genomeId + '/' + genomeId + '.fna > ./genome_characteristics/' + genomeId + '.prodigal.gff\n')
 
-  def readSeqs(self, filename):
-    print '  Reading sequences.'
-    seqs = {}
-    seqId = None
-    seq = ''
-    for line in open(filename):
-      if line[0] == '>':
-        if seqId != None:
-          seqs[seqId] = seq
-          
-        seqId = line[1:].split()[0]
+    def readSeqs(self, filename):
+        print '  Reading sequences.'
+        seqs = {}
+        seqId = None
         seq = ''
-      else:
-        seq += line.rstrip()
+        for line in open(filename):
+            if line[0] == '>':
+                if seqId != None:
+                    seqs[seqId] = seq
 
-    seqs[seqId] = seq
-    
-    return seqs
+                seqId = line[1:].split()[0]
+                seq = ''
+            else:
+                seq += line.rstrip()
 
-  def parseLineGFF(self, line, genes, posStrand, negStrand, startCodonFreq, stopCodonFreq, rbsMotifFreq, geneLens, seqs):
-    lineSplit = line.split('\t')
+        seqs[seqId] = seq
 
-    genes += 1
+        return seqs
 
-    seqId = lineSplit[0]
-    seq = seqs[seqId]
+    def parseLineGFF(self, line, genes, posStrand, negStrand, startCodonFreq, stopCodonFreq, rbsMotifFreq, geneLens, seqs):
+        lineSplit = line.split('\t')
 
-    start = int(lineSplit[3])
-    end = int(lineSplit[4])
-    geneLen = end - start + 1
-    geneLens.append(geneLen)
+        genes += 1
 
-    strand = lineSplit[6]
-    if strand == '+':
-      posStrand += 1
-      stopCodon = seq[end-3:end]
-    elif strand == '-':
-      negStrand += 1
-      stopCodon = self.revComp(seq[start-1:start+2])
-    else:
-      print '[Error] Unknown strand type.'
-      sys.exit()
+        seqId = lineSplit[0]
+        seq = seqs[seqId]
 
-    features = lineSplit[8].split(';')
-    start_type = features[2].split('=')[1]
-    startCodonFreq[start_type] = startCodonFreq.get(start_type, 0) + 1
+        start = int(lineSplit[3])
+        end = int(lineSplit[4])
+        geneLen = end - start + 1
+        geneLens.append(geneLen)
 
-    stopCodonFreq[stopCodon] = stopCodonFreq.get(stopCodon, 0) + 1
+        strand = lineSplit[6]
+        if strand == '+':
+            posStrand += 1
+            stopCodon = seq[end-3:end]
+        elif strand == '-':
+            negStrand += 1
+            stopCodon = self.revComp(seq[start-1:start+2])
+        else:
+            print '[Error] Unknown strand type.'
+            sys.exit()
 
-    rbs_type = features[3].split('=')[1]
-    rbsMotifFreq[rbs_type] = rbsMotifFreq.get(rbs_type, 0) + 1
+        features = lineSplit[8].split(';')
+        start_type = features[2].split('=')[1]
+        startCodonFreq[start_type] = startCodonFreq.get(start_type, 0) + 1
 
-    return genes, posStrand, negStrand
+        stopCodonFreq[stopCodon] = stopCodonFreq.get(stopCodon, 0) + 1
 
-  def parseGFF(self, genomeId):
-    seqs = self.readSeqs(IMG.genomeDir + genomeId + '/' + genomeId + '.fna')
+        rbs_type = features[3].split('=')[1]
+        rbsMotifFreq[rbs_type] = rbsMotifFreq.get(rbs_type, 0) + 1
 
-    genes = 0
-    genesPlasmid = 0
+        return genes, posStrand, negStrand
 
-    posStrand = 0
-    posStrandPlasmid = 0
+    def parseGFF(self, genomeId):
+        seqs = self.readSeqs(IMG.genomeDir + genomeId + '/' + genomeId + '.fna')
 
-    negStrand = 0
-    negStrandPlasmid = 0
+        genes = 0
+        genesPlasmid = 0
 
-    startCodonFreq = {}
-    startCodonFreqPlasmid = {}
+        posStrand = 0
+        posStrandPlasmid = 0
 
-    stopCodonFreq = {}
-    stopCodonFreqPlasmid = {}
+        negStrand = 0
+        negStrandPlasmid = 0
 
-    rbsMotifFreq = {}
-    rbsMotifFreqPlasmid = {}
+        startCodonFreq = {}
+        startCodonFreqPlasmid = {}
 
-    geneLens = []
-    geneLensPlasmid = []
+        stopCodonFreq = {}
+        stopCodonFreqPlasmid = {}
 
-    totalSeqLen = 0
-    totalSeqLenPlasmid = 0
+        rbsMotifFreq = {}
+        rbsMotifFreqPlasmid = {}
 
-    bPlasmid = False
-    lineNum = 0
-    for line in open('./genome_characteristics/' + genomeId + '.prodigal.gff'):
-      lineNum += 1
-      
-      if lineNum % 10000 == 0:
-        print '  Reading line: ' + str(lineNum)
-        
-      if line[0] == '#':
-        if 'seqlen=' in line:
-          bPlasmid = ('plasmid' in line.lower())
-          lineSplit = line.split(';')
-          seqLen = int(lineSplit[1].split('=')[1])
+        geneLens = []
+        geneLensPlasmid = []
 
-          if bPlasmid:
-            totalSeqLenPlasmid += seqLen
-          else:
-            totalSeqLen += seqLen
+        totalSeqLen = 0
+        totalSeqLenPlasmid = 0
 
-        continue
+        bPlasmid = False
+        lineNum = 0
+        for line in open('./genome_characteristics/' + genomeId + '.prodigal.gff'):
+            lineNum += 1
 
-      if bPlasmid:
-        genesPlasmid, posStrandPlasmid, negStrandPlasmid = self.parseLineGFF(line, genesPlasmid, posStrandPlasmid, negStrandPlasmid, startCodonFreqPlasmid, stopCodonFreqPlasmid, rbsMotifFreqPlasmid, geneLensPlasmid, seqs)
-      else:
-        genes, posStrand, negStrand = self.parseLineGFF(line, genes, posStrand, negStrand, startCodonFreq, stopCodonFreq, rbsMotifFreq, geneLens, seqs)
+            if lineNum % 10000 == 0:
+                print '  Reading line: ' + str(lineNum)
 
-    if totalSeqLen != 0 and genes == 0:
-      print '[Error] No Genes!'
-      sys.exit()
+            if line[0] == '#':
+                if 'seqlen=' in line:
+                    bPlasmid = ('plasmid' in line.lower())
+                    lineSplit = line.split(';')
+                    seqLen = int(lineSplit[1].split('=')[1])
 
-    codingDensity = float( sum(geneLens) ) / max(totalSeqLen, 1)
-    codingDensityPlasmid = float( sum(geneLensPlasmid) ) / max(totalSeqLenPlasmid, 1)
-    for codon, count in startCodonFreq.iteritems():
-      startCodonFreq[codon] = float( count ) / max(genes, 1)
-    for codon, count in stopCodonFreq.iteritems():
-      stopCodonFreq[codon] = float( count ) / max(genes, 1)
-    for motif, count in rbsMotifFreq.iteritems():
-      rbsMotifFreq[motif] = float( count ) / max(genes, 1)
+                    if bPlasmid:
+                        totalSeqLenPlasmid += seqLen
+                    else:
+                        totalSeqLen += seqLen
 
-    strandedness = float( abs(posStrand - negStrand) ) / max(genes, 1)
-    strandednessPlasmid = float( abs(posStrandPlasmid - negStrandPlasmid) ) / max(genesPlasmid, 1)
-    for codon, count in startCodonFreqPlasmid.iteritems():
-      startCodonFreqPlasmid[codon] = float( count ) / max(genesPlasmid, 1)
-    for codon, count in stopCodonFreqPlasmid.iteritems():
-      stopCodonFreqPlasmid[codon] = float( count ) / max(genesPlasmid, 1)
-    for motif, count in rbsMotifFreqPlasmid.iteritems():
-      rbsMotifFreqPlasmid[motif] = float( count ) / max(genes, 1)
+                continue
 
-    return [[totalSeqLen, codingDensity, strandedness, startCodonFreq, stopCodonFreq, rbsMotifFreq, geneLens], [totalSeqLenPlasmid, codingDensityPlasmid, strandednessPlasmid, startCodonFreqPlasmid, stopCodonFreqPlasmid, rbsMotifFreqPlasmid, geneLensPlasmid]];
+            if bPlasmid:
+                genesPlasmid, posStrandPlasmid, negStrandPlasmid = self.parseLineGFF(line, genesPlasmid, posStrandPlasmid, negStrandPlasmid, startCodonFreqPlasmid, stopCodonFreqPlasmid, rbsMotifFreqPlasmid, geneLensPlasmid, seqs)
+            else:
+                genes, posStrand, negStrand = self.parseLineGFF(line, genes, posStrand, negStrand, startCodonFreq, stopCodonFreq, rbsMotifFreq, geneLens, seqs)
 
-  def getCharacteristics(self, genomeId, groupName, charByGroup):
-    genomicChar, plasmidChar = self.parseGFF(genomeId)
+        if totalSeqLen != 0 and genes == 0:
+            print '[Error] No Genes!'
+            sys.exit()
 
-    if genomicChar[0] == 0: # indicates file contained not sequence information or insufficent data to run prodigal
-      return
+        codingDensity = float( sum(geneLens) ) / max(totalSeqLen, 1)
+        codingDensityPlasmid = float( sum(geneLensPlasmid) ) / max(totalSeqLenPlasmid, 1)
+        for codon, count in startCodonFreq.iteritems():
+            startCodonFreq[codon] = float( count ) / max(genes, 1)
+        for codon, count in stopCodonFreq.iteritems():
+            stopCodonFreq[codon] = float( count ) / max(genes, 1)
+        for motif, count in rbsMotifFreq.iteritems():
+            rbsMotifFreq[motif] = float( count ) / max(genes, 1)
 
-    if groupName not in charByGroup:
-      charByGroup[groupName] = {}
+        strandedness = float( abs(posStrand - negStrand) ) / max(genes, 1)
+        strandednessPlasmid = float( abs(posStrandPlasmid - negStrandPlasmid) ) / max(genesPlasmid, 1)
+        for codon, count in startCodonFreqPlasmid.iteritems():
+            startCodonFreqPlasmid[codon] = float( count ) / max(genesPlasmid, 1)
+        for codon, count in stopCodonFreqPlasmid.iteritems():
+            stopCodonFreqPlasmid[codon] = float( count ) / max(genesPlasmid, 1)
+        for motif, count in rbsMotifFreqPlasmid.iteritems():
+            rbsMotifFreqPlasmid[motif] = float( count ) / max(genes, 1)
 
-    charByGroup[groupName]['seq_len'] = charByGroup[groupName].get('seq_len', []) + [genomicChar[0]]
-    charByGroup[groupName]['coding_density'] = charByGroup[groupName].get('coding_density', []) + [genomicChar[1]]
-    charByGroup[groupName]['strandedness'] = charByGroup[groupName].get('strandedness', []) + [genomicChar[2]]
-    charByGroup[groupName]['start_codon_freq'] = charByGroup[groupName].get('start_codon_freq', []) + [genomicChar[3]]
-    charByGroup[groupName]['stop_codon_freq'] = charByGroup[groupName].get('stop_codon_freq', []) + [genomicChar[4]]
-    charByGroup[groupName]['rbs_motif'] = charByGroup[groupName].get('rbs_motif', []) + [genomicChar[5]]
-    charByGroup[groupName]['gene_lens'] = charByGroup[groupName].get('gene_lens', []) + [genomicChar[6]]
+        return [[totalSeqLen, codingDensity, strandedness, startCodonFreq, stopCodonFreq, rbsMotifFreq, geneLens], [totalSeqLenPlasmid, codingDensityPlasmid, strandednessPlasmid, startCodonFreqPlasmid, stopCodonFreqPlasmid, rbsMotifFreqPlasmid, geneLensPlasmid]];
 
-    if plasmidChar[0] != 0:
-      plasmidGroupName = groupName + ' plasmids'
-      if plasmidGroupName not in charByGroup:
-        charByGroup[groupName + ' plasmids'] = {}
+    def getCharacteristics(self, genomeId, groupName, charByGroup):
+        genomicChar, plasmidChar = self.parseGFF(genomeId)
 
-      charByGroup[plasmidGroupName]['seq_len'] = charByGroup[plasmidGroupName].get('seq_len', []) + [plasmidChar[0]]
-      charByGroup[plasmidGroupName]['coding_density'] = charByGroup[plasmidGroupName].get('coding_density', []) + [plasmidChar[1]]
-      charByGroup[plasmidGroupName]['strandedness'] = charByGroup[plasmidGroupName].get('strandedness', []) + [plasmidChar[2]]
-      charByGroup[plasmidGroupName]['start_codon_freq'] = charByGroup[plasmidGroupName].get('start_codon_freq', []) + [plasmidChar[3]]
-      charByGroup[plasmidGroupName]['stop_codon_freq'] = charByGroup[plasmidGroupName].get('stop_codon_freq', []) + [plasmidChar[4]]
-      charByGroup[plasmidGroupName]['rbs_motif'] = charByGroup[plasmidGroupName].get('rbs_motif', []) + [plasmidChar[5]]
-      charByGroup[plasmidGroupName]['gene_lens'] = charByGroup[plasmidGroupName].get('gene_lens', []) + [plasmidChar[6]]
+        if genomicChar[0] == 0: # indicates file contained not sequence information or insufficent data to run prodigal
+            return
 
-  def writeResults(self, charByGroup):
-    fout = open('./data/genome_characteristics.tsv', 'w')
-    fout.write('Group name\t# genomes\tSeq length\t\tCoding density\t\tStrandedness\t\tGene length\t\tStart codon freq\t\t\t\t\t\tStop codon freq\t\tRBS motif freq\n')
-    for groupName, data in charByGroup.iteritems():
-      #sanity check
-      if len(data['seq_len']) != len(data['coding_density']) or len(data['seq_len']) != len(data['strandedness']) or len(data['seq_len']) != len(data['gene_lens']):
-        print '[Error] Not all genome characteristics have the same length: ' + groupName
-        sys.exit()
+        if groupName not in charByGroup:
+            charByGroup[groupName] = {}
 
-      fout.write(groupName)
-      fout.write('\t' + str(len(data['seq_len'])))
-      fout.write('\t%.2f\t%.3f' % (mean(data['seq_len']), std(data['seq_len'])))
-      fout.write('\t%.2f\t%.3f' % (mean(data['coding_density']), std(data['coding_density'])))
-      fout.write('\t%.2f\t%.3f' % (mean(data['strandedness']), std(data['strandedness'])))
+        charByGroup[groupName]['seq_len'] = charByGroup[groupName].get('seq_len', []) + [genomicChar[0]]
+        charByGroup[groupName]['coding_density'] = charByGroup[groupName].get('coding_density', []) + [genomicChar[1]]
+        charByGroup[groupName]['strandedness'] = charByGroup[groupName].get('strandedness', []) + [genomicChar[2]]
+        charByGroup[groupName]['start_codon_freq'] = charByGroup[groupName].get('start_codon_freq', []) + [genomicChar[3]]
+        charByGroup[groupName]['stop_codon_freq'] = charByGroup[groupName].get('stop_codon_freq', []) + [genomicChar[4]]
+        charByGroup[groupName]['rbs_motif'] = charByGroup[groupName].get('rbs_motif', []) + [genomicChar[5]]
+        charByGroup[groupName]['gene_lens'] = charByGroup[groupName].get('gene_lens', []) + [genomicChar[6]]
 
-      meanGeneLen = []
-      for geneLenList in data['gene_lens']:
-        meanGeneLen.append(mean(geneLenList))
+        if plasmidChar[0] != 0:
+            plasmidGroupName = groupName + ' plasmids'
+            if plasmidGroupName not in charByGroup:
+                charByGroup[groupName + ' plasmids'] = {}
 
-      fout.write('\t%.2f\t%.3f' % (mean(meanGeneLen), std(meanGeneLen)))
+            charByGroup[plasmidGroupName]['seq_len'] = charByGroup[plasmidGroupName].get('seq_len', []) + [plasmidChar[0]]
+            charByGroup[plasmidGroupName]['coding_density'] = charByGroup[plasmidGroupName].get('coding_density', []) + [plasmidChar[1]]
+            charByGroup[plasmidGroupName]['strandedness'] = charByGroup[plasmidGroupName].get('strandedness', []) + [plasmidChar[2]]
+            charByGroup[plasmidGroupName]['start_codon_freq'] = charByGroup[plasmidGroupName].get('start_codon_freq', []) + [plasmidChar[3]]
+            charByGroup[plasmidGroupName]['stop_codon_freq'] = charByGroup[plasmidGroupName].get('stop_codon_freq', []) + [plasmidChar[4]]
+            charByGroup[plasmidGroupName]['rbs_motif'] = charByGroup[plasmidGroupName].get('rbs_motif', []) + [plasmidChar[5]]
+            charByGroup[plasmidGroupName]['gene_lens'] = charByGroup[plasmidGroupName].get('gene_lens', []) + [plasmidChar[6]]
 
-      meanStartCodonDic = {}
-      for startCodonDic in data['start_codon_freq']:
-        for codon, freq in startCodonDic.iteritems():
-          meanStartCodonDic[codon] = meanStartCodonDic.get(codon, []) + [freq]
+    def writeResults(self, charByGroup):
+        fout = open('./data/genome_characteristics.tsv', 'w')
+        fout.write('Group name\t# genomes\tSeq length\t\tCoding density\t\tStrandedness\t\tGene length\t\tStart codon freq\t\t\t\t\t\tStop codon freq\t\tRBS motif freq\n')
+        for groupName, data in charByGroup.iteritems():
+            #sanity check
+            if len(data['seq_len']) != len(data['coding_density']) or len(data['seq_len']) != len(data['strandedness']) or len(data['seq_len']) != len(data['gene_lens']):
+                print '[Error] Not all genome characteristics have the same length: ' + groupName
+                sys.exit()
 
-      for codon, freqList in meanStartCodonDic.iteritems():
-          fout.write('\t' + codon + ': %.2f\t%.3f' % (mean(freqList), std(freqList)))
+            fout.write(groupName)
+            fout.write('\t' + str(len(data['seq_len'])))
+            fout.write('\t%.2f\t%.3f' % (mean(data['seq_len']), std(data['seq_len'])))
+            fout.write('\t%.2f\t%.3f' % (mean(data['coding_density']), std(data['coding_density'])))
+            fout.write('\t%.2f\t%.3f' % (mean(data['strandedness']), std(data['strandedness'])))
 
-      meanStopCodonDic = {}
-      for stopCodonDic in data['stop_codon_freq']:
-        for codon, freq in stopCodonDic.iteritems():
-          meanStopCodonDic[codon] = meanStopCodonDic.get(codon, []) + [freq]
+            meanGeneLen = []
+            for geneLenList in data['gene_lens']:
+                meanGeneLen.append(mean(geneLenList))
 
-      for codon, freqList in meanStopCodonDic.iteritems():
-          fout.write('\t' + codon + ': %.2f\t%.3f' % (mean(freqList), std(freqList)))
+            fout.write('\t%.2f\t%.3f' % (mean(meanGeneLen), std(meanGeneLen)))
 
-      meanRbsMotifDic = {}
-      for rbsMotifDic in data['rbs_motif']:
-        for motif, freq in rbsMotifDic.iteritems():
-          meanRbsMotifDic[motif] = meanRbsMotifDic.get(motif, []) + [freq]
+            meanStartCodonDic = {}
+            for startCodonDic in data['start_codon_freq']:
+                for codon, freq in startCodonDic.iteritems():
+                    meanStartCodonDic[codon] = meanStartCodonDic.get(codon, []) + [freq]
 
-      for motif, freqList in meanRbsMotifDic.iteritems():
-          fout.write('\t' + motif + ': %.2f\t%.3f' % (mean(freqList), std(freqList)))
-      fout.write('\n')
+            for codon, freqList in meanStartCodonDic.iteritems():
+                fout.write('\t' + codon + ': %.2f\t%.3f' % (mean(freqList), std(freqList)))
 
-    fout.close()
+            meanStopCodonDic = {}
+            for stopCodonDic in data['stop_codon_freq']:
+                for codon, freq in stopCodonDic.iteritems():
+                    meanStopCodonDic[codon] = meanStopCodonDic.get(codon, []) + [freq]
 
-  def run(self):
-    img = IMG()
+            for codon, freqList in meanStopCodonDic.iteritems():
+                fout.write('\t' + codon + ': %.2f\t%.3f' % (mean(freqList), std(freqList)))
 
-    # get genome ids of all prokaryotes and euks
-    print 'Reading Proks and Euks metadata.'
-    bHeader = True
-    genomeIdToGroup = {}
-    missingGenomeData = {}
-    for line in open(img.metadataFile):
-      if bHeader:
-        bHeader = False
-        continue
+            meanRbsMotifDic = {}
+            for rbsMotifDic in data['rbs_motif']:
+                for motif, freq in rbsMotifDic.iteritems():
+                    meanRbsMotifDic[motif] = meanRbsMotifDic.get(motif, []) + [freq]
 
-      lineSplit = line.split('\t')
-      genomeId = lineSplit[0].strip()
-      domain = lineSplit[1].strip()
+            for motif, freqList in meanRbsMotifDic.iteritems():
+                fout.write('\t' + motif + ': %.2f\t%.3f' % (mean(freqList), std(freqList)))
+            fout.write('\n')
 
-      if os.path.exists(IMG.genomeDir + genomeId + '/' + genomeId + '.fna'):
-        if domain == 'Bacteria' or domain == 'Archaea':
-          genomeIdToGroup[genomeId] = 'd__' + domain
-        elif domain == 'Eukaryota':
-          phylum = lineSplit[6].strip()
+        fout.close()
 
-          if phylum == 'Apicomplexa' or phylum == 'Arthropoda' or phylum == 'Ascomycota' or phylum == 'Chlorophyta' or phylum == 'Chordata' or phylum == 'Streptophyta':
-            genomeIdToGroup[genomeId] = 'p__' + phylum
-      else:
-        missingGenomeData[domain] = missingGenomeData.get(domain, 0) + 1
+    def run(self):
+        img = IMG()
 
-    # get genome ids of all viruses
-    print 'Reading Virus metadata.'
-    bHeader = True
-    for line in open(img.virusMetadataFile):
-      if bHeader:
-        bHeader = False
-        continue
+        # get genome ids of all prokaryotes and euks
+        print 'Reading Proks and Euks metadata.'
+        bHeader = True
+        genomeIdToGroup = {}
+        missingGenomeData = {}
+        for line in open(img.metadataFile):
+            if bHeader:
+                bHeader = False
+                continue
 
-      lineSplit = line.split('\t')
-      genomeId = lineSplit[0].strip()
-      domain = lineSplit[1].strip()
+            lineSplit = line.split('\t')
+            genomeId = lineSplit[0].strip()
+            domain = lineSplit[1].strip()
 
-      if os.path.exists(IMG.genomeDir + genomeId + '/' + genomeId + '.fna'):
-        genomeIdToGroup[genomeId] = 'd__' + domain
-      else:
-        missingGenomeData[domain] = missingGenomeData.get(domain, 0) + 1
+            if os.path.exists(IMG.genomeDir + genomeId + '/' + genomeId + '.fna'):
+                if domain == 'Bacteria' or domain == 'Archaea':
+                    genomeIdToGroup[genomeId] = 'd__' + domain
+                elif domain == 'Eukaryota':
+                    phylum = lineSplit[6].strip()
 
-    # report results
-    print 'Number of valid genomes: ' + str(len(genomeIdToGroup))
-    print 'Number of genomes missing genomic data: '
-    for domain, count in missingGenomeData.iteritems():
-      print '  ' + domain + ': ' + str(count)
+                    if phylum == 'Apicomplexa' or phylum == 'Arthropoda' or phylum == 'Ascomycota' or phylum == 'Chlorophyta' or phylum == 'Chordata' or phylum == 'Streptophyta':
+                        genomeIdToGroup[genomeId] = 'p__' + phylum
+            else:
+                missingGenomeData[domain] = missingGenomeData.get(domain, 0) + 1
 
-    # process all genomes
-    charByGroup = {}
-    for genomeId, groupName in genomeIdToGroup.iteritems():
-      print genomeId
-      self.runProdigal(genomeId)
-      self.getCharacteristics(genomeId, groupName, charByGroup)
+        # get genome ids of all viruses
+        print 'Reading Virus metadata.'
+        bHeader = True
+        for line in open(img.virusMetadataFile):
+            if bHeader:
+                bHeader = False
+                continue
 
-    # write out results
-    self.writeResults(charByGroup)
+            lineSplit = line.split('\t')
+            genomeId = lineSplit[0].strip()
+            domain = lineSplit[1].strip()
+
+            if os.path.exists(IMG.genomeDir + genomeId + '/' + genomeId + '.fna'):
+                genomeIdToGroup[genomeId] = 'd__' + domain
+            else:
+                missingGenomeData[domain] = missingGenomeData.get(domain, 0) + 1
+
+        # report results
+        print 'Number of valid genomes: ' + str(len(genomeIdToGroup))
+        print 'Number of genomes missing genomic data: '
+        for domain, count in missingGenomeData.iteritems():
+            print '  ' + domain + ': ' + str(count)
+
+        # process all genomes
+        charByGroup = {}
+        for genomeId, groupName in genomeIdToGroup.iteritems():
+            print genomeId
+            self.runProdigal(genomeId)
+            self.getCharacteristics(genomeId, groupName, charByGroup)
+
+        # write out results
+        self.writeResults(charByGroup)
 
 if __name__ == '__main__':
-  genomeCharacteristics = GenomeCharacteristics()
-  genomeCharacteristics.run()
-
+    genomeCharacteristics = GenomeCharacteristics()
+    genomeCharacteristics.run()

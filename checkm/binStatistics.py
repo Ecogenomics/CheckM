@@ -36,7 +36,7 @@ class BinStatistics():
         self.logger = logging.getLogger()        
         self.totalThreads = threads
 
-    def calculate(self, binFiles, outDir):
+    def calculate(self, binFiles, outDir, binStatsFile, seqStatsFile):
         """Calculate statistics for each putative genome bin."""
         makeSurePathExists(outDir)
         
@@ -53,7 +53,7 @@ class BinStatistics():
             workerQueue.put(None)
 
         calcProc = [mp.Process(target = self.__processBin, args = (outDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target = self.__reportProgress, args = (outDir, len(binFiles), writerQueue))
+        writeProc = mp.Process(target = self.__reportProgress, args = (outDir, binStatsFile, seqStatsFile, len(binFiles), writerQueue))
 
         writeProc.start()
         
@@ -77,8 +77,8 @@ class BinStatistics():
             scaffoldStats = {}
             
             binId = binIdFromFilename(binFile)
-            outDir = os.path.join(outDir, binId)
-            makeSurePathExists(outDir)
+            binDir = os.path.join(outDir, binId)
+            makeSurePathExists(binDir)
 
             # read scaffolds
             scaffolds = readFasta(binFile) 
@@ -101,13 +101,13 @@ class BinStatistics():
             binStats['N50 (contigs)'] = contig_N50
             
             # calculate coding density statistics            
-            codingDensity, numORFs = self.calculateCodingDensity(outDir, genomeSize, scaffoldStats)
+            codingDensity, numORFs = self.calculateCodingDensity(binDir, genomeSize, scaffoldStats)
             binStats['Coding density'] = codingDensity
             binStats['# predicted ORFs'] = numORFs
             
             queueOut.put((binId, binStats, scaffoldStats))
             
-    def __reportProgress(self, outDir, numBins, queueIn):
+    def __reportProgress(self, outDir, binStatsFile, seqStatsFile, numBins, queueIn):
         """Report number of processed bins and write statistics to file."""      
         
         numProcessedBins = 0
@@ -139,11 +139,11 @@ class BinStatistics():
         storagePath = os.path.join(outDir, 'storage')  
         makeSurePathExists(storagePath)
         
-        fout = open(os.path.join(storagePath, defaultValues.__CHECKM_DEFAULT_BIN_STATS_FILE__), 'w')
+        fout = open(os.path.join(storagePath, binStatsFile), 'w')
         fout.write(str(binStats))
         fout.close()
         
-        fout = open(os.path.join(storagePath, defaultValues.__CHECKM_DEFAULT_SEQ_STATS_FILE__), 'w')
+        fout = open(os.path.join(storagePath, seqStatsFile), 'w')
         fout.write(str(seqStats))
         fout.close()
          
@@ -164,7 +164,7 @@ class BinStatistics():
             gcContent = float(gc) / (gc + at) 
             seqStats[seqId]['GC'] = gcContent
             
-            if len(seq) > defaultValues.__CHECKM_DEFAULT_MIN_SEQ_LEN_GC_STD__:
+            if len(seq) > defaultValues.MIN_SEQ_LEN_GC_STD:
                 gcPerSeq.append(gcContent)
                 
         GC = float(totalGC) / (totalGC + totalAT)
@@ -181,7 +181,7 @@ class BinStatistics():
             scaffoldLen = len(scaffold)
             scaffoldLens.append(scaffoldLen)
                         
-            splitScaffold = scaffold.split(defaultValues.__CHECKM_DEFAULT_CONTIG_BREAK__)
+            splitScaffold = scaffold.split(defaultValues.CONTIG_BREAK)
             lenContigsInScaffold = []
             for contig in splitScaffold:
                 contigLen = len(contig.replace('N', ''))
@@ -201,7 +201,7 @@ class BinStatistics():
         
     def calculateCodingDensity(self, outDir, genomeSize, seqStats):
         """Calculate coding density of putative genome bin."""
-        ntFile = os.path.join(outDir, defaultValues.__CHECKM_DEFAULT_PRODIGAL_NT__)
+        ntFile = os.path.join(outDir, defaultValues.PRODIGAL_NT)
         ntGenes = readFasta(ntFile)
         
         codingBasePairs = 0

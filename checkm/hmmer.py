@@ -23,16 +23,12 @@ import os
 import sys
 from re import split as re_split
 
-from common import makeSurePathExists
-
-import defaultValues
-
 class FormatError(BaseException): pass
 class HMMERError(BaseException): pass
 class HMMMERModeError(BaseException): pass
 
 class HMMERRunner():
-    """Wrapper for running HMMER3"""
+    """Wrapper for running HMMER3."""
     def __init__(self, mode="dom"):
         # make sure HMMER is installed
         self.checkForHMMER()
@@ -49,20 +45,13 @@ class HMMERRunner():
         else:
             raise HMMMERModeError("Mode %s not understood" % mode)
         
-        # make the output file names
-        (self.txtOut, self.hmmOut) = makeOutputFNs(mode=self.mode)
-    
-    def search(self, db, query, outputDir, cmdlineOptions=''):
+    def search(self, db, query, tableOut, hmmerOut, cmdlineOptions=''):
         """Run hmmsearch"""
         # make the output dir and files
         if self.mode != 'domtblout' and self.mode != 'tblout':
             raise HMMMERModeError("Mode %s not compatible with search" % self.mode)
         
-        makeSurePathExists(outputDir)
-        txtFile = os.path.join(outputDir, self.txtOut)
-        hmmFile = os.path.join(outputDir, self.hmmOut)
-
-        cmd = ('hmmsearch --%s %s %s %s %s > %s' % (self.mode, txtFile, cmdlineOptions, db, query, hmmFile))
+        cmd = ('hmmsearch --%s %s %s %s %s > %s' % (self.mode, tableOut, cmdlineOptions, db, query, hmmerOut))
         os.system(cmd)
 
     def align(self, db, query, outputFile, writeMode='>', outputFormat='PSIBLAST', trim=True):
@@ -79,17 +68,13 @@ class HMMERRunner():
         cmd = 'hmmalign %s --outformat %s %s %s %s %s' % (opts, outputFormat, db, query, writeMode, outputFile)
         os.system(cmd)
 
-    def fetch(self, db, key, fetchFileName, emitFileName=''):
-        """Run hmmfetch and possible hmmemit"""
+    def fetch(self, db, key, fetchFileName):
+        """Run hmmfetch"""
         if self.mode != 'fetch':
             raise HMMMERModeError("Mode %s not compatible with fetch" % self.mode)
         
         # run hmmer
         os.system('hmmfetch %s %s > %s' % (db, key, fetchFileName))
-        
-        # run emit if we have been told to
-        if emitFileName != '':
-            os.system('hmmemit -c %s > %s' % (fetchFileName, emitFileName))
 
     def checkForHMMER(self):
         """Check to see if HMMER is on the system before we try fancy things
@@ -107,17 +92,6 @@ class HMMERRunner():
         if exit_status != 0:
             raise HMMERError("Error attempting to run hmmsearch, is it in your path?")
         
-def makeOutputFNs(mode='domtblout'):
-    """Consistent interface for making output filenames."""
-    txtOut = defaultValues.__CHECKM_DEFAULT_HMMER_TXT_OUT__
-    
-    if mode == 'align':
-        hmmOut = defaultValues.__CHECKM_DEFAULT_HMMER_ALIGN_OUT__
-    else:
-        hmmOut = defaultValues.__CHECKM_DEFAULT_HMMER_OUT__
-    return (txtOut, hmmOut)
-
-
 class HMMERParser():
     """Parses tabular output."""
     def __init__(self, fileHandle, mode='dom'):
@@ -187,7 +161,11 @@ class HmmerHitTBL():
             self.target_name = values[0]
             self.target_accession = values[1]
             self.query_name = values[2]
+            
             self.query_accession = values[3]
+            if self.query_accession == '-':
+                self.query_accession = self.query_name
+                
             self.full_e_value = float(values[4])
             self.full_score = float(values[5])
             self.full_bias = float(values[6])
@@ -235,7 +213,11 @@ class HmmerHitDOM():
             self.target_accession = values[1]
             self.target_length = int(values[2])
             self.query_name = values[3]
+            
             self.query_accession = values[4]
+            if self.query_accession == '-':
+                self.query_accession = self.query_name
+                
             self.query_length = int(values[5])
             self.full_e_value = float(values[6])
             self.full_score = float(values[7])
@@ -280,3 +262,4 @@ class HmmerHitDOM():
                           str(self.acc),
                           self.target_description]
                          )
+    

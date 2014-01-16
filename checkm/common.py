@@ -48,6 +48,12 @@ def checkFileExists(inputFile):
         logger = logging.getLogger()
         logger.error('  [Error] Input file does not exists: ' + inputFile + '\n')
         sys.exit()
+        
+def checkDirExists(inputDir):
+    if not os.path.exists(inputDir):
+        logger = logging.getLogger()
+        logger.error('  [Error] Input directory does not exists: ' + inputDir + '\n')
+        sys.exit()
 
 def makeSurePathExists(path):
     try:

@@ -25,9 +25,12 @@ class HmmModelError(Exception):
 class HmmModel(object):
     """Store HMM model parameters."""
     def __init__(self, keys):
-        setattr(self, 'isGatheringThreshold', True)
-        setattr(self, 'isTrustedCutoff', True)
-        setattr(self, 'isNoiseCutoff', True)
+        setattr(self, 'isGatheringThreshold', False)
+        setattr(self, 'isTrustedCutoff', False)
+        setattr(self, 'isNoiseCutoff', False)
+        
+        if 'acc' not in keys:
+            setattr(self, 'acc', keys['name'])
         
         for key, value in keys.items():
             setattr(self, key, value)
@@ -38,6 +41,8 @@ class HmmModel(object):
                 setattr(self, 'isTrustedCutoff', True)
             elif key == 'nc':
                 setattr(self, 'isNoiseCutoff', True)
+                
+        
 
 class HmmModelParser(object):
     """Parse HMM model file."""

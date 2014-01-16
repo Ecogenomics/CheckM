@@ -24,12 +24,15 @@ import os
 import multiprocessing as mp
 import logging
 import ntpath
+from collections import defaultdict
 
 import pysam
 
 import defaultValues
 from common import reassignStdOut, restoreStdOut, binIdFromFilename
 from seqUtils import readFasta
+
+from numpy import mean, std
 
 class ReadLoader:
     """Callback for counting aligned reads with pysam.fetch"""
@@ -133,7 +136,7 @@ class Coverage():
         print(header)
 
         for seqId in coverageInfo[coverageInfo.keys()[0]].keys():
-            rowStr = seqId + '\t' + seqIdToBinId.get(seqId, defaultValues.__CHECKM_DEFAULT_UNBINNED__) + '\t' + str(coverageInfo[coverageInfo.keys()[0]][seqId].seqLen)
+            rowStr = seqId + '\t' + seqIdToBinId.get(seqId, defaultValues.UNBINNED) + '\t' + str(coverageInfo[coverageInfo.keys()[0]][seqId].seqLen)
             for bamFile in bamFiles:
                 bamId = binIdFromFilename(bamFile)
                 rowStr += '\t' + bamId + '\t' + str(coverageInfo[bamFile][seqId].coverage) + '\t' + str(coverageInfo[bamFile][seqId].mappedReads)
@@ -292,3 +295,17 @@ class Coverage():
                 coverageStats[binId][seqId][bamId] = coverage
                 
         return coverageStats
+    
+    def binProfiles(self, coverageStats):
+        profiles = defaultdict(dict)
+        for binId, seqIds in coverageStats.iteritems():
+            coverages = defaultdict(list)
+            for seqId, bamIds in seqIds.iteritems():
+                for bamId in bamIds:
+                    coverages[bamId].append(coverageStats[binId][seqId][bamId])
+                    
+            for bamId, seqCoverages in coverages.iteritems():
+                profiles[binId][bamId] = [mean(seqCoverages), std(seqCoverages)]
+                    
+        return profiles
+                    

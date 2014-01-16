@@ -41,14 +41,14 @@ from lib.img import IMG
 class Tigr2Pfam(object):
     def __init__(self):
         pass
-        
+
     def run(self, percentThreshold):
         img = IMG()
-  
+
         metadata = img.genomeMetadata()
-        
+
         genomeIds = img.genomeIdsByTaxonomy('universal', metadata, 'All')
-        
+
         matches = {}
         pfamCount = {}
         tigrCount = {}
@@ -56,13 +56,13 @@ class Tigr2Pfam(object):
             statusStr = '  Finished processing %d of %d (%.2f%%) genomes.' % (genomeCounter+1, len(genomeIds), float(genomeCounter+1)*100/len(genomeIds))
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
-            
+
             if metadata[genomeId]['status'] == 'Finished':
                 pfamFile = img.genomeDir + genomeId + '/' + genomeId + img.pfamExtension
-                
+
                 if not os.path.exists(pfamFile):
                     continue
-                
+
                 # get PFAM hits
                 geneIdToPfams = {}
                 bHeader = True
@@ -70,18 +70,18 @@ class Tigr2Pfam(object):
                     if bHeader:
                         bHeader = False
                         continue
-                    
+
                     lineSplit = line.split('\t')
                     if lineSplit[0] in geneIdToPfams:
                         geneIdToPfams[lineSplit[0]].add(lineSplit[8])
                     else:
                         geneIdToPfams[lineSplit[0]] = set([lineSplit[8]])
-                        
+
                     if lineSplit[8] in pfamCount:
                         pfamCount[lineSplit[8]].add(genomeId)
                     else:
                         pfamCount[lineSplit[8]] = set([genomeId])
-                 
+
                 # get TIGRFAM hits
                 geneIdToTigr = {}
                 bHeader = True
@@ -89,13 +89,13 @@ class Tigr2Pfam(object):
                     if bHeader:
                         bHeader = False
                         continue
-                    
-                    lineSplit = line.split('\t')   
+
+                    lineSplit = line.split('\t')
                     if lineSplit[0] in geneIdToTigr:
                         geneIdToTigr[lineSplit[0]].add(lineSplit[6])
                     else:
                         geneIdToTigr[lineSplit[0]] = set([lineSplit[6]])
-                        
+
                     if lineSplit[6] in tigrCount:
                         tigrCount[lineSplit[6]].add(genomeId)
                     else:
@@ -106,10 +106,10 @@ class Tigr2Pfam(object):
                 for geneId in geneIds:
                     pfams = geneIdToPfams.get(geneId, None)
                     tigrs = geneIdToTigr.get(geneId, None)
-                    
+
                     if pfams == None or tigrs == None:
                         continue
-                    
+
                     for pfamId in pfams:
                         for tigrId in tigrs:
                             key = pfamId + '-' + tigrId
@@ -117,28 +117,28 @@ class Tigr2Pfam(object):
                                 matches[key].add(genomeId)
                             else:
                                 matches[key] = set([genomeId])
-                                
+
         sys.stdout.write('\n')
-                            
+
         # find TIGRFAMs that generally hit the same gene as a PFAM
         fout = open('../data/tigrfam2pfam.tsv', 'w')
         for key, genomeSet in matches.iteritems():
             pfam, tigr = key.split('-')
-            
+
             # deem a TIGRFAM HMM redundant if it is almost always hits that
             # same ORF as a PFAM HMM
             if float(len(genomeSet)) / len(tigrCount[tigr]) >= percentThreshold:
                 fout.write(pfam + '\t' + tigr + '\n')
         fout.close()
-                  
-if __name__ == '__main__':  
+
+if __name__ == '__main__':
     print 'Tigr2Pfam v' + __version__ + ': ' + __prog_desc__
     print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
-    
+
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-p', '--percent', help='percent threshold for matching a TIGRFAM to a PFAM', type = float, default = 0.90)
-    
+
     args = parser.parse_args()
-    
+
     tigr2Pfam = Tigr2Pfam()
     tigr2Pfam.run(args.percent)

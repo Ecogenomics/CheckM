@@ -25,4 +25,4 @@ img = IMG()
 
 lineages = img.lineagesSorted(4)
 for lineage in lineages:
-  os.system("./markerSetTest.py -T '" + lineage + "'")
+    os.system("./markerSetTest.py -T '" + lineage + "'")

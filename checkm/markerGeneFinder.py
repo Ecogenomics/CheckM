@@ -30,15 +30,14 @@ from hmmer import HMMERRunner
 from prodigal import ProdigalRunner
 
 class MarkerGeneFinder():
-    """This class runs prodigal and hmmer creating data for parsing"""
+    """Identify marker genes within binned sequences using Prodigal and HMMER."""
     def __init__(self, threads):  
         self.logger = logging.getLogger()                  
         self.totalThreads = threads
 
-    def find(self, binFiles, outDir, markerFile):
+    def find(self, binFiles, outDir, tableOut, hmmerOut, markerFile):
         """Identify marker genes in each bin using prodigal and HMMER."""
-        makeSurePathExists(outDir)
-      
+
         # process each fasta file
         self.threadsPerSearch = max(1, int(self.totalThreads / len(binFiles)))
         self.logger.info("  Identifying marker genes in %d bins with %d threads:" % (len(binFiles), self.totalThreads))
@@ -53,7 +52,7 @@ class MarkerGeneFinder():
         for _ in range(self.totalThreads):
             workerQueue.put(None)
 
-        calcProc = [mp.Process(target = self.__processBin, args = (outDir, markerFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, markerFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
         writeProc = mp.Process(target = self.__reportProgress, args = (len(binFiles), writerQueue))
 
         writeProc.start()
@@ -67,7 +66,7 @@ class MarkerGeneFinder():
         writerQueue.put(None)
         writeProc.join()
               
-    def __processBin(self, outDir, markerFile, queueIn, queueOut):
+    def __processBin(self, outDir, tableOut, hmmerOut, markerFile, queueIn, queueOut):
         """Thread safe bin processing."""      
         while True:    
             binFile = queueIn.get(block=True, timeout=None) 
@@ -75,16 +74,19 @@ class MarkerGeneFinder():
                 break   
             
             binId = binIdFromFilename(binFile)
-            outDir = os.path.join(outDir, binId)
-            makeSurePathExists(outDir)
+            binDir = os.path.join(outDir, binId)
+            makeSurePathExists(binDir)
     
-            # run Prodigal      
-            prodigal = ProdigalRunner() 
-            aaGeneFile = prodigal.run(binFile, outDir)
+            # run Prodigal     
+            prodigal = ProdigalRunner(binDir) 
+            if not prodigal.areORFsCalled():
+                prodigal.run(binFile)
     
             # run HMMER
             hmmer = HMMERRunner()
-            hmmer.search(markerFile, aaGeneFile, outDir, '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 1 --domE 1')
+            tableOutPath = os.path.join(binDir, tableOut)
+            hmmerOutPath = os.path.join(binDir, hmmerOut)
+            hmmer.search(markerFile, prodigal.aaGeneFile, tableOutPath, hmmerOutPath, '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 1 --domE 1')
     
             queueOut.put(binId)
             

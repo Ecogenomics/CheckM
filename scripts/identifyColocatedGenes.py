@@ -36,60 +36,59 @@ from lib.img import IMG
 from lib.markerSet import MarkerSet
 
 class IdentifyColocatedGenes(object):
-  def __init__(self):
-    pass
+    def __init__(self):
+        pass
 
-  def run(self, ubiquityThreshold, singleCopyThreshold, minGenomes, minMarkers, mostSpecificRank, distThreshold, genomeThreshold):
-    img = IMG()
-    markerset = MarkerSet()
-    
-    lineages = img.lineagesSorted(mostSpecificRank)
-    
-    fout = open('./data/colocated.tsv', 'w', 1)
-    fout.write('Lineage\t# genomes\t# markers\t# co-located sets\tCo-located markers\n')
-    
-    lineageCount = 0
-    for lineage in lineages:
-      lineageCount += 1
-      
-      genomeIds = img.genomeIdsByTaxonomy(lineage, 'Final')
-      if len(genomeIds) < minGenomes:
-        continue
-      
-      countTable = img.countTable(genomeIds)
-      markerGenes = markerset.markerGenes(genomeIds, countTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
+    def run(self, ubiquityThreshold, singleCopyThreshold, minGenomes, minMarkers, mostSpecificRank, distThreshold, genomeThreshold):
+        img = IMG()
+        markerset = MarkerSet()
 
-      geneDistTable = img.geneDistTable(genomeIds, markerGenes)
-      colocatedGenes = markerset.colocatedGenes(geneDistTable, distThreshold, genomeThreshold)
-      colocatedSets = markerset.colocatedSets(colocatedGenes, markerGenes)
-      if len(colocatedSets) < minMarkers:
-        continue
-        
-      print '\nLineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes (' + str(lineageCount) + ' of ' + str(len(lineages)) + ').'
-      print '  Marker genes: ' + str(len(markerGenes))
-      print '  Co-located gene sets: ' + str(len(colocatedSets))
-      
-      fout.write(lineage + '\t' + str(len(genomeIds)) + '\t' + str(len(markerGenes)) + '\t' + str(len(colocatedSets)))
-      for cs in colocatedSets:
-        fout.write('\t' + ', '.join(cs))
-      fout.write('\n')
-        
-    fout.close()
-    
+        lineages = img.lineagesSorted(mostSpecificRank)
+
+        fout = open('./data/colocated.tsv', 'w', 1)
+        fout.write('Lineage\t# genomes\t# markers\t# co-located sets\tCo-located markers\n')
+
+        lineageCount = 0
+        for lineage in lineages:
+            lineageCount += 1
+
+            genomeIds = img.genomeIdsByTaxonomy(lineage, 'Final')
+            if len(genomeIds) < minGenomes:
+                continue
+
+            countTable = img.countTable(genomeIds)
+            markerGenes = markerset.markerGenes(genomeIds, countTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
+
+            geneDistTable = img.geneDistTable(genomeIds, markerGenes)
+            colocatedGenes = markerset.colocatedGenes(geneDistTable, distThreshold, genomeThreshold)
+            colocatedSets = markerset.colocatedSets(colocatedGenes, markerGenes)
+            if len(colocatedSets) < minMarkers:
+                continue
+
+            print '\nLineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes (' + str(lineageCount) + ' of ' + str(len(lineages)) + ').'
+            print '  Marker genes: ' + str(len(markerGenes))
+            print '  Co-located gene sets: ' + str(len(colocatedSets))
+
+            fout.write(lineage + '\t' + str(len(genomeIds)) + '\t' + str(len(markerGenes)) + '\t' + str(len(colocatedSets)))
+            for cs in colocatedSets:
+                fout.write('\t' + ', '.join(cs))
+            fout.write('\n')
+
+        fout.close()
+
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description="Identify co-located genes within genomes for a specific lineage.",
-                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description="Identify co-located genes within genomes for a specific lineage.",
+                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument('-u', '--ubiquity', help='Ubiquity threshold for defining marker set', type=float, default = 0.97)
-  parser.add_argument('-s', '--single_copy', help='Single-copy threshold for defining marker set', type=float, default = 0.97)
-  parser.add_argument('-m', '--min_genomes', help='Minimum genomes required to include in analysis', type=int, default = 40)
-  parser.add_argument('-x', '--min_markers', help='Minimum markers required to include in analysis', type=int, default = 20)
-  parser.add_argument('-r', '--most_specific_rank', help='Most specific rank to include in analysis', type=int, default = 5)
-  parser.add_argument('-d', '--distance_threshold', help='Distance, as percentage of genome length, to be considered co-located', type=float, default=0.001)
-  parser.add_argument('-g', '--genome_threshold', help='Percentage of genomes required to be considered co-located', type=float, default=0.95)
+    parser.add_argument('-u', '--ubiquity', help='Ubiquity threshold for defining marker set', type=float, default = 0.97)
+    parser.add_argument('-s', '--single_copy', help='Single-copy threshold for defining marker set', type=float, default = 0.97)
+    parser.add_argument('-m', '--min_genomes', help='Minimum genomes required to include in analysis', type=int, default = 40)
+    parser.add_argument('-x', '--min_markers', help='Minimum markers required to include in analysis', type=int, default = 20)
+    parser.add_argument('-r', '--most_specific_rank', help='Most specific rank to include in analysis', type=int, default = 5)
+    parser.add_argument('-d', '--distance_threshold', help='Distance, as percentage of genome length, to be considered co-located', type=float, default=0.001)
+    parser.add_argument('-g', '--genome_threshold', help='Percentage of genomes required to be considered co-located', type=float, default=0.95)
 
-  args = parser.parse_args()
-  
-  identifyColocatedGenes = IdentifyColocatedGenes()
-  identifyColocatedGenes.run(args.ubiquity, args.single_copy, args.min_genomes, args.min_markers, args.most_specific_rank, args.distance_threshold, args.genome_threshold)
+    args = parser.parse_args()
 
+    identifyColocatedGenes = IdentifyColocatedGenes()
+    identifyColocatedGenes.run(args.ubiquity, args.single_copy, args.min_genomes, args.min_markers, args.most_specific_rank, args.distance_threshold, args.genome_threshold)

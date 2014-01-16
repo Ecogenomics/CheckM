@@ -34,11 +34,11 @@ import argparse
 class MakeTrees(object):
     def __init__(self):
         pass
-    
+
     def run(self, alignDir, outputDir, extension, numThreads):
         if not os.path.exists(outputDir):
             os.makedirs(outputDir)
-    
+
         treeList = open(outputDir + '/treeList.txt', 'w')
         files = os.listdir(alignDir)
         for f in files:
@@ -47,34 +47,34 @@ class MakeTrees(object):
                 fin = open(os.path.join(alignDir, f))
                 data = fin.readlines()
                 fin.close()
-        
+
                 fout = open(os.path.join(alignDir, f), 'w')
                 for line in data:
                     if line[0] != '>':
                         line = line.replace('*', 'X')
                     fout.write(line)
                 fout.close()
-            
+
                 prefix = f[0:f.rfind('.')]
                 cmd = 'FastTree -quiet -nosupport -wag -gamma -log ' + outputDir + '/' + prefix + '.log ' + alignDir + '/' + f + ' > ' + outputDir + '/' + prefix + '.tre'
                 treeList.write(cmd + '\n')
-    
+
         treeList.close()
-        
+
         print 'Building trees...'
         os.system('cat ' + outputDir + '/treeList.txt | parallel --max-procs ' + str(numThreads))
 
 if __name__ == '__main__':
     print 'MakeTrees v' + __version__ + ': ' + __prog_desc__
     print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
-  
+
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('align_dir', help='directory containing multiple sequence alignments')
     parser.add_argument('output_dir', help='output directory')
     parser.add_argument('-x', '--extension', help='extension of alignment files to process', default = '.aln.masked.faa')
     parser.add_argument('-t', '--threads', help='number of threads to use', type=int, default = 1)
-    
+
     args = parser.parse_args()
-    
+
     makeTrees = MakeTrees()
     makeTrees.run(args.align_dir, args.output_dir, args.extension, args.threads)

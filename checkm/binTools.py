@@ -32,7 +32,7 @@ from prodigal import ProdigalGeneFeatureParser
 
 class BinTools():
     """Functions for exploring and modifying bins."""
-    def __init__(self, threads):         
+    def __init__(self, threads=1):         
         self.logger = logging.getLogger()
     
     def __removeSeqs(self, seqs, seqsToRemove):

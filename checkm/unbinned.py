@@ -22,13 +22,15 @@
 from seqUtils import readFasta
 import logging
 
-from common import checkFileExists, reassignStdOut, restoreStdOut
+from common import checkFileExists
+
+from seqUtils import baseCount
 
 class Unbinned():
     def __init__(self):
         self.logger = logging.getLogger()
     
-    def run(self, binFiles, seqFile, outFile, minSeqLen):       
+    def run(self, binFiles, seqFile, outSeqFile, outStatsFile, minSeqLen):       
         checkFileExists(seqFile)
         
         # get list of sequences in bins
@@ -45,23 +47,28 @@ class Unbinned():
         self.logger.info('  Reading all sequences.')
         allSeqs = readFasta(seqFile)
         self.logger.info('    Read %d sequences.' % (len(allSeqs)))
-        
+           
         # write all unbinned sequences
         self.logger.info('  Identifying unbinned sequences.')
+        seqOut = open(outSeqFile, 'w')
         
-        # redirect output
-        oldStdOut = reassignStdOut(outFile)
+        statsOut = open(outStatsFile, 'w')
+        statsOut.write('Sequence Id\tLength\tGC\n')
         
         unbinnedCount = 0
         for seqId, seq in allSeqs.iteritems():
             if seqId not in binnedSeqs:
                 if len(seq) >= minSeqLen:
                     unbinnedCount += 1
-                    print('>' + seqId)
-                    print(seq)
+                    seqOut.write('>' + seqId)
+                    seqOut.write(seq)
                     
-        # restore stdout   
-        restoreStdOut(outFile, oldStdOut)
-        
+                    a, c, g, t = baseCount(seq)
+                    
+                    statsOut.write('%s\t%d\t%.2f\n' % (seqId, len(seq), float(g+c)*100/(a+c+g+t)))
+                    
+        seqOut.close()
+        statsOut.close()
+
         self.logger.info('    Identified %d unbinned sequences.' % (unbinnedCount))
                 

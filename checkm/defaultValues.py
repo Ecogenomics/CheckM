@@ -19,24 +19,32 @@
 #                                                                             #
 ###############################################################################
 
-__CHECKM_DEFAULT_E_VAL__ = 1e-10
-__CHECKM_DEFAULT_LENGTH__ = 0.7
+E_VAL = 1e-10
+LENGTH = 0.7
 
-__CHECKM_DEFAULT_HMMER_TXT_OUT__ = 'hmmer.txt'
-__CHECKM_DEFAULT_HMMER_OUT__ = 'hmmer.hmmer3'
-__CHECKM_DEFAULT_HMMER_ALIGN_OUT__ = 'hmmer.align'
+SEQ_CONCAT_CHAR = '|'
 
-__CHECKM_DEFAULT_PRODIGAL_AA__ = 'prodigal.faa'
-__CHECKM_DEFAULT_PRODIGAL_NT__ = 'prodigal.fna'
-__CHECKM_DEFAULT_PRODIGAL_GFF__ = 'prodigal.gff'
+HMMER_TABLE_PHYLO_OUT = 'hmmer.tree.txt'
+HMMER_PHYLO_OUT = 'hmmer.tree.hmmer3'
 
-__CHECKM_DEFAULT_BIN_STATS_FILE__ = 'bin_stats.tsv'
-__CHECKM_DEFAULT_BIN_STATS_EXT_FILE__ = 'bin_stats_ext.tsv'
-__CHECKM_DEFAULT_SEQ_STATS_FILE__ = 'seq_stats.tsv'
-__CHECKM_DEFAULT_MARKER_GENE_STATS__ = 'marker_gene_stats.tsv'
+HMMER_TABLE_OUT = 'hmmer.analyze.txt'
+HMMER_OUT = 'hmmer.analyze.hmmer3'
 
-__CHECKM_DEFAULT_CONTIG_BREAK__ = 'NNNNNNNNNN'
+PRODIGAL_AA = 'prodigal.faa'
+PRODIGAL_NT = 'prodigal.fna'
+PRODIGAL_GFF = 'prodigal.gff'
 
-__CHECKM_DEFAULT_UNBINNED__ = 'unbinned'
+BIN_STATS_PHYLO_OUT = 'bin_stats.tree.tsv'
+SEQ_STATS_PHYLO_OUT = 'seq_stats.tree.tsv'
 
-__CHECKM_DEFAULT_MIN_SEQ_LEN_GC_STD__ = 1000
+BIN_STATS_OUT = 'bin_stats.analyze.tsv'
+SEQ_STATS_OUT = 'seq_stats.analyze.tsv'
+
+BIN_STATS_EXT_OUT = 'bin_stats_ext.tsv'
+MARKER_GENE_STATS = 'marker_gene_stats.tsv'
+
+CONTIG_BREAK = 'NNNNNNNNNN'
+
+UNBINNED = 'unbinned'
+
+MIN_SEQ_LEN_GC_STD = 1000

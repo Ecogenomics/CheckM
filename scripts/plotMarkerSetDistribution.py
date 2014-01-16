@@ -40,38 +40,38 @@ from lib.plots.heatmap import Heatmap
 class PlotMarkerSetDistribution(object):
     def __init__(self):
         pass
-    
+
     def run(self, taxonomyStr, ubiquityThreshold, singleCopyThreshold, numBins, numRndGenomes):
         img = IMG()
         markerSet = MarkerSet()
-        
+
         metadata = img.genomeMetadata()
         lineageGenomeIds = img.genomeIdsByTaxonomy(taxonomyStr, metadata)
-        
+
         # build marker set from finished prokaryotic genomes
         genomeIds = []
         for genomeId in lineageGenomeIds:
             if metadata[genomeId]['status'] == 'Finished' and (metadata[genomeId]['taxonomy'][0] == 'Bacteria' or metadata[genomeId]['taxonomy'][0] == 'Archaea'):
                 genomeIds.append(genomeId)
         genomeIds = set(genomeIds) - img.genomesWithMissingData(genomeIds)
-        
+
         print 'Lineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.'
-                        
-        # get marker set      
+
+        # get marker set
         countTable = img.countTable(genomeIds)
         countTable = img.filterTable(genomeIds, countTable, 0.9*ubiquityThreshold, 0.9*singleCopyThreshold)
         markerGenes = markerSet.markerGenes(genomeIds, countTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
         tigrToRemove = img.identifyRedundantTIGRFAMs(markerGenes)
         markerGenes = markerGenes - tigrToRemove
         geneDistTable = img.geneDistTable(genomeIds, markerGenes)
-        
+
         print 'Number of marker genes: ' + str(len(markerGenes))
-        
+
         # randomly set genomes to plot
         if numRndGenomes != -1:
             genomeIds = random.sample(list(genomeIds), numRndGenomes)
-        genomeIds = set(genomeIds)   
-        
+        genomeIds = set(genomeIds)
+
         # plot distribution of marker genes
         filename = 'geneDistribution.' + taxonomyStr.replace(';','_') + '.' + str(ubiquityThreshold) + '-' + str(singleCopyThreshold) + '.tsv'
         fout = open(filename, 'w')
@@ -80,7 +80,7 @@ class PlotMarkerSetDistribution(object):
         rowLabels = []
         for genomeId in genomeIds:
             binSize = float(metadata[genomeId]['genome size']) / numBins
-            
+
             binCounts = [0]*numBins
             pts = []
             for _, data in geneDistTable[genomeId].iteritems():
@@ -89,35 +89,34 @@ class PlotMarkerSetDistribution(object):
                     binCounts[binNum] += 1
                     pts.append(genePos[1])
             matrix.append(binCounts)
-            
+
             u = markerSet.uniformity(metadata[genomeId]['genome size'], pts)
-            
+
             fout.write(genomeId + '\t' + '; '.join(metadata[genomeId]['taxonomy']) + '\t' + str(len(geneDistTable[genomeId])) + '\t%.3f' % u)
             for b in xrange(0, numBins):
                 fout.write('\t' + str(binCounts[b]))
             fout.write('\n')
-            
+
             rowLabels.append('%.2f' % u + ', ' + str(genomeId) + ' - ' + '; '.join(metadata[genomeId]['taxonomy'][0:5]))
-            
+
         fout.close()
-        
+
         # plot data
         heatmap = Heatmap()
         plotFilename = 'geneDistribution.' + taxonomyStr.replace(';','_') + '.' + str(ubiquityThreshold) + '-' + str(singleCopyThreshold) + '.png'
         heatmap.plot(plotFilename, matrix, rowLabels, 0.6)
-    
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Calculate size of marker set.",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    
+
     parser.add_argument('-T', '--taxonomy', help='IMG taxonomy string indicating lineage of interest', default = 'universal')
     parser.add_argument('-u', '--ubiquity', help='Ubiquity threshold for defining marker set', type=float, default = 0.97)
     parser.add_argument('-s', '--single_copy', help='Single-copy threshold for defining marker set', type=float, default = 0.97)
     parser.add_argument('-b', '--bins', help='Number of bins to divide genome into', type=int, default = 100)
     parser.add_argument('-n', '--num_genomes', help='Number of genomes in lineage to plot (-1 for all)', type=int, default = -1)
-    
+
     args = parser.parse_args()
-    
+
     plotMarkerSetDistribution = PlotMarkerSetDistribution()
     plotMarkerSetDistribution.run(args.taxonomy, args.ubiquity, args.single_copy, args.bins, args.num_genomes)
-
