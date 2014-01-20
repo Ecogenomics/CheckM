@@ -21,6 +21,8 @@
 #                                                                             #
 ###############################################################################
 
+__prog_desc__ = "identify genes suitable for phylogenetic inference"
+
 __author__ = 'Donovan Parks'
 __copyright__ = 'Copyright 2013'
 __credits__ = ['Donovan Parks']
@@ -109,7 +111,7 @@ class PhylogeneticInferenceGenes(object):
             
         return genesInGenomes
     
-    def __fetchMarkerModels(self, universalMarkerGenes):
+    def __fetchMarkerModels(self, universalMarkerGenes, outputModelDir):
         print ''
         print 'Grabbing HMMs for universal marker genes.'
         markerIdToName = {}
@@ -124,9 +126,9 @@ class PhylogeneticInferenceGenes(object):
 
         for markerId in universalMarkerGenes:
             if 'pfam' in markerId:
-                os.system('hmmfetch -o ./data/phylo_hmms/' + markerId.replace('pfam', 'PF') + '.hmm /srv/whitlam/bio/db/pfam/27/Pfam-A.hmm ' + markerIdToName[markerId] + ' &> /dev/null')
+                os.system('hmmfetch -o ' + os.path.join(outputModelDir, markerId.replace('pfam', 'PF') + '.hmm') + ' /srv/whitlam/bio/db/pfam/27/Pfam-A.hmm ' + markerIdToName[markerId] + ' &> /dev/null')
             else:
-                os.system('hmmfetch -o ./data/phylo_hmms/' + markerId + '.hmm /srv/whitlam/bio/db/tigrfam/13.0/' + markerId + '.HMM ' + markerId + ' &> /dev/null')
+                os.system('hmmfetch -o ' + os.path.join(outputModelDir, markerId + '.hmm') + ' /srv/whitlam/bio/db/tigrfam/13.0/' + markerId + '.HMM ' + markerId + ' &> /dev/null')
                 
     def __alignMarkers(self, allTrustedGenomeIds, universalMarkerGenes, genesInGenomes, numThreads, outputDir):
         """Perform multithreaded alignment of marker genes using HMM align."""
@@ -165,8 +167,6 @@ class PhylogeneticInferenceGenes(object):
             if markerId == None:
                 break 
             
-            print markerId
-            
             modelName = markerId
             if modelName.startswith('pfam'):
                 modelName = modelName.replace('pfam', 'PF')
@@ -177,7 +177,7 @@ class PhylogeneticInferenceGenes(object):
                 seqs = readFasta(IMG.genomeDir + '/' + genomeId + '/' + genomeId + '.genes.faa')
 
                 for geneId in genesInGenomes[genomeId].get(markerId, []):
-                    fout.write('>' + genomeId + '_' + geneId + '\n')
+                    fout.write('>' + genomeId + '|' + geneId + '\n')
                     fout.write(seqs[geneId] + '\n')
             fout.close()
             
@@ -226,37 +226,39 @@ class PhylogeneticInferenceGenes(object):
             fout.write(maskedSeq + '\n')
         fout.close()
 
-    def run(self, phyloUbiquityThreshold, phyloSingleCopyThreshold, numThreads, outputDir):
+    def run(self, phyloUbiquityThreshold, phyloSingleCopyThreshold, numThreads, outputGeneDir, outputModelDir):
         # make sure output directory is empty
-        if not os.path.exists(outputDir):
-            os.makedirs(outputDir)
+        if not os.path.exists(outputGeneDir):
+            os.makedirs(outputGeneDir)
 
-        files = os.listdir(outputDir)
+        files = os.listdir(outputGeneDir)
         for f in files:
-            os.remove(os.path.join(outputDir, f))
+            os.remove(os.path.join(outputGeneDir, f))
 
         # get universal marker genes
         allTrustedGenomeIds, universalMarkerGenes = self.__getUniversalMarkerGenes(phyloUbiquityThreshold, phyloSingleCopyThreshold)
-
+        
         # get mapping of marker ids to gene ids for each genome
         genesInGenomes = self.__genesInGenomes(allTrustedGenomeIds)
 
         # get HMM for each universal marker gene
-        self.__fetchMarkerModels(universalMarkerGenes)
+        self.__fetchMarkerModels(universalMarkerGenes, outputModelDir)
 
         # align gene sequences and infer gene trees
-        self.__alignMarkers(allTrustedGenomeIds, universalMarkerGenes, genesInGenomes, numThreads, outputDir)
+        self.__alignMarkers(allTrustedGenomeIds, universalMarkerGenes, genesInGenomes, numThreads, outputGeneDir)
         
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Identify genes suitable for phylogenetic inference.",
-                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
+    print 'PhylogeneticInferenceGenes v' + __version__ + ': ' + __prog_desc__
+    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-x', '--phylo_ubiquity', help='ubiquity threshold for defining phylogenetic marker genes', type=float, default = 0.90)
     parser.add_argument('-y', '--phylo_single_copy', help='single-copy threshold for defining phylogenetic marker genes', type=float, default = 0.90)
     parser.add_argument('-t', '--threads', help='number of threads', type = int, default = 16)
-    parser.add_argument('-o', '--output_dir', help='output directory for alignments', default = './data/gene_alignments/')
+    parser.add_argument('-o', '--output_gene_dir', help='output directory for gene alignments', default = './data/gene_alignments/')
+    parser.add_argument('-m', '--output_model_dir', help='output directory for HMMs', default = './data/phylo_hmms/')
 
     args = parser.parse_args()
 
     phylogeneticInferenceGenes = PhylogeneticInferenceGenes()
-    phylogeneticInferenceGenes.run(args.phylo_ubiquity, args.phylo_single_copy, args.threads, args.output_dir)
+    phylogeneticInferenceGenes.run(args.phylo_ubiquity, args.phylo_single_copy, args.threads, args.output_gene_dir, args.output_model_dir)

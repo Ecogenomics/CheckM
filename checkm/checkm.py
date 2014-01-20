@@ -117,7 +117,9 @@ class OptionsParser():
         pplacer.run(binFiles, options.out_folder)
         
         # determine taxonomy of each bin
-        binTaxonomy = pplacer.getBinTaxonomy(binFiles, options.out_folder)
+        binIdToTaxonomy = pplacer.getBinTaxonomy(binFiles, options.out_folder)
+        for binId in sorted(binIdToTaxonomy.keys()):
+            print binId, binIdToTaxonomy[binId]
         
         self.timeKeeper.printTimeStamp()
         

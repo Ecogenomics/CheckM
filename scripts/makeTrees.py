@@ -42,7 +42,7 @@ class MakeTrees(object):
         treeList = open(outputDir + '/treeList.txt', 'w')
         files = os.listdir(alignDir)
         for f in files:
-            if f.endswith(extension):
+            if f.endswith(extension):                
                 # replace any '*' amino acids with an 'X' as many downstream programs do not like asterisk
                 fin = open(os.path.join(alignDir, f))
                 data = fin.readlines()

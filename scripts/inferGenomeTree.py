@@ -76,7 +76,7 @@ class InferGenomeTree(object):
         # determine genome id and gene id of each sequences
         genomeIdGeneId = []
         for seqId in seqs.keys():
-            genomeId, geneId = seqId.split('_')
+            genomeId, geneId = seqId.split('|')
             genomeIdGeneId.append([genomeId, geneId])
 
         # retain only best hit for paralogous genes
@@ -103,9 +103,6 @@ class InferGenomeTree(object):
 
         return filteredSeqs
     
-
-            
-    
     def __taxonomy(self, img, genomeIds, outputTaxonomy):
         metadata = img.genomeMetadata()
         
@@ -118,8 +115,9 @@ class InferGenomeTree(object):
         
         fout.close()
 
-    def run(self, geneTreeDir, alignmentDir, extension, outputTree, outputTaxonomy):
+    def run(self, geneTreeDir, alignmentDir, extension, outputAlignFile, outputTree, outputTaxonomy):
         # read gene trees
+        print 'Reading gene trees.'
         geneIds = set()
         files = os.listdir(geneTreeDir)
         for f in files:
@@ -128,10 +126,12 @@ class InferGenomeTree(object):
                 geneIds.add(geneId)
                 
         # write out genome tree taxonomy
+        print 'Reading trusted genomes.'
         img = IMG()
         genomeIds = img.genomeIds(img.genomeMetadata(), 'Trusted')
         self.__taxonomy(img, genomeIds, outputTaxonomy)
-        sys.exit()
+        
+        print '  There are %d trusted genomes.' % (len(genomeIds))
     
         # get genes in genomes
         print 'Reading all PFAM and TIGRFAM hits in trusted genomes.'
@@ -145,7 +145,6 @@ class InferGenomeTree(object):
         for f in files:
             geneId = f[0:f.find('.')]
             if f.endswith(extension) and geneId in geneIds:
-                print '  ' + f
                 seqs = readFasta(os.path.join(alignmentDir, f))
                 
                 imgGeneId = geneId
@@ -157,8 +156,7 @@ class InferGenomeTree(object):
                 alignments[geneId] = seqs
 
         # create concatenated alignment
-        print ''
-        print 'Concatenating alignments.'
+        print 'Concatenating alignments:'
         concatenatedSeqs = {}
         totalAlignLen = 0
         for geneId in sorted(alignments.keys()):
@@ -176,19 +174,13 @@ class InferGenomeTree(object):
                     
         print '  Total alignment length: ' + str(totalAlignLen)
         
-                # save concatenated alignment
-        concatenatedAlignFile = os.path.join('data', 'genome_tree.concatenated.faa')
-        writeFasta(concatenatedSeqs, concatenatedAlignFile)
-        
-        # dereplicate identical sequences
-        derepConcatenatedAlignFile = os.path.join('data', 'genome_tree.concatenated.derep.faa')
-        derepSeqFile = os.path.join('data', 'genome_tree.concatenated.derep.tsv')
-        os.system('seqmagick convert --deduplicate-sequences --deduplicated-sequences-file ' + derepSeqFile + ' ' + concatenatedAlignFile + ' ' + derepConcatenatedAlignFile)
+        # save concatenated alignment
+        writeFasta(concatenatedSeqs, outputAlignFile)
 
         # infer genome tree
         print 'Inferring genome tree.'
         outputLog = outputTree[0:outputTree.rfind('.')] + '.log'
-        cmd = 'FastTreeMP -wag -gamma -log ' + outputLog + ' ' + derepConcatenatedAlignFile + ' > ' + outputTree
+        cmd = 'FastTreeMP -wag -gamma -log ' + outputLog + ' ' + outputAlignFile + ' > ' + outputTree
         os.system(cmd)
 
 if __name__ == '__main__':
@@ -198,11 +190,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('gene_tree_dir', help='directory containing gene trees to use for phylogenetic inference')
     parser.add_argument('alignment_dir', help='directory containing multiple sequence alignments for gene trees')
-    parser.add_argument('-x', '--extension', help='extension of alignment files to process', default = '.aln.masked.faa')
+    parser.add_argument('output_align', help='output concatenated alignment')
     parser.add_argument('output_tree', help='output genome tree')
     parser.add_argument('output_taxonomy', help='output genome tree taxonomy')
+    parser.add_argument('-x', '--extension', help='extension of alignment files to process', default = '.aln.masked.faa')
 
     args = parser.parse_args()
 
     inferGenomeTree = InferGenomeTree()
-    inferGenomeTree.run(args.gene_tree_dir, args.alignment_dir, args.extension, args.output_tree, args.output_taxonomy)
+    inferGenomeTree.run(args.gene_tree_dir, args.alignment_dir, args.extension, args.output_align, args.output_tree, args.output_taxonomy)

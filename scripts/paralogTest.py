@@ -31,19 +31,38 @@ __status__ = 'Development'
 import os
 import argparse
 from collections import defaultdict
-import time
-import random
 
 from checkm.lib.img import IMG
-from Bio import Phylo
-
-import numpy as np
+import dendropy
 
 from rerootTree import RerootTree
 
 class ParalogTest(object):
     def __init__(self):
         pass
+    
+    def __patristicDist(self, tree, taxa1, taxa2):
+        mrca = tree.mrca(taxon_labels=[taxa1.taxon.label, taxa2.taxon.label])
+        
+        if mrca.parent_node == None:
+            # MRCA is the root of the tree
+            return taxa1.distance_from_root() + taxa2.distance_from_root()
+        else:
+        
+            dist = taxa1.edge_length
+            parentNode = taxa1.parent_node
+            while parentNode != mrca:                  
+                dist += parentNode.edge_length    
+                parentNode = parentNode.parent_node
+    
+                
+            dist += taxa2.edge_length
+            parentNode = taxa2.parent_node
+            while parentNode != mrca:                  
+                dist += parentNode.edge_length
+                parentNode = parentNode.parent_node
+                
+            return dist
 
     def run(self, geneTreeDir, acceptPer, extension, outputDir):
         # make sure output directory is empty
@@ -68,55 +87,55 @@ class ParalogTest(object):
             geneId = f[0:f.find('.')]
             print '  Testing gene tree: ' + geneId
 
-            tree = Phylo.read(os.path.join(geneTreeDir, f), 'newick')
+            tree = dendropy.Tree.get_from_path(os.path.join(geneTreeDir, f), schema='newick', as_rooted=False, preserve_underscores=True)
 
-            taxa = tree.root.get_terminals()
+            taxa = tree.leaf_nodes()
             numTaxa = len(taxa)
             print '  Genes in tree: ' + str(numTaxa)
 
             # root tree with archaeal genomes
             rerootTree = RerootTree()
             rerootTree.reroot(tree)
-
+            
             # get species name of each taxa
             leafNodeToSpeciesName = {}
             for t in taxa:
-                genomeId = t.name.split('_')[0]
+                genomeId = t.taxon.label.split('|')[0]
                 genus = metadata[genomeId]['taxonomy'][5]
                 sp = metadata[genomeId]['taxonomy'][6].lower()
 
-                leafNodeToSpeciesName[t.name] = genus + ' ' + sp
-
+                leafNodeToSpeciesName[t.taxon.label] = genus + ' ' + sp
+                
             # find all paralogous genes
             print '  Finding paralogous genes.'
 
             paralogs = defaultdict(set)
             for i in xrange(0, len(taxa)):
-                genomeId = taxa[i].name.split('_')[0]
+                genomeId = taxa[i].taxon.label.split('|')[0]
                 for j in xrange(i+1, len(taxa)):
-                    # genes from the same genome paralogs, but we filter out
+                    # genes from the same genome are paralogs, but we filter out
                     # those that are identical (distance of 0 on the tree) to
                     # speed up computation and because these clearly do not
                     # adversely effect phylogenetic inference
-                    if genomeId == taxa[j].name.split('_')[0] and tree.distance(taxa[i], taxa[j]) > 0:
-                        paralogs[genomeId].add(taxa[i])
-                        paralogs[genomeId].add(taxa[j])
-
+                    if genomeId == taxa[j].taxon.label.split('|')[0] and self.__patristicDist(tree, taxa[i], taxa[j]) > 0:
+                        paralogs[genomeId].add(taxa[i].taxon.label)
+                        paralogs[genomeId].add(taxa[j].taxon.label)
+                        
             print '    Paralogous genes: ' + str(len(paralogs))
 
             # check if paralogous genes are conspecific
             print '  Determining if paralogous genes are conspecific.'
             nonConspecificGenomes = []
-            for genomeId, taxa in paralogs.iteritems():
-                lcaNode = tree.common_ancestor(taxa)
+            for genomeId, taxaLabels in paralogs.iteritems():
+                lcaNode = tree.mrca(taxon_labels = taxaLabels)
 
-                children = lcaNode.get_terminals()
+                children = lcaNode.leaf_nodes()
                 species = set()
                 for child in children:
-                    genomeId = child.name.split('_')[0]
+                    childGenomeId = child.taxon.label.split('|')[0]
 
-                    genus = metadata[genomeId]['taxonomy'][5]
-                    sp = metadata[genomeId]['taxonomy'][6].lower()
+                    genus = metadata[childGenomeId]['taxonomy'][5]
+                    sp = metadata[childGenomeId]['taxonomy'][6].lower()
                     if sp != '' and sp != 'unclassified':
                         species.add(genus + ' ' + sp)
 

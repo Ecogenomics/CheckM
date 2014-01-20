@@ -84,14 +84,34 @@ class PplacerRunner():
         
         # read genome tree
         treeFile = os.path.join(alignOutputDir, self.TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True)
+        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
         
         # find first parent of each bin with a taxonomic label
+        binIdToTaxonomy = {}
         for node in tree.leaf_nodes():
-            if node.label in binIds:
-                print node.label
+            if node.taxon.label in binIds:
+                # find first node decorated with a taxon string between leaf and root
+                taxaStr = None
+                parentNode = node.parent_node
+                while parentNode != None:                  
+                    if parentNode.label and 'bs|' in parentNode.label:
+                        tokens = parentNode.label.split('|')
+                        
+                        if taxaStr:
+                            taxaStr = tokens[2] + ';' + taxaStr
+                        else:
+                            taxaStr = tokens[2]
+                    
+                    parentNode = parentNode.parent_node
+                    if parentNode == None:
+                        break
                 
-        
+                if not taxaStr:
+                    taxaStr = 'k__unclassified'
+                binIdToTaxonomy[node.taxon.label] = taxaStr
+                
+        return binIdToTaxonomy
+
     def __createConcatenatedAlignment(self, binFiles, alignOutputDir):
         """Create a concatenated alignment of marker genes for each bin."""
         

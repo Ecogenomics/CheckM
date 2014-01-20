@@ -77,12 +77,7 @@ class HMMERRunner():
         os.system('hmmfetch %s %s > %s' % (db, key, fetchFileName))
 
     def checkForHMMER(self):
-        """Check to see if HMMER is on the system before we try fancy things
-    
-        We assume that a successful hmmsearch -h returns 0 and anything
-        else returns something non-zero
-        """
-        # redirect stdout so we don't get mess!
+        """Check to see if HMMER is on the system path."""
         try:
             exit_status = os.system('hmmsearch -h > /dev/null')
         except:

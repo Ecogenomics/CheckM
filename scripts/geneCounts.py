@@ -33,7 +33,7 @@ import sys
 import argparse
 
 from checkm.lib.img import IMG
-import dendropy
+from Bio import Phylo
 
 class ConsistencyTest(object):
     def __init__(self):
@@ -42,9 +42,9 @@ class ConsistencyTest(object):
     def __genomeId(self, taxaLabel):
         if taxaLabel.startswith('IMG_'):
             genomeId = taxaLabel[4:]
-        elif '|' in taxaLabel:
+        elif '_' in taxaLabel:
             # assume taxa are labeled with the format: genomeId_geneId
-            genomeId = taxaLabel.split('|')[0]
+            genomeId = taxaLabel.split('_')[0]
         else:
             genomeId = taxaLabel
 
@@ -102,7 +102,7 @@ class ConsistencyTest(object):
                 continue
 
             print treeFile
-            tree = dendropy.Tree.get_from_path(os.path.join(geneTreeDir, treeFile), schema='newick', as_rooted=True, preserve_underscores=True)
+            tree = Phylo.read(os.path.join(geneTreeDir, treeFile), 'newick')
 
             domainConsistency = {}
             phylaConsistency = {}
@@ -111,12 +111,12 @@ class ConsistencyTest(object):
 
             # get abundance of taxa at different taxonomic ranks
             totals = [{}, {}, {}]
-            leaves = tree.leaf_nodes()
+            leaves = tree.root.get_terminals()
             print '  Number of leaves: ' + str(len(leaves))
             totalValidLeaves = 0
 
             for leaf in leaves:
-                genomeId = self.__genomeId(leaf.taxon.label)
+                genomeId = self.__genomeId(leaf.name)
 
                 if genomeId not in metadata:
                     print '[Error] Genome is missing metadata: ' + genomeId
@@ -132,14 +132,14 @@ class ConsistencyTest(object):
             taxaCounts[treeFile] = [totalValidLeaves, totals[0].get('Bacteria', 0), totals[0].get('Archaea', 0)]
 
             # find highest consistency nodes (congruent descendant taxa / (total taxa + incongruent descendant taxa))
-            internalNodes = tree.internal_nodes()
+            internalNodes = tree.get_nonterminals()
             for node in internalNodes:
-                leaves = node.leaf_nodes()
+                leaves = node.get_terminals()
 
                 for r in xrange(0, 3):
                     leafCounts = {}
                     for leaf in leaves:
-                        genomeId = self.__genomeId(leaf.taxon.label)
+                        genomeId = self.__genomeId(leaf.name)
                         taxonomy = genomeIdToTaxonomy[genomeId]
                         leafCounts[taxonomy[r]] = leafCounts.get(taxonomy[r], 0) + 1
 
@@ -225,7 +225,10 @@ class ConsistencyTest(object):
 
             if avgCon > consistencyThreshold:
                 retainedGeneTrees += 1
-                os.system('cp ' + os.path.join(geneTreeDir, treeFile) + ' ' + os.path.join(outputDir, treeFile))
+                os.system('cp ' + os.path.join(geneTreeDir, treeFile) + os.path.join(outputDir, treeFile))
+
+                alignFile = treeFile.replace('.tre', '.faa')
+                os.system('cp ' + os.path.join(geneTreeDir, alignFile) + os.path.join(outputDir, alignFile))
             else:
                 filteredGeneTrees += 1
 
@@ -254,7 +257,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('gene_tree_dir', help='directory containing gene trees to test')
     parser.add_argument('output_file', help='output file')
-    parser.add_argument('-c', '--consistency_threshold', help='required average consistency to retain tree', type=float, default = 0.86)
+    parser.add_argument('-c', '--consistency_threshold', help='required average consistency to retain tree', type=float, default = 0.8)
     parser.add_argument('-t', '--min_taxa', help='minimum taxa in clade required to evaluate consistency', type=int, default = 20)
     parser.add_argument('-x', '--extension', help='extension of tree files to process', default = '.tre')
     parser.add_argument('-o', '--output_dir', help='output directory for retained gene trees', default = './data/gene_trees_final/')
