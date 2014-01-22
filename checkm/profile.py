@@ -74,7 +74,7 @@ class Profile():
                 perMR = float(readsMappedToBin[binId][bamId]) / totalMappedReads[bamId]
                 perMappedReads[binId][bamId] = perMR
                 
-                if binId == defaultValues.__CHECKM_DEFAULT_UNBINNED__:
+                if binId == defaultValues.UNBINNED:
                     continue
                                 
                 normCoverage = perMR / binSize[binId]
@@ -107,12 +107,12 @@ class Profile():
                 rowStr += '\t' + str(readsMappedToBin[binId][bamId])
                 rowStr += '\t' + str(perMappedReads[binId][bamId]*100.0)
                  
-                if defaultValues.__CHECKM_DEFAULT_UNBINNED__ in perMappedReads:
-                    unbinnedPercentage = perMappedReads[defaultValues.__CHECKM_DEFAULT_UNBINNED__][bamId]
+                if defaultValues.UNBINNED in perMappedReads:
+                    unbinnedPercentage = perMappedReads[defaultValues.UNBINNED][bamId]
                 else:
                     unbinnedPercentage = 0
                     
-                if binId == defaultValues.__CHECKM_DEFAULT_UNBINNED__:
+                if binId == defaultValues.UNBINNED:
                     rowStr += '\t' + 'NA' 
                     rowStr += '\t' + str(unbinnedPercentage*100.0)
                 else:

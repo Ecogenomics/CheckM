@@ -252,9 +252,7 @@ class ResultsParser():
             coverage = Coverage(1)
             coverageProfile = coverage.parseCoverage(coverageFile)
             coverageBinProfiles = coverage.binProfiles(coverageProfile)
-        
-        print('')
-        
+                
         prettyTableFormats = [1, 2]      
           
         header = self.__getHeader(outputFormat, coverageBinProfiles) 
@@ -701,4 +699,4 @@ class ResultsManager():
                 else:
                     print()
         else:
-            print("Unknown output format: ", outputFormat)
+            self.logger.error("Unknown output format: %d", outputFormat)

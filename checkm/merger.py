@@ -33,7 +33,6 @@ class Merger():
     def run(self, binFiles, outDir, hmmTableFile, hmmModelFile, minDeltaComp, maxDeltaCont, minMergedComp, maxMergedCont):   
         checkDirExists(outDir)
         
-        self.logger.info('')
         self.logger.info('  Comparing marker sets between all pairs of bins.')
             
         resultsParser = ResultsParser()

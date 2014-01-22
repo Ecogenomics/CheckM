@@ -83,6 +83,7 @@ def printHelp():
     coverage    -> Calculate coverage of sequences
     tetra       -> Calculate tetranucleotide signature of sequences
     profile     -> Calculate percentage of reads mapped to each bin
+    join_tables -> Join tab-separated value tables containing bin information
     ssu_finder  -> Identify SSU (16S/18S) rRNAs in sequences
     bin_compare -> Compare two sets of bins (e.g., from alternative binning methods)
 
@@ -123,9 +124,16 @@ if __name__ == '__main__':
     # do QA on phylogenetic marker genes
     tree_qa_parser = subparsers.add_parser('tree_qa',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        parents=[output_parser],
                                         description='''Assess phylogenetic markers found in each bin.''')
     tree_qa_parser.add_argument('out_folder', help="folder specified during tree command")
+    tree_qa_parser.add_argument('-o', '--output-format', dest='out_format',
+                                    type=int,
+                                    help='''change the output format to one of the following:
+                                        1. brief summary of genome tree placement
+                                        2. genome tree in Newick format decorated with IMG genome ids
+                                        3. genome tree in Newick format decorated with taxonomy strings''', 
+                                    default=1, choices=[1, 2, 3])
+    tree_qa_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     tree_qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print a strictly tab-separated values table")
     tree_qa_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
@@ -360,8 +368,8 @@ if __name__ == '__main__':
                                             description='Calculate coverage of sequences.')
     
     coverage_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    coverage_parser.add_argument('bam_files', nargs='+', help="BAM files to parse")
     coverage_parser.add_argument('output_file', help="print results to file")
+    coverage_parser.add_argument('bam_files', nargs='+', help="BAM files to parse")
     coverage_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
     coverage_parser.add_argument('-r', '--all_reads', action='store_true', help="use all reads to estimate coverage instead of just those in proper pairs")
     coverage_parser.add_argument('-a', '--min_align', help='minimum alignment length as percentage of read length', type=float, default = 0.98)
@@ -386,6 +394,14 @@ if __name__ == '__main__':
     profile_parser.add_argument('coverage_file', help="file indicating coverage of each sequence (see coverage command)")
     profile_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     profile_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Join tab-separated values file
+    join_parser = subparsers.add_parser('join_tables',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            description='Join tab-separated value tables containing bin information.')
+    join_parser.add_argument('tables', nargs='+', help="tab-separated table files with bin ids as their primary key")
+    join_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
+    join_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Find SSU rRNAs in sequences
     ssu_finder_parser = subparsers.add_parser('ssu_finder',

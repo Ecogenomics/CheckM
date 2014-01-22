@@ -22,6 +22,7 @@
 import os
 import sys
 import logging
+from collections import defaultdict
 
 import numpy as np
 
@@ -44,7 +45,7 @@ from profile import Profile
 from binTools import BinTools
 from ssuFinder import SSU_Finder
 from PCA import PCA
-from common import makeSurePathExists, checkFileExists, binIdFromFilename
+from common import makeSurePathExists, checkFileExists, binIdFromFilename, reassignStdOut, restoreStdOut
 
 from plot.gcPlots import GcPlots
 from plot.codingDensityPlots import CodingDensityPlots
@@ -115,12 +116,7 @@ class OptionsParser():
         self.logger.info('')
         pplacer = PplacerRunner(options.threads)
         pplacer.run(binFiles, options.out_folder)
-        
-        # determine taxonomy of each bin
-        binIdToTaxonomy = pplacer.getBinTaxonomy(binFiles, options.out_folder)
-        for binId in sorted(binIdToTaxonomy.keys()):
-            print binId, binIdToTaxonomy[binId]
-        
+                
         self.timeKeeper.printTimeStamp()
         
     def treeQA(self, options):
@@ -131,17 +127,22 @@ class OptionsParser():
         self.logger.info('*******************************************************************************')
 
         makeSurePathExists(options.out_folder)
-
-        phyloHMMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'phylo.hmm')   
-
+        
+        # calculate marker gene statistics
+        phyloHMMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'phylo.hmm')
+        
         RP = ResultsParser()
         RP.analyseResults(options.out_folder, 
                           defaultValues.BIN_STATS_PHYLO_OUT, 
                           defaultValues.SEQ_STATS_PHYLO_OUT, 
                           defaultValues.HMMER_TABLE_PHYLO_OUT, 
                           phyloHMMs)
-        RP.printSummary(options.out_format, options.bTabTable, options.file)
-                
+        #RP.printSummary(options.out_format, options.bTabTable, options.file)
+ 
+        # determine taxonomy of each bin
+        pplacer = PplacerRunner(1)
+        pplacer.printSummary(options.out_format, options.out_folder, RP, options.bTabTable, options.file)
+         
         if options.file != '':
             print '  QA information written to: ' + options.file
             
@@ -702,6 +703,52 @@ class OptionsParser():
             
         self.timeKeeper.printTimeStamp()
         
+    def joinTables(self, options):
+        """Join tables command"""
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - join_tables] Join tables containing bin information.')
+        self.logger.info('*******************************************************************************')
+        
+        # read all tables
+        headers = {}
+        rows = defaultdict(dict)
+        binIds = set()
+        for f in options.tables:        
+            with open(f) as fin:
+                headers[f] = [x.strip() for x in fin.readline().split('\t')][1:]
+                
+                for line in fin:             
+                    lineSplit = [x.strip() for x in line.split('\t')]
+                    
+                    binId = lineSplit[0]
+                    binIds.add(binId)
+                    
+                    for i, header in enumerate(headers[f]):
+                        rows[binId][header] = lineSplit[i+1]
+                           
+        # write merge table  
+        oldStdOut = reassignStdOut(options.file)
+        
+        row = 'Bin Id'        
+        for f in options.tables:
+            row += '\t' + '\t'.join(headers[f])
+        print(row)
+              
+        for binId in binIds:
+            row = binId
+            for f in options.tables:
+                for header in headers[f]:     
+                    row += '\t' + rows[binId].get(header, '')
+            print(row)
+   
+        restoreStdOut(options.file, oldStdOut) 
+            
+        if options.file:    
+            self.logger.info('\n  Joined table written to: ' + options.file)
+               
+        self.timeKeeper.printTimeStamp()
+        
     def modify(self, options):
         """Modify command"""
         self.logger.info('')
@@ -848,6 +895,8 @@ class OptionsParser():
             self.merge(options)
         elif(options.subparser_name == 'outliers'):
             self.outliers(options)
+        elif(options.subparser_name == 'join_tables'):
+            self.joinTables(options)
         elif(options.subparser_name == 'modify'):
             self.modify(options)
         elif(options.subparser_name == 'unique'):
