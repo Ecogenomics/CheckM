@@ -612,12 +612,16 @@ class ResultsManager():
             data = self.calculateMarkers(verbose=True)
             print("--------------------")
             print(self.binId)
-            for marker,count in data.iteritems():
+            
+            markerHits = 0
+            for marker, count in data.iteritems():
                 print("%s\t%d" % (marker, count))
+                if count >= 1:
+                    markerHits += 1
 
-            print("TOTAL:\t%d / %d (%0.2f" % (len(self.markerHits),
+            print("Total: %d / %d (%0.2f" % (markerHits,
                                               len(self.models),
-                                              100*float(len(self.markerHits))/float(len(self.models))
+                                              100*float(markerHits)/float(len(self.models))
                                               )+"%)")
         elif outputFormat == 4:
             # matrix of bin vs marker counts

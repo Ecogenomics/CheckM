@@ -23,9 +23,12 @@ import os
 import sys
 import subprocess
 import logging
+import json
 from collections import defaultdict
 
 import dendropy
+from  dendropy.dataobject.taxon import Taxon
+
 import prettytable
 
 import defaultValues
@@ -77,16 +80,74 @@ class PplacerRunner():
             self.reportNewickTree(outDir, outFile, None)
         elif outputFormat == 3:
             self.reportNewickTree(outDir, outFile, 'taxonomy')
+        elif outputFormat == 4:
+            self.reportFullMSA(outDir, outFile)
         else:
             self.logger.error("Unknown output format: %d", outputFormat)
             
-    def reportNewickTree(self, outDir, outFile, leafLabels=None):
+    def reportFullMSA(self, outDir, outFile):
+        """Create MSA with all reference and bin alignments."""
+    
+        # write bin alignments to file
         oldStdOut = reassignStdOut(outFile)
+        for line in open(os.path.join(outDir, 'storage', 'tree', self.CONCAT_SEQ_OUT)):
+            print(line.rstrip()) 
         
-        treeFile = os.path.join(outDir, 'storage', 'tree', self.TREE_OUT)
+        # read duplicate seqs
+        duplicateNodes = self.__readDuplicateSeqs()
         
+        # write reference alignments to file
+        seqs = readFasta(os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.concatenated.derep.fasta'))
+        for seqId, seq in seqs.iteritems():
+            print('>' + seqId)
+            print(seq)
+                
+            if seqId in duplicateNodes:
+                for dupSeqId in duplicateNodes[seqId]:
+                    print('>' + dupSeqId)
+                    print(seq)
+                
+        restoreStdOut(outFile, oldStdOut)
+            
+    def readPlacementFile(self, placementFile):
+        '''Read pplacer JSON placement file.'''
+        jsonData = open(placementFile)
+        
+        data = json.load(jsonData)
+        binIdToPP = {}
+        for placementData in data['placements']:
+            binId = placementData['nm'][0][0]
+            
+            topPP = 0
+            for pp in placementData['p']:
+                if pp[2] > topPP:
+                    topPP = pp[2]
+                    
+            binIdToPP[binId] = topPP
+                 
+        jsonData.close()
+        
+        return binIdToPP
+            
+    def reportNewickTree(self, outDir, outFile, leafLabels=None): 
+        # read duplicate nodes
+        duplicateSeqs = self.__readDuplicateSeqs()
+                         
+        # read tree
+        treeFile = os.path.join(outDir, 'storage', 'tree', self.TREE_OUT)  
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
         
+        # insert duplicate nodes into tree
+        for leaf in tree.leaf_nodes():
+            duplicates = duplicateSeqs.get(leaf.taxon.label, None)
+            if duplicates != None:
+                newParent = leaf.parent_node.new_child(edge_length = leaf.edge_length)
+                curLeaf = leaf.parent_node.remove_child(leaf)
+                newParent.new_child(taxon = curLeaf.taxon, edge_length = 0)
+                for d in duplicates:
+                    newParent.new_child(taxon = Taxon(label = d), edge_length = 0)
+                
+        # append taxonomy to leaf nodes
         if leafLabels == 'taxonomy':
             # read taxonomy string for each IMG genome
             taxonomy = {}
@@ -100,8 +161,9 @@ class PplacerRunner():
                 if taxaStr:
                     leaf.taxon.label += '|' + taxaStr
 
+        # write out tree
+        oldStdOut = reassignStdOut(outFile)
         print(tree.as_string(schema='newick', suppress_rooting=True))
-        
         restoreStdOut(outFile, oldStdOut)   
         
     def getBinTaxonomy(self, outDir, binIds): 
@@ -123,13 +185,13 @@ class PplacerRunner():
                 taxaStr = None
                 parentNode = node.parent_node
                 while parentNode != None:                  
-                    if parentNode.label and 'bs|' in parentNode.label:
+                    if parentNode.label and '|' in parentNode.label:
                         tokens = parentNode.label.split('|')
                         
                         if taxaStr:
-                            taxaStr = tokens[2] + ';' + taxaStr
+                            taxaStr = tokens[0] + ';' + taxaStr
                         else:
-                            taxaStr = tokens[2]
+                            taxaStr = tokens[0]
                     
                     parentNode = parentNode.parent_node
                     if parentNode == None:
@@ -158,21 +220,25 @@ class PplacerRunner():
         # get taxonomy for each bin
         binIdToTaxonomy = self.getBinTaxonomy(outDir, binIds)
         
-        # write table
-        self.__printTable(binIdToTaxonomy, resultsParser, bTabTable, outFile)
+        # get weighted ML likelihood
+        pplacerJsonFile = os.path.join(outDir, 'storage', 'tree', 'concatenated.pplacer.json')
+        binIdToWeightedML = self.readPlacementFile(pplacerJsonFile)
         
-    def __printTable(self, binIdToTaxonomy, resultsParser, bTabTable, outFile):
+        # write table
+        self.__printTable(binIdToTaxonomy, binIdToWeightedML, resultsParser, bTabTable, outFile)
+        
+    def __printTable(self, binIdToTaxonomy, binIdToWeightedML, resultsParser, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
-        header = ['Bin Id', '# marker (of %d)' % len(resultsParser.models), 'Taxonomy']
+        header = ['Bin Id', '# marker (of %d)' % len(resultsParser.models), 'Taxonomy', 'Weighted ML']
         
         if bTabTable: 
             pTable = None
             print('\t'.join(header))
         else:
             pTable = prettytable.PrettyTable(header)
-            pTable.float_format = '.2'
+            pTable.float_format = '.3'
             pTable.align = 'c'
             pTable.align[header[0]] = 'l'
             pTable.align['Taxonomy'] = 'l'
@@ -180,7 +246,7 @@ class PplacerRunner():
             pTable.vrules = prettytable.NONE
 
         for binId in sorted(binIdToTaxonomy.keys()):
-            row = [binId, str(len(resultsParser.results[binId].markerHits)), binIdToTaxonomy[binId]]
+            row = [binId, str(len(resultsParser.results[binId].markerHits)), binIdToTaxonomy[binId], binIdToWeightedML[binId]]
             
             if bTabTable:
                 print('\t'.join(row))
@@ -192,10 +258,20 @@ class PplacerRunner():
             
         # restore stdout   
         restoreStdOut(outFile, oldStdOut)   
+        
+    def __readDuplicateSeqs(self):
+        """Parse file indicating duplicate sequence alignments."""
+        duplicateSeqs = {}
+        for line in open(os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree.derep.txt')):
+            lineSplit = line.rstrip().split()
+            if len(lineSplit) > 1:
+                duplicateSeqs[lineSplit[0]] = lineSplit[1:]
+                
+        return duplicateSeqs
 
     def __createConcatenatedAlignment(self, binFiles, alignOutputDir):
         """Create a concatenated alignment of marker genes for each bin."""
-        
+                
         # read alignment files
         self.logger.info('  Reading marker alignment files.')
         alignments = defaultdict(dict)
@@ -215,9 +291,12 @@ class PplacerRunner():
         # create concatenated alignment
         self.logger.info('  Concatenating alignments.')
         concatenatedSeqs = {}
+        t = 0
         for markerId in sorted(alignments.keys()):
             seqs = alignments[markerId]
             alignLen = len(seqs[seqs.keys()[0]])
+            
+            t += alignLen
 
             for binId in binIds:
                 if binId in seqs:

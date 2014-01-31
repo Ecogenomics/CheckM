@@ -29,7 +29,6 @@ __email__ = 'donovan.parks@gmail.com'
 __status__ = 'Development'
 
 import os
-import sys
 import argparse
 from collections import defaultdict
 
@@ -128,7 +127,7 @@ class InferGenomeTree(object):
         # write out genome tree taxonomy
         print 'Reading trusted genomes.'
         img = IMG()
-        genomeIds = img.genomeIds(img.genomeMetadata(), 'Trusted')
+        genomeIds = img.genomeIds(img.genomeMetadata(), 'trusted')
         self.__taxonomy(img, genomeIds, outputTaxonomy)
         
         print '  There are %d trusted genomes.' % (len(genomeIds))
@@ -180,7 +179,7 @@ class InferGenomeTree(object):
         # infer genome tree
         print 'Inferring genome tree.'
         outputLog = outputTree[0:outputTree.rfind('.')] + '.log'
-        cmd = 'FastTreeMP -wag -gamma -log ' + outputLog + ' ' + outputAlignFile + ' > ' + outputTree
+        cmd = 'FastTreeMP -nosupport -wag -gamma -log ' + outputLog + ' ' + outputAlignFile + ' > ' + outputTree
         os.system(cmd)
 
 if __name__ == '__main__':

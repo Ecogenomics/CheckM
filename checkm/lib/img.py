@@ -21,41 +21,50 @@
 
 import os
 import sys
+import ast
 import random
+import logging
+
+from taxonomyUtils import ranksByLabel
 
 class IMG(object):
-    metadataFile = '/srv/whitlam/bio/db/img/02122013/metadata/img_metadata.latest.tsv'
-    genomeDir = '/srv/whitlam/bio/db/img/02122013/genomes/'
+    metadataFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data','img', 'img_metadata.tsv')
+    trustedGenomeFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data','img', 'genomes_trusted.tsv')
+    geneCountFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data','img', 'geneCounts.txt') 
+    redundantTIGRFAMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data','pfam', 'tigrfam2pfam.tsv')
+    
+    genomeDir = '/srv/whitlam/bio/db/img/4.1/genomes/'
     pfamExtension = '.pfam.tab.txt'
     tigrExtension = '.tigrfam.tab.txt'
     pfamHMMs = '/srv/whitlam/bio/db/pfam/27/Pfam-A.hmm'
     tigrHMMs = '/srv/whitlam/bio/db/tigrfam/13.0/Tigr.hmm'
 
     def __init__(self):
+        self.logger = logging.getLogger()
+        
         self.numScaffoldThreshold = 300
         self.N50Threshold = 10000
-        pass
 
     def trustedGenomes(self):
         genomeIds = set()
-        with open('./data/genomes_trusted.tsv') as f:
+        with open(IMG.trustedGenomeFile) as f:
             f.readline()
             for line in f:
                 genomeIds.add(line.split('\t')[0])
 
         return genomeIds
 
-    def genomeIds(self, metadata, genomeFilter = 'All'):
+    def genomeIds(self, metadata, genomeFilter = 'all'):
         genomeIds = set()
 
-        if genomeFilter == 'All':
+        if genomeFilter == 'all':
             for genomeId, data in metadata.iteritems():
                 if data['Donovan Note'] == '':
                     genomeIds.add(genomeId)
-        elif genomeFilter == 'Trusted':
+        elif genomeFilter == 'trusted':
                 genomeIds = self.trustedGenomes()
         else:
-            print '[Error] Unrecognized filter flag: ' + genomeFilter
+            self.logger.error('Unrecognized filter flag: ' + genomeFilter)
             sys.exit()
 
         return genomeIds
@@ -195,7 +204,7 @@ class IMG(object):
 
         return missing
 
-    def genomeIdsByTaxonomy(self, taxonStr, metadata, genomeFilter = 'All'):
+    def genomeIdsByTaxonomy(self, taxonStr, metadata, genomeFilter = 'all'):
         genomeIds = self.genomeIds(metadata, genomeFilter)
 
         searchTaxa = taxonStr.split(';')
@@ -217,6 +226,17 @@ class IMG(object):
                 genomeIdsOfInterest.add(genomeId)
 
         return genomeIdsOfInterest
+    
+    def getGenomesByClade(self, rank, clade, metadata, genomeFilter = 'all'):
+        genomeIds = self.genomeIds(metadata, genomeFilter)
+
+        rankIndex = ranksByLabel[rank]
+        genomeIdsOfInterest = set()
+        for genomeId in genomeIds:
+            if metadata[genomeId]['taxonomy'][rankIndex] == clade:
+                genomeIdsOfInterest.add(genomeId)
+
+        return genomeIdsOfInterest
 
     def lineageStats(self):
         metadata = self.genomeMetadata()
@@ -224,7 +244,7 @@ class IMG(object):
         stats = {}
         for r in xrange(0, 6): # Domain to Genus
             for _, data in metadata.iteritems():
-                taxaStr = '; '.join(data['taxonomy'][0:r+1])
+                taxaStr = ';'.join(data['taxonomy'][0:r+1])
                 stats[taxaStr] = stats.get(taxaStr, 0) + 1
 
         return stats
@@ -235,7 +255,7 @@ class IMG(object):
             taxa = set()
             for _, data in metadata.iteritems():
                 if 'unclassified' not in data['taxonomy'][0:r+1]:
-                    taxa.add('; '.join(data['taxonomy'][0:r+1]))
+                    taxa.add(';'.join(data['taxonomy'][0:r+1]))
 
             lineages += sorted(list(taxa))
 
@@ -269,14 +289,28 @@ class IMG(object):
                     table[clusterId] = {}
                 table[clusterId][genomeId] = c
 
-    def countTable(self, genomeIds):
+    def geneCountTable(self, genomeIds):
         table = {}
         self.__readTable(table, genomeIds, self.pfamExtension, 8)
         self.__readTable(table, genomeIds, self.tigrExtension, 6)
 
         return table
+    
+    def readGeneCountTable(self, genomeIds):
+        # read entire gene count table
+        with open(self.geneCountFile, 'r') as f:
+            s = f.read()
+            geneCounts = ast.literal_eval(s)
+            
+        # filter to specified set of genomes
+        for _, genomeCounts in geneCounts.iteritems():
+            for genomeId in genomeCounts:
+                if genomeId not in genomeIds:
+                    genomeCounts.pop(genomeId)
 
-    def filterTable(self, genomeIds, table, ubiquityThreshold = 0.9, singleCopyThreshold = 0.9):
+        return geneCounts
+
+    def filterGeneCountTable(self, genomeIds, table, ubiquityThreshold = 0.9, singleCopyThreshold = 0.9):
         idsToFilter = []
         for pfamId, genomeCounts in table.iteritems():
             ubiquity = 0
@@ -416,7 +450,7 @@ class IMG(object):
 
     def identifyRedundantTIGRFAMs(self, markerGenes):
         tigrIdToPfamId = {}
-        for line in open('../data/tigrfam2pfam.tsv'):
+        for line in open(IMG.redundantTIGRFAMs):
             lineSplit = line.split('\t')
             pfamId = lineSplit[0]
             tigrId = lineSplit[1].rstrip()

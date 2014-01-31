@@ -19,39 +19,24 @@
 #                                                                             #
 ###############################################################################
 
-import os
-import sys
+import logging
 
 from lib.img import IMG
-
-from common import makeSurePathExists
 
 class MarkerSet():
     """Calculate and process marker sets."""
     def __init__(self):
-        pass
-    
-    def identifyLineageSpecificMarkers(self, treeFile, binFile):
-        """Calculate lineage-specific marker set for a given genome bin."""
+        self.logger = logging.getLogger()
         
-        # determine lineage suitable for calculating markers
-        genomeIds = []
-          
-        # build gene count table
-        img = IMG()
-        countTable = img.countTable(genomeIds)
-        countTable = img.filterTable(genomeIds, countTable, 0.9*ubiquityThreshold, 0.9*singleCopyThreshold)
+    def identifyTaxonomicSpecificMarkers(self, rank, clade, 
+                                            ubiquityThreshold, singleCopyThreshold,
+                                            outputFile):
+        """Calculate a taxonomic-specific marker sets."""
+        pass
 
-        # identify marker genes for genomes
-        markerGenes = markerset.markerGenes(genomeIds, countTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
-        tigrToRemove = img.identifyRedundantTIGRFAMs(markerGenes)
-        markerGenes = markerGenes - tigrToRemove
+    def identifyLineageSpecificMarkers(self, treeFile, binFile):
+        """Calculate lineage-specific marker set."""
+        pass
 
-        # identify marker sets
-        geneDistTable = img.geneDistTable(genomeIds, markerGenes)
-        colocatedGenes = markerset.colocatedGenes(geneDistTable)
-        colocatedSets = markerset.colocatedSets(colocatedGenes, markerGenes)
-
-   
     def checkBin(self):
         pass

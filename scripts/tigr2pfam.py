@@ -36,7 +36,7 @@ import sys
 import os
 import argparse
 
-from lib.img import IMG
+from checkm.lib.img import IMG
 
 class Tigr2Pfam(object):
     def __init__(self):
@@ -47,7 +47,7 @@ class Tigr2Pfam(object):
 
         metadata = img.genomeMetadata()
 
-        genomeIds = img.genomeIdsByTaxonomy('universal', metadata, 'All')
+        genomeIds = img.genomeIdsByTaxonomy('prokaryotes', metadata, 'all')
 
         matches = {}
         pfamCount = {}

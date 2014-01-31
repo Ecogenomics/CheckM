@@ -176,6 +176,7 @@ class OptionsParser():
                 
         binFiles = self.binFiles(options.bin_folder, options.extension)   
         makeSurePathExists(options.out_folder) 
+        makeSurePathExists(os.path.join(options.out_folder, 'storage'))
 
         # find marker genes in genome bins    
         mgf = MarkerGeneFinder(options.threads)
@@ -235,7 +236,7 @@ class OptionsParser():
             print '  QA information written to: ' + options.file
             
         self.timeKeeper.printTimeStamp()
-        
+                
     def gcPlot(self, options):
         """GC plot command"""
         self.logger.info('')

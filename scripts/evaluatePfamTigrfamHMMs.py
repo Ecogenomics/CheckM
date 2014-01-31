@@ -32,8 +32,8 @@ __status__ = 'Development'
 
 import os
 
-from lib.img import IMG
-from lib.pfam import PFAM
+from checkm.lib.img import IMG
+from checkm.lib.pfam import PFAM
 from lib.markerSet import MarkerSet
 
 from Bio import SeqIO

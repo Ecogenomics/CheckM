@@ -223,11 +223,12 @@ class ConsistencyTest(object):
             avgCon /= 3
             fout.write('\t' + str(avgCon))
 
-            if avgCon > consistencyThreshold:
+            if avgCon >= consistencyThreshold:
                 retainedGeneTrees += 1
                 os.system('cp ' + os.path.join(geneTreeDir, treeFile) + ' ' + os.path.join(outputDir, treeFile))
             else:
                 filteredGeneTrees += 1
+                print 'Filtered % s with an average consistency of %.4f.' % (treeFile, avgCon)
 
             for r in xrange(0, 3):
                 fout.write('\t' + str(avgConsistency[treeFile][r]))

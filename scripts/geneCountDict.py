@@ -17,7 +17,7 @@
 #                                                                             #
 ###############################################################################
 
-__prog_desc__ = 'prune taxa with identical sequences from tree'
+__prog_desc__ = 'create dictionary of gene counts for each genome'
 
 __author__ = 'Donovan Parks'
 __copyright__ = 'Copyright 2013'
@@ -30,46 +30,40 @@ __status__ = 'Development'
 
 import argparse
 
-import dendropy
+from checkm.lib.img import IMG
 
-class PruneTree(object):
+class GeneCountDict(object):
     def __init__(self):
         pass
-    
-    def __readDuplicateTaxa(self, dupSeqFile):
-        dupTaxa = []
+
+    def run(self, outputFile):
+        img = IMG()
         
-        for line in open(dupSeqFile):
-            lineSplit = line.split()
-            
-            for i in xrange(1, len(lineSplit)):
-                dupTaxa.append(lineSplit[i].strip())
-                
-        return dupTaxa
-                
-
-    def run(self, dupSeqFile, inputTree, outputTree):
-        # get list of taxa with duplicate sequences 
-        dupTaxa = self.__readDuplicateTaxa(dupSeqFile)
-        print 'Pruing %d taxa.' % len(dupTaxa)
+        print 'Identifying all IMG prokaryotic genomes with valid data.'
+        metadata = img.genomeMetadata()
+        genomeIds = img.genomeIdsByTaxonomy('prokaryotes', metadata)
+        genomeMissingData = img.genomesWithMissingData(genomeIds)
+        genomeIds -= genomeMissingData
+        
+        print '  Identified %d valid genomes.' % (len(genomeIds))
+        
+        print 'Calculating gene copy number for each genome.'
+        countTable = img.geneCountTable(genomeIds)
          
-        # prune duplicate taxa from tree
-        tree = dendropy.Tree.get_from_path(inputTree, schema='newick', as_rooted=True, preserve_underscores=True)
-
-        tree.prune_taxa_with_labels(dupTaxa)
-
-        tree.write_to_path(outputTree, schema='newick', suppress_rooting=True)
-
+        fout = open(outputFile, 'w')
+        fout.write(str(countTable))
+        fout.close()
+        
+        print 'Gene count dictionary to: ' + outputFile
+        
 if __name__ == '__main__':
-    print 'RerootTree v' + __version__ + ': ' + __prog_desc__
+    print 'GeneCountDict v' + __version__ + ': ' + __prog_desc__
     print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('duplicate_seq_file', help='file indicating deplicate sequences as determine with seqmagick')
-    parser.add_argument('input_tree', help='tree to prunt')
-    parser.add_argument('output_tree', help='output tree')
+    parser.add_argument('output_file', help='output file')
 
     args = parser.parse_args()
 
-    PruneTree = PruneTree()
-    PruneTree.run(args.duplicate_seq_file, args.input_tree, args.output_tree)
+    geneCountDict = GeneCountDict()
+    geneCountDict.run(args.output_file)

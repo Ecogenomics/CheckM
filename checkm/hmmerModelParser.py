@@ -42,8 +42,6 @@ class HmmModel(object):
             elif key == 'nc':
                 setattr(self, 'isNoiseCutoff', True)
                 
-        
-
 class HmmModelParser(object):
     """Parse HMM model file."""
     def __init__(self, hmmFile):

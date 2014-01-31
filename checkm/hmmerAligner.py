@@ -68,7 +68,7 @@ class HmmerAligner:
         markerSeqs = self.__extractMarkerSeqs(outDir, resultsParser, bBestHitOnly, bMultipleHitsOnly)
         
         # generate individual HMMs required to create multiple sequence alignments
-        hmmModelFiles = {}                
+        hmmModelFiles = {}            
         self.__makeAlignmentModels(hmmModelFile, resultsParser.models, hmmModelFiles)
          
         # align each of the marker genes     

@@ -40,8 +40,7 @@ from getPhylogeneticHMMs import GetPhylogeneticHMMs
 from inferGenomeTree import InferGenomeTree
 from rerootTree import RerootTree
 from bootstrapTree import BootstrapTree
-from pruneTree import PruneTree
-from makeCompliantWithPplacer import MakeCompliantWithPplacer
+from propogateTaxonomicLabels import PropogateTaxonomicLabels
 
 class GenomeTreeWorkflow(object):
     def __init__(self, outputDir):
@@ -65,12 +64,13 @@ class GenomeTreeWorkflow(object):
         
         self.consistencyOut = os.path.join(outputDir, 'genome_tree.consistency.tsv')
         self.concatenatedAlignFile = os.path.join(outputDir, 'genome_tree.concatenated.faa')
-        self.derepConcatenatedAlignFile = os.path.join(outputDir, 'genome_tree.concatenated.derep.faa')
+        self.derepConcatenatedAlignFile = os.path.join(outputDir, 'genome_tree.concatenated.derep.fasta')
         self.genomeTreeOut = os.path.join(outputDir, 'genome_tree.tre')
         self.genomeTreeRootedOut = os.path.join(outputDir, 'genome_tree.rooted.tre')
-        self.genomeTreeBootstrapOut = os.path.join(outputDir, 'genome_tree.rooted.bs.tre')
         self.genomeTreeDecoratedOut = os.path.join(outputDir, 'genome_tree.decorated.tre')
         self.genomeTreeDerepOut = os.path.join(outputDir, 'genome_tree.derep.tre')
+        self.genomeTreeDerepRootedOut = os.path.join(outputDir, 'genome_tree.derep.rooted.tre')
+        self.genomeTreeBootstrapOut = os.path.join(outputDir, 'genome_tree.bs.tre')
         self.genomeTreeFinalOut = os.path.join(outputDir, 'genome_tree.final.tre')
         self.genomeTreeTaxonomyOut = os.path.join(outputDir, 'genome_tree.taxonomy.tsv')
         self.phyloHMMsOut = os.path.join(outputDir, 'phylo.hmm')
@@ -147,7 +147,7 @@ class GenomeTreeWorkflow(object):
         print '--- Identifying genes suitable for phylogenetic inference ---'
         phylogeneticInferenceGenes = PhylogeneticInferenceGenes()
         phylogeneticInferenceGenes.run(self.phyloUbiquity, self.phyloSingleCopy, numThreads, self.alignmentDir, self.hmmDir)
-        
+    
         # infer gene trees
         print ''
         print '--- Inferring gene trees ---'
@@ -174,43 +174,52 @@ class GenomeTreeWorkflow(object):
         
         # infer genome tree
         print ''
-        print '--- Inferring genome tree ---'
+        print '--- Inferring full genome tree ---'
         inferGenomeTree = InferGenomeTree()
-        inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concateatedAlignFile, self.genomeTreeOut, self.genomeTreeTaxonomyOut)
+        inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.genomeTreeOut, self.genomeTreeTaxonomyOut)
         
         # root genome tree between archaea and bacteria
         print ''
-        print '--- Rooting genome tree ---'
+        print '--- Rooting full genome tree ---'
         rerootTree = RerootTree()
         rerootTree.run(self.genomeTreeOut, self.genomeTreeRootedOut)
-        
-        # calculate bootstraps for genome tree   
-        print ''
-        print '--- Calculating bootstrap support ---'
-        bootstrapTree = BootstrapTree()
-        bootstrapTree.run(self.bootstrapDir, self.genomeTreeRootedOut, self.concateatedAlignFile, 100, numThreads, self.genomeTreeBootstrapOut)
-        
+            
         # decorate genome tree with taxonomy using nlevel from tax2tree
         print ''
-        print '--- Decorating genome tree with taxonomic information using tax2tree ---'
-        os.system('nlevel -t %s -m %s -o %s' % (self.genomeTreeBootstrapOut, self.genomeTreeTaxonomyOut, self.genomeTreeDecoratedOut))
+        print '--- Decorating full genome tree with taxonomic information using tax2tree ---'
+        os.system('nlevel -t %s -m %s -o %s' % (self.genomeTreeRootedOut, self.genomeTreeTaxonomyOut, self.genomeTreeDecoratedOut))
         
         # dereplicate identical sequences   
         print ''
         print '--- Identifying duplicate sequences ---'
         os.system('seqmagick convert --deduplicate-sequences --deduplicated-sequences-file ' + self.derepSeqFile + ' ' + self.concatenatedAlignFile + ' ' + self.derepConcatenatedAlignFile)
         
-        # prune tree to dereplicated sequence set
+        # infer dereplicated genome tree 
         print ''
-        print '--- Pruning taxa with identical sequences ---'
-        pruneTree = PruneTree()
-        pruneTree.run(self.derepSeqFile, self.genomeTreeDecoratedOut, self.genomeTreeDerepOut)
+        print '--- Inferring dereplicated genome tree ---'
+        outputLog = self.genomeTreeDerepOut[0:self.genomeTreeDerepOut.rfind('.')] + '.log'
+        cmd = 'FastTreeMP -nosupport -wag -gamma -log ' + outputLog + ' ' + self.derepConcatenatedAlignFile + ' > ' + self.genomeTreeDerepOut
+        os.system(cmd)
         
-        # format for pplacer
+        # root genome tree between archaea and bacteria
         print ''
-        print '--- Reformatting tree for compliance with pplacer ---'
-        makeComplianWithPplacer = MakeCompliantWithPplacer()
-        makeComplianWithPplacer.run(self.genomeTreeDerepOut, self.genomeTreeFinalOut)
+        print '--- Rooting dereplicated genome tree ---'
+        rerootTree = RerootTree()
+        rerootTree.run(self.genomeTreeDerepOut, self.genomeTreeDerepRootedOut)
+                
+        # calculate bootstraps for genome tree   
+        print ''
+        print '--- Calculating bootstrap support ---'
+        bootstrapTree = BootstrapTree()
+        bootstrapTree.run(self.bootstrapDir, self.genomeTreeDerepRootedOut, self.concatenatedAlignFile, 100, numThreads, self.genomeTreeBootstrapOut)
+        
+        os.system('cp ' + self.genomeTreeBootstrapOut + ' ' + self.genomeTreeFinalOut)
+        
+        # propogate taxonomic labels onto dereplicated tree 
+        print ''
+        print '--- Propagating taxonomic labels to dereplicated tree ---'
+        propogateTaxonomicLabels = PropogateTaxonomicLabels()
+        propogateTaxonomicLabels.run(self.genomeTreeDecoratedOut, self.derepSeqFile, self.genomeTreeFinalOut)
         
 if __name__ == '__main__':
     print 'GenomeTreeWorkflow v' + __version__ + ': ' + __prog_desc__

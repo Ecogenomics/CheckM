@@ -60,7 +60,7 @@ class Unbinned():
             if seqId not in binnedSeqs:
                 if len(seq) >= minSeqLen:
                     unbinnedCount += 1
-                    seqOut.write('>' + seqId)
+                    seqOut.write('>' + seqId + '\n')
                     seqOut.write(seq)
                     
                     a, c, g, t = baseCount(seq)

@@ -48,7 +48,7 @@ class PhylogeneticInferenceGenes(object):
     def __init__(self):
         pass
 
-    def __getUniversalMarkerGenes(self, phyloUbiquityThreshold, phyloSingleCopyThreshold):
+    def __getUniversalMarkerGenes(self, phyloUbiquityThreshold, phyloSingleCopyThreshold, outputGeneDir):
         img = IMG()
         markerset = MarkerSet()
 
@@ -59,14 +59,14 @@ class PhylogeneticInferenceGenes(object):
         for lineage in ['Archaea', 'Bacteria']:
             # get all genomes in lineage
             print '\nIdentifying all ' + lineage + ' genomes.'
-            trustedGenomeIds = img.genomeIdsByTaxonomy(lineage, metadata, 'Trusted')
+            trustedGenomeIds = img.genomeIdsByTaxonomy(lineage, metadata, 'trusted')
             allTrustedGenomeIds.update(trustedGenomeIds)
             print '  Trusted genomes in lineage: ' + str(len(trustedGenomeIds))
 
             # build gene count table
             print '\nBuilding gene count table.'
-            countTable = img.countTable(trustedGenomeIds)
-            countTable = img.filterTable(trustedGenomeIds, countTable, 0.9*phyloUbiquityThreshold, 0.9*phyloSingleCopyThreshold)
+            countTable = img.geneCountTable(trustedGenomeIds)
+            countTable = img.filterGeneCountTable(trustedGenomeIds, countTable, 0.9*phyloUbiquityThreshold, 0.9*phyloSingleCopyThreshold)
 
             # identify marker set
             markerGenes = markerset.markerGenes(trustedGenomeIds, countTable, phyloUbiquityThreshold*len(trustedGenomeIds), phyloSingleCopyThreshold*len(trustedGenomeIds))
@@ -86,7 +86,7 @@ class PhylogeneticInferenceGenes(object):
             else:
                 universalMarkerGenes.intersection_update(markerGenes)
 
-        fout = open('./data/phylo_marker_set.txt', 'w')
+        fout = open(os.path.join(outputGeneDir, 'phylo_marker_set.txt'), 'w')
         fout.write(str(universalMarkerGenes))
         fout.close()
 
@@ -130,7 +130,7 @@ class PhylogeneticInferenceGenes(object):
             else:
                 os.system('hmmfetch -o ' + os.path.join(outputModelDir, markerId + '.hmm') + ' /srv/whitlam/bio/db/tigrfam/13.0/' + markerId + '.HMM ' + markerId + ' &> /dev/null')
                 
-    def __alignMarkers(self, allTrustedGenomeIds, universalMarkerGenes, genesInGenomes, numThreads, outputDir):
+    def __alignMarkers(self, allTrustedGenomeIds, universalMarkerGenes, genesInGenomes, numThreads, outputGeneDir, outputModelDir):
         """Perform multithreaded alignment of marker genes using HMM align."""
         
         print ''
@@ -145,7 +145,7 @@ class PhylogeneticInferenceGenes(object):
         for _ in range(numThreads):
             workerQueue.put(None)
             
-        calcProc = [mp.Process(target = self.__runHmmAlign, args = (allTrustedGenomeIds, genesInGenomes, outputDir, workerQueue, writerQueue)) for _ in range(numThreads)]
+        calcProc = [mp.Process(target = self.__runHmmAlign, args = (allTrustedGenomeIds, genesInGenomes, outputGeneDir, outputModelDir, workerQueue, writerQueue)) for _ in range(numThreads)]
         writeProc = mp.Process(target = self.__reportThreads, args = (len(universalMarkerGenes), writerQueue))
 
         writeProc.start()
@@ -159,7 +159,7 @@ class PhylogeneticInferenceGenes(object):
         writerQueue.put(None)
         writeProc.join()
         
-    def __runHmmAlign(self, allTrustedGenomeIds, genesInGenomes, outputDir, queueIn, queueOut):
+    def __runHmmAlign(self, allTrustedGenomeIds, genesInGenomes, outputGeneDir, outputModelDir, queueIn, queueOut):
         """Run each marker gene in a separate thread."""
         
         while True:
@@ -171,7 +171,7 @@ class PhylogeneticInferenceGenes(object):
             if modelName.startswith('pfam'):
                 modelName = modelName.replace('pfam', 'PF')
 
-            markerSeqFile = './data/gene_seqs/' + modelName + '.faa'
+            markerSeqFile = os.path.join(outputGeneDir, modelName + '.faa')
             fout = open(markerSeqFile, 'w')
             for genomeId in allTrustedGenomeIds:
                 seqs = readFasta(IMG.genomeDir + '/' + genomeId + '/' + genomeId + '.genes.faa')
@@ -182,8 +182,8 @@ class PhylogeneticInferenceGenes(object):
             fout.close()
             
             hmmer = HMMERRunner('align')
-            hmmer.align(os.path.join('./data/phylo_hmms', modelName + '.hmm'), markerSeqFile, os.path.join(outputDir, modelName + '.aln.faa'), trim=False, outputFormat='Pfam')
-            self.__maskAlignment(os.path.join(outputDir, modelName + '.aln.faa'), os.path.join(outputDir, modelName + '.aln.masked.faa'))
+            hmmer.align(os.path.join(outputModelDir, modelName + '.hmm'), markerSeqFile, os.path.join(outputGeneDir, modelName + '.aln.faa'), trim=False, outputFormat='Pfam')
+            self.__maskAlignment(os.path.join(outputGeneDir, modelName + '.aln.faa'), os.path.join(outputGeneDir, modelName + '.aln.masked.faa'))
             
             queueOut.put(modelName)
             
@@ -230,13 +230,16 @@ class PhylogeneticInferenceGenes(object):
         # make sure output directory is empty
         if not os.path.exists(outputGeneDir):
             os.makedirs(outputGeneDir)
+            
+        if not os.path.exists(outputModelDir):
+            os.makedirs(outputModelDir)
 
         files = os.listdir(outputGeneDir)
         for f in files:
             os.remove(os.path.join(outputGeneDir, f))
 
         # get universal marker genes
-        allTrustedGenomeIds, universalMarkerGenes = self.__getUniversalMarkerGenes(phyloUbiquityThreshold, phyloSingleCopyThreshold)
+        allTrustedGenomeIds, universalMarkerGenes = self.__getUniversalMarkerGenes(phyloUbiquityThreshold, phyloSingleCopyThreshold, outputGeneDir)
         
         # get mapping of marker ids to gene ids for each genome
         genesInGenomes = self.__genesInGenomes(allTrustedGenomeIds)
@@ -245,7 +248,7 @@ class PhylogeneticInferenceGenes(object):
         self.__fetchMarkerModels(universalMarkerGenes, outputModelDir)
 
         # align gene sequences and infer gene trees
-        self.__alignMarkers(allTrustedGenomeIds, universalMarkerGenes, genesInGenomes, numThreads, outputGeneDir)
+        self.__alignMarkers(allTrustedGenomeIds, universalMarkerGenes, genesInGenomes, numThreads, outputGeneDir, outputModelDir)
         
 if __name__ == '__main__':
     print 'PhylogeneticInferenceGenes v' + __version__ + ': ' + __prog_desc__

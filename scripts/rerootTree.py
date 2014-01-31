@@ -81,7 +81,7 @@ class RerootTree(object):
         else:
             print '    Archaea are monophyletic. Rerooting between archaea and bacteria.'
             mrca = tree.mrca(taxon_labels=outgroup)
-            tree.reroot_at_edge(mrca.edge, update_splits=True)
+            tree.reroot_at_edge(mrca.edge, length1 = 0.5*mrca.edge_length, length2 = 0.5*mrca.edge_length, update_splits=True)
 
     def run(self, inputTree, outputTree):
         tree = dendropy.Tree.get_from_path(inputTree, schema='newick', as_rooted=False, preserve_underscores=True)

@@ -21,6 +21,9 @@
 
 import os
 import sys
+import uuid
+import logging
+import multiprocessing as mp
 from re import split as re_split
 
 class FormatError(BaseException): pass
@@ -86,6 +89,87 @@ class HMMERRunner():
     
         if exit_status != 0:
             raise HMMERError("Error attempting to run hmmsearch, is it in your path?")
+        
+class HMMERModelExtractor():
+    """Extract HMMs."""
+    def __init__(self, threads):
+        self.logger = logging.getLogger()
+        self.totalThreads = threads
+    
+    def extract(self, hmmModelFile, modelAccIds, ouputModelFile):
+        """Make temporary HMM files used to create HMM alignments.""" 
+        
+        self.logger.info("  Extracting %d HMM models with %d threads:" % (len(modelAccIds), self.totalThreads))
+        
+        # process each marker in parallel
+        workerQueue = mp.Queue()
+        writerQueue = mp.Queue()
+
+        for modelAcc in modelAccIds:
+            fetchFilename = os.path.join('/tmp', str(uuid.uuid4()))
+            workerQueue.put((modelAcc, fetchFilename))
+
+        for _ in range(self.totalThreads):
+            workerQueue.put((None, None))
+
+        calcProc = [mp.Process(target = self.__extractModel, args = (hmmModelFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        writeProc = mp.Process(target = self.__reportModelExtractionProgress, args = (ouputModelFile, len(modelAccIds), writerQueue))
+
+        writeProc.start()
+        
+        for p in calcProc:
+            p.start()
+
+        for p in calcProc:
+            p.join()
+            
+        writerQueue.put((None, None))
+        writeProc.join()
+            
+    def __extractModel(self, hmmModelFile, queueIn, queueOut):
+        """Extract HMM model."""
+        HF = HMMERRunner(mode='fetch')
+        
+        while True:    
+            modelAcc, fetchFilename = queueIn.get(block=True, timeout=None) 
+            if modelAcc == None:
+                break  
+        
+            HF.fetch(hmmModelFile, modelAcc, fetchFilename)
+            
+            queueOut.put((modelAcc, fetchFilename))
+            
+    def __reportModelExtractionProgress(self, ouputModelFile, numMarkers, queueIn):
+        """Report number of extracted HMMs."""      
+        
+        fout = open(ouputModelFile, 'w')
+        
+        numModelsExtracted = 0
+        if self.logger.getEffectiveLevel() <= logging.INFO:
+            statusStr = '    Finished extracting %d of %d (%.2f%%) HMM models.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
+            sys.stdout.write('%s\r' % statusStr)
+            sys.stdout.flush()
+        
+        while True:
+            modelAcc, fetchFilename = queueIn.get(block=True, timeout=None)
+            if modelAcc == None:
+                break
+            
+            if self.logger.getEffectiveLevel() <= logging.INFO:
+                numModelsExtracted += 1
+                statusStr = '    Finished extracting %d of %d (%.2f%%) HMM models.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
+                sys.stdout.write('%s\r' % statusStr)
+                sys.stdout.flush()
+                
+            for line in open(fetchFilename):
+                fout.write(line)
+                
+            os.remove(fetchFilename)
+         
+        if self.logger.getEffectiveLevel() <= logging.INFO:
+            sys.stdout.write('\n')
+            
+        fout.close()
         
 class HMMERParser():
     """Parses tabular output."""

@@ -30,7 +30,7 @@ __status__ = 'Development'
 
 import argparse
 
-from lib.img import IMG
+from checkm.lib.img import IMG
 from lib.markerSet import MarkerSet
 
 class QcGenomes(object):
@@ -73,7 +73,7 @@ class QcGenomes(object):
 
             # get all genomes in lineage
             print 'Identifying all ' + lineage + ' genomes.'
-            allLineageGenomeIds = img.genomeIdsByTaxonomy(lineage, metadata, 'All')
+            allLineageGenomeIds = img.genomeIdsByTaxonomy(lineage, metadata, 'all')
             print '  Number of genomes: ' + str(len(allLineageGenomeIds))
 
             # tabulate genomes from each phylum
@@ -117,8 +117,8 @@ class QcGenomes(object):
             print '\nDetermining initial marker gene sets for genome filtering.'
 
             print '  Determining count table.'
-            countTable = img.countTable(retainedGenomeIds)
-            countTable = img.filterTable(retainedGenomeIds, countTable, 0.9*ubiquityThreshold, 0.9*singleCopyThreshold)
+            countTable = img.geneCountTable(retainedGenomeIds)
+            countTable = img.filterGeneCountTable(retainedGenomeIds, countTable, 0.9*ubiquityThreshold, 0.9*singleCopyThreshold)
 
             # identify marker genes for genomes
             markerGenes = markerset.markerGenes(retainedGenomeIds, countTable, ubiquityThreshold*len(retainedGenomeIds), singleCopyThreshold*len(retainedGenomeIds))

@@ -98,7 +98,7 @@ if __name__ == '__main__':
     output_parser = argparse.ArgumentParser(add_help=False)
     output_parser.add_argument('-o', '--output-format', dest='out_format',
             type=int,
-            help='''change the output format to one of the following:
+            help='''desired output:
                 1. brief summary of genome bin completeness and contamination
                 2. summary statistics for each genome bin including GC distribution, genome size, completeness estimation, and contamination estimation
                 3. list of marker names and their counts
@@ -128,22 +128,27 @@ if __name__ == '__main__':
     tree_qa_parser.add_argument('out_folder', help="folder specified during tree command")
     tree_qa_parser.add_argument('-o', '--output-format', dest='out_format',
                                     type=int,
-                                    help='''change the output format to one of the following:
+                                    help='''desired output:
                                         1. brief summary of genome tree placement
                                         2. genome tree in Newick format decorated with IMG genome ids
-                                        3. genome tree in Newick format decorated with taxonomy strings''', 
-                                    default=1, choices=[1, 2, 3])
+                                        3. genome tree in Newick format decorated with taxonomy strings
+                                        4. multiple sequence alignment of reference genomes and bins''', 
+                                    default=1, choices=[1, 2, 3, 4])
     tree_qa_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     tree_qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print a strictly tab-separated values table")
     tree_qa_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     
-    # determine placement of each genome bin in the genome tree
+    # calculate lineage-specific marker set for genome bins
     marker_parser = subparsers.add_parser('marker',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         description='''Calculate lineage-specific marker sets for each genome bin.''')
     marker_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     marker_parser.add_argument('out_folder', help="folder specified during tree command")
+    marker_parser.add_argument('-m', '--num_genomes_markers', type=int, help="minimum genomes required to calculate initial marker set", default=30)
+    marker_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum genomes required to refine marker set", default=6)
+    marker_parser.add_argument('-b', '--bootstrap', type=int, help="required bootstrap support for calculating marker set", default=0)
+    marker_parser.add_argument('--taxonomy', dest='bRequireTaxonomy', action="store_true", default=False, help="only consider nodes with defined taxonomy")
     marker_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
     marker_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     marker_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -152,7 +157,7 @@ if __name__ == '__main__':
     analyze_parser = subparsers.add_parser('analyze',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         description='''Identify marker genes in bins and calculate genome statistics.''')
-    analyze_parser.add_argument('marker_file', help="markers to use for accessing genomes (marker file from tree command or an HMMER HMM file)")
+    analyze_parser.add_argument('marker_file', help="markers to use for accessing genomes")
     analyze_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     analyze_parser.add_argument('out_folder', help="folder specified during tree command")
     analyze_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
@@ -188,7 +193,7 @@ if __name__ == '__main__':
     pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.E_VAL, help="e-value cut off")
     pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.LENGTH, help="percent overlap between target and query")
     pipeline_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
-    
+        
     # generic arguments for plots
     plot_need_qa_results_parser = argparse.ArgumentParser(add_help=False)
     plot_need_qa_results_parser.add_argument('out_folder', help="folder specified during analyze and qa command")

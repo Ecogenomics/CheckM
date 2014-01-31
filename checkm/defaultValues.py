@@ -19,10 +19,15 @@
 #                                                                             #
 ###############################################################################
 
+import os
+import sys
+
 E_VAL = 1e-10
 LENGTH = 0.7
 
-SEQ_CONCAT_CHAR = '|'
+SEQ_CONCAT_CHAR = '&&'
+
+HMM_MODELS = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'pfam_tigrfam.hmm')
 
 HMMER_TABLE_PHYLO_OUT = 'hmmer.tree.txt'
 HMMER_PHYLO_OUT = 'hmmer.tree.hmmer3'
