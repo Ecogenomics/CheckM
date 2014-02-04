@@ -39,6 +39,11 @@ PRODIGAL_AA = 'prodigal.faa'
 PRODIGAL_NT = 'prodigal.fna'
 PRODIGAL_GFF = 'prodigal.gff'
 
+PPLACER_CONCAT_SEQ_OUT = 'concatenated.fasta'
+PPLACER_JSON_OUT = 'concatenated.pplacer.json'
+PPLACER_OUT = 'pplacer.out'
+PPLACER_TREE_OUT = 'concatenated.tre'
+
 BIN_STATS_PHYLO_OUT = 'bin_stats.tree.tsv'
 SEQ_STATS_PHYLO_OUT = 'seq_stats.tree.tsv'
 

@@ -166,7 +166,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('gene_tree_dir', help='directory containing gene trees to test')
-    parser.add_argument('-a', '--accept_per', help='percentage of non-conspecific genomes allowed', type=float, default=0.003)
+    parser.add_argument('-a', '--accept_per', help='percentage of non-conspecific genomes allowed', type=float, default=0.01)
     parser.add_argument('-x', '--extension', help='extension of tree files to process', default = '.tre')
     parser.add_argument('-o', '--output_dir', help='output directory for retained gene trees', default = './data/gene_trees_conspecific/')
 

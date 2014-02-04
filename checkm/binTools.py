@@ -36,7 +36,7 @@ class BinTools():
         self.logger = logging.getLogger()
     
     def __removeSeqs(self, seqs, seqsToRemove):
-        """ Remove sequences. """
+        """Remove sequences. """
         missingSeqIds = set(seqsToRemove).difference(set(seqs.keys()))
         if len(missingSeqIds) > 0:
             self.logger.error('  [Error] Missing sequence(s) specified for removal: ' + ', '.join(missingSeqIds) + '\n')
@@ -46,7 +46,7 @@ class BinTools():
             seqs.pop(seqId)
                 
     def __addSeqs(self, seqs, refSeqs, seqsToAdd):
-        """ Add sequences. """
+        """Add sequences. """
         missingSeqIds = set(seqsToAdd).difference(set(refSeqs.keys()))
         if len(missingSeqIds) > 0:
             self.logger.error('  [Error] Missing sequence(s) specified for addition: ' + ', '.join(missingSeqIds) + '\n')
@@ -124,7 +124,7 @@ class BinTools():
             print '  No sequences assigned to multiple bins.'
             
     def gcDist(self, seqs):
-        """ GC statistics for bin."""
+        """GC statistics for bin."""
         GCs = []
         gcTotal = 0
         basesTotal = 0
@@ -144,7 +144,7 @@ class BinTools():
         return meanGC, deltaGCs, GCs
     
     def codingDensityDist(self, seqs, prodigalParser):
-        """ Coding density statistics for bin."""
+        """Coding density statistics for bin."""
         CDs = []
         seqLens = []
         
@@ -170,7 +170,7 @@ class BinTools():
         return meanCD, deltaCDs, CDs
     
     def binTetraSig(self, seqs, tetraSigs):
-        """ Tetranucleotide signature for bin. """
+        """Tetranucleotide signature for bin. """
         binSize = 0
         for _, seq in seqs.iteritems():
             binSize += len(seq)
@@ -186,7 +186,7 @@ class BinTools():
         return binSig
     
     def tetraDiffDist(self, seqs, genomicSig, tetraSigs, binSig):
-        """ TD statistics for bin."""
+        """TD statistics for bin."""
         deltaTDs = np.zeros(len(seqs))
         for i, seqId in enumerate(seqs.keys()):
             deltaTDs[i] = genomicSig.distance(tetraSigs[seqId], binSig)
@@ -195,8 +195,6 @@ class BinTools():
             
     def identifyOutliers(self, outFolder, binFiles, tetraProfileFile, distribution, reportType, outputFile):
         """Identify sequences that are outliers."""   
-        logger = logging.getLogger()
-        
         gcBounds = readDistribution(distribution, 'gc_dist')
         cdBounds = readDistribution(distribution, 'cd_dist')
         tdBounds = readDistribution(distribution, 'td_dist')

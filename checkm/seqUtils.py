@@ -98,7 +98,7 @@ def readGenomicSeqsFromFasta(fastaFile, seqToIgnore=None):
     return seqs
 
 def writeFasta(seqs, outputFile):
-    '''Write sequences from FASTA file.'''
+    '''write sequences to FASTA file'''
     if outputFile.endswith('.gz'):
         fout = gzip.open(outputFile, 'wb')
     else:

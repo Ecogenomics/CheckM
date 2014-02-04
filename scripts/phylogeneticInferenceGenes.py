@@ -53,15 +53,26 @@ class PhylogeneticInferenceGenes(object):
         markerset = MarkerSet()
 
         metadata = img.genomeMetadata()
-
+        
+        sortedLineages = img.lineagesSorted(metadata, mostSpecificRank=1)
+        lineages = []
+        for lineage in sortedLineages:
+            lineageSplit = lineage.split(';')
+            if len(lineageSplit) == 2 and lineageSplit[0] == 'Archaea':
+                lineages.append(lineage)
+                
         allTrustedGenomeIds = set()
         phyloMarkerGenes = {}
-        for lineage in ['Archaea', 'Bacteria']:
+        for lineage in lineages: #['Archaea']: #, 'Bacteria']:
             # get all genomes in lineage
             print '\nIdentifying all ' + lineage + ' genomes.'
             trustedGenomeIds = img.genomeIdsByTaxonomy(lineage, metadata, 'trusted')
-            allTrustedGenomeIds.update(trustedGenomeIds)
             print '  Trusted genomes in lineage: ' + str(len(trustedGenomeIds))
+            if len(trustedGenomeIds) < 1:
+                print '  Skipping lineage due to insufficient number of genomes.'
+                continue
+            
+            allTrustedGenomeIds.update(trustedGenomeIds)
 
             # build gene count table
             print '\nBuilding gene count table.'

@@ -40,7 +40,7 @@ from getPhylogeneticHMMs import GetPhylogeneticHMMs
 from inferGenomeTree import InferGenomeTree
 from rerootTree import RerootTree
 from bootstrapTree import BootstrapTree
-from propogateTaxonomicLabels import PropogateTaxonomicLabels
+from decorateTree import DecorateTree
 
 class GenomeTreeWorkflow(object):
     def __init__(self, outputDir):
@@ -65,20 +65,21 @@ class GenomeTreeWorkflow(object):
         self.consistencyOut = os.path.join(outputDir, 'genome_tree.consistency.tsv')
         self.concatenatedAlignFile = os.path.join(outputDir, 'genome_tree.concatenated.faa')
         self.derepConcatenatedAlignFile = os.path.join(outputDir, 'genome_tree.concatenated.derep.fasta')
-        self.genomeTreeOut = os.path.join(outputDir, 'genome_tree.tre')
-        self.genomeTreeRootedOut = os.path.join(outputDir, 'genome_tree.rooted.tre')
-        self.genomeTreeDecoratedOut = os.path.join(outputDir, 'genome_tree.decorated.tre')
-        self.genomeTreeDerepOut = os.path.join(outputDir, 'genome_tree.derep.tre')
-        self.genomeTreeDerepRootedOut = os.path.join(outputDir, 'genome_tree.derep.rooted.tre')
-        self.genomeTreeBootstrapOut = os.path.join(outputDir, 'genome_tree.bs.tre')
-        self.genomeTreeFinalOut = os.path.join(outputDir, 'genome_tree.final.tre')
-        self.genomeTreeTaxonomyOut = os.path.join(outputDir, 'genome_tree.taxonomy.tsv')
+        self.treeOut = os.path.join(outputDir, 'genome_tree.tre')
+        self.treeRootedOut = os.path.join(outputDir, 'genome_tree.rooted.tre')
+        self.treeTaxonomyOut = os.path.join(outputDir, 'genome_tree.taxonomy.tre')
+        self.treeDerepOut = os.path.join(outputDir, 'genome_tree.derep.tre')
+        self.treeDerepRootedOut = os.path.join(outputDir, 'genome_tree.derep.rooted.tre')
+        self.treeDerepBootstrapOut = os.path.join(outputDir, 'genome_tree.derep.bs.tre')
+        self.treeDerepFinalOut = os.path.join(outputDir, 'genome_tree.final.tre')
+        self.taxonomyOut = os.path.join(outputDir, 'genome_tree.taxonomy.tsv')
+        self.treeMetadata = os.path.join(outputDir, 'genome_tree.metadata.tsv')
         self.phyloHMMsOut = os.path.join(outputDir, 'phylo.hmm')
         self.derepSeqFile = os.path.join(outputDir, 'genome_tree.derep.txt')
                 
-        self.phyloUbiquity = 0.9
-        self.phyloSingleCopy = 0.9
-        self.paralogAcceptPer = 0.003
+        self.phyloUbiquity = 0.90
+        self.phyloSingleCopy = 0.90
+        self.paralogAcceptPer = 0.01
         self.consistencyAcceptPer = 0.86
         self.consistencyMinTaxa = 20
         
@@ -176,18 +177,18 @@ class GenomeTreeWorkflow(object):
         print ''
         print '--- Inferring full genome tree ---'
         inferGenomeTree = InferGenomeTree()
-        inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.genomeTreeOut, self.genomeTreeTaxonomyOut)
+        inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.treeOut, self.taxonomyOut)
         
         # root genome tree between archaea and bacteria
         print ''
         print '--- Rooting full genome tree ---'
         rerootTree = RerootTree()
-        rerootTree.run(self.genomeTreeOut, self.genomeTreeRootedOut)
+        rerootTree.run(self.treeOut, self.treeRootedOut)
             
         # decorate genome tree with taxonomy using nlevel from tax2tree
         print ''
         print '--- Decorating full genome tree with taxonomic information using tax2tree ---'
-        os.system('nlevel -t %s -m %s -o %s' % (self.genomeTreeRootedOut, self.genomeTreeTaxonomyOut, self.genomeTreeDecoratedOut))
+        os.system('nlevel -t %s -m %s -o %s' % (self.treeRootedOut, self.taxonomyOut, self.treeTaxonomyOut))
         
         # dereplicate identical sequences   
         print ''
@@ -197,29 +198,29 @@ class GenomeTreeWorkflow(object):
         # infer dereplicated genome tree 
         print ''
         print '--- Inferring dereplicated genome tree ---'
-        outputLog = self.genomeTreeDerepOut[0:self.genomeTreeDerepOut.rfind('.')] + '.log'
-        cmd = 'FastTreeMP -nosupport -wag -gamma -log ' + outputLog + ' ' + self.derepConcatenatedAlignFile + ' > ' + self.genomeTreeDerepOut
+        outputLog = self.treeDerepOut[0:self.treeDerepOut.rfind('.')] + '.log'
+        cmd = 'FastTreeMP -nosupport -wag -gamma -log ' + outputLog + ' ' + self.derepConcatenatedAlignFile + ' > ' + self.treeDerepOut
         os.system(cmd)
         
         # root genome tree between archaea and bacteria
         print ''
         print '--- Rooting dereplicated genome tree ---'
         rerootTree = RerootTree()
-        rerootTree.run(self.genomeTreeDerepOut, self.genomeTreeDerepRootedOut)
+        rerootTree.run(self.treeDerepOut, self.treeDerepRootedOut)
                 
         # calculate bootstraps for genome tree   
         print ''
         print '--- Calculating bootstrap support ---'
         bootstrapTree = BootstrapTree()
-        bootstrapTree.run(self.bootstrapDir, self.genomeTreeDerepRootedOut, self.concatenatedAlignFile, 100, numThreads, self.genomeTreeBootstrapOut)
+        bootstrapTree.run(self.bootstrapDir, self.treeDerepRootedOut, self.concatenatedAlignFile, 100, numThreads, self.treeDerepBootstrapOut)
         
-        os.system('cp ' + self.genomeTreeBootstrapOut + ' ' + self.genomeTreeFinalOut)
+        os.system('cp ' + self.treeDerepBootstrapOut + ' ' + self.treeDerepFinalOut)
         
-        # propogate taxonomic labels onto dereplicated tree 
+        # decorate dereplicated tree with unique IDs and a complementary file indicating properties of each internal node 
         print ''
-        print '--- Propagating taxonomic labels to dereplicated tree ---'
-        propogateTaxonomicLabels = PropogateTaxonomicLabels()
-        propogateTaxonomicLabels.run(self.genomeTreeDecoratedOut, self.derepSeqFile, self.genomeTreeFinalOut)
+        print '--- Decorating final tree with lineage-specific statistics and marker set information ---'
+        decorateTree = DecorateTree()
+        decorateTree.decorate(self.treeTaxonomyOut, self.derepSeqFile, self.treeDerepFinalOut, self.treeMetadata, numThreads)
         
 if __name__ == '__main__':
     print 'GenomeTreeWorkflow v' + __version__ + ': ' + __prog_desc__

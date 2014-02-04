@@ -194,7 +194,7 @@ class QcGenomes(object):
 
         for r in xrange(0, 6): # Domain to Genus
             for genomeId, data in metadata.iteritems():
-                taxaStr = '; '.join(data['taxonomy'][0:r+1])
+                taxaStr = ';'.join(data['taxonomy'][0:r+1])
                 allStats[taxaStr] = allStats.get(taxaStr, 0) + 1
                 if genomeId in allTrustedGenomeIds:
                     trustedStats[taxaStr] = trustedStats.get(taxaStr, 0) + 1

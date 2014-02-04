@@ -75,8 +75,8 @@ class RerootTree(object):
             if domain == 'archaea':
                 outgroup.append(t.taxon.label)
 
-        if not self.__isMonophyletic(tree, outgroup):
-            print '    Archaea are paraphyletic. Rerooting at midpoint.'
+        if outgroup == [] or len(outgroup) == len(taxa) or not self.__isMonophyletic(tree, outgroup):
+            print '    Archaea are paraphyletic or tree is exclusively bacteria or archaea. Rerooting at midpoint.'
             tree.reroot_at_midpoint(update_splits=True)
         else:
             print '    Archaea are monophyletic. Rerooting between archaea and bacteria.'

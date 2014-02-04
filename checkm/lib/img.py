@@ -130,6 +130,7 @@ class IMG(object):
                 statusIndex = lineSplit.index('Status')
                 proposalNameIndex = lineSplit.index('Proposal Name')
                 scaffoldCountIndex = lineSplit.index('Scaffold Count')
+                gcIndex = lineSplit.index('GC Count')
                 genomeSizeIndex = lineSplit.index('Genome Size')
                 geneCountIndex = lineSplit.index('Gene Count')
                 codingBaseCountIndex = lineSplit.index('Coding Base Count')
@@ -154,6 +155,13 @@ class IMG(object):
             metadata[genomeId]['proposal name'] = lineSplit[proposalNameIndex]
             metadata[genomeId]['taxonomy'] = [rDomain, rPhylum, rClass, rOrder, rFamily, rGenus, rSpecies]
             metadata[genomeId]['scaffold count'] = int(lineSplit[scaffoldCountIndex])
+            
+            try:
+                metadata[genomeId]['GC Count'] = int(lineSplit[gcIndex])
+                metadata[genomeId]['GC %'] = float(lineSplit[gcIndex]) / int(lineSplit[genomeSizeIndex])
+            except:
+                metadata[genomeId]['GC Count'] = 'NA'
+                metadata[genomeId]['GC %'] = 'NA'
 
             try:
                 metadata[genomeId]['genome size'] = int(lineSplit[genomeSizeIndex])

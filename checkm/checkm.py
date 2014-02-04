@@ -34,6 +34,7 @@ from resultsParser import ResultsParser
 from hmmerAligner import HmmerAligner
 from markerGeneFinder import MarkerGeneFinder
 from pplacer import PplacerRunner
+from treeParser import TreeParser
 from aminoAcidIdentity import AminoAcidIdentity
 from binComparer import BinComparer
 from binStatistics import BinStatistics
@@ -72,7 +73,7 @@ class OptionsParser():
                     binFiles.append(os.path.join(binFolder, f))
                     
         if not binFiles:
-            self.logger.error("  [Error] No bins found. Check the extension used to identify bins.")
+            self.logger.error("  [Error] No bins found. Check the extension (-x) used to identify bins.")
             sys.exit()
         
         return sorted(binFiles)
@@ -137,11 +138,10 @@ class OptionsParser():
                           defaultValues.SEQ_STATS_PHYLO_OUT, 
                           defaultValues.HMMER_TABLE_PHYLO_OUT, 
                           phyloHMMs)
-        #RP.printSummary(options.out_format, options.bTabTable, options.file)
- 
+
         # determine taxonomy of each bin
-        pplacer = PplacerRunner(1)
-        pplacer.printSummary(options.out_format, options.out_folder, RP, options.bTabTable, options.file)
+        treeParser = TreeParser()
+        treeParser.printSummary(options.out_format, options.out_folder, RP, options.bTabTable, options.file)
          
         if options.file != '':
             print '  QA information written to: ' + options.file
@@ -155,16 +155,17 @@ class OptionsParser():
         self.logger.info(' [CheckM - marker] Calculating lineage-specific marker sets.')
         self.logger.info('*******************************************************************************')
                 
-        binFiles = self.binFiles(options.bin_folder, options.extension)  
         makeSurePathExists(options.out_folder) 
 
-        treeFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree.tre')
-
-        markerSet = MarkerSet()
+        treeParser = TreeParser()
+        treeParser.getBinMarkerSets(options.out_folder, options.marker_file, 
+                                    options.num_genomes_markers, options.num_genomes_refine, 
+                                    options.bootstrap, options. bNoLineageSpecificRefinement,
+                                    options.bRequireTaxonomy)
         
-        for binFile in binFiles:
-            markerSet.identifyLineageSpecificMarkers(treeFile, binFile)
-
+        print ''
+        print '  Marker set written to: ' + options.marker_file
+        
         self.timeKeeper.printTimeStamp()
         
     def analyze(self, options, db=None):
@@ -850,7 +851,7 @@ class OptionsParser():
             self.tree(options)
         elif(options.subparser_name == 'tree_qa'):
             self.treeQA(options)
-        elif(options.subparser_name == 'marker'):
+        elif(options.subparser_name == 'marker_set'):
             self.marker(options)
         elif(options.subparser_name == 'analyze'):
             self.analyze(options)

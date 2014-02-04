@@ -83,7 +83,7 @@ class GenomicSignatures(object):
         return seq.translate(self.compl)[::-1]
             
     def __calculateResults(self, queueIn, queueOut):
-        """Calculate confidence interval for a specific mean GC and different sequence lengths."""
+        """Calculate genomic signature of sequences in parallel."""
         while True:
             seqId, seq = queueIn.get(block=True, timeout=None) 
             if seqId == None:
@@ -94,7 +94,7 @@ class GenomicSignatures(object):
             queueOut.put((seqId, sig))
 
     def __storeResults(self, seqFile, outputFile, totalSeqs, writerQueue):
-        """Store confidence intervals (i.e., to shared memory)."""
+        """Store genomic signatures to file."""
         
         # write header
         fout = open(outputFile, 'w')
