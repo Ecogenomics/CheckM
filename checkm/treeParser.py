@@ -31,6 +31,8 @@ import prettytable
 
 import defaultValues
 
+from markerSet import MarkerSet
+
 from common import checkDirExists, reassignStdOut, restoreStdOut
 from seqUtils import readFasta, writeFasta
 
@@ -208,6 +210,7 @@ class TreeParser():
         rootNode = tree.find_node(filter_fn = lambda n: n.parent_node == None)
         
         fout = open(markerFile, 'w')
+        fout.write(defaultValues.LINEAGE_MARKER_FILE_HEADER + '\n')
         
         numProcessedBins = 0
         for binId in binIds:
@@ -292,11 +295,10 @@ class TreeParser():
                 # do not refine marker set
                 finalMarkerSet = trustedMarkerSet
                 
-            numMarkers = 0
-            for m in finalMarkerSet:
-                numMarkers += len(m)
+            markerSet = MarkerSet(finalMarkerSet)
+            numMarkers, numMarkerSets = markerSet.size()
                 
-            fout.write(binId + '\t' + '\t' + uniqueId + '\t' + str(len(finalMarkerSet)) + '\t' + str(numMarkers) + '\t' + str(finalMarkerSet) + '\n')
+            fout.write(binId + '\t' + uniqueId + '\t' + str(numMarkers) + '\t' + str(numMarkerSets) + '\t' + str(finalMarkerSet) + '\n')
                 
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stdout.write('\n')

@@ -96,10 +96,11 @@ class HMMERModelExtractor():
         self.logger = logging.getLogger()
         self.totalThreads = threads
     
-    def extract(self, hmmModelFile, modelAccIds, ouputModelFile):
+    def extract(self, hmmModelFile, modelAccIds, ouputModelFile, bReportProgress = True):
         """Make temporary HMM files used to create HMM alignments.""" 
         
-        self.logger.info("  Extracting %d HMM models with %d threads:" % (len(modelAccIds), self.totalThreads))
+        if bReportProgress:
+            self.logger.info("  Extracting %d HMM models with %d threads:" % (len(modelAccIds), self.totalThreads))
         
         # process each marker in parallel
         workerQueue = mp.Queue()
@@ -113,7 +114,7 @@ class HMMERModelExtractor():
             workerQueue.put((None, None))
 
         calcProc = [mp.Process(target = self.__extractModel, args = (hmmModelFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target = self.__reportModelExtractionProgress, args = (ouputModelFile, len(modelAccIds), writerQueue))
+        writeProc = mp.Process(target = self.__reportModelExtractionProgress, args = (ouputModelFile, len(modelAccIds), bReportProgress, writerQueue))
 
         writeProc.start()
         
@@ -139,23 +140,18 @@ class HMMERModelExtractor():
             
             queueOut.put((modelAcc, fetchFilename))
             
-    def __reportModelExtractionProgress(self, ouputModelFile, numMarkers, queueIn):
+    def __reportModelExtractionProgress(self, ouputModelFile, numMarkers, bReportProgress, queueIn):
         """Report number of extracted HMMs."""      
         
         fout = open(ouputModelFile, 'w')
         
-        numModelsExtracted = 0
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            statusStr = '    Finished extracting %d of %d (%.2f%%) HMM models.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
-            sys.stdout.write('%s\r' % statusStr)
-            sys.stdout.flush()
-        
+        numModelsExtracted = 0       
         while True:
             modelAcc, fetchFilename = queueIn.get(block=True, timeout=None)
             if modelAcc == None:
                 break
             
-            if self.logger.getEffectiveLevel() <= logging.INFO:
+            if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
                 numModelsExtracted += 1
                 statusStr = '    Finished extracting %d of %d (%.2f%%) HMM models.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
                 sys.stdout.write('%s\r' % statusStr)
@@ -166,7 +162,7 @@ class HMMERModelExtractor():
                 
             os.remove(fetchFilename)
          
-        if self.logger.getEffectiveLevel() <= logging.INFO:
+        if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stdout.write('\n')
             
         fout.close()

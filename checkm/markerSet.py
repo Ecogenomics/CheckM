@@ -21,12 +21,57 @@
 
 import logging
 
-from lib.img import IMG
+def parseTaxonomicMarkerSetFile(markerSetFile):
+    """Parse marker set from a taxonomic-specific marker set file."""
+    with open(markerSetFile) as f:
+        f.readline() # skip header
+        
+        lineSplit = f.readline().split('\t')
+        markerSet = MarkerSet(eval(lineSplit[4].rstrip()))
+    
+    return markerSet
+
+def parseLineageMarkerSetFile(markerSetFile):
+    """Parse marker set from a lineage-specific marker set file."""
+    binIdToMarkerSets = {}
+    with open(markerSetFile) as f:
+        f.readline() # skip header
+        
+        for line in f:
+            lineSplit = line.split('\t')
+            binId = lineSplit[0]
+            binIdToMarkerSets[binId] = MarkerSet(eval(lineSplit[4].rstrip()))
+    
+    return binIdToMarkerSets
 
 class MarkerSet():
-    """Calculate and process marker sets."""
-    def __init__(self):
+    """Marker genes organized into co-located sets."""
+    def __init__(self, markerSet):
+        """
+          markerSet: a list of marker gene sets
+        """
         self.logger = logging.getLogger()
+        self.markerSet = markerSet
+        
+    def __repr__(self):
+        return str(self.markerSet)
+        
+    def size(self):
+        """Number of marker genes and marker gene sets."""
+        numMarkerGenes = 0
+        for m in self.markerSet:
+            numMarkerGenes += len(m)
+            
+        return numMarkerGenes, len(self.markerSet)
+    
+    def getMarkerGenes(self):
+        """Get marker genes within marker set."""
+        markerGenes = set()
+        for m in self.markerSet:
+            for marker in m:
+                markerGenes.add(marker)
+                
+        return markerGenes
         
     def identifyTaxonomicSpecificMarkers(self, rank, clade, 
                                             ubiquityThreshold, singleCopyThreshold,

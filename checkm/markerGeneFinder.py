@@ -31,6 +31,8 @@ import defaultValues
 from hmmer import HMMERRunner, HMMERModelExtractor
 from prodigal import ProdigalRunner
 
+from markerSet import parseTaxonomicMarkerSetFile, parseLineageMarkerSetFile
+
 class MarkerGeneFinder():
     """Identify marker genes within binned sequences using Prodigal and HMMER."""
     def __init__(self, threads):  
@@ -47,14 +49,41 @@ class MarkerGeneFinder():
         # determine type of marker file
         markerFileType = self.__markerFileType(markerFile)
         
-        # create HMM model file
+        # get list of all bins
+        binIds = []
+        for binFile in binFiles:
+            binIds.append(binIdFromFilename(binFile))
+        
+        # create HMM model file(s)
+        makeSurePathExists(os.path.join(outDir, 'storage', 'tmp'))
+        
+        hmmModelFiles = {}
         if markerFileType == self.TAXONOMIC_MARKER_FILE:
-            hmmModelFile = os.path.join(outDir, 'storage', 'taxonomic.hmm')
-            self.__getTaxonomicMarkerHMMs(markerFile, hmmModelFile)
+            markerSet = parseTaxonomicMarkerSetFile(markerFile)
+            hmmModelFile = os.path.join(outDir, 'storage', 'tmp', 'taxonomic.hmm')
+            self.__createMarkerHMMs(markerSet, hmmModelFile)
+            
+            for binId in binIds:
+                hmmModelFiles[binId] = hmmModelFile
         elif markerFileType == self.TREE_MARKER_FILE:
-            pass
+            binIdToMarkerSets = parseLineageMarkerSetFile(markerFile)
+
+            self.logger.info('  Extracting lineage-specific HMM models with %d threads:' % self.totalThreads)
+            for i, binId in enumerate(binIdToMarkerSets):
+                if self.logger.getEffectiveLevel() <= logging.INFO:
+                    statusStr = '    Finished extracting models from %d of %d (%.2f%%) bins.' % (i, len(binIdToMarkerSets), float(i)*100/len(binIdToMarkerSets))
+                    sys.stdout.write('%s\r' % statusStr)
+                    sys.stdout.flush()
+                
+                hmmModelFile = os.path.join(outDir, 'storage', 'tmp', binId + '.hmm')
+                self.__createMarkerHMMs(binIdToMarkerSets[binId], hmmModelFile, False)
+                hmmModelFiles[binId] = hmmModelFile 
+                
+            if self.logger.getEffectiveLevel() <= logging.INFO:
+                sys.stdout.write('\n')
         else:
-            hmmModelFile = markerFile
+            for binId in binIds:
+                hmmModelFiles[binId] = markerFile
 
         # process each fasta file
         self.threadsPerSearch = max(1, int(self.totalThreads / len(binFiles)))
@@ -70,7 +99,7 @@ class MarkerGeneFinder():
         for _ in range(self.totalThreads):
             workerQueue.put(None)
 
-        calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, hmmModelFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, hmmModelFiles, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
         writeProc = mp.Process(target = self.__reportProgress, args = (len(binFiles), writerQueue))
 
         writeProc.start()
@@ -84,14 +113,16 @@ class MarkerGeneFinder():
         writerQueue.put(None)
         writeProc.join()
         
+        return hmmModelFiles
+        
     def __markerFileType(self, markerFile):
         """Determine type of marker file."""
         with open(markerFile, 'r') as f:
             header = f.readline()
             
-        if '# Taxonomic Marker Set' in header:
+        if defaultValues.TAXON_MARKER_FILE_HEADER in header:
             return self.TAXONOMIC_MARKER_FILE
-        elif '# Tree Marker Sets' in header:
+        elif defaultValues.LINEAGE_MARKER_FILE_HEADER in header:
             return self.TREE_MARKER_FILE
         elif 'HMMER3' in header:
             return self.HMM_MODELs_FILE
@@ -99,44 +130,17 @@ class MarkerGeneFinder():
             self.logger.error('Unrecognized file type: ' + markerFile)
             sys.exit()
             
-    def __getTaxonomicMarkerHMMs(self, markerFile, outputFile):
+    def __createMarkerHMMs(self, markerSet, outputFile, bReportProgress = True):
         """Create HMM file for taxonomic markers."""
-        for line in open(markerFile):
-            if line[0] == '#':
-                continue
-            elif 'LINEAGE\t' in line:
-                lineage = line.split('\t')[1].rstrip()
-            elif 'GENOME\t' in line:
-                numGenomes = int(line.split('\t')[1].rstrip())
-            elif 'UBIQUITY\t' in line:
-                pass
-            elif 'SINGLE_COPY\t' in line:    
-                pass
-            elif 'COLOCATED_DISTANCE\t' in line:   
-                pass
-            elif 'COLOCATED_GENOME_PERCENTAGE\t' in line: 
-                pass
-            else:
-                markerSets = eval(line.rstrip())
-              
+
         # get list of marker genes  
-        markersGene = []
-        for markerSet in markerSets:
-            for markerGene in markerSet:
-                markersGene.append(markerGene)
-            
-        # report marker set statistics            
-        self.logger.info('  Lineage: %s' % lineage)
-        self.logger.info('  # reference genomes: %d' % numGenomes)
-        self.logger.info('  # marker genes: %d' % len(markersGene))
-        self.logger.info('  # marker sets: %d' % len(markerSets))
-        self.logger.info('')
+        markersGene = markerSet.getMarkerGenes()
         
         # extract marker genes
         modelExtractor = HMMERModelExtractor(self.totalThreads)
-        modelExtractor.extract(defaultValues.HMM_MODELS, markersGene, outputFile)
+        modelExtractor.extract(defaultValues.HMM_MODELS, markersGene, outputFile, bReportProgress)
               
-    def __processBin(self, outDir, tableOut, hmmerOut, markerFile, queueIn, queueOut):
+    def __processBin(self, outDir, tableOut, hmmerOut, hmmModelFiles, queueIn, queueOut):
         """Thread safe bin processing."""      
         while True:    
             binFile = queueIn.get(block=True, timeout=None) 
@@ -156,7 +160,7 @@ class MarkerGeneFinder():
             hmmer = HMMERRunner()
             tableOutPath = os.path.join(binDir, tableOut)
             hmmerOutPath = os.path.join(binDir, hmmerOut)
-            hmmer.search(markerFile, prodigal.aaGeneFile, tableOutPath, hmmerOutPath, '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 1 --domE 1')
+            hmmer.search(hmmModelFiles[binId], prodigal.aaGeneFile, tableOutPath, hmmerOutPath, '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 1 --domE 1')
     
             queueOut.put(binId)
             

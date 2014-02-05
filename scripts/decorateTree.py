@@ -73,6 +73,17 @@ class DecorateTree(object):
         colocatedSets = self.markerset.colocatedSets(colocatedGenes, markerGenes)
         
         return colocatedSets
+    
+    def __pfamIdToPfamAcc(self, img):
+        pfamIdToPfamAcc = {}
+        for line in open(img.pfamHMMs):
+            if 'ACC' in line:
+                acc = line.split()[1].strip()
+                pfamId = acc.split('.')[0]
+                
+                pfamIdToPfamAcc[pfamId] = acc
+        
+        return pfamIdToPfamAcc
 
     def decorate(self, taxaTreeFile, derepFile, inputTreeFile, metadataOut, numThreads):    
         # read genome metadata
@@ -97,7 +108,11 @@ class DecorateTree(object):
         print '  Calculating statistics for each internal node.'
         self.__internalNodeStatistics(taxaTreeFile, inputTreeFile, duplicateTaxa, geneCountTable, metadata, metadataOut, numThreads)
      
-    def __internalNodeStatistics(self, taxaTreeFile, inputTreeFile, duplicateTaxa, geneCountTable, metadata, metadataOut, numThreads):       
+    def __internalNodeStatistics(self, taxaTreeFile, inputTreeFile, duplicateTaxa, geneCountTable, metadata, metadataOut, numThreads):  
+        
+        # determine HMM model accession numbers
+        pfamIdToPfamAcc = self.__pfamIdToPfamAcc(self.img)
+               
         taxaTree = dendropy.Tree.get_from_path(taxaTreeFile, schema='newick', as_rooted=True, preserve_underscores=True)
         inputTree = dendropy.Tree.get_from_path(inputTreeFile, schema='newick', as_rooted=True, preserve_underscores=True)
     
@@ -113,7 +128,7 @@ class DecorateTree(object):
             workerQueue.put((None, None))
             
         calcProc = [mp.Process(target = self.__processInternalNode, args = (taxaTree, duplicateTaxa, geneCountTable, workerQueue, writerQueue)) for _ in range(numThreads)]
-        writeProc = mp.Process(target = self.__reportStatistics, args = (metadata, metadataOut, inputTree, inputTreeFile, writerQueue))
+        writeProc = mp.Process(target = self.__reportStatistics, args = (metadata, metadataOut, inputTree, inputTreeFile, pfamIdToPfamAcc, writerQueue))
 
         writeProc.start()
 
@@ -159,9 +174,9 @@ class DecorateTree(object):
             
             queueOut.put((uniqueId, labels, markerSet, taxaStr, bootstrap, node.oid, nodeLabel))
             
-    def __reportStatistics(self, metadata, metadataOut, inputTree, inputTreeFile, writerQueue):
+    def __reportStatistics(self, metadata, metadataOut, inputTree, inputTreeFile, pfamIdToPfamAcc, writerQueue):
         """Store statistics for internal node."""
-        
+                
         fout = open(metadataOut, 'w')
         fout.write('UID\t# genomes\tTaxonomy\tBootstrap')
         fout.write('\tGC mean\tGC std')
@@ -193,7 +208,21 @@ class DecorateTree(object):
             m, s = self.__meanStd(metadata, labels, 'gene count')
             fout.write('\t' + str(m) + '\t' + str(s))
             
-            fout.write('\t' + str(markerSet))
+            # change model names to accession numbers, and make
+            # sure there is an HMM model for each PFAM
+            mungedMarkerSets = []
+            for geneSet in markerSet:
+                s = set()
+                for geneId in geneSet:
+                    if 'pfam' in geneId:
+                        pfamId = geneId.replace('pfam', 'PF')
+                        if pfamId in pfamIdToPfamAcc:                      
+                            s.add(pfamIdToPfamAcc[pfamId])
+                    else:
+                        s.add(geneId)
+                mungedMarkerSets.append(s)
+            
+            fout.write('\t' + str(mungedMarkerSets))
             
             fout.write('\n')
             

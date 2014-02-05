@@ -25,6 +25,9 @@ import sys
 E_VAL = 1e-10
 LENGTH = 0.7
 
+TAXON_MARKER_FILE_HEADER = '# [Taxon Marker File]'
+LINEAGE_MARKER_FILE_HEADER = '# [Lineage Marker File]'
+
 SEQ_CONCAT_CHAR = '&&'
 
 HMM_MODELS = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'pfam_tigrfam.hmm')

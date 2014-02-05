@@ -18,13 +18,13 @@
 ###############################################################################
 
 __prog_name__ = 'TaxonomicMarkerSets'
-__prog_desc__ = 'create all taxonomic-specific marker sets'
+__prog_desc__ = 'create taxonomic-specific marker sets'
 
 __author__ = 'Donovan Parks'
 __copyright__ = 'Copyright 2013'
 __credits__ = ['Donovan Parks']
 __license__ = 'GPL3'
-__version__ = '0.1'
+__version__ = '0.0.1'
 __maintainer__ = 'Donovan Parks'
 __email__ = 'donovan.parks@gmail.com'
 __status__ = 'Development'
@@ -35,8 +35,8 @@ import argparse
 import multiprocessing as mp
 
 from checkm.lib.img import IMG
+from checkm.lib.taxonomyUtils import rankPrefixes, ranksByLevel
 from lib.markerSet import MarkerSet
-from lib.taxonomyUtils import rankPrefixes
 
 class TaxonomicMarkerSets(object):
     def __init__(self):
@@ -82,6 +82,9 @@ class TaxonomicMarkerSets(object):
                        colocatedDistThreshold, colocatedGenomeThreshold,
                        outputDir, numDataItems, writerQueue):
         """Store or write results of worker threads in a single thread."""
+        
+        taxonSetOut = open(os.path.join(outputDir, 'taxon_marker_sets.tsv'), 'w')
+        
         processedItems = 0
         while True:
             lineage, colocatedSets, numGenomes = writerQueue.get(block=True, timeout=None)
@@ -115,9 +118,7 @@ class TaxonomicMarkerSets(object):
                     for geneId in geneSet:
                         if 'pfam' in geneId:
                             pfamId = geneId.replace('pfam', 'PF')
-                            if pfamId not in pfamIdToPfamAcc:
-                                print geneId # missing PFAM HMM
-                            else:                         
+                            if pfamId in pfamIdToPfamAcc:                    
                                 s.add(pfamIdToPfamAcc[pfamId])
                         else:
                             s.add(geneId)
@@ -125,8 +126,18 @@ class TaxonomicMarkerSets(object):
                             
                 fout.write(str(mungedColocatedSets))
                 fout.close()
+                
+
+                # write out single taxonomic-specific marker set file
+                numMarkerGenes = 0
+                for m in mungedColocatedSets:
+                    numMarkerGenes += len(m)
+                    
+                taxonomy = [x.strip() for x in lineage.split(';')]
+                taxonSetOut.write(ranksByLevel[len(taxonomy)-1] + '\t' + taxonomy[-1] + '\t' + str(numGenomes) + '\t' + str(numMarkerGenes) + '\t' + str(len(mungedColocatedSets)) + '\t' + str(mungedColocatedSets) + '\n')
 
         sys.stdout.write('\n')
+        taxonSetOut.close()
         
     def __pfamIdToPfamAcc(self, img):
         pfamIdToPfamAcc = {}
@@ -190,7 +201,7 @@ if __name__ == '__main__':
     parser.add_argument('output_dir', help='output directory')
     parser.add_argument('-u', '--ubiquity', help='ubiquity threshold for defining marker set', type=float, default = 0.97)
     parser.add_argument('-s', '--single_copy', help='single-copy threshold for defining marker set', type=float, default = 0.97)
-    parser.add_argument('-m', '--min_genomes', help='minimum genomes required to infer marker set', type=int, default = 5)
+    parser.add_argument('-m', '--min_genomes', help='minimum genomes required to infer marker set', type=int, default = 3)
     parser.add_argument('-d', '--distance_threshold', help='genomic distance to be considered co-located', type=float, default=5000)
     parser.add_argument('-g', '--genome_threshold', help='percentage of genomes required to be considered co-located', type=float, default=0.95)
     parser.add_argument('-t', '--threads', type=int, help='number of threads', default=1)

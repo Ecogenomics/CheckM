@@ -34,6 +34,7 @@ import argparse
 import sys
 
 from checkm import checkm, defaultValues
+from checkm.lib.taxonomyUtils import taxonomicRanks
 
 def printHelp():
     print ''
@@ -42,15 +43,18 @@ def printHelp():
 
   Assess completeness and contamination of putative genome bins.
     
-  Standard workflow:
+  Lineage-specific marker set:
     tree        -> Place each genome bin in the genome tree
     tree_qa     -> Assess phylogenetic markers found in each bin
-    marker_set  -> Calculate lineage-specific marker sets for each genome bin
+    lineage_set -> Infer lineage-specific marker sets for each genome bin
+    
+  Taxonomic-specific marker set:
+    taxon_list  -> List available taxonomic-specific marker sets
+    taxon_set   -> Infer taxonomic-specific marker set
+    
+  Apply marker set to genome bins:   
     analyze     -> Identify marker genes in genome bins
     qa          -> Assess bins for contamination and completeness
-
-  Combined workflows:
-    all         -> Perform the entire standard workflow
          
   General plots:
     nx_plot     -> Create Nx-plots
@@ -125,7 +129,7 @@ if __name__ == '__main__':
     tree_qa_parser = subparsers.add_parser('tree_qa',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         description='''Assess phylogenetic markers found in each bin.''')
-    tree_qa_parser.add_argument('out_folder', help="folder specified during tree command")
+    tree_qa_parser.add_argument('tree_folder', help="folder specified during tree command")
     tree_qa_parser.add_argument('-o', '--output-format', dest='out_format',
                                     type=int,
                                     help='''desired output:
@@ -141,25 +145,40 @@ if __name__ == '__main__':
     
     
     # calculate lineage-specific marker set for genome bins
-    marker_set_parser = subparsers.add_parser('marker_set',
+    lineage_set_parser = subparsers.add_parser('lineage_set',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        description='''Calculate lineage-specific marker sets for each genome bin.''')
-    marker_set_parser.add_argument('out_folder', help="folder specified during tree command")
-    marker_set_parser.add_argument('marker_file', help="output file indicating marker set for each bin")
-    marker_set_parser.add_argument('-m', '--num_genomes_markers', type=int, help="minimum genomes required to calculate initial marker set", default=30)
-    marker_set_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum genomes required to refine marker set", default=5)
-    marker_set_parser.add_argument('-b', '--bootstrap', type=float, help="required bootstrap support for calculating marker set; percentage between 0 and 1", default=0)
-    marker_set_parser.add_argument('--no_lineage_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform lineage-specific marker set refinement")
-    marker_set_parser.add_argument('--taxonomy', dest='bRequireTaxonomy', action="store_true", default=False, help="only consider nodes with defined taxonomy")
-    marker_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+                                        description='''Infer lineage-specific marker sets for each genome bin.''')
+    lineage_set_parser.add_argument('tree_folder', help="folder specified during tree command")
+    lineage_set_parser.add_argument('marker_file', help="output file describing marker set for each bin")
+    lineage_set_parser.add_argument('-m', '--num_genomes_markers', type=int, help="minimum genomes required to calculate initial marker set", default=30)
+    lineage_set_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum genomes required to refine marker set", default=5)
+    lineage_set_parser.add_argument('-b', '--bootstrap', type=float, help="required bootstrap support for calculating marker set; percentage between 0 and 1", default=0)
+    lineage_set_parser.add_argument('--no_lineage_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform lineage-specific marker set refinement")
+    lineage_set_parser.add_argument('--taxonomy', dest='bRequireTaxonomy', action="store_true", default=False, help="only consider nodes with defined taxonomy")
+    lineage_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # list of avaliable taxonomic-specific marker set
+    taxon_list_parser = subparsers.add_parser('taxon_list',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        description='''List available taxonomic-specific marker sets.''')
+    taxon_list_parser.add_argument('-r', '--rank', help="restrict list to specified taxonomic rank", choices=['ALL'] + taxonomicRanks, default='ALL')
+    
+    # calculate taxonomic-specific marker set
+    taxon_set_parser = subparsers.add_parser('taxon_set',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        description='''Infer taxonomic-specific marker set.''')
+    taxon_set_parser.add_argument('rank', help="taxonomic rank", choices=['domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'])
+    taxon_set_parser.add_argument('taxon', help="taxon of interest")
+    taxon_set_parser.add_argument('marker_file', help="output file describing taxonomic-specific marker set")
+    taxon_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # identify marker genes within binned contigs and calculate genome statistics
     analyze_parser = subparsers.add_parser('analyze',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         description='''Identify marker genes in bins and calculate genome statistics.''')
-    analyze_parser.add_argument('marker_file', help="markers to use for accessing genomes")
+    analyze_parser.add_argument('marker_file', help="markers for assessing bins (marker set or HMM file)")
     analyze_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    analyze_parser.add_argument('out_folder', help="folder specified during tree command")
+    analyze_parser.add_argument('out_folder', help="folder to write output files")
     analyze_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
     analyze_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     analyze_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -169,8 +188,9 @@ if __name__ == '__main__':
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[output_parser],
                                         description='''Assess genome bins for contamination and completeness.''')
-    qa_parser.add_argument('marker_file', help="markers use to analyze bins (marker file from tree command or an HMMER HMM file)")
-    qa_parser.add_argument('out_folder', help="folder specified during tree command")
+    qa_parser.add_argument('marker_file', help="markers for assessing bins (marker set or HMM file)")
+    qa_parser.add_argument('analyze_folder', help="folder specified during analyze command")
+    qa_parser.add_argument('--individual_markers', dest='bIndividualMarkers', action="store_true", default=False, help="treat marker as independent (i.e., ignore co-located set structure)")
     qa_parser.add_argument('--skip_orf_correction', dest='bSkipOrfCorrection', action="store_true", default=False, help="skip identification of ORF errors affecting marker genes")
     qa_parser.add_argument('--ignore_thresholds', dest='bIgnoreThresholds', action="store_true", default=False, help="ignore model-specific score thresholds")
     qa_parser.add_argument('--aai_strain', type=float, default=0.95, help="AAI threshold used to identify strain heterogeneity")
@@ -180,19 +200,6 @@ if __name__ == '__main__':
     qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print a strictly tab-separated values table")
     qa_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
-    # Standard workflow in one step
-    pipeline_parser = subparsers.add_parser('all',
-                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        parents=[output_parser],
-                                        description='''Run analyze + qa + align in one step.''')
-    pipeline_parser.add_argument('marker_file', help="markers to use for accessing genomes (marker file from tree command or an HMMER HMM file)")
-    pipeline_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    pipeline_parser.add_argument('out_folder', help="folder to write output files")
-    pipeline_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
-    pipeline_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
-    pipeline_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.E_VAL, help="e-value cut off")
-    pipeline_parser.add_argument('-l', '--length', type=float, default=defaultValues.LENGTH, help="percent overlap between target and query")
-    pipeline_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
         
     # generic arguments for plots
     plot_need_qa_results_parser = argparse.ArgumentParser(add_help=False)

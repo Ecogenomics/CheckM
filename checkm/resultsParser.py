@@ -44,43 +44,44 @@ class ResultsParser():
         self.logger = logging.getLogger()
 
         self.results = {}
-        self.models = {}
+        self.models = defaultdict(dict)
     
     def analyseResults(self,
-                       directory,
+                       outDir,
                        binStatsFile,
                        seqStatsFile,
                        hmmTableFile,
-                       hmmModelFile,
+                       binIdToHmmModelFile,
                        bIgnoreThresholds = False,
                        evalueThreshold = defaultValues.E_VAL,
                        lengthThreshold = defaultValues.LENGTH,
                        bSkipOrfCorrection = False,
                        ):
-        """Parse the results in the output directory"""
+        """Parse results in the output directory"""
 
         # parse information from HMMs
-        self.parseHmmerModels(hmmModelFile)
+        self.parseHmmerModels(binIdToHmmModelFile)
         
         # read bin and sequence stats into dictionaries
-        binStats = self.parseBinStats(directory, binStatsFile)
-        seqStats = self.parseSeqStats(directory, seqStatsFile)
+        binStats = self.parseBinStats(outDir, binStatsFile)
+        seqStats = self.parseSeqStats(outDir, seqStatsFile)
 
         # get hits to each bin
-        self.parseBinHits(directory, hmmTableFile, bSkipOrfCorrection, bIgnoreThresholds, evalueThreshold, lengthThreshold, binStats, seqStats)
+        self.parseBinHits(outDir, hmmTableFile, bSkipOrfCorrection, bIgnoreThresholds, evalueThreshold, lengthThreshold, binStats, seqStats)
             
-    def cacheResults(self, directory):
+    def cacheResults(self, outDir):
         # cache critical results to file
-        self.__writeBinStatsExt(directory)
-        self.__writeMarkerGeneStats(directory)
+        self.__writeBinStatsExt(outDir)
+        self.__writeMarkerGeneStats(outDir)
         
-    def parseHmmerModels(self, hmmModelFile):
-        """ Parse HMM file to collect model information."""
-        modelParser = HmmModelParser(hmmModelFile)
-        for model in modelParser.parse():
-            self.models[model.acc] = model
+    def parseHmmerModels(self, binIdToHmmModelFile):
+        """ Parse each bins HMM file to collect model information."""
+        for binId, hmmModelFile in binIdToHmmModelFile.iteritems():
+            modelParser = HmmModelParser(hmmModelFile)
+            for model in modelParser.parse():
+                self.models[binId][model.acc] = model
 
-    def parseBinHits(self, directory, 
+    def parseBinHits(self, outDir, 
                      hmmTableFile, 
                      bSkipOrfCorrection = False, 
                      bIgnoreThresholds = False, 
@@ -93,24 +94,18 @@ class ResultsParser():
             self.logger.error('  [Error] Models must be parsed before identifying HMM hits.')
             raise
         
-        for folder in os.listdir(directory): 
-            binFolder = os.path.join(directory, folder)
-            if os.path.isdir(binFolder):
-                # check if directory is a bin
-                hmmerTableFile = os.path.join(binFolder, hmmTableFile)
-                if not os.path.exists(hmmerTableFile):
-                    continue
-                
-                if binStats != None and seqStats != None:
-                    resultsManager = ResultsManager(folder, self.models, bIgnoreThresholds, evalueThreshold, lengthThreshold, binStats[folder], seqStats[folder])
-                elif binStats == None and seqStats == None:
-                    resultsManager = ResultsManager(folder, self.models, bIgnoreThresholds, evalueThreshold, lengthThreshold)
-                else:
-                    self.logger.error('  [Error] Invalid parameter settings for binStats and seqStats.')
-                    raise
-                       
-                self.parseHmmerResults(hmmerTableFile, resultsManager, bSkipOrfCorrection, folder == 'bin_26')
-                self.results[folder] = resultsManager
+        for binId in self.models:    
+            if binStats != None and seqStats != None:
+                resultsManager = ResultsManager(binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold, binStats[binId], seqStats[binId])
+            elif binStats == None and seqStats == None:
+                resultsManager = ResultsManager(binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold)
+            else:
+                self.logger.error('  [Error] Invalid parameter settings for binStats and seqStats.')
+                raise
+                   
+            hmmerTableFile = os.path.join(outDir, binId, hmmTableFile)
+            self.parseHmmerResults(hmmerTableFile, resultsManager, bSkipOrfCorrection)
+            self.results[binId] = resultsManager
 
     def __writeBinStatsExt(self, directory):
         binStatsExt = {}
@@ -181,7 +176,7 @@ class ResultsParser():
             
         return seqStats
             
-    def parseHmmerResults(self, fileName, resultsManager, bSkipOrfCorrection, bDebug):
+    def parseHmmerResults(self, fileName, resultsManager, bSkipOrfCorrection):
         """Parse HMMER results."""
         try:
             with open(fileName, 'r') as hmmerHandle:

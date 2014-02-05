@@ -35,6 +35,7 @@ from hmmerAligner import HmmerAligner
 from markerGeneFinder import MarkerGeneFinder
 from pplacer import PplacerRunner
 from treeParser import TreeParser
+from taxonParser import TaxonParser
 from aminoAcidIdentity import AminoAcidIdentity
 from binComparer import BinComparer
 from binStatistics import BinStatistics
@@ -98,20 +99,23 @@ class OptionsParser():
         binStats = BinStatistics(options.threads)
         binStats.calculate(binFiles, options.out_folder, defaultValues.BIN_STATS_PHYLO_OUT, defaultValues.SEQ_STATS_PHYLO_OUT)
         
+        # set HMM file for each bin
+        binIdToHmmModelFile = {}
+        for binFile in binFiles:
+            binId = binIdFromFilename(binFile)
+            binIdToHmmModelFile[binId] = phyloHMMs
+        
         # align identified marker genes
         self.logger.info('')
         HA = HmmerAligner(options.threads)
-        HA.makeAlignments(options.out_folder,
-                          defaultValues.HMMER_TABLE_PHYLO_OUT,
-                          phyloHMMs,
-                          False,
-                          defaultValues.E_VAL,
-                          defaultValues.LENGTH,
-                          os.path.join(options.out_folder, 'storage', 'tree'),
-                          False,
-                          bBestHitOnly = True,
-                          bMultipleHitsOnly = False
-                          )
+        HA.makeAlignmentToCommonMarkers(options.out_folder,
+                                          defaultValues.HMMER_TABLE_PHYLO_OUT,
+                                          binIdToHmmModelFile,
+                                          False,
+                                          defaultValues.E_VAL,
+                                          defaultValues.LENGTH,
+                                          os.path.join(options.out_folder, 'storage', 'tree')
+                                          )
         
         # place bins into genome tree
         self.logger.info('')
@@ -129,30 +133,35 @@ class OptionsParser():
 
         makeSurePathExists(options.out_folder)
         
-        # calculate marker gene statistics
+        # set HMM file for each bin
         phyloHMMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'phylo.hmm')
+        binIdToHmmModelFile = {}
+        for f in os.listdir(options.out_folder):
+            if os.path.isdir(f) and f != 'storage':  
+                binIdToHmmModelFile[f] = phyloHMMs
         
+        # calculate marker gene statistics
         RP = ResultsParser()
         RP.analyseResults(options.out_folder, 
                           defaultValues.BIN_STATS_PHYLO_OUT, 
                           defaultValues.SEQ_STATS_PHYLO_OUT, 
                           defaultValues.HMMER_TABLE_PHYLO_OUT, 
-                          phyloHMMs)
+                          binIdToHmmModelFile)
 
         # determine taxonomy of each bin
         treeParser = TreeParser()
         treeParser.printSummary(options.out_format, options.out_folder, RP, options.bTabTable, options.file)
          
         if options.file != '':
-            print '  QA information written to: ' + options.file
+            self.logger.info('  QA information written to: ' + options.file)
             
         self.timeKeeper.printTimeStamp()
 
-    def marker(self, options, db=None):
-        """Marker command"""   
+    def lineageSet(self, options, db=None):
+        """Lineage set command"""   
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - marker] Calculating lineage-specific marker sets.')
+        self.logger.info(' [CheckM - lineage_set] Infer lineage-specific marker sets.')
         self.logger.info('*******************************************************************************')
                 
         makeSurePathExists(options.out_folder) 
@@ -163,8 +172,37 @@ class OptionsParser():
                                     options.bootstrap, options. bNoLineageSpecificRefinement,
                                     options.bRequireTaxonomy)
         
-        print ''
-        print '  Marker set written to: ' + options.marker_file
+        self.logger.info('')
+        self.logger.info('  Marker set written to: ' + options.marker_file)
+        
+        self.timeKeeper.printTimeStamp()
+        
+    def taxonList(self, options, db=None):
+        """Lineage set command"""   
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - taxon_list] List available taxonomic-specific marker sets.')
+        self.logger.info('*******************************************************************************')
+                
+        taxonParser = TaxonParser()
+        taxonParser.list(options.rank)
+        
+        self.timeKeeper.printTimeStamp()
+        
+    def taxonSet(self, options, db=None):
+        """Taxon set command"""   
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - taxon_set] Infer taxonomic-specific marker set.')
+        self.logger.info('*******************************************************************************')
+                
+        self.logger.info('')
+        taxonParser = TaxonParser()
+        bValidSet = taxonParser.markerSet(options.rank, options.taxon, options.marker_file)
+        
+        if bValidSet:
+            self.logger.info('')
+            self.logger.info('  Marker set written to: ' + options.marker_file)
         
         self.timeKeeper.printTimeStamp()
         
@@ -181,24 +219,21 @@ class OptionsParser():
 
         # find marker genes in genome bins    
         mgf = MarkerGeneFinder(options.threads)
-        mgf.find(binFiles, options.out_folder, defaultValues.HMMER_TABLE_OUT, defaultValues.HMMER_OUT, options.marker_file)
+        binIdToHmmModelFile = mgf.find(binFiles, options.out_folder, defaultValues.HMMER_TABLE_OUT, defaultValues.HMMER_OUT, options.marker_file)
         
         self.timeKeeper.printTimeStamp()
         
-        # align identified marker genes
+        # align marker genes with multiple hits within a bin
         self.logger.info('')
         HA = HmmerAligner(options.threads)
-        HA.makeAlignments(options.out_folder,
-                          defaultValues.HMMER_TABLE_OUT,
-                          options.marker_file,
-                          False,
-                          defaultValues.E_VAL,
-                          defaultValues.LENGTH,
-                          os.path.join(options.out_folder, 'storage', 'aai_qa'),
-                          False,
-                          bBestHitOnly = False,
-                          bMultipleHitsOnly = True
-                          )
+        HA.makeAlignmentsOfMultipleHits(options.out_folder,
+                                          defaultValues.HMMER_TABLE_OUT,
+                                          binIdToHmmModelFile,
+                                          False,
+                                          defaultValues.E_VAL,
+                                          defaultValues.LENGTH,
+                                          os.path.join(options.out_folder, 'storage', 'aai_qa')
+                                          )
         
         self.timeKeeper.printTimeStamp()
         
@@ -851,16 +886,16 @@ class OptionsParser():
             self.tree(options)
         elif(options.subparser_name == 'tree_qa'):
             self.treeQA(options)
-        elif(options.subparser_name == 'marker_set'):
-            self.marker(options)
+        elif(options.subparser_name == 'lineage_set'):
+            self.lineageSet(options)
+        elif(options.subparser_name == 'taxon_list'):
+            self.taxonList(options)
+        elif(options.subparser_name == 'taxon_set'):
+            self.taxonSet(options)
         elif(options.subparser_name == 'analyze'):
             self.analyze(options)
         elif(options.subparser_name == 'qa'):
             self.qa(options)
-        elif(options.subparser_name == 'all'):
-            self.analyze(options)
-            self.qa(options)
-            self.align(options)
         elif(options.subparser_name == 'gc_plot'):
             self.gcPlot(options)
         elif(options.subparser_name == 'coding_plot'):

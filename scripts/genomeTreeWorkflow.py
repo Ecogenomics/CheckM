@@ -44,11 +44,11 @@ from decorateTree import DecorateTree
 
 class GenomeTreeWorkflow(object):
     def __init__(self, outputDir):
-        if os.path.exists(outputDir):
-            print '[Error] Output directory already exists: ' + outputDir
-            sys.exit(0)
-        else:
-            os.makedirs(outputDir)
+        #if os.path.exists(outputDir):
+        #    print '[Error] Output directory already exists: ' + outputDir
+        #    sys.exit(0)
+        #else:
+        #    os.makedirs(outputDir)
             
         self.__checkForHMMER()
         self.__checkForFastTree()
@@ -84,12 +84,12 @@ class GenomeTreeWorkflow(object):
         self.consistencyMinTaxa = 20
         
         # create output directories
-        os.makedirs(self.hmmDir)
-        os.makedirs(self.alignmentDir)
-        os.makedirs(self.geneTreeDir)
-        os.makedirs(self.conspecificGeneTreeDir)
-        os.makedirs(self.finalGeneTreeDir)
-        os.makedirs(self.bootstrapDir)
+        #os.makedirs(self.hmmDir)
+        #os.makedirs(self.alignmentDir)
+        #os.makedirs(self.geneTreeDir)
+        #os.makedirs(self.conspecificGeneTreeDir)
+        #os.makedirs(self.finalGeneTreeDir)
+        #os.makedirs(self.bootstrapDir)
     
     def __checkForHMMER(self):
         """Check to see if HMMER is on the system path."""
@@ -144,76 +144,77 @@ class GenomeTreeWorkflow(object):
             sys.exit()
 
     def run(self, numThreads):  
-        # identify genes suitable for phylogenetic inference
-        print '--- Identifying genes suitable for phylogenetic inference ---'
-        phylogeneticInferenceGenes = PhylogeneticInferenceGenes()
-        phylogeneticInferenceGenes.run(self.phyloUbiquity, self.phyloSingleCopy, numThreads, self.alignmentDir, self.hmmDir)
-    
-        # infer gene trees
-        print ''
-        print '--- Inferring gene trees ---'
-        makeTrees = MakeTrees()
-        makeTrees.run(self.alignmentDir, self.geneTreeDir, '.aln.masked.faa', numThreads)
+        if False:
+            # identify genes suitable for phylogenetic inference
+            print '--- Identifying genes suitable for phylogenetic inference ---'
+            phylogeneticInferenceGenes = PhylogeneticInferenceGenes()
+            phylogeneticInferenceGenes.run(self.phyloUbiquity, self.phyloSingleCopy, numThreads, self.alignmentDir, self.hmmDir)
         
-        # test gene trees for paralogs
-        print ''
-        print '--- Testing for paralogs in gene trees ---'
-        paralogTest = ParalogTest()
-        paralogTest.run(self.geneTreeDir, self.paralogAcceptPer, '.tre', self.conspecificGeneTreeDir)
-        
-        # test gene trees for consistency with IMG taxonomy
-        print ''
-        print '--- Testing taxonomic consistency of gene trees ---'
-        consistencyTest = ConsistencyTest()
-        consistencyTest.run(self.conspecificGeneTreeDir, '.tre', self.consistencyAcceptPer, self.consistencyMinTaxa, self.consistencyOut, self.finalGeneTreeDir)
-        
-        # gather phylogenetically informative HMMs into a single model file
-        print ''
-        print '--- Gathering phylogenetically informative HMMs ---'
-        getPhylogeneticHMMs = GetPhylogeneticHMMs()
-        getPhylogeneticHMMs.run(self.hmmDir, self.finalGeneTreeDir, self.phyloHMMsOut)
-        
-        # infer genome tree
-        print ''
-        print '--- Inferring full genome tree ---'
-        inferGenomeTree = InferGenomeTree()
-        inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.treeOut, self.taxonomyOut)
-        
-        # root genome tree between archaea and bacteria
-        print ''
-        print '--- Rooting full genome tree ---'
-        rerootTree = RerootTree()
-        rerootTree.run(self.treeOut, self.treeRootedOut)
+            # infer gene trees
+            print ''
+            print '--- Inferring gene trees ---'
+            makeTrees = MakeTrees()
+            makeTrees.run(self.alignmentDir, self.geneTreeDir, '.aln.masked.faa', numThreads)
             
-        # decorate genome tree with taxonomy using nlevel from tax2tree
-        print ''
-        print '--- Decorating full genome tree with taxonomic information using tax2tree ---'
-        os.system('nlevel -t %s -m %s -o %s' % (self.treeRootedOut, self.taxonomyOut, self.treeTaxonomyOut))
-        
-        # dereplicate identical sequences   
-        print ''
-        print '--- Identifying duplicate sequences ---'
-        os.system('seqmagick convert --deduplicate-sequences --deduplicated-sequences-file ' + self.derepSeqFile + ' ' + self.concatenatedAlignFile + ' ' + self.derepConcatenatedAlignFile)
-        
-        # infer dereplicated genome tree 
-        print ''
-        print '--- Inferring dereplicated genome tree ---'
-        outputLog = self.treeDerepOut[0:self.treeDerepOut.rfind('.')] + '.log'
-        cmd = 'FastTreeMP -nosupport -wag -gamma -log ' + outputLog + ' ' + self.derepConcatenatedAlignFile + ' > ' + self.treeDerepOut
-        os.system(cmd)
-        
-        # root genome tree between archaea and bacteria
-        print ''
-        print '--- Rooting dereplicated genome tree ---'
-        rerootTree = RerootTree()
-        rerootTree.run(self.treeDerepOut, self.treeDerepRootedOut)
+            # test gene trees for paralogs
+            print ''
+            print '--- Testing for paralogs in gene trees ---'
+            paralogTest = ParalogTest()
+            paralogTest.run(self.geneTreeDir, self.paralogAcceptPer, '.tre', self.conspecificGeneTreeDir)
+            
+            # test gene trees for consistency with IMG taxonomy
+            print ''
+            print '--- Testing taxonomic consistency of gene trees ---'
+            consistencyTest = ConsistencyTest()
+            consistencyTest.run(self.conspecificGeneTreeDir, '.tre', self.consistencyAcceptPer, self.consistencyMinTaxa, self.consistencyOut, self.finalGeneTreeDir)
+            
+            # gather phylogenetically informative HMMs into a single model file
+            print ''
+            print '--- Gathering phylogenetically informative HMMs ---'
+            getPhylogeneticHMMs = GetPhylogeneticHMMs()
+            getPhylogeneticHMMs.run(self.hmmDir, self.finalGeneTreeDir, self.phyloHMMsOut)
+            
+            # infer genome tree
+            print ''
+            print '--- Inferring full genome tree ---'
+            inferGenomeTree = InferGenomeTree()
+            inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.treeOut, self.taxonomyOut)
+            
+            # root genome tree between archaea and bacteria
+            print ''
+            print '--- Rooting full genome tree ---'
+            rerootTree = RerootTree()
+            rerootTree.run(self.treeOut, self.treeRootedOut)
                 
-        # calculate bootstraps for genome tree   
-        print ''
-        print '--- Calculating bootstrap support ---'
-        bootstrapTree = BootstrapTree()
-        bootstrapTree.run(self.bootstrapDir, self.treeDerepRootedOut, self.concatenatedAlignFile, 100, numThreads, self.treeDerepBootstrapOut)
-        
+            # decorate genome tree with taxonomy using nlevel from tax2tree
+            print ''
+            print '--- Decorating full genome tree with taxonomic information using tax2tree ---'
+            os.system('nlevel -t %s -m %s -o %s' % (self.treeRootedOut, self.taxonomyOut, self.treeTaxonomyOut))
+            
+            # dereplicate identical sequences   
+            print ''
+            print '--- Identifying duplicate sequences ---'
+            os.system('seqmagick convert --deduplicate-sequences --deduplicated-sequences-file ' + self.derepSeqFile + ' ' + self.concatenatedAlignFile + ' ' + self.derepConcatenatedAlignFile)
+            
+            # infer dereplicated genome tree 
+            print ''
+            print '--- Inferring dereplicated genome tree ---'
+            outputLog = self.treeDerepOut[0:self.treeDerepOut.rfind('.')] + '.log'
+            cmd = 'FastTreeMP -nosupport -wag -gamma -log ' + outputLog + ' ' + self.derepConcatenatedAlignFile + ' > ' + self.treeDerepOut
+            os.system(cmd)
+            
+            # root genome tree between archaea and bacteria
+            print ''
+            print '--- Rooting dereplicated genome tree ---'
+            rerootTree = RerootTree()
+            rerootTree.run(self.treeDerepOut, self.treeDerepRootedOut)
+                    
+            # calculate bootstraps for genome tree   
+            print ''
+            print '--- Calculating bootstrap support ---'
+            bootstrapTree = BootstrapTree()
+            bootstrapTree.run(self.bootstrapDir, self.treeDerepRootedOut, self.concatenatedAlignFile, 100, numThreads, self.treeDerepBootstrapOut)
+            
         os.system('cp ' + self.treeDerepBootstrapOut + ' ' + self.treeDerepFinalOut)
         
         # decorate dereplicated tree with unique IDs and a complementary file indicating properties of each internal node 

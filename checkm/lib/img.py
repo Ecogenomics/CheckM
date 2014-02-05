@@ -257,7 +257,7 @@ class IMG(object):
 
         return stats
 
-    def lineagesSorted(self, metadata, mostSpecificRank=5):
+    def lineagesSorted(self, metadata, mostSpecificRank=6):
         lineages = []
         for r in xrange(0, mostSpecificRank+1):
             taxa = set()

@@ -30,8 +30,9 @@ __maintainer__ = 'Donovan Parks'
 __email__ = 'donovan.parks@gmail.com'
 __status__ = 'Development'
 
-ranksByLabel = {'Domain':0, 'Phylum':1, 'Class':2, 'Order':3, 'Family':4, 'Genus':5, 'Species':6, 'GG_ID':7}
-ranksByLevel = {0:'Domain', 1:'Phylum', 2:'Class', 3:'Order', 4:'Family', 5:'Genus', 6:'Species', 7:'GG_ID'}
+taxonomicRanks = ['domain', 'phylum', 'class', 'order', 'family', 'genus', 'species']
+ranksByLabel = {'domain':0, 'phylum':1, 'class':2, 'order':3, 'family':4, 'genus':5, 'species':6, 'gg_id':7}
+ranksByLevel = {0:'domain', 1:'phylum', 2:'class', 3:'order', 4:'family', 5:'genus', 6:'species', 7:'gg_id'}
 rankPrefixes = {0:'k__', 1:'p__', 2:'c__', 3:'o__', 4:'f__', 5:'g__', 6:'s__', 7:'id__'}
 
 def taxonomyWithRanks(taxonomy, ranks=6):
