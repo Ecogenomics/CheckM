@@ -88,7 +88,7 @@ class SSU_Finder(object):
         return seqInfo
 
     def __addHit(self, hits, seqId, info, concatenateThreshold):
-        """Add hits from individual HMM models and concatenate nearby hits."""
+        """Add hits from individual HMMs and concatenate nearby hits."""
         
         # check if this is the first hit to this sequence
         if seqId not in hits:
@@ -235,7 +235,7 @@ class SSU_Finder(object):
         # write summary file and putative SSU rRNAs to file
         summaryFile = os.path.join(outputDir, 'ssu_summary.tsv')
         summaryOut = open(summaryFile, 'w')
-        summaryOut.write('Bin Id\tSeq. Id\tHMM model\ti-Evalue\tStart hit\tEnd hit\t16S/18S gene length\tRev. Complement\tSequence length\n')
+        summaryOut.write('Bin Id\tSeq. Id\tHMM\ti-Evalue\tStart hit\tEnd hit\t16S/18S gene length\tRev. Complement\tSequence length\n')
 
         seqFile = os.path.join(outputDir, 'ssu.fna')
         seqOut = open(seqFile, 'w')

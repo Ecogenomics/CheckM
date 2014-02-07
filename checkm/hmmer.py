@@ -100,7 +100,7 @@ class HMMERModelExtractor():
         """Make temporary HMM files used to create HMM alignments.""" 
         
         if bReportProgress:
-            self.logger.info("  Extracting %d HMM models with %d threads:" % (len(modelAccIds), self.totalThreads))
+            self.logger.info("  Extracting %d HMMs with %d threads:" % (len(modelAccIds), self.totalThreads))
         
         # process each marker in parallel
         workerQueue = mp.Queue()
@@ -128,7 +128,7 @@ class HMMERModelExtractor():
         writeProc.join()
             
     def __extractModel(self, hmmModelFile, queueIn, queueOut):
-        """Extract HMM model."""
+        """Extract HMM."""
         HF = HMMERRunner(mode='fetch')
         
         while True:    
@@ -153,7 +153,7 @@ class HMMERModelExtractor():
             
             if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
                 numModelsExtracted += 1
-                statusStr = '    Finished extracting %d of %d (%.2f%%) HMM models.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
+                statusStr = '    Finished extracting %d of %d (%.2f%%) HMMs.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
                 sys.stdout.write('%s\r' % statusStr)
                 sys.stdout.flush()
                 

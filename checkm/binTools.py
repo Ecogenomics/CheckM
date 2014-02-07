@@ -193,7 +193,7 @@ class BinTools():
         
         return np.mean(deltaTDs), deltaTDs
             
-    def identifyOutliers(self, outFolder, binFiles, tetraProfileFile, distribution, reportType, outputFile):
+    def identifyOutliers(self, outDir, binFiles, tetraProfileFile, distribution, reportType, outputFile):
         """Identify sequences that are outliers."""   
         gcBounds = readDistribution(distribution, 'gc_dist')
         cdBounds = readDistribution(distribution, 'cd_dist')
@@ -221,7 +221,7 @@ class BinTools():
             binSig = self.binTetraSig(seqs, tetraSigs)
             meanTD, deltaTDs = self.tetraDiffDist(seqs, genomicSig, tetraSigs, binSig)
             
-            gffFile = os.path.join(outFolder, os.path.basename(binFile), 'prodigal.gff')
+            gffFile = os.path.join(outDir, 'bins', binId, 'prodigal.gff')
             prodigalParser = ProdigalGeneFeatureParser(gffFile)
             meanCD, deltaCDs, CDs = self.codingDensityDist(seqs, prodigalParser)
             

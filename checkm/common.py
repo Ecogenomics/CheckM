@@ -27,6 +27,18 @@ import logging
 
 import numpy as np
 
+def getBinIdsFromDir(outDir):
+    """Get bin ids."""
+    binIds = []
+    
+    binDir = os.path.join(outDir, 'bins')
+    
+    for f in os.listdir(binDir):
+        if os.path.isdir(os.path.join(binDir, f)) and f != 'storage':  
+            binIds.append(f)
+            
+    return binIds
+
 def readDistribution(distPer, dirPostfix):
     """Read distribution file."""
     distFile = os.path.join(os.path.dirname(sys.argv[0]) + '/../data/', dirPostfix, 'distribution_' + distPer + '.txt')

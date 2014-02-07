@@ -28,7 +28,7 @@ import numpy as np
 
 import defaultValues
 
-from common import makeSurePathExists, checkFileExists
+from common import checkFileExists
 from seqUtils import readFastaBases
 
 class ProdigalError(BaseException): pass
@@ -41,7 +41,6 @@ class ProdigalRunner():
         # make sure prodigal is installed
         self.checkForProdigal()
         
-        makeSurePathExists(outDir)
         self.aaGeneFile = os.path.join(outDir, defaultValues.PRODIGAL_AA)
         self.ntGeneFile = os.path.join(outDir, defaultValues.PRODIGAL_NT)
         self.gffFile = os.path.join(outDir, defaultValues.PRODIGAL_GFF)

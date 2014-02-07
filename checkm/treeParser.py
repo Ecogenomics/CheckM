@@ -33,8 +33,8 @@ import defaultValues
 
 from markerSet import MarkerSet
 
-from common import checkDirExists, reassignStdOut, restoreStdOut
-from seqUtils import readFasta, writeFasta
+from common import checkDirExists, reassignStdOut, restoreStdOut, getBinIdsFromDir
+from seqUtils import readFasta
 
 class TreeParser():
     """Parse genome tree and associated tree metadata."""
@@ -192,14 +192,11 @@ class TreeParser():
                                     numGenomesMarkers, numGenomesRefine, 
                                     bootstrap, bNoLineageSpecificRefinement, bRequireTaxonomy):
         """Determine marker set for each bin."""
-        
+
         self.logger.info('  Determining marker set for each genome bin.')
         
         # get all bin ids
-        binIds = set()
-        for f in os.listdir(outDir):
-            if os.path.isdir(os.path.join(outDir, f)) and f != 'storage':
-                binIds.add(f)
+        binIds = getBinIdsFromDir(outDir)
                 
         # get statistics for internal nodes
         uniqueIdToLineageStatistics = self.__readNodeMetadata()
@@ -224,17 +221,18 @@ class TreeParser():
             node = tree.find_node_with_taxon_label(binId)
             if node == None:
                 # use universal set
-                uniqueId = rootNode.label.split('|')[0]
-                stats = uniqueIdToLineageStatistics[uniqueId]
+                trustedUniqueId = rootNode.label.split('|')[0]
+                trustedStats = uniqueIdToLineageStatistics[trustedUniqueId]
+                trustedStats['taxonomy'] = 'root'
             else:
                 parentNode = node.parent_node
                 while True:
                     if parentNode.label: # nodes inserted by PPLACER will not have a label
-                        uniqueId = parentNode.label.split('|')[0]
+                        trustedUniqueId = parentNode.label.split('|')[0]
                         
-                        stats = uniqueIdToLineageStatistics[uniqueId]
-                        if stats['# genomes'] >= numGenomesMarkers and stats['bootstrap'] >= bootstrap:
-                            if not bRequireTaxonomy or stats['taxonomy'] != '':
+                        trustedStats = uniqueIdToLineageStatistics[trustedUniqueId]
+                        if trustedStats['# genomes'] >= numGenomesMarkers and trustedStats['bootstrap'] >= bootstrap:
+                            if not bRequireTaxonomy or trustedStats['taxonomy'] != '':
                                 # all criteria meet, so use marker set from this node
                                 break
                     
@@ -244,7 +242,7 @@ class TreeParser():
                     parentNode = parentNode.parent_node
              
             # get marker set meeting all criteria required for a trusted marker set       
-            trustedMarkerSet = eval(stats['marker set'])
+            trustedMarkerSet = eval(trustedStats['marker set'])
             
             # get lineage-specific marker set which will be used to refine the above marker set
             if not bNoLineageSpecificRefinement:
@@ -298,7 +296,10 @@ class TreeParser():
             markerSet = MarkerSet(finalMarkerSet)
             numMarkers, numMarkerSets = markerSet.size()
                 
-            fout.write(binId + '\t' + uniqueId + '\t' + str(numMarkers) + '\t' + str(numMarkerSets) + '\t' + str(finalMarkerSet) + '\n')
+            if bRequireTaxonomy:
+                fout.write(binId + '\t' + trustedStats['taxonomy'] + '\t' + str(numMarkers) + '\t' + str(numMarkerSets) + '\t' + str(finalMarkerSet) + '\n')
+            else:
+                fout.write(binId + '\t' + str(trustedUniqueId) + '\t' + str(numMarkers) + '\t' + str(numMarkerSets) + '\t' + str(finalMarkerSet) + '\n')
                 
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stdout.write('\n')
@@ -388,12 +389,7 @@ class TreeParser():
         checkDirExists(alignOutputDir)
         
         # get all bin ids
-        files = os.listdir(outDir)
-        
-        binIds = set()
-        for f in files:
-            if os.path.isdir(os.path.join(outDir, f)) and f != 'storage':
-                binIds.add(f)
+        binIds = getBinIdsFromDir(outDir)
 
         # get taxonomy for each bin
         binIdToTaxonomy = self.getBinTaxonomy(outDir, binIds)
@@ -413,7 +409,8 @@ class TreeParser():
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
-        header = ['Bin Id', '# marker (of %d)' % len(resultsParser.models), 'Taxonomy', 'Weighted ML']
+        arbitraryBinId = binIdToTaxonomy.keys()[0]
+        header = ['Bin Id', '# marker (of %d)' % len(resultsParser.models[arbitraryBinId]), 'Taxonomy', 'Weighted ML']
         
         if bTabTable: 
             pTable = None
@@ -431,7 +428,7 @@ class TreeParser():
             row = [binId, str(len(resultsParser.results[binId].markerHits)), binIdToTaxonomy[binId], binIdToWeightedML.get(binId, 'NA')]
             
             if bTabTable:
-                print('\t'.join(row))
+                print('\t'.join(map(str, row)))
             else:
                 pTable.add_row(row)
                 
@@ -445,7 +442,8 @@ class TreeParser():
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
-        header = ['Bin Id', '# marker (of %d)' % len(resultsParser.models), 'Taxonomy', 'Weighted ML']
+        arbitraryBinId = binIdToTaxonomy.keys()[0]
+        header = ['Bin Id', '# marker (of %d)' % len(resultsParser.models[arbitraryBinId]), 'Taxonomy', 'Weighted ML']
         header += ['# descendant genomes', 'GC mean', 'GC std']
         header += ['Genome size mean (Mbps)', 'Genome size std (Mbps)']
         header += ['Genome count mean', 'Genome count std']

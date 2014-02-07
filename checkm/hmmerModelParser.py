@@ -23,7 +23,7 @@ class HmmModelError(Exception):
     pass
 
 class HmmModel(object):
-    """Store HMM model parameters."""
+    """Store HMM parameters."""
     def __init__(self, keys):
         setattr(self, 'isGatheringThreshold', False)
         setattr(self, 'isTrustedCutoff', False)
@@ -43,7 +43,7 @@ class HmmModel(object):
                 setattr(self, 'isNoiseCutoff', True)
                 
 class HmmModelParser(object):
-    """Parse HMM model file."""
+    """Parse HMM file."""
     def __init__(self, hmmFile):
         self.hmmFile = open(hmmFile)
 
@@ -54,7 +54,7 @@ class HmmModelParser(object):
             if line.startswith("HMMER"):
                 headerKeys['format'] = line.rstrip()
             elif line.startswith("HMM"):
-                # beginning of the hmm model; iterate through till end of model
+                # beginning of the hmm; iterate through till end of model
                 for line in self.hmmFile:
                     if line.startswith("//"):
                         yield HmmModel(headerKeys)

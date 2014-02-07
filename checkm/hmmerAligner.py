@@ -81,7 +81,7 @@ class HmmerAligner:
         makeSurePathExists(alignOutputDir)
         self.__alignMarkerGenes(markerSeqs, hmmModelFiles, alignOutputDir)
                
-        # remove the temporary HMM model files
+        # remove the temporary HMM files
         for fileName in hmmModelFiles:
             os.remove(hmmModelFiles[fileName])
             
@@ -128,7 +128,7 @@ class HmmerAligner:
             makeSurePathExists(binAlignOutputDir)
             self.__alignMarkerGenes(markersWithMultipleHits, hmmModelFiles, binAlignOutputDir, bReportProgress = False)
                    
-            # remove the temporary HMM model files
+            # remove the temporary HMM files
             for fileName in hmmModelFiles:
                 os.remove(hmmModelFiles[fileName])
                 
@@ -243,7 +243,7 @@ class HmmerAligner:
         markerSeqs = defaultdict(dict)
         for binId in resultsParser.results:
             # read ORFs for bin 
-            aaGeneFile = os.path.join(outDir, binId, defaultValues.PRODIGAL_AA)
+            aaGeneFile = os.path.join(outDir, 'bins', binId, defaultValues.PRODIGAL_AA)
             binORFs = readFasta(aaGeneFile)
         
             # extract ORFs hitting a marker
@@ -279,7 +279,7 @@ class HmmerAligner:
         
         markersWithMultipleHits = defaultdict(dict)
 
-        aaGeneFile = os.path.join(outDir, binId, defaultValues.PRODIGAL_AA)
+        aaGeneFile = os.path.join(outDir, 'bins', binId, defaultValues.PRODIGAL_AA)
         binORFs = readFasta(aaGeneFile)
     
         for markerId, hits in resultsParser.results[binId].markerHits.iteritems(): 
@@ -298,7 +298,7 @@ class HmmerAligner:
         """Make temporary HMM files used to create HMM alignments.""" 
         
         if bReportProgress:
-            self.logger.info("  Extracting %d HMM models with %d threads:" % (len(modelKeys), self.totalThreads))
+            self.logger.info("  Extracting %d HMMs with %d threads:" % (len(modelKeys), self.totalThreads))
         
         # process each marker in parallel
         workerQueue = mp.Queue()
@@ -327,7 +327,7 @@ class HmmerAligner:
         writeProc.join()
             
     def __extractModel(self, hmmModelFile, queueIn, queueOut):
-        """Extract HMM model."""
+        """Extract HMM."""
         HF = HMMERRunner(mode='fetch')
         
         while True:    
@@ -344,7 +344,7 @@ class HmmerAligner:
         
         numModelsExtracted = 0
         if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
-            statusStr = '    Finished extracting %d of %d (%.2f%%) HMM models.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
+            statusStr = '    Finished extracting %d of %d (%.2f%%) HMMs.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
         
@@ -355,7 +355,7 @@ class HmmerAligner:
             
             if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
                 numModelsExtracted += 1
-                statusStr = '    Finished extracting %d of %d (%.2f%%) HMM models.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
+                statusStr = '    Finished extracting %d of %d (%.2f%%) HMMs.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
                 sys.stdout.write('%s\r' % statusStr)
                 sys.stdout.flush()
          

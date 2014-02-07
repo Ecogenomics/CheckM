@@ -29,7 +29,7 @@ import numpy as np
 import defaultValues
 
 from timeKeeper import TimeKeeper
-from markerSet import MarkerSet
+from markerSet import MarkerSetParser
 from resultsParser import ResultsParser
 from hmmerAligner import HmmerAligner
 from markerGeneFinder import MarkerGeneFinder
@@ -47,7 +47,7 @@ from profile import Profile
 from binTools import BinTools
 from ssuFinder import SSU_Finder
 from PCA import PCA
-from common import makeSurePathExists, checkFileExists, binIdFromFilename, reassignStdOut, restoreStdOut
+from common import makeSurePathExists, checkFileExists, binIdFromFilename, reassignStdOut, restoreStdOut, getBinIdsFromDir
 
 from plot.gcPlots import GcPlots
 from plot.codingDensityPlots import CodingDensityPlots
@@ -83,11 +83,16 @@ class OptionsParser():
         """Tree command"""   
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - tree] Placing each genome bin in the genome tree.')
+        self.logger.info(' [CheckM - tree] Placing bins in genome tree.')
         self.logger.info('*******************************************************************************')
                 
         binFiles = self.binFiles(options.bin_folder, options.extension)   
-        makeSurePathExists(options.out_folder) 
+        
+        # setup directory structure
+        makeSurePathExists(options.out_folder)
+        makeSurePathExists(os.path.join(options.out_folder, 'bins')) 
+        makeSurePathExists(os.path.join(options.out_folder, 'storage')) 
+        makeSurePathExists(os.path.join(options.out_folder, 'storage', 'hmms'))
         
         # find phylogenetically informative genes in genome bins 
         phyloHMMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'phylo.hmm')                              
@@ -131,18 +136,16 @@ class OptionsParser():
         self.logger.info(' [CheckM - tree_qa] Assessing phylogenetic markers found in each bin.')
         self.logger.info('*******************************************************************************')
 
-        makeSurePathExists(options.out_folder)
+        makeSurePathExists(options.tree_folder)
         
         # set HMM file for each bin
-        phyloHMMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'phylo.hmm')
-        binIdToHmmModelFile = {}
-        for f in os.listdir(options.out_folder):
-            if os.path.isdir(f) and f != 'storage':  
-                binIdToHmmModelFile[f] = phyloHMMs
+        phyloHMMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'phylo.hmm') 
+        markerSetParser = MarkerSetParser()
+        binIdToHmmModelFile = markerSetParser.createHmmModelFiles(options.tree_folder, getBinIdsFromDir(options.tree_folder), phyloHMMs)
         
         # calculate marker gene statistics
         RP = ResultsParser()
-        RP.analyseResults(options.out_folder, 
+        RP.analyseResults(options.tree_folder, 
                           defaultValues.BIN_STATS_PHYLO_OUT, 
                           defaultValues.SEQ_STATS_PHYLO_OUT, 
                           defaultValues.HMMER_TABLE_PHYLO_OUT, 
@@ -150,7 +153,7 @@ class OptionsParser():
 
         # determine taxonomy of each bin
         treeParser = TreeParser()
-        treeParser.printSummary(options.out_format, options.out_folder, RP, options.bTabTable, options.file)
+        treeParser.printSummary(options.out_format, options.tree_folder, RP, options.bTabTable, options.file)
          
         if options.file != '':
             self.logger.info('  QA information written to: ' + options.file)
@@ -164,10 +167,10 @@ class OptionsParser():
         self.logger.info(' [CheckM - lineage_set] Infer lineage-specific marker sets.')
         self.logger.info('*******************************************************************************')
                 
-        makeSurePathExists(options.out_folder) 
+        makeSurePathExists(options.tree_folder) 
 
         treeParser = TreeParser()
-        treeParser.getBinMarkerSets(options.out_folder, options.marker_file, 
+        treeParser.getBinMarkerSets(options.tree_folder, options.marker_file, 
                                     options.num_genomes_markers, options.num_genomes_refine, 
                                     options.bootstrap, options. bNoLineageSpecificRefinement,
                                     options.bRequireTaxonomy)
@@ -214,9 +217,14 @@ class OptionsParser():
         self.logger.info('*******************************************************************************')
                 
         binFiles = self.binFiles(options.bin_folder, options.extension)   
-        makeSurePathExists(options.out_folder) 
-        makeSurePathExists(os.path.join(options.out_folder, 'storage'))
 
+        # setup directory structure
+        makeSurePathExists(options.out_folder)
+        makeSurePathExists(os.path.join(options.out_folder, 'bins')) 
+        makeSurePathExists(os.path.join(options.out_folder, 'storage')) 
+        makeSurePathExists(os.path.join(options.out_folder, 'storage', 'aai_qa'))
+        makeSurePathExists(os.path.join(options.out_folder, 'storage', 'hmms'))
+        
         # find marker genes in genome bins    
         mgf = MarkerGeneFinder(options.threads)
         binIdToHmmModelFile = mgf.find(binFiles, options.out_folder, defaultValues.HMMER_TABLE_OUT, defaultValues.HMMER_OUT, options.marker_file)
@@ -251,25 +259,34 @@ class OptionsParser():
         self.logger.info(' [CheckM - qa] Tabulating genome statistics.')
         self.logger.info('*******************************************************************************')
 
+        # calculate AAI between marks with multiple hits in a single bin
         aai = AminoAcidIdentity()
-        aai.run(options.aai_strain, os.path.join(options.out_folder, 'storage', 'aai_qa'))
+        aai.run(options.aai_strain, options.analyze_folder)
+        
+        # get HMM file for each bin
+        markerSetParser = MarkerSetParser()
+        binIdToHmmModelFile = markerSetParser.createHmmModelFiles(options.analyze_folder, getBinIdsFromDir(options.analyze_folder), options.marker_file)
+        binIdToMarkerSet = markerSetParser.getMarkerSets(options.analyze_folder, getBinIdsFromDir(options.analyze_folder), options.marker_file)
 
+        # get results for each bin
         RP = ResultsParser()
-        RP.analyseResults(options.out_folder, 
+        RP.analyseResults(options.analyze_folder, 
                           defaultValues.BIN_STATS_OUT, 
                           defaultValues.SEQ_STATS_OUT,
                           defaultValues.HMMER_TABLE_OUT,
-                          options.marker_file,
+                          binIdToHmmModelFile,
                           bIgnoreThresholds = options.bIgnoreThresholds,
                           evalueThreshold = options.e_value,
                           lengthThreshold = options.length,
                           bSkipOrfCorrection = options.bSkipOrfCorrection
                           )
-        RP.printSummary(options.out_format, aai, options.coverage_file, options.bTabTable, options.file)
-        RP.cacheResults(options.out_folder)
+        
+        self.logger.info('')
+        RP.printSummary(options.out_format, aai, binIdToMarkerSet, options.coverage_file, options.bTabTable, options.file)
+        RP.cacheResults(options.analyze_folder, binIdToMarkerSet)
                         
         if options.file != '':
-            print '  QA information written to: ' + options.file
+            self.logger.info('  QA information written to: ' + options.file)
             
         self.timeKeeper.printTimeStamp()
                 
@@ -444,7 +461,7 @@ class OptionsParser():
             self.logger.error('  [Error] Coverage profile is 1 dimensional. PCA requires at least 2 dimensions.')
             sys.exit()
         
-        print '  Computing PCA of coverage profiles.\n'
+        self.logger.info('  Computing PCA of coverage profiles.\n')
         pca = PCA()
         pc, variance = pca.pcaMatrix(coverageProfiles, fraction=1.0, bCenter=True, bScale=False)
             

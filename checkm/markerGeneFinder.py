@@ -26,64 +26,28 @@ import logging
 
 from common import binIdFromFilename, makeSurePathExists
 
-import defaultValues
-
-from hmmer import HMMERRunner, HMMERModelExtractor
+from hmmer import HMMERRunner
 from prodigal import ProdigalRunner
 
-from markerSet import parseTaxonomicMarkerSetFile, parseLineageMarkerSetFile
+from markerSet import MarkerSetParser
 
 class MarkerGeneFinder():
     """Identify marker genes within binned sequences using Prodigal and HMMER."""
     def __init__(self, threads):  
         self.logger = logging.getLogger()                  
         self.totalThreads = threads
-        
-        self.TAXONOMIC_MARKER_FILE = 1
-        self.TREE_MARKER_FILE = 2
-        self.HMM_MODELs_FILE = 3
 
     def find(self, binFiles, outDir, tableOut, hmmerOut, markerFile):
         """Identify marker genes in each bin using prodigal and HMMER."""
         
-        # determine type of marker file
-        markerFileType = self.__markerFileType(markerFile)
-        
-        # get list of all bins
+        # get bin ids
         binIds = []
         for binFile in binFiles:
             binIds.append(binIdFromFilename(binFile))
-        
-        # create HMM model file(s)
-        makeSurePathExists(os.path.join(outDir, 'storage', 'tmp'))
-        
-        hmmModelFiles = {}
-        if markerFileType == self.TAXONOMIC_MARKER_FILE:
-            markerSet = parseTaxonomicMarkerSetFile(markerFile)
-            hmmModelFile = os.path.join(outDir, 'storage', 'tmp', 'taxonomic.hmm')
-            self.__createMarkerHMMs(markerSet, hmmModelFile)
-            
-            for binId in binIds:
-                hmmModelFiles[binId] = hmmModelFile
-        elif markerFileType == self.TREE_MARKER_FILE:
-            binIdToMarkerSets = parseLineageMarkerSetFile(markerFile)
-
-            self.logger.info('  Extracting lineage-specific HMM models with %d threads:' % self.totalThreads)
-            for i, binId in enumerate(binIdToMarkerSets):
-                if self.logger.getEffectiveLevel() <= logging.INFO:
-                    statusStr = '    Finished extracting models from %d of %d (%.2f%%) bins.' % (i, len(binIdToMarkerSets), float(i)*100/len(binIdToMarkerSets))
-                    sys.stdout.write('%s\r' % statusStr)
-                    sys.stdout.flush()
                 
-                hmmModelFile = os.path.join(outDir, 'storage', 'tmp', binId + '.hmm')
-                self.__createMarkerHMMs(binIdToMarkerSets[binId], hmmModelFile, False)
-                hmmModelFiles[binId] = hmmModelFile 
-                
-            if self.logger.getEffectiveLevel() <= logging.INFO:
-                sys.stdout.write('\n')
-        else:
-            for binId in binIds:
-                hmmModelFiles[binId] = markerFile
+        # create HMM file(s)
+        markerSetParser = MarkerSetParser(self.totalThreads)
+        binIdToHmmModelFile = markerSetParser.createHmmModelFiles(outDir, binIds, markerFile)
 
         # process each fasta file
         self.threadsPerSearch = max(1, int(self.totalThreads / len(binFiles)))
@@ -99,7 +63,7 @@ class MarkerGeneFinder():
         for _ in range(self.totalThreads):
             workerQueue.put(None)
 
-        calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, hmmModelFiles, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, binIdToHmmModelFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
         writeProc = mp.Process(target = self.__reportProgress, args = (len(binFiles), writerQueue))
 
         writeProc.start()
@@ -113,34 +77,9 @@ class MarkerGeneFinder():
         writerQueue.put(None)
         writeProc.join()
         
-        return hmmModelFiles
-        
-    def __markerFileType(self, markerFile):
-        """Determine type of marker file."""
-        with open(markerFile, 'r') as f:
-            header = f.readline()
-            
-        if defaultValues.TAXON_MARKER_FILE_HEADER in header:
-            return self.TAXONOMIC_MARKER_FILE
-        elif defaultValues.LINEAGE_MARKER_FILE_HEADER in header:
-            return self.TREE_MARKER_FILE
-        elif 'HMMER3' in header:
-            return self.HMM_MODELs_FILE
-        else:
-            self.logger.error('Unrecognized file type: ' + markerFile)
-            sys.exit()
-            
-    def __createMarkerHMMs(self, markerSet, outputFile, bReportProgress = True):
-        """Create HMM file for taxonomic markers."""
-
-        # get list of marker genes  
-        markersGene = markerSet.getMarkerGenes()
-        
-        # extract marker genes
-        modelExtractor = HMMERModelExtractor(self.totalThreads)
-        modelExtractor.extract(defaultValues.HMM_MODELS, markersGene, outputFile, bReportProgress)
+        return binIdToHmmModelFile
               
-    def __processBin(self, outDir, tableOut, hmmerOut, hmmModelFiles, queueIn, queueOut):
+    def __processBin(self, outDir, tableOut, hmmerOut, binIdToHmmModelFile, queueIn, queueOut):
         """Thread safe bin processing."""      
         while True:    
             binFile = queueIn.get(block=True, timeout=None) 
@@ -148,7 +87,7 @@ class MarkerGeneFinder():
                 break   
             
             binId = binIdFromFilename(binFile)
-            binDir = os.path.join(outDir, binId)
+            binDir = os.path.join(outDir, 'bins', binId)
             makeSurePathExists(binDir)
     
             # run Prodigal     
@@ -160,7 +99,7 @@ class MarkerGeneFinder():
             hmmer = HMMERRunner()
             tableOutPath = os.path.join(binDir, tableOut)
             hmmerOutPath = os.path.join(binDir, hmmerOut)
-            hmmer.search(hmmModelFiles[binId], prodigal.aaGeneFile, tableOutPath, hmmerOutPath, '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 1 --domE 1')
+            hmmer.search(binIdToHmmModelFile[binId], prodigal.aaGeneFile, tableOutPath, hmmerOutPath, '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 1 --domE 1')
     
             queueOut.put(binId)
             

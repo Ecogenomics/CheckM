@@ -38,10 +38,9 @@ class BinStatistics():
 
     def calculate(self, binFiles, outDir, binStatsFile, seqStatsFile):
         """Calculate statistics for each putative genome bin."""
-        makeSurePathExists(outDir)
         
         # process each bin
-        self.logger.info("  Calculating genome statistics (e.g., GC, coding density) for %d bins with %d threads:" % (len(binFiles), self.totalThreads))
+        self.logger.info("  Calculating genome statistics for %d bins with %d threads:" % (len(binFiles), self.totalThreads))
 
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
@@ -77,7 +76,7 @@ class BinStatistics():
             scaffoldStats = {}
             
             binId = binIdFromFilename(binFile)
-            binDir = os.path.join(outDir, binId)
+            binDir = os.path.join(outDir, 'bins', binId)
             makeSurePathExists(binDir)
 
             # read scaffolds
@@ -137,7 +136,6 @@ class BinStatistics():
        
         # save results
         storagePath = os.path.join(outDir, 'storage')  
-        makeSurePathExists(storagePath)
         
         fout = open(os.path.join(storagePath, binStatsFile), 'w')
         fout.write(str(binStats))

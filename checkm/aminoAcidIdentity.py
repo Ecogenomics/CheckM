@@ -20,60 +20,69 @@
 ###############################################################################
 
 import os
+import sys
 import logging
 from collections import defaultdict
 
 from numpy import mean
 
 import defaultValues
-from common import makeSurePathExists, binIdFromFilename
+from common import getBinIdsFromDir
 from seqUtils import readFasta
 
 class AminoAcidIdentity():
-    """Calculate AAI between sequences aligned to an HMM model."""
+    """Calculate AAI between sequences aligned to an HMM."""
     def __init__(self):
         self.logger = logging.getLogger()
         self.aaiRawScores = defaultdict(dict)
         self.aaiHetero = defaultdict(dict)
         self.aaiMeanBinHetero = {}
         
-    def run(self, aaiStrainThreshold, alignOutputDir):
+    def run(self, aaiStrainThreshold, outDir):
         """Calculate AAI between input alignments."""
-        
-        makeSurePathExists(alignOutputDir)
         
         self.logger.info('')
         self.logger.info('  Calculating AAI between multi-copy marker genes.')
         
-        # calculate AAI for all marker genes
-        files = os.listdir(alignOutputDir)
-        for f in files: 
-            if not f.endswith('.masked.faa'):
+        # calculate AAI for duplicate marker genes
+        binIds = getBinIdsFromDir(outDir)
+        alignOutputDir = os.path.join(outDir, 'storage', 'aai_qa')
+        for binId in binIds:
+            binPath = os.path.join(alignOutputDir, binId)
+            if not os.path.exists(binPath):
                 continue
             
-            markerId = f[0:f.find('.')]
-            
-            seqs = readFasta(os.path.join(alignOutputDir, f))
-            
-            # calculate AAI between all pairs of seqs from the same bin
-            for i in xrange(0, len(seqs)):
-                seqIdI = seqs.keys()[i]
-                binIdI = seqIdI[0:seqIdI.find(defaultValues.SEQ_CONCAT_CHAR)]
+            for f in os.listdir(binPath): 
+                if not f.endswith('.masked.faa'):
+                    continue
                 
-                seqI = seqs[seqIdI]
+                markerId = f[0:f.find('.')]
                 
-                for j in xrange(i+1, len(seqs)): 
-                    seqIdJ = seqs.keys()[j]
-                    binIdJ = seqIdJ[0:seqIdJ.find(defaultValues.SEQ_CONCAT_CHAR)]
+                seqs = readFasta(os.path.join(binPath, f))
+                
+                # calculate AAI between all pairs of seqs
+                for i in xrange(0, len(seqs)):
+                    seqIdI = seqs.keys()[i]
+                    binIdI = seqIdI[0:seqIdI.find(defaultValues.SEQ_CONCAT_CHAR)]
                     
-                    seqJ = seqs[seqIdJ]
+                    seqI = seqs[seqIdI]
                     
-                    if binIdI == binIdJ:
-                        aai = self.aai(seqI, seqJ)
+                    for j in xrange(i+1, len(seqs)): 
+                        seqIdJ = seqs.keys()[j]
+                        binIdJ = seqIdJ[0:seqIdJ.find(defaultValues.SEQ_CONCAT_CHAR)]
                         
-                        if binIdI not in self.aaiRawScores:
-                            self.aaiRawScores[binIdI] = defaultdict(list)
-                        self.aaiRawScores[binIdI][markerId].append(aai)
+                        seqJ = seqs[seqIdJ]
+                        
+                        if binIdI == binIdJ:
+                            aai = self.aai(seqI, seqJ)
+                            
+                            if binIdI not in self.aaiRawScores:
+                                self.aaiRawScores[binIdI] = defaultdict(list)
+                            self.aaiRawScores[binIdI][markerId].append(aai)
+                        else:
+                            # something is wrong as the bin Ids should always be the same
+                            self.logger.error('  [Error] Bin ids do not match.')
+                            sys.exit()
                         
         # calculate strain heterogeneity for each marker gene in each bin
         for binId, markerIds in self.aaiRawScores.iteritems():

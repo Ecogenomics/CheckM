@@ -28,7 +28,7 @@ __license__ = "GPL3"
 __maintainer__ = "Donovan Parks"
 __email__ = "donovan.parks@gmail.com"
 __status__ = "Development"
-__version__ = "0.0.1"
+__version__ = "0.5.0"
 
 import argparse
 import sys
@@ -44,16 +44,16 @@ def printHelp():
   Assess completeness and contamination of putative genome bins.
     
   Lineage-specific marker set:
-    tree        -> Place each genome bin in the genome tree
+    tree        -> Place bins in the genome tree
     tree_qa     -> Assess phylogenetic markers found in each bin
-    lineage_set -> Infer lineage-specific marker sets for each genome bin
+    lineage_set -> Infer lineage-specific marker sets for each bin
     
   Taxonomic-specific marker set:
     taxon_list  -> List available taxonomic-specific marker sets
     taxon_set   -> Infer taxonomic-specific marker set
     
   Apply marker set to genome bins:   
-    analyze     -> Identify marker genes in genome bins
+    analyze     -> Identify marker genes in bins
     qa          -> Assess bins for contamination and completeness
          
   General plots:
@@ -103,8 +103,8 @@ if __name__ == '__main__':
     output_parser.add_argument('-o', '--output-format', dest='out_format',
             type=int,
             help='''desired output:
-                1. brief summary of genome bin completeness and contamination
-                2. summary statistics for each genome bin including GC distribution, genome size, completeness estimation, and contamination estimation
+                1. brief summary of bin completeness and contamination
+                2. summary statistics for each bin including GC distribution, genome size, completeness estimation, and contamination estimation
                 3. list of marker names and their counts
                 4. matrix of marker counts
                 5. list of bin name, marker name, scaffold name
@@ -118,10 +118,10 @@ if __name__ == '__main__':
     # determine placement of each genome bin in the genome tree
     tree_parser = subparsers.add_parser('tree',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        description='''Place each genome bin in the genome tree.''')
+                                        description='''Place bins in the genome tree.''')
     tree_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     tree_parser.add_argument('out_folder', help="folder to write output files")
-    tree_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    tree_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
     tree_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     tree_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
@@ -140,20 +140,20 @@ if __name__ == '__main__':
                                         5. multiple sequence alignment of reference genomes and bins''', 
                                     default=1, choices=[1, 2, 3, 4, 5])
     tree_qa_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
-    tree_qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print a strictly tab-separated values table")
+    tree_qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     tree_qa_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     
     # calculate lineage-specific marker set for genome bins
     lineage_set_parser = subparsers.add_parser('lineage_set',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        description='''Infer lineage-specific marker sets for each genome bin.''')
+                                        description='''Infer lineage-specific marker sets for each bin.''')
     lineage_set_parser.add_argument('tree_folder', help="folder specified during tree command")
     lineage_set_parser.add_argument('marker_file', help="output file describing marker set for each bin")
-    lineage_set_parser.add_argument('-m', '--num_genomes_markers', type=int, help="minimum genomes required to calculate initial marker set", default=30)
-    lineage_set_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum genomes required to refine marker set", default=5)
     lineage_set_parser.add_argument('-b', '--bootstrap', type=float, help="required bootstrap support for calculating marker set; percentage between 0 and 1", default=0)
-    lineage_set_parser.add_argument('--no_lineage_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform lineage-specific marker set refinement")
+    lineage_set_parser.add_argument('-m', '--num_genomes_markers', type=int, help="minimum reference genomes required to calculate initial marker set", default=30)
+    lineage_set_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum reference genomes required to refine marker set", default=5)
+    lineage_set_parser.add_argument('--no_lineage_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform marker set refinement")
     lineage_set_parser.add_argument('--taxonomy', dest='bRequireTaxonomy', action="store_true", default=False, help="only consider nodes with defined taxonomy")
     lineage_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     taxon_list_parser = subparsers.add_parser('taxon_list',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         description='''List available taxonomic-specific marker sets.''')
-    taxon_list_parser.add_argument('-r', '--rank', help="restrict list to specified taxonomic rank", choices=['ALL'] + taxonomicRanks, default='ALL')
+    taxon_list_parser.add_argument('--rank', help="restrict list to specified taxonomic rank", choices=['ALL'] + taxonomicRanks, default='ALL')
     
     # calculate taxonomic-specific marker set
     taxon_set_parser = subparsers.add_parser('taxon_set',
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     analyze_parser.add_argument('marker_file', help="markers for assessing bins (marker set or HMM file)")
     analyze_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     analyze_parser.add_argument('out_folder', help="folder to write output files")
-    analyze_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    analyze_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
     analyze_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     analyze_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
@@ -187,8 +187,8 @@ if __name__ == '__main__':
     qa_parser = subparsers.add_parser('qa',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[output_parser],
-                                        description='''Assess genome bins for contamination and completeness.''')
-    qa_parser.add_argument('marker_file', help="markers for assessing bins (marker set or HMM file)")
+                                        description='''Assess bins for contamination and completeness.''')
+    qa_parser.add_argument('marker_file', help="marker file specified during analyze command")
     qa_parser.add_argument('analyze_folder', help="folder specified during analyze command")
     qa_parser.add_argument('--individual_markers', dest='bIndividualMarkers', action="store_true", default=False, help="treat marker as independent (i.e., ignore co-located set structure)")
     qa_parser.add_argument('--skip_orf_correction', dest='bSkipOrfCorrection', action="store_true", default=False, help="skip identification of ORF errors affecting marker genes")
@@ -197,7 +197,7 @@ if __name__ == '__main__':
     qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.E_VAL, help="e-value cut off")
     qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.LENGTH, help="percent overlap between target and query")
     qa_parser.add_argument('-c', '--coverage_file', default=None, help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
-    qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print a strictly tab-separated values table")
+    qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     qa_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
         
@@ -211,7 +211,7 @@ if __name__ == '__main__':
     plot_parser.add_argument('--image_type', default = 'png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
     plot_parser.add_argument('--dpi', type = int, default = 300, help='desired DPI of output image')
     plot_parser.add_argument('--font_size', type = int, default = 8, help='Desired font size')
-    plot_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    plot_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
     
     plot_single_parser = argparse.ArgumentParser('plot_single',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -278,7 +278,7 @@ if __name__ == '__main__':
     plot_dist_parser.add_argument('--image_type', default = 'png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
     plot_dist_parser.add_argument('--dpi', type = int, default = 600, help='desired DPI of output image')
     plot_dist_parser.add_argument('--font_size', type = int, default = 8, help='Desired font size')
-    plot_dist_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    plot_dist_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
     plot_dist_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
     plot_dist_parser.add_argument('--height', type = float, default = 8, help='height of output image')
     
@@ -370,7 +370,7 @@ if __name__ == '__main__':
     unbinned_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
     unbinned_parser.add_argument('output_seq_file', help="write unbinned sequences to file")
     unbinned_parser.add_argument('output_stats_file', help="write unbinned sequence statistics to file")
-    unbinned_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    unbinned_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
     unbinned_parser.add_argument('-s', '--min_seq_len', type=int, default=0, help="required length of sequence")
     unbinned_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
@@ -382,7 +382,7 @@ if __name__ == '__main__':
     coverage_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     coverage_parser.add_argument('output_file', help="print results to file")
     coverage_parser.add_argument('bam_files', nargs='+', help="BAM files to parse")
-    coverage_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    coverage_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
     coverage_parser.add_argument('-r', '--all_reads', action='store_true', help="use all reads to estimate coverage instead of just those in proper pairs")
     coverage_parser.add_argument('-a', '--min_align', help='minimum alignment length as percentage of read length', type=float, default = 0.98)
     coverage_parser.add_argument('-e', '--max_edit_dist', help='maximum edit distance as percentage of read length', type=float, default = 0.02)
@@ -423,7 +423,7 @@ if __name__ == '__main__':
     ssu_finder_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     ssu_finder_parser.add_argument('out_folder', help="folder to write output files")
 
-    ssu_finder_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    ssu_finder_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
     ssu_finder_parser.add_argument('-e', '--evalue', help='e-value threshold for identifying hits', type=float, default = 1e-5)
     ssu_finder_parser.add_argument('-c', '--concatenate', help='concatenate hits that are within the specified number of base pairs', type=int, default = 100)
     ssu_finder_parser.add_argument('-t', '--threads', help='number of threads', type=int, default = 1)
@@ -453,7 +453,7 @@ if __name__ == '__main__':
     merge_parser.add_argument('--delta_cont', help="maximum increase in contamination to report pair", type=float, default = 5.0)
     merge_parser.add_argument('--merged_comp', help="minimum merged completeness to report pair", type=float, default = 70.0)
     merge_parser.add_argument('--merged_cont', help="maximum merged contamination to report pair", type=float, default = 10.0)
-    merge_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    merge_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
     merge_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     merge_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
@@ -467,7 +467,7 @@ if __name__ == '__main__':
     outlier_parser.add_argument('output_file', help="print results to file")
     outlier_parser.add_argument('-d', '--distribution', help='reference distribution used to identify outliers', choices=['80', '90', '95', '98', '99', '99.5', '99.9', '100'], default='99')
     outlier_parser.add_argument('-r', '--report_type', help="report sequences that are outliers in 'all' or 'any' reference distribution", choices=['any', 'all'], default='any')
-    outlier_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    outlier_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
     outlier_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Modify a bin
@@ -479,7 +479,7 @@ if __name__ == '__main__':
     modify_parser.add_argument('output_file', help="modified bin")
     modify_parser.add_argument('-a', '--add', action='append', help="ID of sequence to add to bin (may specify multiple times)")
     modify_parser.add_argument('-r', '--remove', action='append', help="ID of sequence to remove from bin (may specify multiple times)")
-    modify_parser.add_argument('-x', '--outlier_file', help="remove all sequences marked as outliers in the bin (see outlier command)")
+    modify_parser.add_argument('-o', '--outlier_file', help="remove all sequences marked as outliers in the bin (see outlier command)")
     modify_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Ensure uniqueness of bins 
