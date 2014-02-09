@@ -69,10 +69,10 @@ class ResultsParser():
         # get hits to each bin
         self.parseBinHits(outDir, hmmTableFile, bSkipOrfCorrection, bIgnoreThresholds, evalueThreshold, lengthThreshold, binStats, seqStats)
             
-    def cacheResults(self, outDir, binIdToMarkerSet):
+    def cacheResults(self, outDir, binIdToMarkerSet, bIndividualMarkers):
         # cache critical results to file
-        self.__writeBinStatsExt(outDir, binIdToMarkerSet)
-        self.__writeMarkerGeneStats(outDir, binIdToMarkerSet)
+        self.__writeBinStatsExt(outDir, binIdToMarkerSet, bIndividualMarkers)
+        self.__writeMarkerGeneStats(outDir, binIdToMarkerSet, bIndividualMarkers)
         
     def parseHmmerModels(self, binIdToHmmModelFile):
         """Parse each bin's HMM file to collect model information."""
@@ -107,10 +107,10 @@ class ResultsParser():
             self.parseHmmerResults(hmmerTableFile, resultsManager, bSkipOrfCorrection)
             self.results[binId] = resultsManager
 
-    def __writeBinStatsExt(self, directory, binIdToMarkerSet):
+    def __writeBinStatsExt(self, directory, binIdToMarkerSet, bIndividualMarkers):
         binStatsExt = {}
         for binId in self.results:
-            binStatsExt[binId] = self.results[binId].getSummary(binIdToMarkerSet[binId], outputFormat = 2)
+            binStatsExt[binId] = self.results[binId].getSummary(binIdToMarkerSet[binId], bIndividualMarkers, outputFormat=2)
             binStatsExt[binId].update(self.results[binId].geneCopyNumber())
            
         binStatsExtFile = os.path.join(directory, 'storage', defaultValues.BIN_STATS_EXT_OUT) 
@@ -118,10 +118,10 @@ class ResultsParser():
         fout.write(str(binStatsExt))
         fout.close
         
-    def __writeMarkerGeneStats(self, directory, binIdToMarkerSet):
+    def __writeMarkerGeneStats(self, directory, binIdToMarkerSet, bIndividualMarkers):
         markerGenes = {}
         for binId in self.results:
-            markerGenes[binId] = self.results[binId].getSummary(binIdToMarkerSet[binId], outputFormat=8)
+            markerGenes[binId] = self.results[binId].getSummary(binIdToMarkerSet[binId], bIndividualMarkers, outputFormat=8)
              
         markerGenesFile = os.path.join(directory, 'storage', defaultValues.MARKER_GENE_STATS)
         fout = open(markerGenesFile, 'w')
@@ -239,7 +239,7 @@ class ResultsParser():
             
         return header
         
-    def printSummary(self, outputFormat, aai, binIdToMarkerSet, coverageFile, bTabTable, outFile):
+    def printSummary(self, outputFormat, aai, binIdToMarkerSet, bIndividualMarkers, coverageFile, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
         
@@ -265,7 +265,7 @@ class ResultsParser():
             pTable.vrules = prettytable.NONE
 
         for binId in sorted(self.results.keys()):
-            self.results[binId].printSummary(outputFormat, aai, binIdToMarkerSet[binId], coverageBinProfiles, pTable)
+            self.results[binId].printSummary(outputFormat, aai, binIdToMarkerSet[binId], bIndividualMarkers, coverageBinProfiles, pTable)
             
         if not bTabTable :  
             if 'Completeness' in header:
@@ -403,7 +403,7 @@ class ResultsManager():
                     
             self.markerHits[markerId] = hits
                 
-    def calculateMarkers(self, markerSet, verbose=False):
+    def calculateMarkers(self, markerSet, bIndividualMarkers, verbose=False):
         """Returns an object containing summary information 
            When verbose is False a list is returned containing the counts of
            markers for the bin as well as the total completeness and
@@ -421,9 +421,9 @@ class ResultsManager():
                     
             return ret
         else:
-            return self.geneCounts(markerSet, self.markerHits, self.models)
+            return self.geneCounts(markerSet, self.markerHits, self.models, bIndividualMarkers)
         
-    def geneCounts(self, markerSet, hits, models):
+    def geneCounts(self, markerSet, hits, models, bIndividualMarkers):
         """ Determine number of marker genes with 0-5 hits 
             as well as the total completeness and contamination."""   
         geneCounts = [0]*6
@@ -442,7 +442,7 @@ class ResultsManager():
             
             geneCounts[markerCount] += 1
             
-        percComp, percCont = markerSet.genomeCheck(hits, bIndividualMarkers=True)
+        percComp, percCont = markerSet.genomeCheck(hits, bIndividualMarkers)
         
         geneCounts.append(percComp)
         geneCounts.append(percCont)
@@ -471,12 +471,12 @@ class ResultsManager():
         
         return geneCopyNumber
           
-    def getSummary(self, markerSet, outputFormat=1):
+    def getSummary(self, markerSet, bIndividualMarkers, outputFormat=1):
         """Get dictionary containing information about bin."""
         summary = {}
         
         if outputFormat == 1:
-            data = self.calculateMarkers(markerSet, verbose=False)
+            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=False)
             summary['# markers'] = len(self.models)
             summary['# marker sets'] = markerSet.numSets()
             summary['0'] = data[0]
@@ -488,7 +488,7 @@ class ResultsManager():
             summary['Completeness'] = data[6]
             summary['Contamination'] = data[7]
         elif outputFormat == 2:
-            data = self.calculateMarkers(markerSet, verbose=False)
+            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=False)
             summary['# markers'] = len(self.models)
             summary['# marker sets'] = markerSet.numSets()
             summary['0'] = data[0]
@@ -501,12 +501,12 @@ class ResultsManager():
             summary['Contamination'] = data[7]
             summary.update(self.binStats)   
         elif outputFormat == 3:
-            data = self.calculateMarkers(markerSet, verbose=True)
+            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=True)
             for marker,count in data.iteritems():
                 summary[marker] = count
 
         elif outputFormat == 4:
-            data = self.calculateMarkers(markerSet, verbose=True)
+            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=True)
             for marker,count in data.iteritems():
                 summary[marker] = count
 
@@ -562,10 +562,10 @@ class ResultsManager():
             
         return summary
 
-    def printSummary(self, outputFormat, aai, markerSet, coverageBinProfiles = None, table = None):
+    def printSummary(self, outputFormat, aai, markerSet, bIndividualMarkers, coverageBinProfiles = None, table = None):
         """Print out information about bin."""
         if outputFormat == 1:
-            data = self.calculateMarkers(markerSet, verbose=False)
+            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=False)
             row = "%s\t%d\t%d\t%s\t%0.2f\t%0.2f\t%0.2f" % (self.binId,
                                                 len(self.models), markerSet.numSets(),
                                                 "\t".join([str(data[i]) for i in range(6)]),
@@ -578,7 +578,7 @@ class ResultsManager():
             else:  
                 table.add_row([self.binId, len(self.models), markerSet.numSets()] + data + [aai.aaiMeanBinHetero.get(self.binId, 0.0)])
         elif outputFormat == 2:
-            data = self.calculateMarkers(markerSet, verbose=False)
+            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=False)
             
             if table == None:
                 row = self.binId
@@ -613,7 +613,7 @@ class ResultsManager():
                 table.add_row(row)
                     
         elif outputFormat == 3:
-            data = self.calculateMarkers(markerSet, verbose=True)
+            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=True)
             print("--------------------")
             print(self.binId)
             
@@ -629,7 +629,7 @@ class ResultsManager():
                                               )+"%)")
         elif outputFormat == 4:
             # matrix of bin vs marker counts
-            data = self.calculateMarkers(markerSet, verbose=True)
+            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=True)
             columns = self.models.keys()
             
             rowStr = self.binId

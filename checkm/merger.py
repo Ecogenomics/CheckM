@@ -20,8 +20,8 @@
 ###############################################################################
 
 import os
+import sys
 import logging
-from collections import defaultdict
 
 from common import checkDirExists
 from resultsParser import ResultsParser
@@ -30,15 +30,24 @@ class Merger():
     def __init__(self):
         self.logger = logging.getLogger()
     
-    def run(self, binFiles, outDir, hmmTableFile, hmmModelFile, minDeltaComp, maxDeltaCont, minMergedComp, maxMergedCont):   
+    def run(self, binFiles, outDir, hmmTableFile, 
+                binIdToHmmModelFile, binIdToMarkerSet, 
+                minDeltaComp, maxDeltaCont, 
+                minMergedComp, maxMergedCont):   
         checkDirExists(outDir)
         
         self.logger.info('  Comparing marker sets between all pairs of bins.')
-            
-        resultsParser = ResultsParser()
         
+        # ensure all bins are using the same marker set
+        for _, markerSetI in binIdToMarkerSet:
+            for _, markerSetJ in binIdToMarkerSet:
+                if markerSetI != markerSetJ:
+                    self.logger.error('  [Error] All bins must use the same marker set to assess potential mergers.')
+                    sys.exit(0)
+            
         # parse HMM information
-        resultsParser.parseHmmerModels(hmmModelFile)
+        resultsParser = ResultsParser()
+        resultsParser.parseHmmerModels(binIdToHmmModelFile)
         
         # get HMM hits to each bin 
         resultsParser.parseBinHits(outDir, hmmTableFile)
@@ -59,14 +68,20 @@ class Merger():
             binIdI = binIds[i]
             markersI = set(binMarkerHits[binIdI].markerHits.keys())
             
-            geneCountsI = binMarkerHits[binIdI].geneCounts(binMarkerHits[binIdI].markerHits, resultsParser.models)
+            geneCountsI = binMarkerHits[binIdI].geneCounts(binIdToMarkerSet[binIdI], 
+                                                           binMarkerHits[binIdI].markerHits, 
+                                                           resultsParser.models,
+                                                           True)
             completenessI, contaminationI = geneCountsI[6:8]
              
             for j in xrange(i+1, len(binMarkerHits)):               
                 binIdJ = binIds[j]
                 markersJ = (binMarkerHits[binIdJ].markerHits.keys())
                 
-                geneCountsJ = binMarkerHits[binIdJ].geneCounts(binMarkerHits[binIdJ].markerHits, resultsParser.models)
+                geneCountsJ = binMarkerHits[binIdJ].geneCounts(binIdToMarkerSet[binIdJ], 
+                                                               binMarkerHits[binIdJ].markerHits, 
+                                                               resultsParser.models,
+                                                               True)
                 completenessJ, contaminationJ = geneCountsJ[6:8]
                 
                 # merge together hits from both bins and calculate completeness and contamination
@@ -80,7 +95,10 @@ class Merger():
                     else:
                         mergedHits[markerId] = hits
                 
-                geneCountsMerged = binMarkerHits[binIdI].geneCounts(mergedHits, resultsParser.models)
+                geneCountsMerged = binMarkerHits[binIdI].geneCounts(binIdToMarkerSet[binIdJ], 
+                                                                    mergedHits, 
+                                                                    resultsParser.models,
+                                                                    True)
                 completenessMerged, contaminationMerged = geneCountsMerged[6:8]
                 
                 if not (completenessMerged >= minMergedComp and contaminationMerged < maxMergedCont):

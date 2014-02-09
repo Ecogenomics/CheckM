@@ -99,7 +99,7 @@ class AminoAcidIdentity():
                 self.aaiHetero[binId][markerId] = strainHetero
                 binHetero.append(strainHetero)
                 
-            self.aaiMeanBinHetero[binId] = mean(binHetero)
+            self.aaiMeanBinHetero[binId] = 100 * mean(binHetero)
                         
     def aai(self, seq1, seq2):  
         assert len(seq1) == len(seq2)

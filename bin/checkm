@@ -116,7 +116,7 @@ if __name__ == '__main__':
     output_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     
     # determine placement of each genome bin in the genome tree
-    tree_parser = subparsers.add_parser('tree',
+    tree_parser = subparsers.add_parser('tree', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         description='''Place bins in the genome tree.''')
     tree_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
@@ -446,9 +446,9 @@ if __name__ == '__main__':
     merge_parser = subparsers.add_parser('merge',
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                             description='Identify bins with complementary sets of marker genes.')
-    merge_parser.add_argument('marker_file', help="markers to use for accessing genomes")
+    merge_parser.add_argument('marker_file', help="marker file used to assess potential bin mergers (marker set or HMM file)")
     merge_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    merge_parser.add_argument('out_folder', help="folder to write output files")
+    merge_parser.add_argument('analyze_folder', help="folder specified during analyze command")
     merge_parser.add_argument('--delta_comp', help="minimum increase in completeness to report pair", type=float, default = 5.0)
     merge_parser.add_argument('--delta_cont', help="maximum increase in contamination to report pair", type=float, default = 5.0)
     merge_parser.add_argument('--merged_comp', help="minimum merged completeness to report pair", type=float, default = 70.0)

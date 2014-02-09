@@ -282,8 +282,8 @@ class OptionsParser():
                           )
         
         self.logger.info('')
-        RP.printSummary(options.out_format, aai, binIdToMarkerSet, options.coverage_file, options.bTabTable, options.file)
-        RP.cacheResults(options.analyze_folder, binIdToMarkerSet)
+        RP.printSummary(options.out_format, aai, binIdToMarkerSet, options.bIndividualMarkers, options.coverage_file, options.bTabTable, options.file)
+        RP.cacheResults(options.analyze_folder, binIdToMarkerSet, options.bIndividualMarkers)
                         
         if options.file != '':
             self.logger.info('  QA information written to: ' + options.file)
@@ -729,12 +729,17 @@ class OptionsParser():
         
         # find marker genes in genome bins                         
         mgf = MarkerGeneFinder(options.threads)
-        mgf.find(binFiles, options.out_folder, "merger.table.txt", "merger.hmmer3", options.marker_file)
+        mgf.find(binFiles, options.analyze_folder, "merger.table.txt", "merger.hmmer3", options.marker_file)
         
+        # get HMM file for each bin
+        markerSetParser = MarkerSetParser()
+        binIdToHmmModelFile = markerSetParser.createHmmModelFiles(options.analyze_folder, getBinIdsFromDir(options.analyze_folder), options.marker_file)
+        binIdToMarkerSet = markerSetParser.getMarkerSets(options.analyze_folder, getBinIdsFromDir(options.analyze_folder), options.marker_file)
+
         # compare markers found in each bin
         self.logger.info('')
         merger = Merger()
-        outputFile = merger.run(binFiles, options.out_folder, "merger.table.txt", options.marker_file, 
+        outputFile = merger.run(binFiles, options.out_folder, "merger.table.txt", binIdToHmmModelFile, binIdToMarkerSet,
                                 options.delta_comp, options.delta_cont, options.merged_comp, options.merged_cont)
         
         self.logger.info('\n  Merger information written to: ' + outputFile)

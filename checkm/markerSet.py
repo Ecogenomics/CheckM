@@ -80,7 +80,7 @@ class MarkerSet():
                 present = 0
                 multiCopy = 0
                 for marker in ms:
-                    count = hits.get(marker, 0)
+                    count = len(hits.get(marker, []))
                     if count == 1:
                         present += 1
                     elif count > 1:
@@ -90,8 +90,8 @@ class MarkerSet():
                 comp += float(present) / len(ms)
                 cont += float(multiCopy) / len(ms)
 
-            percComp = comp / self.numSets()
-            percCont = cont / self.numSets()
+            percComp = 100 * comp / len(self.markerSet)
+            percCont = 100 * cont / len(self.markerSet)
         
         return percComp, percCont
      
