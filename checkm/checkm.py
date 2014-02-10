@@ -47,6 +47,7 @@ from profile import Profile
 from binTools import BinTools
 from ssuFinder import SSU_Finder
 from PCA import PCA
+from testing import Testing
 from common import makeSurePathExists, checkFileExists, binIdFromFilename, reassignStdOut, restoreStdOut, getBinIdsFromDir
 
 from plot.gcPlots import GcPlots
@@ -79,7 +80,7 @@ class OptionsParser():
         
         return sorted(binFiles)
     
-    def tree(self, options, db=None):
+    def tree(self, options):
         """Tree command"""   
         self.logger.info('')
         self.logger.info('*******************************************************************************')
@@ -164,7 +165,7 @@ class OptionsParser():
         """Lineage set command"""   
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - lineage_set] Infer lineage-specific marker sets.')
+        self.logger.info(' [CheckM - lineage_set] Inferring lineage-specific marker sets.')
         self.logger.info('*******************************************************************************')
                 
         makeSurePathExists(options.tree_folder) 
@@ -294,8 +295,9 @@ class OptionsParser():
         """GC plot command"""
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - gc_plot] Create GC histogram and delta-GC plot.')
+        self.logger.info(' [CheckM - gc_plot] Creating GC histogram and delta-GC plot.')
         self.logger.info('*******************************************************************************')
+        self.logger.info('')
             
         binFiles = self.binFiles(options.bin_folder, options.extension)  
         
@@ -304,7 +306,7 @@ class OptionsParser():
         plots = GcPlots(options)
         filesProcessed = 1
         for f in binFiles:  
-            self.logger.info('Plotting GC plots for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
+            self.logger.info('  Plotting GC plots for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
             filesProcessed += 1
             
             plots.plot(f, options.distributions)
@@ -320,8 +322,9 @@ class OptionsParser():
         """Coding density plot command"""
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - coding_plot] Create coding density (CD) histogram and delta-CD plot.')
+        self.logger.info(' [CheckM - coding_plot] Creating coding density histogram and delta-CD plot.')
         self.logger.info('*******************************************************************************')
+        self.logger.info('')
             
         binFiles = self.binFiles(options.bin_folder, options.extension)  
         
@@ -346,8 +349,9 @@ class OptionsParser():
         """Tetranucleotide distance plot command"""
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - tetra_plot] Create tetra-distance (TD) histogram and delta-TD plot.')
+        self.logger.info(' [CheckM - tetra_plot] Creating tetra-distance histogram and delta-TD plot.')
         self.logger.info('*******************************************************************************')
+        self.logger.info('')
             
         binFiles = self.binFiles(options.bin_folder, options.extension)  
         
@@ -382,7 +386,7 @@ class OptionsParser():
         
         makeSurePathExists(options.plot_folder)
         
-        genomicSignatures = GenomicSignatures()
+        genomicSignatures = GenomicSignatures(K=4, threads=1)
         tetraSigs = genomicSignatures.read(options.tetra_profile)
             
         plots = DistributionPlots(options)
@@ -494,11 +498,11 @@ class OptionsParser():
         nx = NxPlot(options)
         filesProcessed = 1
         for f in binFiles:  
-            self.logger.info('  Plotting Nx-plot for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
+            binId = binIdFromFilename(f)
+            self.logger.info('  Plotting Nx-plot for %s (%d of %d)' % (binId, filesProcessed, len(binFiles)))
             filesProcessed += 1
             nx.plot(f)
             
-            binId = binIdFromFilename(f)
             outputFile = os.path.join(options.plot_folder, binId) + '.nx_plot.' + options.image_type
             nx.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('    Plot written to: ' + outputFile)
@@ -519,11 +523,11 @@ class OptionsParser():
         plot = CumulativeLengthPlot(options)
         filesProcessed = 1
         for f in binFiles:  
-            self.logger.info('  Plotting cumulative sequence length plot for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
+            binId = binIdFromFilename(f)
+            self.logger.info('  Plotting cumulative sequence length plot for %s (%d of %d)' % (binId, filesProcessed, len(binFiles)))
             filesProcessed += 1
             plot.plot(f)
-            
-            binId = binIdFromFilename(f)
+             
             outputFile = os.path.join(options.plot_folder, binId) + '.seq_len_plot.' + options.image_type
             plot.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('    Plot written to: ' + outputFile)
@@ -544,11 +548,11 @@ class OptionsParser():
         plot = LengthHistogram(options)
         filesProcessed = 1
         for f in binFiles:  
-            self.logger.info('  Plotting sequence length histogram for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
+            binId = binIdFromFilename(f)
+            self.logger.info('  Plotting sequence length histogram for %s (%d of %d)' % (binId, filesProcessed, len(binFiles)))
             filesProcessed += 1
             plot.plot(f)
             
-            binId = binIdFromFilename(f)
             outputFile = os.path.join(options.plot_folder, binId) + '.len_hist.' + options.image_type
             plot.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('    Plot written to: ' + outputFile)
@@ -574,15 +578,18 @@ class OptionsParser():
         plot = MarkerGenePosPlot(options)
         filesProcessed = 1
         for f in binFiles:  
-            self.logger.info('  Plotting marker gene position plot for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
-            filesProcessed += 1
-            
             binId = binIdFromFilename(f)
-            plot.plot(f, markerGeneStats[binId], binStats[binId])
+            self.logger.info('  Plotting marker gene position plot for %s (%d of %d)' % (binId, filesProcessed, len(binFiles)))
+            filesProcessed += 1
+              
+            bPlotted = plot.plot(f, markerGeneStats[binId], binStats[binId])
             
-            outputFile = os.path.join(options.plot_folder, binId) + '.marker_pos_plot.' + options.image_type
-            plot.savePlot(outputFile, dpi=options.dpi)
-            self.logger.info('    Plot written to: ' + outputFile)
+            if bPlotted:
+                outputFile = os.path.join(options.plot_folder, binId) + '.marker_pos_plot.' + options.image_type
+                plot.savePlot(outputFile, dpi=options.dpi)
+                self.logger.info('    Plot written to: ' + outputFile)
+            else:
+                self.logger.info('    No marker genes found in bin.')
             
         self.timeKeeper.printTimeStamp()
 
@@ -600,20 +607,20 @@ class OptionsParser():
 
         # read sequence stats file
         resultsParser = ResultsParser()
-        seqStats = resultsParser.parseSeqStats(options.out_folder)
+        seqStats = resultsParser.parseSeqStats(options.out_folder, defaultValues.SEQ_STATS_OUT)
 
         # read coverage stats file
-        coverage = Coverage()
-        coverageStats = coverage.parseCoverage(options.coverage_file, defaultValues.BIN_STATS_OUT)
+        coverage = Coverage(threads = 1)
+        coverageStats = coverage.parseCoverage(options.coverage_file)
         
         # create plot for each bin
         plot = ParallelCoordPlot(options)
         filesProcessed = 1
         for f in binFiles:  
-            self.logger.info('  Plotting marker gene position plot for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
+            binId = binIdFromFilename(f)
+            self.logger.info('  Plotting marker gene position plot for %s (%d of %d)' % (binId, filesProcessed, len(binFiles)))
             filesProcessed += 1
                 
-            binId = binIdFromFilename(f)
             plot.plot(binId, seqStats, coverageStats)
             
             outputFile = os.path.join(options.plot_folder, binId) + '.paralel_coord_plot.' + options.image_type
@@ -675,7 +682,7 @@ class OptionsParser():
         """Coverage command"""
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - coverage] Calculate coverage of sequences.')
+        self.logger.info(' [CheckM - coverage] Calculating coverage of sequences.')
         self.logger.info('*******************************************************************************')
     
         binFiles = self.binFiles(options.bin_folder, options.extension) 
@@ -691,11 +698,12 @@ class OptionsParser():
         """Tetranucleotide signature command"""
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - tetra] Calculate tetranucleotide signature of sequences.')
+        self.logger.info(' [CheckM - tetra] Calculating tetranucleotide signature of sequences.')
         self.logger.info('*******************************************************************************')
   
         checkFileExists(options.seq_file)
         
+        self.logger.info('')
         tetraSig = GenomicSignatures(4, options.threads)
         tetraSig.calculate(options.seq_file, options.output_file)
         
@@ -707,7 +715,7 @@ class OptionsParser():
         """Profile command"""
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - profile] Calculate percentage of reads mapped to each bin.')
+        self.logger.info(' [CheckM - profile] Calculating percentage of reads mapped to each bin.')
         self.logger.info('*******************************************************************************')
   
         profile = Profile()
@@ -750,7 +758,7 @@ class OptionsParser():
         """Outlier command"""
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - outlier] Identify outliers in bins.')
+        self.logger.info(' [CheckM - outlier] Identifying outliers in bins.')
         self.logger.info('*******************************************************************************')
         
         binFiles = self.binFiles(options.bin_folder, options.extension)
@@ -766,7 +774,7 @@ class OptionsParser():
         """Join tables command"""
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - join_tables] Join tables containing bin information.')
+        self.logger.info(' [CheckM - join_tables] Joining tables containing bin information.')
         self.logger.info('*******************************************************************************')
         
         # read all tables
@@ -812,7 +820,7 @@ class OptionsParser():
         """Modify command"""
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - modify] Modify sequences in a bin.')
+        self.logger.info(' [CheckM - modify] Modifying sequences in bin.')
         self.logger.info('*******************************************************************************')
         
         if not (options.add or options.remove or options.outlier_file):
@@ -838,7 +846,7 @@ class OptionsParser():
         """Unique command"""
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info('[CheckM - unique] Ensure no sequences are assigned to multiple bins.')
+        self.logger.info('[CheckM - unique] Ensuring no sequences are assigned to multiple bins.')
         self.logger.info('*******************************************************************************')
   
         binFiles = self.binFiles(options.bin_folder, options.extension)
@@ -852,7 +860,7 @@ class OptionsParser():
         """SSU finder command"""
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info('[CheckM - ssu_finder] Identify SSU (16S/18S) rRNAs in sequences.')
+        self.logger.info('[CheckM - ssu_finder] Identifying SSU (16S/18S) rRNAs in sequences.')
         self.logger.info('*******************************************************************************')
   
         binFiles = self.binFiles(options.bin_folder, options.extension) 
@@ -869,7 +877,7 @@ class OptionsParser():
         """Bin compare command"""
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info('[CheckM - bin_compare] Compare two sets of bins.')
+        self.logger.info('[CheckM - bin_compare] Comparing two sets of bins.')
         self.logger.info('*******************************************************************************')
   
         makeSurePathExists(options.bin_folder1)
@@ -885,6 +893,72 @@ class OptionsParser():
         self.logger.info('  Detailed bin comparison written to: ' + options.output_file)
        
         self.timeKeeper.printTimeStamp()
+        
+    def test(self, options):
+        """Bin compare command"""
+        print ''
+        print '*******************************************************************************'
+        print '[CheckM - test] Processing E.coli K12-W3310 and verify operation of CheckM.'
+        print '*******************************************************************************'
+  
+        ecoliFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'test_data', '637000110.fna')
+        makeSurePathExists(ecoliFile)
+        
+        testing = Testing()
+        
+        print '  [Step 1]: Verifying tree command.'
+        options.bin_folder = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'test_data')
+        options.extension = 'fna'
+        options.bQuiet = True
+        self.tree(options)
+        testing.verifyTree(options.out_folder)
+        print '    Passed.'
+        
+        print '  [Step 2]: Verifying tree_qa command.'
+        options.tree_folder = options.out_folder
+        options.out_format = 1
+        options.file = os.path.join(options.out_folder, 'tree_qa_test.tsv')
+        options.bTabTable = True
+        self.treeQA(options)
+        testing.verifyTreeQA(options.file)
+        print '    Passed.'
+        
+        print '  [Step 3]: Verifying lineage_set command.'
+        options.marker_file = os.path.join(options.out_folder, 'lineage_set_test.tsv')
+        options.bootstrap = 0
+        options.num_genomes_markers = 30
+        options.num_genomes_refine = 5
+        options.bNoLineageSpecificRefinement = False
+        
+        options.bRequireTaxonomy = False
+        self.lineageSet(options)
+        testing.verifyLineageSet(options.marker_file, options.bRequireTaxonomy)
+        
+        options.bRequireTaxonomy = True
+        self.lineageSet(options)
+        testing.verifyLineageSet(options.marker_file, options.bRequireTaxonomy)
+        print '    Passed.'
+        
+        print '  [Step 4]: Verifying analyze command.'
+        self.analyze(options)
+        testing.verifyAnalyze(options.out_folder)
+        print '    Passed.'
+        
+        print '  [Step 5]: Verifying qa command.'
+        options.analyze_folder = options.out_folder
+        options.out_format = 1
+        options.file = os.path.join(options.out_folder, 'qa_test.tsv')
+        options.bIndividualMarkers = False
+        options.bSkipOrfCorrection = False
+        options.bIgnoreThresholds = False
+        options.aai_strain = 0.95
+        options.e_value = 1e-10
+        options.length = 0.7
+        options.coverage_file = None
+        options.bTabTable = True
+        self.qa(options)
+        testing.verifyQA(options.file)
+        print '    Passed.'
 
     def parseOptions(self, options):
         """Parse user options and call the correct pipeline(s)"""    
@@ -964,6 +1038,8 @@ class OptionsParser():
             self.ssuFinder(options)
         elif(options.subparser_name == 'bin_compare'):
             self.binCompare(options)
+        elif(options.subparser_name == 'test'):
+            self.test(options)
         else:
             self.logger.error('  [Error] Unknown CheckM command: ' + options.subparser_name + '\n')
             sys.exit()

@@ -255,12 +255,10 @@ class Coverage():
                 
             coverageInfo[seqId] = CoverageStruct(seqLen = seqLen, mappedReads = numMappedReads, coverage = coverage)
 
-
         if self.logger.getEffectiveLevel() <= logging.INFO:
-            statusStr = 'Finished processing %d of %d (%.2f%%) reference sequences.' % (processedRefSeqs, numRefSeqs, float(processedRefSeqs)*100/numRefSeqs)
-            sys.stdout.write('%s\n' % statusStr)
-            sys.stdout.flush()
-
+            sys.stdout.write('\n')
+            
+            print ''
             print '    # total reads: %d' % totalReads
             print '      # properly mapped reads: %d (%.1f%%)' % (totalMappedReads, float(totalMappedReads)*100/totalReads)
             print '      # duplicate reads: %d (%.1f%%)' % (totalDuplicates, float(totalDuplicates)*100/totalReads)

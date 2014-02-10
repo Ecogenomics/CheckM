@@ -26,7 +26,7 @@ import numpy as np
 from AbstractPlot import AbstractPlot
 
 from checkm.seqUtils import readFasta
-from checkm.common import readDistribution
+from checkm.common import readDistribution, findNearest
 from checkm.genomicSignatures import GenomicSignatures
 from checkm.binTools import BinTools
 
@@ -47,12 +47,9 @@ class TetraDistPlots(AbstractPlot):
         self.fig.tight_layout(pad=5, w_pad=10)
         self.draw()
         
-    def plotOnAxes(self, fastaFile, tetraSigs, distributionsToPlot, axesHist, axesDeltaTD):
-        
+    def plotOnAxes(self, fastaFile, tetraSigs, distributionsToPlot, axesHist, axesDeltaTD):    
         # Read reference distributions from file
-        dist = {}
-        for d in distributionsToPlot:
-            dist[d] = readDistribution(d, 'td_dist')
+        dist = readDistribution('td_dist')
         
         # get tetranucleotide signature for bin
         seqs = readFasta(fastaFile)
@@ -128,11 +125,13 @@ class TetraDistPlots(AbstractPlot):
         xMinSeqs, xMaxSeqs = axesDeltaTD.get_xlim()
         
         # plot reference distributions
-        for distTD in dist.values():        
+        for distToPlot in distributionsToPlot:    
+            boundKey = findNearest(dist[dist.keys()[0]].keys(), distToPlot)
+              
             x = []
             y = []
-            for windowSize, bound in distTD.iteritems():
-                x.append(bound)
+            for windowSize in dist:
+                x.append(dist[windowSize][boundKey])
                 y.append(windowSize)
                 
             # sort by y-values

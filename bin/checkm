@@ -90,6 +90,9 @@ def printHelp():
     join_tables -> Join tab-separated value tables containing bin information
     ssu_finder  -> Identify SSU (16S/18S) rRNAs in sequences
     bin_compare -> Compare two sets of bins (e.g., from alternative binning methods)
+    
+  Testing:
+    test        -> Process E.coli K12-W3310 and verify operation of CheckM
 
   Use: checkm <command> -h for command specific help
     '''
@@ -100,8 +103,7 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(help="--", dest='subparser_name')
 
     output_parser = argparse.ArgumentParser(add_help=False)
-    output_parser.add_argument('-o', '--output-format', dest='out_format',
-            type=int,
+    output_parser.add_argument('-o', '--out_format', type=int,
             help='''desired output:
                 1. brief summary of bin completeness and contamination
                 2. summary statistics for each bin including GC distribution, genome size, completeness estimation, and contamination estimation
@@ -130,8 +132,7 @@ if __name__ == '__main__':
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         description='''Assess phylogenetic markers found in each bin.''')
     tree_qa_parser.add_argument('tree_folder', help="folder specified during tree command")
-    tree_qa_parser.add_argument('-o', '--output-format', dest='out_format',
-                                    type=int,
+    tree_qa_parser.add_argument('-o', '--out_format', type = int,
                                     help='''desired output:
                                         1. brief summary of genome tree placement
                                         2. summary of genome tree placement with lineage-specific statistics
@@ -203,7 +204,7 @@ if __name__ == '__main__':
         
     # generic arguments for plots
     plot_need_qa_results_parser = argparse.ArgumentParser(add_help=False)
-    plot_need_qa_results_parser.add_argument('out_folder', help="folder specified during analyze and qa command")
+    plot_need_qa_results_parser.add_argument('out_folder', help="folder specified during qa command")
     
     plot_parser = argparse.ArgumentParser(add_help=False)
     plot_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
@@ -238,7 +239,7 @@ if __name__ == '__main__':
                                         parents=[plot_double_parser],
                                         description= 'Create GC histogram and delta-GC plot.')
     
-    plot_gc_parser.add_argument('distributions', help='reference distributions to plot', nargs='+', choices=['80', '90', '95', '98', '99', '99.5', '99.9', '100'])
+    plot_gc_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
     plot_gc_parser.add_argument('-w', '--gc_window_size', help="window size used to calculate GC histogram", type=int, default=5000)
     plot_gc_parser.add_argument('-b', '--gc_bin_width', help="width of GC bars in histogram", type=float, default=0.01) 
     plot_gc_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -249,7 +250,7 @@ if __name__ == '__main__':
                                         parents=[plot_need_qa_results_parser, plot_double_parser],
                                         description= 'Create coding density (CD) histogram and delta-CD plot.')
     
-    plot_coding_parser.add_argument('distributions', help='reference distributions to plot', nargs='+', choices=['80', '90', '95', '98', '99', '99.5', '99.9', '100'])
+    plot_coding_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
     plot_coding_parser.add_argument('-w', '--cd_window_size', help="window size used to calculate CD histogram", type=int, default=10000)
     plot_coding_parser.add_argument('-b', '--cd_bin_width', help="width of CD bars in histogram", type=float, default=0.01) 
     plot_coding_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -260,7 +261,7 @@ if __name__ == '__main__':
                                         parents=[plot_need_qa_results_parser, plot_double_parser],
                                         description= 'Create tetranucleotide distance (TD) histogram and delta-TD plot.')
     plot_tetra_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each bin (see tetra command)')
-    plot_tetra_parser.add_argument('distributions', help='reference distributions to plot', nargs='+', choices=['80', '90', '95', '98', '99', '99.5', '99.9', '100'])
+    plot_tetra_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
     plot_tetra_parser.add_argument('-w', '--td_window_size', help="window size used to calculate TD histogram", type=int, default=5000)
     plot_tetra_parser.add_argument('-b', '--td_bin_width', help="width of TD bars in histogram", type=float, default=0.01) 
     plot_tetra_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -273,7 +274,7 @@ if __name__ == '__main__':
     plot_dist_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
     plot_dist_parser.add_argument('plot_folder', help="folder to hold plots")
     plot_dist_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
-    plot_dist_parser.add_argument('distributions', help='reference distributions to plot', nargs='+', choices=['80', '90', '95', '98', '99', '99.5', '99.9', '100'])
+    plot_dist_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
     
     plot_dist_parser.add_argument('--image_type', default = 'png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
     plot_dist_parser.add_argument('--dpi', type = int, default = 600, help='desired DPI of output image')
@@ -488,7 +489,15 @@ if __name__ == '__main__':
                                             description='Ensure no sequences are assigned to multiple bins.')
     unique_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     unique_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
-
+    
+    # Test operation of CheckM using E.Coli K12-W3110
+    test_parser = subparsers.add_parser('test',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            description='Process E.coli K12-W3310 and verify operation of CheckM.')
+    test_parser.add_argument('out_folder', help="folder to write output files")
+    test_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
+    test_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_false", default=True, help=argparse.SUPPRESS)
+    
     # debug and development
     if False:
         debug_parser = subparsers.add_parser('debug',

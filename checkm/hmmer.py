@@ -68,9 +68,13 @@ class HMMERRunner():
             opts += ' --trim '
             
         # run hmmer
-        cmd = 'hmmalign %s --outformat %s %s %s %s %s' % (opts, outputFormat, db, query, writeMode, outputFile)
-        os.system(cmd)
-
+        cmd = 'hmmalign --allcol %s --outformat %s %s %s %s %s' % (opts, outputFormat, db, query, writeMode, outputFile) 
+        rtn = os.system(cmd)
+        if rtn == 256:
+            # assume user has a newer version of HMMER (>= 3.1b1) and the allcol parameter is no longer valid
+            cmd = cmd.replace('--allcol','')
+            os.system(cmd)
+            
     def fetch(self, db, key, fetchFileName):
         """Run hmmfetch"""
         if self.mode != 'fetch':

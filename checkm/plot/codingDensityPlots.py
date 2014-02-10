@@ -29,7 +29,7 @@ from AbstractPlot import AbstractPlot
 
 from checkm.prodigal import ProdigalGeneFeatureParser
 from checkm.seqUtils import readFasta, baseCount
-from checkm.common import readDistribution, findNearest
+from checkm.common import readDistribution, findNearest, binIdFromFilename
 from checkm.binTools import BinTools
 
 class CodingDensityPlots(AbstractPlot):
@@ -51,12 +51,10 @@ class CodingDensityPlots(AbstractPlot):
         
     def plotOnAxes(self, fastaFile, distributionsToPlot, axesHist, axesDeltaCD):
         # Read reference distributions from file
-        dist = {}
-        for d in distributionsToPlot:
-            dist[d] = readDistribution(d, 'cd_dist')
+        dist = readDistribution('cd_dist')
         
         # parse Prodigal output
-        gffFile = os.path.join(self.options.out_folder, os.path.basename(fastaFile), 'prodigal.gff')
+        gffFile = os.path.join(self.options.out_folder, 'bins', binIdFromFilename(fastaFile), 'prodigal.gff')
         prodigalParser = ProdigalGeneFeatureParser(gffFile)
         
         # get coding density for windows
@@ -126,15 +124,21 @@ class CodingDensityPlots(AbstractPlot):
         xMinSeqs, xMaxSeqs = axesDeltaCD.get_xlim()
         
         # plot reference distributions
-        for distCD in dist.values():
-            closestCD = findNearest(np.array(distCD.keys()), meanCD)
+        for distToPlot in distributionsToPlot:
+            closestCD = findNearest(np.array(dist.keys()), meanCD)
+            
+            # find closest distribution values
+            sampleSeqLen = dist[closestCD].keys()[0]
+            d = dist[closestCD][sampleSeqLen]
+            cdLowerBoundKey = findNearest(d.keys(), (100 - distToPlot)/2.0)
+            cdUpperBoundKey = findNearest(d.keys(), (100 + distToPlot)/2.0)
             
             xL = []
             xU = []
             y = []
-            for windowSize, bounds in distCD[closestCD].iteritems():
-                xL.append(bounds[0])
-                xU.append(bounds[1])
+            for windowSize in dist[closestCD]:
+                xL.append(dist[closestCD][windowSize][cdLowerBoundKey])
+                xU.append(dist[closestCD][windowSize][cdUpperBoundKey])
                 y.append(windowSize)
                 
             # sort by y-values

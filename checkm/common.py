@@ -39,9 +39,9 @@ def getBinIdsFromDir(outDir):
             
     return binIds
 
-def readDistribution(distPer, dirPostfix):
+def readDistribution(prefix):
     """Read distribution file."""
-    distFile = os.path.join(os.path.dirname(sys.argv[0]) + '/../data/', dirPostfix, 'distribution_' + distPer + '.txt')
+    distFile = os.path.join(os.path.dirname(sys.argv[0]) + '/../data/distributions',  prefix + '.txt')
     checkFileExists(distFile)
     
     with open(distFile, 'r') as f:

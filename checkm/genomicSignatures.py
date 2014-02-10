@@ -148,7 +148,7 @@ class GenomicSignatures(object):
     def calculate(self, seqFile, outputFile):
         """Calculate genomic signature of each sequence."""  
         
-        self.logger.info('  Determining tetranucleotide signatures of each sequence.')
+        self.logger.info('  Determining tetranucleotide signature of each sequence.')
           
         # process each sequence in parallel
         workerQueue = mp.Queue()

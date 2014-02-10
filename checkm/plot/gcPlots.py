@@ -48,9 +48,7 @@ class GcPlots(AbstractPlot):
         
     def plotOnAxes(self, fastaFile, distributionsToPlot, axesHist, axesDeltaGC):
         # Read reference distributions from file
-        dist = {}
-        for d in distributionsToPlot:
-            dist[d] = readDistribution(d, 'gc_dist')
+        dist = readDistribution('gc_dist')
         
         # get GC for windows
         seqs = readFasta(fastaFile)
@@ -117,15 +115,21 @@ class GcPlots(AbstractPlot):
         xMinSeqs, xMaxSeqs = axesDeltaGC.get_xlim()
         
         # plot reference distributions
-        for distGC in dist.values():
-            closestGC = findNearest(np.array(distGC.keys()), meanGC)
+        for distToPlot in distributionsToPlot:
+            closestGC = findNearest(np.array(dist.keys()), meanGC)
+            
+            # find closest distribution values
+            sampleSeqLen = dist[closestGC].keys()[0]
+            d = dist[closestGC][sampleSeqLen]
+            gcLowerBoundKey = findNearest(d.keys(), (100 - distToPlot)/2.0)
+            gcUpperBoundKey = findNearest(d.keys(), (100 + distToPlot)/2.0)
             
             xL = []
             xU = []
             y = []
-            for windowSize, bounds in distGC[closestGC].iteritems():
-                xL.append(bounds[0])
-                xU.append(bounds[1])
+            for windowSize in dist[closestGC]:
+                xL.append(dist[closestGC][windowSize][gcLowerBoundKey])
+                xU.append(dist[closestGC][windowSize][gcUpperBoundKey])
                 y.append(windowSize)
                 
             # sort by y-values

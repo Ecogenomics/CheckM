@@ -63,6 +63,9 @@ class MarkerGenePosPlot(AbstractPlot):
         binId = binIdFromFilename(binFile)
         
         markerGenesPerSeq, markerGeneNum = self.getMarkerGenesPerSeq(markerGeneStats)
+        
+        if len(markerGenesPerSeq) == 0:
+            return False
 
         # Get length of sequences with one or more marker genes
         seqs = readFasta(binFile)
@@ -88,7 +91,7 @@ class MarkerGenePosPlot(AbstractPlot):
 
         # get position of genes in bin
         prodigalFastaParser = ProdigalFastaParser()
-        geneFile = os.path.join(self.options.out_folder, os.path.basename(binFile), defaultValues.PRODIGAL_AA)
+        geneFile = os.path.join(self.options.out_folder, 'bins', binId, defaultValues.PRODIGAL_AA)
         genePos = prodigalFastaParser.genePositions(geneFile)
 
         # Set size of figure
@@ -123,7 +126,7 @@ class MarkerGenePosPlot(AbstractPlot):
         # legend
         colours = [(1.0, 1.0, 1.0), (127/255.0, 201/255.0, 127/255.0), (255/255.0, 192/255.0, 134/255.0), (190/255.0, 174/255.0, 212/255.0), (0.0, 0.0, 0.0)]
         discreteColourMap = mpl.colors.ListedColormap(colours)
-        axisColourMap = self.fig.add_axes([1.0-0.2-self.options.fig_padding/self.options.width, self.options.fig_padding/height, 0.2, 0.04])
+        axisColourMap = self.fig.add_axes([self.options.fig_padding/self.options.width, self.options.fig_padding/height, 0.15, 0.03*(self.options.width/height)])
         colourBar = mpl.colorbar.ColorbarBase(axisColourMap, cmap=discreteColourMap, orientation='horizontal', drawedges=True)
         colourBar.set_ticks([0.1, 0.3, 0.5, 0.7, 0.9])
         colourBar.set_ticklabels(['0', '1', '2', '3', '4+'])
@@ -153,11 +156,8 @@ class MarkerGenePosPlot(AbstractPlot):
             binPosX += 1.0
 
         # set plot title
-        completenessStr = self.removeExtraZeros(str(binStats['Completeness']))
-        contaminationStr = self.removeExtraZeros(str(binStats['Contamination']))
-
         titleStr = binId + '\n'
-        titleStr += '(%.2f Mbps, %d seqs, %s%% complete, %s%% contamination)' % (float(binSize)/1e6, len(seqs), completenessStr, contaminationStr)
+        titleStr += '(%.2f Mbps, %d seqs, %.2f%% complete, %.2f%% contamination)' % (float(binSize)/1e6, len(seqs), binStats['Completeness'], binStats['Contamination'])
         axes.set_title(titleStr)
 
         # Prettify plot
@@ -183,3 +183,5 @@ class MarkerGenePosPlot(AbstractPlot):
                 spine.set_color(self.axesColour)
 
         self.draw()
+        
+        return True
