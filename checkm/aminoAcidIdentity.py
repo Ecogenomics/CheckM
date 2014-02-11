@@ -27,7 +27,7 @@ from collections import defaultdict
 from numpy import mean
 
 import defaultValues
-from common import getBinIdsFromDir
+from common import getBinIdsFromOutDir
 from seqUtils import readFasta
 
 class AminoAcidIdentity():
@@ -41,14 +41,13 @@ class AminoAcidIdentity():
     def run(self, aaiStrainThreshold, outDir):
         """Calculate AAI between input alignments."""
         
-        self.logger.info('')
         self.logger.info('  Calculating AAI between multi-copy marker genes.')
         
         # calculate AAI for duplicate marker genes
-        binIds = getBinIdsFromDir(outDir)
-        alignOutputDir = os.path.join(outDir, 'storage', 'aai_qa')
+        binIds = getBinIdsFromOutDir(outDir)
+        aaiOutputDir = os.path.join(outDir, 'storage', 'aai_qa')
         for binId in binIds:
-            binPath = os.path.join(alignOutputDir, binId)
+            binPath = os.path.join(aaiOutputDir, binId)
             if not os.path.exists(binPath):
                 continue
             

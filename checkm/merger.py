@@ -39,8 +39,8 @@ class Merger():
         self.logger.info('  Comparing marker sets between all pairs of bins.')
         
         # ensure all bins are using the same marker set
-        for _, markerSetI in binIdToMarkerSet:
-            for _, markerSetJ in binIdToMarkerSet:
+        for _, markerSetI in binIdToMarkerSet.iteritems():
+            for _, markerSetJ in binIdToMarkerSet.iteritems():
                 if markerSetI != markerSetJ:
                     self.logger.error('  [Error] All bins must use the same marker set to assess potential mergers.')
                     sys.exit(0)

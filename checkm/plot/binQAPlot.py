@@ -43,7 +43,7 @@ class BinQAPlot(AbstractPlot):
             
             sortedBinIds.append([binId, binStatsExt[binId]['Completeness']])
             
-        sortedBinIds.sort(key=itemgetter(1, 0), reverse=True)
+        sortedBinIds.sort(key=itemgetter(1, 0))
 
         return [x[0] for x in sortedBinIds]
         
@@ -65,6 +65,11 @@ class BinQAPlot(AbstractPlot):
                  
             axes = self.fig.add_subplot(len(binFiles)+3, 1, i+1)
             
+            # create a vector for each column indicating:
+            #  0) single-copy
+            #  1-4) increasing levels of strain heterogeneity
+            #  5-8) increasing levels of contamination (2 to 5+ copies)
+            #  9) missing
             data = []
             for i in range(binStatsExt[binId]['1']):
                 data.append([1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0])

@@ -118,7 +118,10 @@ class BinTools():
                 
                 if len(seqInter) > 0:
                     bDuplicates = True
-                    print '  Sequences shared between %s and %s: ' % (binIds[i], binIds[j]) + ', '.join(seqInter)
+                    print '  Sequences shared between %s and %s: ' % (binIds[i], binIds[j])
+                    for seqId in seqInter:
+                        print '    ' + seqId
+                    print ''
         
         if not bDuplicates:
             print '  No sequences assigned to multiple bins.'
@@ -194,10 +197,12 @@ class BinTools():
         return np.mean(deltaTDs), deltaTDs
             
     def identifyOutliers(self, outDir, binFiles, tetraProfileFile, distribution, reportType, outputFile):
-        """Identify sequences that are outliers."""   
-        gcBounds = readDistribution(distribution, 'gc_dist')
-        cdBounds = readDistribution(distribution, 'cd_dist')
-        tdBounds = readDistribution(distribution, 'td_dist')
+        """Identify sequences that are outliers.""" 
+        
+        self.logger.info('  Reading reference distributions.')  
+        gcBounds = readDistribution('gc_dist')
+        cdBounds = readDistribution('cd_dist')
+        tdBounds = readDistribution('td_dist')
 
         fout = open(outputFile, 'w')
         fout.write('Bin Id\tSequence Id\tSequence length\tOutlying distributions')
@@ -205,12 +210,13 @@ class BinTools():
         fout.write('\tSequence CD\tMean bin CD\tLower CD bound (%s%%)\tUpper CD bound (%s%%)' % (distribution, distribution))
         fout.write('\tSequence TD\tMean bin TD\tUpper TD bound (%s%%)\n' % distribution)
         
+        self.logger.info('')
         processedBins = 0
         for binFile in binFiles:
             binId = binIdFromFilename(binFile)
             
             processedBins += 1
-            self.logger.info('  Finding outliers in bin %s (%d of %d)' % (binId, processedBins, len(binFiles)))
+            self.logger.info('  Finding outliers in %s (%d of %d).' % (binId, processedBins, len(binFiles)))
                 
             seqs = readFasta(binFile)
             
@@ -225,20 +231,36 @@ class BinTools():
             prodigalParser = ProdigalGeneFeatureParser(gffFile)
             meanCD, deltaCDs, CDs = self.codingDensityDist(seqs, prodigalParser)
             
+            # find keys into GC and CD distributions
+            closestGC = findNearest(np.array(gcBounds.keys()), meanGC)
+            sampleSeqLen = gcBounds[closestGC].keys()[0]
+            d = gcBounds[closestGC][sampleSeqLen]
+            gcLowerBoundKey = findNearest(d.keys(), (100 - distribution)/2.0)
+            gcUpperBoundKey = findNearest(d.keys(), (100 + distribution)/2.0)
+            
+            closestCD = findNearest(np.array(cdBounds.keys()), meanCD)
+            sampleSeqLen = cdBounds[closestCD].keys()[0]
+            d = cdBounds[closestCD][sampleSeqLen]
+            cdLowerBoundKey = findNearest(d.keys(), (100 - distribution)/2.0)
+            cdUpperBoundKey = findNearest(d.keys(), (100 + distribution)/2.0)
+            
+            tdBoundKey = findNearest(tdBounds[tdBounds.keys()[0]].keys(), distribution)
+            
             index = 0
             for seqId, seq in seqs.iteritems(): 
-                closestGC = findNearest(np.array(gcBounds.keys()), meanGC)
-                closestWindowSize = findNearest(np.array(gcBounds[closestGC].keys()), len(seq))
-                gcLowerBound = gcBounds[closestGC][closestWindowSize][0]
-                gcUpperBound = gcBounds[closestGC][closestWindowSize][1]
+                seqLen = len(seq)
                 
-                closestCD = findNearest(np.array(cdBounds.keys()), meanCD)
-                closestWindowSize = findNearest(np.array(cdBounds[closestCD].keys()), len(seq))
-                cdLowerBound = cdBounds[closestCD][closestWindowSize][0]
-                cdUpperBound = cdBounds[closestCD][closestWindowSize][1]
-     
-                closestWindowSize = findNearest(np.array(tdBounds.keys()), len(seq))
-                tdBound = tdBounds[closestWindowSize]
+                # find GC, CD, and TD bounds
+                closestSeqLen = findNearest(gcBounds[closestGC].keys(), seqLen)
+                gcLowerBound = gcBounds[closestGC][closestSeqLen][gcLowerBoundKey]
+                gcUpperBound = gcBounds[closestGC][closestSeqLen][gcUpperBoundKey]
+
+                closestSeqLen = findNearest(cdBounds[closestCD].keys(), seqLen)
+                cdLowerBound = cdBounds[closestCD][closestSeqLen][cdLowerBoundKey]
+                cdUpperBound = cdBounds[closestCD][closestSeqLen][cdUpperBoundKey]
+                
+                closestSeqLen = findNearest(tdBounds.keys(), seqLen)
+                tdBound = tdBounds[closestSeqLen][tdBoundKey]
 
                 outlyingDists = []
                 if deltaGCs[index] < gcLowerBound or deltaGCs[index] > gcUpperBound:
@@ -254,7 +276,7 @@ class BinTools():
                     fout.write(binId + '\t' + seqId + '\t%d' % len(seq) + '\t' + ','.join(outlyingDists))
                     fout.write('\t%.1f\t%.1f\t%.1f\t%.1f' % (seqGC[index]*100, meanGC*100, (meanGC+gcLowerBound)*100, (meanGC+gcUpperBound)*100))
                     fout.write('\t%.1f\t%.1f\t%.1f\t%.1f' % (CDs[index]*100, meanCD*100, (meanCD+cdLowerBound)*100, (min(1.0, meanCD+cdUpperBound))*100))
-                    fout.write('\t%.1f\t%.1f\t%.1f' % (deltaTDs[index]*100, meanTD*100, tdBound*100) + '\n')
+                    fout.write('\t%.3f\t%.3f\t%.3f' % (deltaTDs[index], meanTD, tdBound) + '\n')
                     
                 index += 1
                               

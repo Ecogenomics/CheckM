@@ -27,7 +27,7 @@ import logging
 
 import numpy as np
 
-def getBinIdsFromDir(outDir):
+def getBinIdsFromOutDir(outDir):
     """Get bin ids."""
     binIds = []
     

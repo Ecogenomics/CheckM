@@ -1,4 +1,4 @@
-#!/srv/whitlam/bio/apps/12.04/sw/python/2.7.4/bin/python
+#!/srv/sw/python/2.7.4/bin/python
 
 ###############################################################################
 #
@@ -41,7 +41,7 @@ def printHelp():
     print '                ...::: CheckM v' + __version__ + ' :::...'''
     print '''\
 
-  Assess completeness and contamination of putative genome bins.
+  Assess quality of putative genome bins.
     
   Lineage-specific marker set:
     tree        -> Place bins in the genome tree
@@ -55,26 +55,26 @@ def printHelp():
   Apply marker set to genome bins:   
     analyze     -> Identify marker genes in bins
     qa          -> Assess bins for contamination and completeness
+      
+  Bin QA plots:
+    bin_qa_plot -> Bar plot of bin completeness, contamination, and strain heterogeneity   
          
+  Reference distribution plots:  
+    gc_plot     -> Create GC histogram and delta-GC plot
+    coding_plot -> Create coding density (CD) histogram and delta-CD plot
+    tetra_plot  -> Create tetranucleotide distance (TD) histogram and delta-TD plot
+    dist_plot   -> Create image with GC, CD, and TD distribution plots together
+  
   General plots:
     nx_plot     -> Create Nx-plots
     len_plot    -> Cumulative sequence length plot
     len_hist    -> Sequence length histogram
     marker_plot -> Plot position of marker genes on sequences
     par_plot    -> Parallel coordinate plot of GC and coverage
-       
-  Reference distribution plots:  
-    gc_plot     -> Create GC histogram and delta-GC plot
-    coding_plot -> Create coding density (CD) histogram and delta-CD plot
-    tetra_plot  -> Create tetranucleotide distance (TD) histogram and delta-TD plot
-    dist_plot   -> Create image with GC, CD, and TD distribution plots together
-    
+      
   Sequence subspace plots:
     cov_pca     -> PCA plot of coverage profiles
     tetra_pca   -> PCA plot of tetranucleotide signatures
-    
-  Bin QA plots:
-    bin_qa_plot -> Bar plot of bin completeness, contamination, and strain heterogeneity
     
   Bin exploration and modification:
     merge       -> Identify bins with complementary sets of marker genes
@@ -406,6 +406,7 @@ if __name__ == '__main__':
                                             description='Calculate percentage of reads mapped to each bin.')
     profile_parser.add_argument('coverage_file', help="file indicating coverage of each sequence (see coverage command)")
     profile_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
+    profile_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     profile_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Join tab-separated values file
@@ -447,9 +448,9 @@ if __name__ == '__main__':
     merge_parser = subparsers.add_parser('merge',
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                             description='Identify bins with complementary sets of marker genes.')
-    merge_parser.add_argument('marker_file', help="marker file used to assess potential bin mergers (marker set or HMM file)")
+    merge_parser.add_argument('marker_file', help="marker file to use for assessing potential bin mergers (marker set or HMM file)")
     merge_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    merge_parser.add_argument('analyze_folder', help="folder specified during analyze command")
+    merge_parser.add_argument('out_folder', help="folder to write output files")
     merge_parser.add_argument('--delta_comp', help="minimum increase in completeness to report pair", type=float, default = 5.0)
     merge_parser.add_argument('--delta_cont', help="maximum increase in contamination to report pair", type=float, default = 5.0)
     merge_parser.add_argument('--merged_comp', help="minimum merged completeness to report pair", type=float, default = 70.0)
@@ -466,7 +467,7 @@ if __name__ == '__main__':
     outlier_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     outlier_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
     outlier_parser.add_argument('output_file', help="print results to file")
-    outlier_parser.add_argument('-d', '--distribution', help='reference distribution used to identify outliers', choices=['80', '90', '95', '98', '99', '99.5', '99.9', '100'], default='99')
+    outlier_parser.add_argument('-d', '--distribution', help='reference distribution used to identify outliers; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95)
     outlier_parser.add_argument('-r', '--report_type', help="report sequences that are outliers in 'all' or 'any' reference distribution", choices=['any', 'all'], default='any')
     outlier_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
     outlier_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -474,7 +475,8 @@ if __name__ == '__main__':
     # Modify a bin
     modify_parser = subparsers.add_parser('modify',
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            description='Modify sequences in a bin.')
+                                            description='Modify sequences in a bin.',
+                                            epilog='Example: checkm modify -r seq_id1 -r seq_id2 seqs.fna bin.fna new_bin.fna')
     modify_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
     modify_parser.add_argument('bin_file', help="bin to be modified")
     modify_parser.add_argument('output_file', help="modified bin")

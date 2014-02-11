@@ -19,8 +19,9 @@
 #                                                                             #
 ###############################################################################
 
-import os
 import logging
+
+import prettytable
 
 import defaultValues
 from common import checkFileExists, reassignStdOut, restoreStdOut
@@ -29,11 +30,12 @@ class Profile():
     def __init__(self):
         self.logger = logging.getLogger()
     
-    def run(self, coverageFile, outFile):
+    def run(self, coverageFile, outFile, bTabTable):
         checkFileExists(coverageFile)
         
         # get number of reads mapped to each bin
         self.logger.info('  Determining number of reads mapped to each bin.')
+        self.logger.info('')
             
         readsMappedToBin = {}
         binSize = {}
@@ -91,21 +93,30 @@ class Profile():
         sortedBinIds = sorted(readsMappedToBin.keys())
         sortedBamIds = sorted(readsMappedToBin[sortedBinIds[0]].keys())
         
-        header = 'Bin Id\tBinSize'
+        header = ['Bin Id','Bin size (Mbps)']
         for bamId in sortedBamIds:
-            header += '\t' + bamId + ': mapped reads'
-            header += '\t' + bamId + ': % mapped reads'
-            header += '\t' + bamId + ': % binned populations'
-            header += '\t' + bamId + ': % community'
-        print(header)
+            header += [bamId + ': mapped reads']
+            header += [bamId + ': % mapped reads']
+            header += [bamId + ': % binned populations']
+            header += [bamId + ': % community']
+            
+        if bTabTable: 
+            print('\t'.join(header))
+        else:
+            pTable = prettytable.PrettyTable(header)
+            pTable.float_format = '.2'
+            pTable.align = 'c'
+            pTable.align[header[0]] = 'l'
+            pTable.hrules = prettytable.FRAME
+            pTable.vrules = prettytable.NONE
         
         for binId in sortedBinIds:
-            rowStr = binId
-            rowStr += '\t' + str(binSize[binId])
+            row = [binId]
+            row += [float(binSize[binId])/1e6]
             
             for bamId in sortedBamIds:
-                rowStr += '\t' + str(readsMappedToBin[binId][bamId])
-                rowStr += '\t' + str(perMappedReads[binId][bamId]*100.0)
+                row += [readsMappedToBin[binId][bamId]]
+                row += [perMappedReads[binId][bamId]*100.0]
                  
                 if defaultValues.UNBINNED in perMappedReads:
                     unbinnedPercentage = perMappedReads[defaultValues.UNBINNED][bamId]
@@ -113,12 +124,18 @@ class Profile():
                     unbinnedPercentage = 0
                     
                 if binId == defaultValues.UNBINNED:
-                    rowStr += '\t' + 'NA' 
-                    rowStr += '\t' + str(unbinnedPercentage*100.0)
+                    row += ['NA'] 
+                    row += [unbinnedPercentage*100.0]
                 else:
-                    rowStr += '\t' + str(normBinCoverage[binId][bamId]*100.0)
-                    rowStr += '\t' + str(normBinCoverage[binId][bamId]*100.0 * (1.0 - unbinnedPercentage))
+                    row += [normBinCoverage[binId][bamId]*100.0]
+                    row += [normBinCoverage[binId][bamId]*100.0 * (1.0 - unbinnedPercentage)]
+                      
+            if bTabTable:  
+                print('\t'.join(map(str, row)))
+            else:
+                pTable.add_row(row)
+                
+        if not bTabTable:
+            print(pTable.get_string())
             
-            print(rowStr)
-        
         restoreStdOut(outFile, oldStdOut)

@@ -33,7 +33,7 @@ import defaultValues
 
 from markerSet import MarkerSet
 
-from common import checkDirExists, reassignStdOut, restoreStdOut, getBinIdsFromDir
+from common import checkDirExists, reassignStdOut, restoreStdOut, getBinIdsFromOutDir
 from seqUtils import readFasta
 
 class TreeParser():
@@ -196,7 +196,7 @@ class TreeParser():
         self.logger.info('  Determining marker set for each genome bin.')
         
         # get all bin ids
-        binIds = getBinIdsFromDir(outDir)
+        binIds = getBinIdsFromOutDir(outDir)
                 
         # get statistics for internal nodes
         uniqueIdToLineageStatistics = self.__readNodeMetadata()
@@ -389,7 +389,7 @@ class TreeParser():
         checkDirExists(alignOutputDir)
         
         # get all bin ids
-        binIds = getBinIdsFromDir(outDir)
+        binIds = getBinIdsFromOutDir(outDir)
 
         # get taxonomy for each bin
         binIdToTaxonomy = self.getBinTaxonomy(outDir, binIds)
