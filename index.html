@@ -15,8 +15,8 @@
   <body>
     <div class="wrapper">
       <header>
-        <h1>CheckM</h1>
-        <p>Beta check your meta before you wreck your meta</p>
+        <h1>[CheckM]</h1>
+        <p>Beta check your meta before you wreck your meta!!!</p>
 
         <p class="view"><a href="https://github.com/Ecogenomics/CheckM">View the Project on GitHub <small>Ecogenomics/CheckM</small></a></p>
 
@@ -35,9 +35,9 @@ that collections of contigs that have been 'binned' into putative
 genomes may be contaminated from another organism or represent an
 incomplete genome.  Both are major problems that need to be addressed
 before inferences about metabolic function can be made by the presence
-or absence of genes. CheckM, is a set of tools that can assess the 
+or absence of genes. CheckM, is a set of tools that can assess the
 contamination and completeness of genome bins using conserved genes found
-in a single copy for different taxonomic lineages.  More closely 
+in a single copy for different taxonomic lineages.  More closely
 related bacteria and archaea share a higher proportion of their gene
 complement and therefore estimations of completeness based on these
 markers will be more accurate than estimates based on gene markers
@@ -94,8 +94,8 @@ your system.  Otherwise you can setup the database using the following:</p>
 
 <h1>Marker Sets</h1>
 
-<p>Marker sets are a list of genes/protein domains that are found in all 
-genomes for a particular taxonomic rank.  Some marker sets may be 
+<p>Marker sets are a list of genes/protein domains that are found in all
+genomes for a particular taxonomic rank.  Some marker sets may be
 universal or be specific to a family or genus.  There are two marker
 sets that get used routinely; one from
 <a href="http://phylosift.wordpress.com">phylosift</a> that contains 37 markers
@@ -147,9 +147,9 @@ contamination of all of my genome bins.  First start by using one of the
 universal marker sets such as the markers used by phylosift or by
 specifying the taxonomy as 'universal' in the <code>-T</code> flag of `checkM.</p>
 
-<pre><code>checkM build -T universal &lt;OUTPUT_FOLDER&gt; genome.fna 
+<pre><code>checkM build -T universal &lt;OUTPUT_FOLDER&gt; genome.fna
 
-checkM qa -T universal &lt;OUTPUT&gt; 
+checkM qa -T universal &lt;OUTPUT&gt;
 </code></pre>
 
 <p>From the output of the <code>qa</code> command you should be able to see which bins
@@ -166,7 +166,7 @@ statistics on completeness and contamination. (There are 428
 
 <pre><code>checkM build -T 'k__Bacteria;p__Proteobacteria;c__Betaproteobacteria;o__Rhodocyclales;f__Rhodocyclaceae' &lt;OUTPUT_FOLDER&gt; genome.fna
 
-checkM qa -T 'k__Bacteria;p__Proteobacteria;c__Betaproteobacteria;o__Rhodocyclales;f__Rhodocyclaceae' &lt;OUTPUT_FOLDER&gt; 
+checkM qa -T 'k__Bacteria;p__Proteobacteria;c__Betaproteobacteria;o__Rhodocyclales;f__Rhodocyclaceae' &lt;OUTPUT_FOLDER&gt;
 </code></pre>
 
 <p>This output should be a more accurate view of the contamination and completeness of your genome.</p>
@@ -223,11 +223,11 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -o OUT_FORMAT, --output-format OUT_FORMAT
-                        Change the output format to one of the following: 
+                        Change the output format to one of the following:
                         1. Simple Summary showing bin name, counts, completeness
-                           and contamination 
+                           and contamination
                         2. List of marker names and their counts
-                        3. Matrix of marker counts 
+                        3. Matrix of marker counts
                         4. Tabular list of bin name, marker name, contig name
                         5. Tabular list showing contigs that contain more than
                            one copy of the same marker. Format: bin name,
@@ -355,6 +355,6 @@ for further details.</p>
       </footer>
     </div>
     <script src="javascripts/scale.fix.js"></script>
-    
+
   </body>
 </html>
