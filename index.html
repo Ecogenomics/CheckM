@@ -4,16 +4,14 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="">
-<meta name="author" content="">
-<!-- Le HTML5 shim, for IE6-8 support of HTML elements --><!--[if lt IE 9]>
+<meta name="author" content=""><!-- Le HTML5 shim, for IE6-8 support of HTML elements --><!--[if lt IE 9]>
 <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
 <![endif]--><!-- Le styles -->
+
 <link href="./css/bootstrap.min.css" rel="stylesheet">
 <link href="./css/bootstrap-responsive.min.css" rel="stylesheet">
-<link href="./css/docs.css" rel="stylesheet">
-</head>
-
-  <body class="preview" data-spy="scroll" data-target=".subnav" data-offset="80">
+<link href="./css/docs.css" rel="stylesheet"></head>
+<body class="preview" data-spy="scroll" data-target=".subnav" data-offset="80">
 <script src="./js/bsa.js"></script>
 <div class="container"><header class="jumbotron subhead" id="overview"> </header>
 <div class="row"> <img style="display: block; margin-left: auto; margin-right: auto;" src="./img/checkm.png"> </div>
@@ -23,8 +21,7 @@
 <div class="span4">
 <hr>
 <h1>Overview</h1>
-<p>Determining if contigs 'binned' into a putative genome is
-incomplete or contains
+<p>Determining if contigs 'binned' into a putative genome represent a&nbsp;complete genome or contains
 sequence data from other genomes is an open problem in metagenomic
 assembly. These issues must be addressed to make informed inferences
 about the gene content and metabolic function of putative population
@@ -88,10 +85,10 @@ extension.<br>
 <p>CheckM was developed to be highly flexible in the marker set
 used for
 assessing bin completeness and contamination. Functionality is provided
-for calculatinglineage- and taxonomic-specific sets of
+for inferring lineage- and taxonomic-specific sets of
 marker, or you
 can supply your own HMM file specifying a custom set of
-markers.The standard workflow for using lineage-specific
+markers. The standard workflow for using lineage-specific
 markers is as follows:</p>
 <ul>
 <li><strong>tree</strong> - infer the position of
@@ -122,10 +119,10 @@ tetranucleotide signature distributions relative to expected
 distributions as determined from a set of reference genomes</li>
 </ul>
 <h3>Bin mergers</h3>
-<p>Automatedmethods for binning contigs tend to be
+<p>Automated methods for binning contigs tend to be
 conservative
 which can result in a genome being split across multiple bins. To help
-identify bins that are likely candidates formerging, CheckM
+identify bins that are likely candidates for merging, CheckM
 provides functionality for identifying bins with complementary sets of
 markers:</p>
 <ul>
@@ -136,7 +133,7 @@ markers</li>
 The merge command requiresbins to be assessed using a common
 set of
 marker genes. Typically, this will be done with with both a
-BacterialandArchaeal set generated with the <span style="font-style: italic;">taxon_set</span> command
+Bacterial and Archaeal set generated with the <span style="font-style: italic;">taxon_set</span> command
 (see manual for further details).<br>
 <h3 style="margin-left: 0px; width: 883px;">Going further</h3>
 CheckM provides a number of additional plots and functionality for
