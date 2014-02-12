@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>GroopM - Metagenomic binning</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="./css/docs.css" rel="stylesheet">
+  </head>
+
+  <body class="preview" data-spy="scroll" data-target=".subnav" data-offset="80">
+    <script src="./js/bsa.js"></script>
+
+    <div class="container">
+
+
+<header class="jumbotron subhead" id="overview">
+  <div class="row">
+    <img style="display: block; margin-left: auto; margin-right: auto;" src="./img/groopm.png"/>
+  </div>
+</header>
+
+
+<section id="theboss">
+  <!-- Headings & Paragraph Copy -->
+  <div class="row">
+    <div class="span4">
+        <hr>
+        <h1>Get GroopM</h1>
+        <p>I use and love Linux and GroopM has been developed to work on a Linux system. I'm not saying it won't work elsewhere, but I haven't tried. YMMV. People have successfully used GroopM on many different flavours of Linux as well as on Mavericks 10.9. If you try it somewhere else then let me know. I'd like to keep this list up to date.</p>
+        <h3>Use pip</h3>
+        <p>This is the recommended method as it will automaticaly install all of GroopM's dependencies. You'll need to have <a href="http://pypi.python.org/pypi">pip</a> installed on your system. Also you should try to install <a href="http://www.pytables.org/moin">pytables</a> yourself first as an error installing one of it's dependencies (numexpr) can hamper your fun installation experience. </p>
+        <p>Of course you can just try and see ;) Open a temrinal and type: </p>
+        <p>$ sudo pip install GroopM</p>
+        <h3>From source on github</h3>
+        <p>If you prefer this type of thing you can always try install from source directly. You will need the following dependencies:</p>
+        <ul>
+          <li>numpy >= 1.6.1</li>
+          <li>scipy >= 0.10.1</li>
+          <li>matplotlib >= 1.1.0</li>
+          <li>pytables >= 2.3</li>
+          <li>pysam >= 0.3</li>
+          <li>PIL >= 1.1.7</li>
+          <li>BamTyper >= 0.2.0</li>
+          <li>Cython</li>
+          <li>GTK or TK dev packages installed on your machine</li>
+        </ul>
+        <p>Clone the repo from github:</p>
+        <p>$ git clone https://github.com/minillinim/GroopM.git</p>
+        <p>Then change into the GroopM directory and type:</p>
+        <p>$ sudo python setup.py install</p>
+    </div>
+    <div class="span4">
+        <hr>
+        <h1>Use GroopM</h1>
+        <p>You can checkout our very new, ever more detailed <a href="manual/GroopM_manual.pdf">manual</a> (currently under construction), or check out the <a href="dev_docs/index.html">development api</a>. If you're feeling rushed then read on:</p>
+        <p>GroopM was developed to be used in conjunction with a specific experimental design pattern. Before you try GroopM please ensure:</p>
+        <ul>
+            <li>You are using a sequencing platform developed after 1987</li>
+            <li>You have sampled your metagenomic community at at least 3 time points / spatial positions</li>
+        </ul>
+        <p>Still with me? Great!</p>
+        <p>Before you can use GroopM you'll need to assemble and map your reads. The general recipe is to make a co-assembly of ALL of your data using <a href="https://www.ebi.ac.uk/~zerbino/velvet/">Velvet</a> or similar. Take these contigs and map each of your read sets to them using <a href="http://bio-bwa.sourceforge.net/">BWA</a> or similar. If you have N sampling points then your aim is to produce N sorted-indexed BAM files. <a href="http://samtools.sourceforge.net/">samtools</a> can help with this.</p>
+        <p>The typical workflow for GroopM is as follows:</p>
+        <ul>
+          <li><strong>parse</strong> - Load then contigs and coverage info into pytables</li>
+          <li><strong>core</strong> - Produce a set of bins</li>
+          <li><strong>refine</strong> - Make sure these bins are ok. Fix any errors you see</li>
+          <li><strong>recruit</strong> - Recruit smaller contigs into your existing bins</li>
+          <li><strong>extract</strong> - Extract binned contigs</li>
+        </ul>
+        <p>GroopM was designed to be as parameter-free as possible. For more information on these steps type:</p>
+        <p>$ groopm OPTION -h</p>
+    </div>
+    <div class="span4">
+        <hr>
+        <h1>Cite GroopM</h1>
+        <p>If you use this software then we'd love you to cite us. Unfortunately GroopM is as yet unpublished, but we are working on our paper right now! If you'd like to cite our software then please contact us and we'll tell you how to make us happy scientists. We've submitted our manuscript and we'll update this page as soon as our publication has been accepted.</p>
+        <hr>
+        <h1>Talk to us</h1>
+        <p>All GroopM related suggestions, criticisms or abuse should be directed to Mike Imelfort. m_dot_imelfort_at_uq_dot_edu_dot_au</p>
+        <hr>
+        <h1>Licensing</h1>
+        <p>GroopM is licensed using the GNU General Public License version 3 as published by the Free Software Foundation.</p>
+        <p>This site and the GroopM logo are copyright Mike Imelfort</p>
+        <p>This site was created using a template created by the wonderful people at <a href="http://bootswatch.com">bootswatch</a>.
+    </div>
+  </div>
+</section>
+<hr>
+
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+  </body>
+</html>
+
