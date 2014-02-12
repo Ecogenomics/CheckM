@@ -1,107 +1,176 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>GroopM - Metagenomic binning</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="">
+<html lang="en"><head>
+<meta charset="utf-8"><title>CheckM - assessing the quality of genome bins</title>
 
-    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-
-    <!-- Le styles -->
-    <link href="./css/bootstrap.min.css" rel="stylesheet">
-    <link href="./css/bootstrap-responsive.min.css" rel="stylesheet">
-    <link href="./css/docs.css" rel="stylesheet">
-  </head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="">
+<meta name="author" content="">
+<!-- Le HTML5 shim, for IE6-8 support of HTML elements --><!--[if lt IE 9]>
+<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]--><!-- Le styles -->
+<link href="./css/bootstrap.min.css" rel="stylesheet">
+<link href="./css/bootstrap-responsive.min.css" rel="stylesheet">
+<link href="./css/docs.css" rel="stylesheet">
+</head>
 
   <body class="preview" data-spy="scroll" data-target=".subnav" data-offset="80">
-    <script src="./js/bsa.js"></script>
-
-    <div class="container">
-
-
-<header class="jumbotron subhead" id="overview">
-  <div class="row">
-    <img style="display: block; margin-left: auto; margin-right: auto;" src="./img/groopm.png"/>
-  </div>
-</header>
-
-
-<section id="theboss">
-  <!-- Headings & Paragraph Copy -->
-  <div class="row">
-    <div class="span4">
-        <hr>
-        <h1>Get GroopM</h1>
-        <p>I use and love Linux and GroopM has been developed to work on a Linux system. I'm not saying it won't work elsewhere, but I haven't tried. YMMV. People have successfully used GroopM on many different flavours of Linux as well as on Mavericks 10.9. If you try it somewhere else then let me know. I'd like to keep this list up to date.</p>
-        <h3>Use pip</h3>
-        <p>This is the recommended method as it will automaticaly install all of GroopM's dependencies. You'll need to have <a href="http://pypi.python.org/pypi">pip</a> installed on your system. Also you should try to install <a href="http://www.pytables.org/moin">pytables</a> yourself first as an error installing one of it's dependencies (numexpr) can hamper your fun installation experience. </p>
-        <p>Of course you can just try and see ;) Open a temrinal and type: </p>
-        <p>$ sudo pip install GroopM</p>
-        <h3>From source on github</h3>
-        <p>If you prefer this type of thing you can always try install from source directly. You will need the following dependencies:</p>
-        <ul>
-          <li>numpy >= 1.6.1</li>
-          <li>scipy >= 0.10.1</li>
-          <li>matplotlib >= 1.1.0</li>
-          <li>pytables >= 2.3</li>
-          <li>pysam >= 0.3</li>
-          <li>PIL >= 1.1.7</li>
-          <li>BamTyper >= 0.2.0</li>
-          <li>Cython</li>
-          <li>GTK or TK dev packages installed on your machine</li>
-        </ul>
-        <p>Clone the repo from github:</p>
-        <p>$ git clone https://github.com/minillinim/GroopM.git</p>
-        <p>Then change into the GroopM directory and type:</p>
-        <p>$ sudo python setup.py install</p>
-    </div>
-    <div class="span4">
-        <hr>
-        <h1>Use GroopM</h1>
-        <p>You can checkout our very new, ever more detailed <a href="manual/GroopM_manual.pdf">manual</a> (currently under construction), or check out the <a href="dev_docs/index.html">development api</a>. If you're feeling rushed then read on:</p>
-        <p>GroopM was developed to be used in conjunction with a specific experimental design pattern. Before you try GroopM please ensure:</p>
-        <ul>
-            <li>You are using a sequencing platform developed after 1987</li>
-            <li>You have sampled your metagenomic community at at least 3 time points / spatial positions</li>
-        </ul>
-        <p>Still with me? Great!</p>
-        <p>Before you can use GroopM you'll need to assemble and map your reads. The general recipe is to make a co-assembly of ALL of your data using <a href="https://www.ebi.ac.uk/~zerbino/velvet/">Velvet</a> or similar. Take these contigs and map each of your read sets to them using <a href="http://bio-bwa.sourceforge.net/">BWA</a> or similar. If you have N sampling points then your aim is to produce N sorted-indexed BAM files. <a href="http://samtools.sourceforge.net/">samtools</a> can help with this.</p>
-        <p>The typical workflow for GroopM is as follows:</p>
-        <ul>
-          <li><strong>parse</strong> - Load then contigs and coverage info into pytables</li>
-          <li><strong>core</strong> - Produce a set of bins</li>
-          <li><strong>refine</strong> - Make sure these bins are ok. Fix any errors you see</li>
-          <li><strong>recruit</strong> - Recruit smaller contigs into your existing bins</li>
-          <li><strong>extract</strong> - Extract binned contigs</li>
-        </ul>
-        <p>GroopM was designed to be as parameter-free as possible. For more information on these steps type:</p>
-        <p>$ groopm OPTION -h</p>
-    </div>
-    <div class="span4">
-        <hr>
-        <h1>Cite GroopM</h1>
-        <p>If you use this software then we'd love you to cite us. Unfortunately GroopM is as yet unpublished, but we are working on our paper right now! If you'd like to cite our software then please contact us and we'll tell you how to make us happy scientists. We've submitted our manuscript and we'll update this page as soon as our publication has been accepted.</p>
-        <hr>
-        <h1>Talk to us</h1>
-        <p>All GroopM related suggestions, criticisms or abuse should be directed to Mike Imelfort. m_dot_imelfort_at_uq_dot_edu_dot_au</p>
-        <hr>
-        <h1>Licensing</h1>
-        <p>GroopM is licensed using the GNU General Public License version 3 as published by the Free Software Foundation.</p>
-        <p>This site and the GroopM logo are copyright Mike Imelfort</p>
-        <p>This site was created using a template created by the wonderful people at <a href="http://bootswatch.com">bootswatch</a>.
-    </div>
-  </div>
+<script src="./js/bsa.js"></script>
+<div class="container"><header class="jumbotron subhead" id="overview"> </header>
+<div class="row"> <img style="display: block; margin-left: auto; margin-right: auto;" src="./img/checkm.png"> </div>
+<section id="theboss"><!-- Headings & Paragraph Copy -->
 </section>
+<div class="row">
+<div class="span4">
 <hr>
-
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-    <script src="./js/bootstrap.min.js"></script>
-  </body>
-</html>
-
+<h1>Overview</h1>
+<p>Determining if contigs 'binned' into a putative genome is
+incomplete or contains
+sequence data from other genomes is an open problem in metagenomic
+assembly. These issues must be addressed to make informed inferences
+about the gene content and metabolic function of putative population
+genomes.
+CheckM provides a set of tools for assessing the
+quality of putative genome bins. It provides robust estimates
+of genome completeness and contamination using
+lineage-specific sets of single-copy, ubiquitious genes
+and explicitly accounting for gene co-location. Assessment of
+bin quality can also be examined using plots depicting key genomic
+characteristics (e.g., GC, coding density) which highlight contigs
+outside the expected distributions of a typical genome. CheckM also
+provides tools for identifying bins that are likely candidates for
+merging based on marker set compatibility, similarity in genomic
+characteristics, and proximity within a reference genome tree.</p>
+<hr>
+<h1>Get CheckM</h1>
+<p>CheckM has been developed to work on a Linux system. It may
+work elsewhere, but I haven't tried. If you try it somewhere
+else then please let me know. I'd like to keep this list up-to-date.</p>
+<h3>Use pip</h3>
+<p>This is the recommended method for obtaining CheckM as it will
+automaticaly install a number of dependencies. You'll need to have <a href="http://pypi.python.org/pypi">pip</a> installed
+on your system. After that, open a terminal and it is as easy as
+typing: </p>
+<p>$ sudo pip install checkm-ACE</p>
+<p>CheckM makes use of the following 3rd party programs which
+must be available on the system path:</p>
+<ul>
+<li>hmmer &gt;= 3.0</li>
+<li>prodigal &gt;= 2.6</li>
+<li>pplacer &gt;= 1.1</li>
+</ul>
+<h3>From source on github</h3>
+<p>If you prefer this type of thing you can always try install
+from source directly. You will need the following dependencies:</p>
+<ul>
+<li>numpy &gt;= 1.8.0</li>
+<li>scipy &gt;= 0.9.0</li>
+<li>matplotlib &gt;= 1.1.0</li>
+<li>dendropy &gt;= 3.12.0</li>
+<li>pysam &gt;= 0.7.4</li>
+</ul>
+<p>The 3rd party dependencies listed above must also be install
+and placed on the system path. Clone the repo from github:</p>
+<p>$ git clone https://github.com/dparks1134/CheckM.git</p>
+<p>Then change into the CheckM directory and type:</p>
+<p>$ sudo python setup.py install</p>
+</div>
+<div class="span4">
+<hr>
+<h1>Use CheckM</h1>
+<p>You can checkout our new and&nbsp;expanding <a href="manual/checkm_manual.pdf">manual</a> (currently
+under construction), or read on if you're in a rush.</p>
+Before using CheckM you need to generate putative genome bins from your
+metagenomic dataset(s). Our companion tool <a href="http://minillinim.github.io/GroopM/">GroopM</a>
+can be used for this task.CheckM assumesgenome
+binsare contained in a single folder with a common file
+extension.<br>
+<h3>Standard workflow</h3>
+<p>CheckM was developed to be highly flexible in the marker set
+used for
+assessing bin completeness and contamination. Functionality is provided
+for calculatinglineage- and taxonomic-specific sets of
+marker, or you
+can supply your own HMM file specifying a custom set of
+markers.The standard workflow for using lineage-specific
+markers is as follows:</p>
+<ul>
+<li><strong>tree</strong> - infer the position of
+each bin within a reference genome tree</li>
+<li><strong>tree_qa </strong>- examine the
+placementof bins within the genome tree and their taxonomic
+affliations</li>
+<li><strong>lineage_set </strong>- infer a
+lineage-specific marker set for each bin</li>
+<li><strong>analyze</strong> - identify markers in
+each bin</li>
+<li><strong>qa </strong>- assess bin completeness
+and contamination</li>
+</ul>
+<p>For more information on these commands type:</p>
+<p>$ checkm OPTION -h</p>
+<h3>Plots</h3>
+<p>A suite of plots is provided for investigating the quality of
+genome bins. We recommend that at least the following plots be
+considered:</p>
+<ul>
+<li><strong>bin_qa_plot </strong>-
+illustratescompleteness, contamination, and strain
+heterogeneity of each bin</li>
+<li><strong>dist_plot </strong>- produces a plot
+for each bin illustrating the bin's GC, coding density, and
+tetranucleotide signature distributions relative to expected
+distributions as determined from a set of reference genomes</li>
+</ul>
+<h3>Bin mergers</h3>
+<p>Automatedmethods for binning contigs tend to be
+conservative
+which can result in a genome being split across multiple bins. To help
+identify bins that are likely candidates formerging, CheckM
+provides functionality for identifying bins with complementary sets of
+markers:</p>
+<ul>
+<li><strong>merge </strong>- identify bins with
+complementary
+markers</li>
+</ul>
+The merge command requiresbins to be assessed using a common
+set of
+marker genes. Typically, this will be done with with both a
+BacterialandArchaeal set generated with the <span style="font-style: italic;">taxon_set</span> command
+(see manual for further details).<br>
+<h3 style="margin-left: 0px; width: 883px;">Going further</h3>
+CheckM provides a number of additional plots and functionality for
+performing tasks such as bin refine, identifying unbinned contigs, and
+producing community profiles. See the manual for more details.</div>
+<div class="span4">
+<hr>
+<h1>Cite CheckM</h1>
+<p>If you use this software then we'd love you to cite us.
+Unfortunately CheckM is as yet unpublished, but we are working on our
+paper right now! If you'd like to cite our software then please contact
+us and we'll tell you how to make us happy scientists. We've submitted
+our manuscript and we'll update this page as soon as our publication
+has been accepted.</p>
+<hr>
+<h1>Talk to us</h1>
+<p>All CheckM related suggestions, criticisms or abuse should be
+directed to Donovan Parks:<br>
+</p>
+<ul>
+<li>donovan_dot_parks_at_gmail_dot_com</li>
+</ul>
+<hr>
+<h1>Licensing</h1>
+<p>CheckM is licensed using the GNU General Public License
+version 3 as published by the Free Software Foundation.</p>
+<p>This site and the CheckM logo were created by Donovan Parks
+and Mike Imelfort.</p>
+<p>This site was created using a template created by the
+wonderful people at <a href="http://bootswatch.com">bootswatch</a>.
+</p>
+</div>
+</div>
+<hr><!-- Placed at the end of the document so the pages load faster -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="./js/bootstrap.min.js"></script> </div>
+</body></html>
