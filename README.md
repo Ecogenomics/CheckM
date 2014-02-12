@@ -1,5 +1,5 @@
 # Overview
-Determining if contigs 'binned' into a putative genome is incomplete or contains sequence data from other genomes is an open problem in metagenomic assembly. These issues must be addressed to make informed inferences about the gene content and metabolic function of putative population genomes. CheckM provides a set of tools for assessing the quality of putative genome bins. It provides robust estimates of genome completeness and contamination using lineage-specific sets of single-copy, ubiquitious genes and explicitly accounting for gene co-location. Assessment of bin quality can also be examined using plots depicting key genomic characteristics (e.g., GC, coding density) which highlight contigs outside the expected distributions of a typical genome. CheckM also provides tools for identifying bins that are likely candidates for merging based on marker set compatibility, similarity in genomic characteristics, and proximity within a reference genome tree.
+Determining if contigs 'binned' into a putative genome represent a complete genomes or contain sequence data from other genomes is an open problem in metagenomic assembly. These issues must be addressed to make informed inferences about the gene content and metabolic function of putative population genomes. CheckM provides a set of tools for assessing the quality of putative genome bins. It provides robust estimates of genome completeness and contamination using lineage-specific sets of single-copy, ubiquitious genes and explicitly accounting for gene co-location. Assessment of bin quality can also be examined using plots depicting key genomic characteristics (e.g., GC, coding density) which highlight contigs outside the expected distributions of a typical genome. CheckM also provides tools for identifying bins that are likely candidates for merging based on marker set compatibility, similarity in genomic characteristics, and proximity within a reference genome tree.
 
 # Installation and Dependancies
 CheckM has been developed to work on a Linux system. It may work elsewhere, but I haven't tried. If you try it somewhere else then please let me know. I'd like to keep this list up-to-date.
@@ -37,11 +37,11 @@ $ sudo python setup.py install
 # Using CheckM
 
 You can checkout our new and expanding manual (currently under construction), or read on if you're in a rush.
-Before using CheckM you need to generate putative genome bins from your metagenomic dataset(s). Our companion tool GroopM can be used for this task.CheckM assumesgenome binsare contained in a single folder with a common file extension.
+Before using CheckM you need to generate putative genome bins from your metagenomic dataset(s). Our companion tool GroopM (http://minillinim.github.io/GroopM/) can be used for this task. CheckM assumes genome bins are contained in a single folder with a common file extension.
 
 ### Standard workflow
 
-CheckM was developed to be highly flexible in the marker set used for assessing bin completeness and contamination. Functionality is provided for calculatinglineage- and taxonomic-specific sets of marker, or you can supply your own HMM file specifying a custom set of markers.The standard workflow for using lineage-specific markers is as follows:
+CheckM was developed to be highly flexible in the marker set used for assessing bin completeness and contamination. Functionality is provided for calculating lineage- and taxonomic-specific sets of marker, or you can supply your own HMM file specifying a custom set of markers. The standard workflow for using lineage-specific markers is as follows:
 
     * tree - infer the position of each bin within a reference genome tree
     * tree_qa - examine the placementof bins within the genome tree and their taxonomic affliations
@@ -62,11 +62,11 @@ A suite of plots is provided for investigating the quality of genome bins. We re
 
 ### Bin mergers
 
-Automated methods for binning contigs tend to be conservative which can result in a genome being split across multiple bins. To help identify bins that are likely candidates formerging, CheckM provides functionality for identifying bins with complementary sets of markers:
+Automated methods for binning contigs tend to be conservative which can result in a genome being split across multiple bins. To help identify bins that are likely candidates for merging, CheckM provides functionality for identifying bins with complementary sets of markers:
 
     * merge - identify bins with complementary markers
 
-The merge command requiresbins to be assessed using a common set of marker genes. Typically, this will be done with with both a BacterialandArchaeal set generated with the taxon_set command (see manual for further details).
+The merge command requiresbins to be assessed using a common set of marker genes. Typically, this will be done with with both a Bacterial and Archaeal set generated with the *taxon_set* command (see manual for further details).
 
 ### Going further
 CheckM provides a number of additional plots and functionality for performing tasks such as bin refine, identifying unbinned contigs, and producing community profiles. See the manual for more details.
