@@ -188,6 +188,22 @@ class TreeParser():
                 
         return binIdToTaxonomy
     
+    def __getNextNamedNode(self, node, uniqueIdToLineageStatistics):
+        parentNode = node.parent_node
+        while True:
+            if parentNode == None:
+                break # reached the root node so terminate
+            
+            if parentNode.label:
+                trustedUniqueId = parentNode.label.split('|')[0]
+                trustedStats = uniqueIdToLineageStatistics[trustedUniqueId]
+                if trustedStats['taxonomy'] != '':
+                    return trustedStats['taxonomy']
+                
+            parentNode = parentNode.parent_node            
+                    
+        return 'root'
+                
     def getBinMarkerSets(self, outDir, markerFile, 
                                     numGenomesMarkers, numGenomesRefine, 
                                     bootstrap, bNoLineageSpecificRefinement, bRequireTaxonomy):
@@ -223,7 +239,7 @@ class TreeParser():
                 # use universal set
                 trustedUniqueId = rootNode.label.split('|')[0]
                 trustedStats = uniqueIdToLineageStatistics[trustedUniqueId]
-                trustedStats['taxonomy'] = 'root'
+                taxonomyStr = 'root'
             else:
                 parentNode = node.parent_node
                 while True:
@@ -233,14 +249,18 @@ class TreeParser():
                         trustedStats = uniqueIdToLineageStatistics[trustedUniqueId]
                         if trustedStats['# genomes'] >= numGenomesMarkers and trustedStats['bootstrap'] >= bootstrap:
                             if not bRequireTaxonomy or trustedStats['taxonomy'] != '':
+                                # get closest taxonomic label
+                                taxonomyStr = trustedStats['taxonomy']
+                                if not bRequireTaxonomy and trustedStats['taxonomy'] == '':
+                                    taxonomyStr = self.__getNextNamedNode(parentNode, uniqueIdToLineageStatistics)
+                                    
                                 # all criteria meet, so use marker set from this node
                                 break
                     
-                    if parentNode.parent_node == None:
+                    parentNode = parentNode.parent_node
+                    if parentNode == None:
                         break # reached the root node so terminate
                 
-                    parentNode = parentNode.parent_node
-             
             # get marker set meeting all criteria required for a trusted marker set       
             trustedMarkerSet = eval(trustedStats['marker set'])
             
@@ -296,10 +316,7 @@ class TreeParser():
             markerSet = MarkerSet(finalMarkerSet)
             numMarkers, numMarkerSets = markerSet.size()
                 
-            if bRequireTaxonomy:
-                fout.write(binId + '\t' + trustedStats['taxonomy'] + '\t' + str(numMarkers) + '\t' + str(numMarkerSets) + '\t' + str(finalMarkerSet) + '\n')
-            else:
-                fout.write(binId + '\t' + str(trustedUniqueId) + '\t' + str(numMarkers) + '\t' + str(numMarkerSets) + '\t' + str(finalMarkerSet) + '\n')
+            fout.write(binId + '\t' + str(trustedUniqueId) + '\t' + taxonomyStr + '\t' + str(numMarkers) + '\t' + str(numMarkerSets) + '\t' + str(finalMarkerSet) + '\n')
                 
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stdout.write('\n')

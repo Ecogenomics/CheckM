@@ -144,9 +144,7 @@ class MarkerSetParser():
         if markerFileType == self.TAXONOMIC_MARKER_FILE:
             markerSet = self.__parseTaxonomicMarkerSetFile(markerFile)
             hmmModelFile = os.path.join(outDir, 'storage', 'hmms', 'taxonomic.hmm')
-            
-            if not os.path.exists(hmmModelFile):
-                self.__createMarkerHMMs(markerSet, hmmModelFile)
+            self.__createMarkerHMMs(markerSet, hmmModelFile)
             
             for binId in binIds:
                 binIdToHmmModelFile[binId] = hmmModelFile
@@ -161,8 +159,7 @@ class MarkerSetParser():
                     sys.stdout.flush()
                 
                 hmmModelFile = os.path.join(outDir, 'storage', 'hmms', binId + '.hmm')
-                if not os.path.exists(hmmModelFile):
-                    self.__createMarkerHMMs(binIdToMarkerSet[binId], hmmModelFile, False)
+                self.__createMarkerHMMs(binIdToMarkerSet[binId], hmmModelFile, False)
                 binIdToHmmModelFile[binId] = hmmModelFile 
                 
             if self.logger.getEffectiveLevel() <= logging.INFO:
@@ -217,6 +214,6 @@ class MarkerSetParser():
             for line in f:
                 lineSplit = line.split('\t')
                 binId = lineSplit[0]
-                binIdToMarkerSets[binId] = MarkerSet(eval(lineSplit[4].rstrip()))
+                binIdToMarkerSets[binId] = MarkerSet(eval(lineSplit[5].rstrip()))
         
         return binIdToMarkerSets   

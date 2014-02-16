@@ -33,6 +33,10 @@ def readFasta(fastaFile):
             
         seqs = {}
         for line in openFile(fastaFile):
+            # skip blank lines
+            if not line.strip():
+                continue
+            
             if line[0] == '>':
                 seqId = line[1:].partition(' ')[0].rstrip()
                 seqs[seqId] = []

@@ -58,8 +58,6 @@ class TaxonomicMarkerSets(object):
                 break
 
             genomeIds = img.genomeIdsByTaxonomy(lineage, metadata, 'trusted')
-            genomeMissingData = img.genomesWithMissingData(genomeIds)
-            genomeIds -= genomeMissingData
             if len(genomeIds) >= minGenomes:
                 geneCountTable = img.geneCountTable(genomeIds)
                 geneCountTable = img.filterGeneCountTable(genomeIds, geneCountTable, 0.9*ubiquityThreshold, 0.9*singleCopyThreshold)

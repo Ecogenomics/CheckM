@@ -477,7 +477,7 @@ class ResultsManager():
         
         if outputFormat == 1:
             data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=False)
-            summary['# markers'] = len(self.models)
+            summary['# markers'] = markerSet.numMarkers()
             summary['# marker sets'] = markerSet.numSets()
             summary['0'] = data[0]
             summary['1'] = data[1]
@@ -489,7 +489,7 @@ class ResultsManager():
             summary['Contamination'] = data[7]
         elif outputFormat == 2:
             data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=False)
-            summary['# markers'] = len(self.models)
+            summary['# markers'] = markerSet.numMarkers()
             summary['# marker sets'] = markerSet.numSets()
             summary['0'] = data[0]
             summary['1'] = data[1]
@@ -567,7 +567,7 @@ class ResultsManager():
         if outputFormat == 1:
             data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=False)
             row = "%s\t%d\t%d\t%s\t%0.2f\t%0.2f\t%0.2f" % (self.binId,
-                                                len(self.models), markerSet.numSets(),
+                                                markerSet.numMarkers(), markerSet.numSets(),
                                                 "\t".join([str(data[i]) for i in range(6)]),
                                                 data[6],
                                                 data[7],
@@ -576,13 +576,13 @@ class ResultsManager():
             if table == None:
                 print(row)
             else:  
-                table.add_row([self.binId, len(self.models), markerSet.numSets()] + data + [aai.aaiMeanBinHetero.get(self.binId, 0.0)])
+                table.add_row([self.binId, markerSet.numMarkers(), markerSet.numSets()] + data + [aai.aaiMeanBinHetero.get(self.binId, 0.0)])
         elif outputFormat == 2:
             data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=False)
             
             if table == None:
                 row = self.binId
-                row += '\t%d\t%d' % (len(self.models), markerSet.numSets())
+                row += '\t%d\t%d' % (markerSet.numMarkers(), markerSet.numSets())
                 row += '\t%0.2f\t%0.2f\t%0.2f' % (data[6], data[7], aai.aaiMeanBinHetero.get(self.binId, 0.0))
                 row += '\t%d\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# scaffolds'], 
                                                  self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'], 
@@ -597,7 +597,7 @@ class ResultsManager():
             
                 print(row)
             else:  
-                row = [self.binId, len(self.models), markerSet.numSets()]
+                row = [self.binId, markerSet.numMarkers(), markerSet.numSets()]
                 row.extend([data[6], data[7], aai.aaiMeanBinHetero.get(self.binId, 0.0)])
                 row.extend([self.binStats['Genome size'], self.binStats['# scaffolds'], 
                                                  self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'], 
@@ -624,8 +624,8 @@ class ResultsManager():
                     markerHits += 1
 
             print("Total: %d / %d (%0.2f" % (markerHits,
-                                              len(self.models),
-                                              100*float(markerHits)/float(len(self.models))
+                                              markerSet.numMarkers(),
+                                              100*float(markerHits)/float(markerSet.numMarkers())
                                               )+"%)")
         elif outputFormat == 4:
             # matrix of bin vs marker counts

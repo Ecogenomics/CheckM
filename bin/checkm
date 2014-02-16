@@ -199,6 +199,7 @@ if __name__ == '__main__':
     qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.LENGTH, help="percent overlap between target and query")
     qa_parser.add_argument('-c', '--coverage_file', default=None, help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
     qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
+    qa_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     qa_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
         

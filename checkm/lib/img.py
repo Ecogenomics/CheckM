@@ -246,11 +246,9 @@ class IMG(object):
 
         return genomeIdsOfInterest
 
-    def lineageStats(self):
-        metadata = self.genomeMetadata()
-
+    def lineageStats(self, metadata, mostSpecificRank):
         stats = {}
-        for r in xrange(0, 6): # Domain to Genus
+        for r in xrange(0, mostSpecificRank+1):
             for _, data in metadata.iteritems():
                 taxaStr = ';'.join(data['taxonomy'][0:r+1])
                 stats[taxaStr] = stats.get(taxaStr, 0) + 1
@@ -269,11 +267,11 @@ class IMG(object):
 
         return lineages
 
-    def lineagesByCriteria(self, minGenomes, mostSpecificRank):
+    def lineagesByCriteria(self, metadata, minGenomes, mostSpecificRank):
         l = []
 
-        stats = self.lineageStats()
-        for lineage in self.lineagesSorted(mostSpecificRank):
+        stats = self.lineageStats(metadata, mostSpecificRank)
+        for lineage in self.lineagesSorted(metadata, mostSpecificRank):
             if stats[lineage] > minGenomes:
                 l.append(lineage)
 
