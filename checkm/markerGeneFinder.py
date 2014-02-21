@@ -29,7 +29,7 @@ from common import binIdFromFilename, makeSurePathExists
 from hmmer import HMMERRunner
 from prodigal import ProdigalRunner
 
-from markerSet import MarkerSetParser
+from markerSets import MarkerSetParser
 
 class MarkerGeneFinder():
     """Identify marker genes within binned sequences using Prodigal and HMMER."""
@@ -39,7 +39,7 @@ class MarkerGeneFinder():
 
     def find(self, binFiles, outDir, tableOut, hmmerOut, markerFile):
         """Identify marker genes in each bin using prodigal and HMMER."""
-        
+                
         # get bin ids
         binIds = []
         for binFile in binFiles:

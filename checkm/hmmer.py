@@ -24,6 +24,7 @@ import sys
 import uuid
 import logging
 import multiprocessing as mp
+import tempfile
 from re import split as re_split
 
 class FormatError(BaseException): pass
@@ -82,6 +83,13 @@ class HMMERRunner():
         
         # run hmmer
         os.system('hmmfetch %s %s > %s' % (db, key, fetchFileName))
+        
+    def index(self, hmmModelFile):
+        """Index a HMM file."""
+        if self.mode != 'fetch':
+            raise HMMMERModeError("Mode %s not compatible with fetch" % self.mode)
+        
+        os.system('hmmfetch --index %s > /dev/null' % hmmModelFile)
 
     def checkForHMMER(self):
         """Check to see if HMMER is on the system path."""
@@ -111,7 +119,7 @@ class HMMERModelExtractor():
         writerQueue = mp.Queue()
 
         for modelAcc in modelAccIds:
-            fetchFilename = os.path.join('/tmp', str(uuid.uuid4()))
+            fetchFilename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
             workerQueue.put((modelAcc, fetchFilename))
 
         for _ in range(self.totalThreads):
@@ -170,6 +178,12 @@ class HMMERModelExtractor():
             sys.stdout.write('\n')
             
         fout.close()
+        
+        # index the model file
+        if os.path.exists(ouputModelFile + '.ssi'):
+            os.remove(ouputModelFile + '.ssi')
+        HF = HMMERRunner(mode='fetch')
+        HF.index(ouputModelFile)
         
 class HMMERParser():
     """Parses tabular output."""

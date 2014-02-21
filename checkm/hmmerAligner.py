@@ -23,6 +23,7 @@ import os
 import sys
 import uuid
 import logging
+import tempfile
 import multiprocessing as mp
 from collections import defaultdict
 
@@ -89,6 +90,7 @@ class HmmerAligner:
                                        outDir,
                                        hmmTableFile,
                                        binIdToHmmModelFile,
+                                       binIdToBinMarkerSets,
                                        bIgnoreThresholds,
                                        evalueThreshold,
                                        lengthThreshold,
@@ -115,7 +117,7 @@ class HmmerAligner:
                 sys.stdout.flush()
             
             # extract ORFs with multiple hits
-            markersWithMultipleHits = self.__extractMarkerWithMultipleHits(outDir, binId, resultsParser)
+            markersWithMultipleHits = self.__extractMarkerWithMultipleHits(outDir, binId, resultsParser, binIdToBinMarkerSets[binId])
             if len(markersWithMultipleHits) == 0:
                 continue
             
@@ -274,7 +276,7 @@ class HmmerAligner:
             
         return rtnSeq
     
-    def __extractMarkerWithMultipleHits(self, outDir, binId, resultsParser):
+    def __extractMarkerWithMultipleHits(self, outDir, binId, resultsParser, binMarkerSet):
         """Extract marker with multiple hits within a single bin."""
         
         markersWithMultipleHits = defaultdict(dict)
@@ -282,7 +284,11 @@ class HmmerAligner:
         aaGeneFile = os.path.join(outDir, 'bins', binId, defaultValues.PRODIGAL_AA)
         binORFs = readFasta(aaGeneFile)
     
+        markerGenes = binMarkerSet.getMarkerGenes()
         for markerId, hits in resultsParser.results[binId].markerHits.iteritems(): 
+            if markerId not in markerGenes:
+                continue
+            
             hits.sort(key = lambda x: x.full_e_value)
             if len(hits) < 2:
                 continue
@@ -291,7 +297,7 @@ class HmmerAligner:
             markersWithMultipleHits[markerId][binId] = {}
             for hit in hits:
                 markersWithMultipleHits[markerId][binId][hit.target_name] = self.__extractSeq(hit.target_name, binORFs)
-                        
+                       
         return markersWithMultipleHits
              
     def __makeAlignmentModels(self, hmmModelFile, modelKeys, hmmModelFiles, bReportProgress = True):
@@ -305,7 +311,7 @@ class HmmerAligner:
         writerQueue = mp.Queue()
 
         for modelId in modelKeys:
-            fetchFilename = os.path.join('/tmp', str(uuid.uuid4()))
+            fetchFilename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
             hmmModelFiles[modelId] = fetchFilename
             workerQueue.put((modelId, fetchFilename))
 

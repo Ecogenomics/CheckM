@@ -28,7 +28,8 @@ import logging
 import defaultValues
 from seqUtils import readFasta, baseCount, calculateN50
 from common import binIdFromFilename, makeSurePathExists
-from mathHelper import mean
+
+from numpy import mean
 
 class BinStatistics():
     """Calculate statistics (GC, coding density, etc.) for genome bins."""
@@ -167,7 +168,9 @@ class BinStatistics():
                 
         GC = float(totalGC) / (totalGC + totalAT)
         
-        varGC = mean(map(lambda x: (x - GC)**2, gcPerSeq))
+        varGC = 0
+        if len(gcPerSeq) > 1:
+            varGC = mean(map(lambda x: (x - GC)**2, gcPerSeq))
 
         return GC, math.sqrt(varGC)
     

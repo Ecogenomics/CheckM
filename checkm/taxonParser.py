@@ -26,8 +26,8 @@ from collections import defaultdict
 
 import prettytable
 
-from markerSet import MarkerSet
-from lib.taxonomyUtils import taxonomicRanks
+from markerSets import BinMarkerSets, MarkerSet
+from lib.taxonomyUtils import taxonomicRanks, ranksByLevel, ranksByLabel
 
 import defaultValues
 
@@ -44,10 +44,11 @@ class TaxonParser():
             lineSplit = line.split('\t')
             rank = lineSplit[0]
             taxon = lineSplit[1]
-            numGenomes = int(lineSplit[2])
-            markerSet = eval(lineSplit[5].rstrip())
-            
-            taxonMarkerSets[rank][taxon] = [numGenomes, MarkerSet(markerSet)]
+            lineage = lineSplit[2]
+            numGenomes = int(lineSplit[3])
+            markerSet = eval(lineSplit[6].rstrip())
+        
+            taxonMarkerSets[rank][taxon] = MarkerSet(ranksByLabel[rank], lineage, numGenomes, markerSet)
             
         return taxonMarkerSets
         
@@ -67,10 +68,10 @@ class TaxonParser():
         for rank in taxonomicRanks:
             if rankFilter == 'ALL' or rankFilter == rank:
                 for taxon in sorted(taxonMarkerSets[rank]):
-                    numGenomes, markerSet = taxonMarkerSets[rank][taxon]
+                    markerSet = taxonMarkerSets[rank][taxon]
                     
                     numMarkers, numMarkerSets = markerSet.size()
-                    pTable.add_row([rank, taxon, numGenomes, numMarkers, numMarkerSets])
+                    pTable.add_row([rank, taxon, markerSet.numGenomes, numMarkers, numMarkerSets])
                
         print ''     
         print pTable.get_string()
@@ -87,15 +88,23 @@ class TaxonParser():
             self.logger.error('  Unrecognized taxon: %s (in rank %s): ' % (taxon, rank))
             return False
         
-        numGenomes, markerSet = taxonMarkerSets[rank][taxon]
-        numMarkers, numMarkerSets = markerSet.size()
-        
-        self.logger.info('  Marker set for %s contains %d marker genes arranged in %d sets.' % (taxon, numMarkers, numMarkerSets))
-        self.logger.info('    Marker set inferred from %d reference genomes.' % numGenomes)
+        markerSet = taxonMarkerSets[rank][taxon]
+ 
+        taxonomy = markerSet.lineageStr.split(';')[::-1]
+        binMarkerSets = BinMarkerSets(taxon)
+        for i, taxon in enumerate(taxonomy):
+            rank = ranksByLevel[len(taxonomy)-i-1]
+            markerSet = taxonMarkerSets[rank][taxon]
+            numMarkers, numMarkerSets = markerSet.size()
+            self.logger.info('  Marker set for %s contains %d marker genes arranged in %d sets.' % (taxon, numMarkers, numMarkerSets))
+            self.logger.info('    Marker set inferred from %d reference genomes.' % markerSet.numGenomes)
+            
+            markerSet.lineageStr = taxon
+            binMarkerSets.addMarkerSet(markerSet)
         
         fout = open(markerFile, 'w')
-        fout.write(defaultValues.TAXON_MARKER_FILE_HEADER + '\n')        
-        fout.write(rank + '\t' + taxon + '\t' + str(numMarkers) + '\t' + str(numMarkerSets) + '\t' + str(markerSet) + '\n')
+        fout.write(defaultValues.TAXON_MARKER_FILE_HEADER + '\n') 
+        binMarkerSets.write(fout)
         fout.close()
         
         return True

@@ -69,10 +69,10 @@ class ResultsParser():
         # get hits to each bin
         self.parseBinHits(outDir, hmmTableFile, bSkipOrfCorrection, bIgnoreThresholds, evalueThreshold, lengthThreshold, binStats, seqStats)
             
-    def cacheResults(self, outDir, binIdToMarkerSet, bIndividualMarkers):
+    def cacheResults(self, outDir, binIdToBinMarkerSets, bIndividualMarkers):
         # cache critical results to file
-        self.__writeBinStatsExt(outDir, binIdToMarkerSet, bIndividualMarkers)
-        self.__writeMarkerGeneStats(outDir, binIdToMarkerSet, bIndividualMarkers)
+        self.__writeBinStatsExt(outDir, binIdToBinMarkerSets, bIndividualMarkers)
+        self.__writeMarkerGeneStats(outDir, binIdToBinMarkerSets, bIndividualMarkers)
         
     def parseHmmerModels(self, binIdToHmmModelFile):
         """Parse each bin's HMM file to collect model information."""
@@ -107,10 +107,10 @@ class ResultsParser():
             self.parseHmmerResults(hmmerTableFile, resultsManager, bSkipOrfCorrection)
             self.results[binId] = resultsManager
 
-    def __writeBinStatsExt(self, directory, binIdToMarkerSet, bIndividualMarkers):
+    def __writeBinStatsExt(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
         binStatsExt = {}
         for binId in self.results:
-            binStatsExt[binId] = self.results[binId].getSummary(binIdToMarkerSet[binId], bIndividualMarkers, outputFormat=2)
+            binStatsExt[binId] = self.results[binId].getSummary(binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=2)
             binStatsExt[binId].update(self.results[binId].geneCopyNumber())
            
         binStatsExtFile = os.path.join(directory, 'storage', defaultValues.BIN_STATS_EXT_OUT) 
@@ -118,10 +118,10 @@ class ResultsParser():
         fout.write(str(binStatsExt))
         fout.close
         
-    def __writeMarkerGeneStats(self, directory, binIdToMarkerSet, bIndividualMarkers):
+    def __writeMarkerGeneStats(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
         markerGenes = {}
         for binId in self.results:
-            markerGenes[binId] = self.results[binId].getSummary(binIdToMarkerSet[binId], bIndividualMarkers, outputFormat=8)
+            markerGenes[binId] = self.results[binId].getSummary(binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=8)
              
         markerGenesFile = os.path.join(directory, 'storage', defaultValues.MARKER_GENE_STATS)
         fout = open(markerGenesFile, 'w')
@@ -192,9 +192,11 @@ class ResultsParser():
                         break
                     resultsManager.addHit(hit)
 
+            # retain only best hit to PFAM clan
             pfam = PFAM()
             resultsManager.markerHits = pfam.filterHitsFromSameClan(resultsManager.markerHits)
-                  
+            
+            # correct for errors in ORF calling      
             if not bSkipOrfCorrection:
                 resultsManager.identifyOrfErrors()
                       
@@ -206,40 +208,43 @@ class ResultsParser():
                 
         # keep count of single, double, triple genes etc...
         if outputFormat == 1:
-            header = ['Bin Id','# markers','# marker sets','0','1','2','3','4','5+','Completeness','Contamination','Strain heterogeneity']
+            header = ['Bin Id','Marker lineage', '# markers','# marker sets','0','1','2','3','4','5+','Completeness','Contamination','Strain heterogeneity']
         elif outputFormat == 2:
             header = ['Bin Id']
-            header += ['# markers', '# marker sets']
+            header += ['Marker lineage', '# markers', '# marker sets']
             header += ['Completeness','Contamination', 'Strain heterogeneity']
             header += ['Genome size (bp)', '# scaffolds', '# contigs', 'N50 (scaffolds)', 'N50 (contigs)', 'Longest scaffold (bp)', 'Longest contig (bp)']
             header += ['GC', 'GC std (scaffolds > 1Kbps)']
             header += ['Coding density (translation table 11)', '# predicted ORFs']
             header += ['0','1','2','3','4','5+']
             
-            for bamId in coverageBinProfiles[coverageBinProfiles.keys()[0]]:
-                header += ['Coverage (' + bamId + ')', 'Coverage std']
+            if coverageBinProfiles != None:
+                for bamId in coverageBinProfiles[coverageBinProfiles.keys()[0]]:
+                    header += ['Coverage (' + bamId + ')', 'Coverage std']
 
             if defaultValues.MIN_SEQ_LEN_GC_STD != 1000:
                 self.logger.error('  [Error] Labeling error: GC std (scaffolds > 1Kbps)')
                 sys.exit() 
         elif outputFormat == 3:
-            header = []
+            header = ['Bin Id', 'Marker Id', 'Marker lineage', '# genomes', '# markers','# marker sets','0','1','2','3','4','5+','Completeness','Contamination','Strain heterogeneity']
         elif outputFormat == 4:
-            header = [''] + self.models.keys()
+            header = []
         elif outputFormat == 5:
-            header = ['Bin Id','Marker Id','Scaffold Id']
+            header = [''] + self.models.keys()
         elif outputFormat == 6:
-            header = ['Bin Id','Marker Id','Scaffold Ids']
+            header = ['Bin Id','Marker Id','Scaffold Id']
         elif outputFormat == 7:
-            header = ['Bin Id','Scaffold Id','{Marker Id, Count}']
+            header = ['Bin Id','Marker Id','Scaffold Ids']
         elif outputFormat == 8:
-            header = ['Bin Id','Gene Id','{Marker Id, Start position, End position}']
+            header = ['Bin Id','Scaffold Id','{Marker Id, Count}']
         elif outputFormat == 9:
+            header = ['Bin Id','Gene Id','{Marker Id, Start position, End position}']
+        elif outputFormat == 10:
             header = ['Scaffold Id','Bin Id','Length','# contigs','GC','# ORFs','Coding density','Marker Ids']
             
         return header
         
-    def printSummary(self, outputFormat, aai, binIdToMarkerSet, bIndividualMarkers, coverageFile, bTabTable, outFile):
+    def printSummary(self, outputFormat, aai, binIdToBinMarkerSets, bIndividualMarkers, coverageFile, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
         
@@ -249,7 +254,7 @@ class ResultsParser():
             coverageProfile = coverage.parseCoverage(coverageFile)
             coverageBinProfiles = coverage.binProfiles(coverageProfile)
                 
-        prettyTableFormats = [1, 2]      
+        prettyTableFormats = [1, 2, 3]      
           
         header = self.__getHeader(outputFormat, coverageBinProfiles) 
         if bTabTable or outputFormat not in prettyTableFormats: 
@@ -265,10 +270,10 @@ class ResultsParser():
             pTable.vrules = prettytable.NONE
 
         for binId in sorted(self.results.keys()):
-            self.results[binId].printSummary(outputFormat, aai, binIdToMarkerSet[binId], bIndividualMarkers, coverageBinProfiles, pTable)
+            self.results[binId].printSummary(outputFormat, aai, binIdToBinMarkerSets[binId], bIndividualMarkers, coverageBinProfiles, pTable)
             
         if not bTabTable :  
-            if 'Completeness' in header:
+            if outputFormat in [1,2]:
                 print(pTable.get_string(sortby='Completeness', reversesort=True))
             else:
                 print(pTable.get_string())
@@ -403,46 +408,53 @@ class ResultsManager():
                     
             self.markerHits[markerId] = hits
                 
-    def calculateMarkers(self, markerSet, bIndividualMarkers, verbose=False):
-        """Returns an object containing summary information 
-           When verbose is False a list is returned containing the counts of
-           markers for the bin as well as the total completeness and
-           contamination.  If the verbose flag is set to true, a dict is
-           returned containing each marker as the key and the value as the
-           count.
-        """
-        if verbose:
-            ret = dict()
-            for marker in self.models:
-                try:
-                    ret[marker] = len(self.markerHits[marker])
-                except KeyError:
-                    ret[marker] = 0
-                    
-            return ret
-        else:
-            return self.geneCounts(markerSet, self.markerHits, self.models, bIndividualMarkers)
+    def hitsToMarkerGene(self, markerSet):
+        """Determine number of times each marker gene is hit."""
+        ret = dict()
+        for marker in markerSet.getMarkerGenes():
+            try:
+                ret[marker] = len(self.markerHits[marker])
+            except KeyError:
+                ret[marker] = 0
+                
+        return ret
+
         
-    def geneCounts(self, markerSet, hits, models, bIndividualMarkers):
+    def geneCountsForBestMarkerSet(self, binMarkerSets, bIndividualMarkers):
+        """Report number of times each marker gene was found along with 
+           a completeness and contamination estimation for the best marker
+           set associated with a bin."""   
+        bestPercComp = -1
+        bestMarkerSet = None
+        for ms in binMarkerSets.markerSetIter():
+            geneCounts = self.geneCounts(ms, bIndividualMarkers)
+            
+            if geneCounts[6] > bestPercComp:
+                bestPercComp = geneCounts[6]
+                bestGeneCount = geneCounts
+                bestMarkerSet = ms
+        
+        return bestGeneCount, bestMarkerSet
+        
+    def geneCounts(self, markerSet, bIndividualMarkers):
         """ Determine number of marker genes with 0-5 hits 
             as well as the total completeness and contamination."""   
         geneCounts = [0]*6
         multiCopyCount = 0
-        for marker in models:
-            # we need to limit it form 0 to 5+
-            if marker in hits:
-                if len(hits[marker]) > 5:
+        for marker in markerSet.getMarkerGenes():
+            if marker in self.markerHits:
+                if len(self.markerHits[marker]) > 5:
                     markerCount = 5
                 else:
-                    markerCount = len(hits[marker])
+                    markerCount = len(self.markerHits[marker])
                     
-                multiCopyCount += (len(hits[marker]) - 1)
+                multiCopyCount += (len(self.markerHits[marker]) - 1)
             else:
                 markerCount = 0
             
             geneCounts[markerCount] += 1
             
-        percComp, percCont = markerSet.genomeCheck(hits, bIndividualMarkers)
+        percComp, percCont = markerSet.genomeCheck(self.markerHits, bIndividualMarkers)
         
         geneCounts.append(percComp)
         geneCounts.append(percCont)
@@ -471,14 +483,15 @@ class ResultsManager():
         
         return geneCopyNumber
           
-    def getSummary(self, markerSet, bIndividualMarkers, outputFormat=1):
+    def getSummary(self, binMarkerSets, bIndividualMarkers, outputFormat=1):
         """Get dictionary containing information about bin."""
         summary = {}
         
         if outputFormat == 1:
-            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=False)
-            summary['# markers'] = markerSet.numMarkers()
-            summary['# marker sets'] = markerSet.numSets()
+            data, bestMarkerSet = self.geneCountsForBestMarkerSet(binMarkerSets, bIndividualMarkers)
+            summary['marker lineage'] = bestMarkerSet.lineageStr
+            summary['# markers'] = bestMarkerSet.numMarkers()
+            summary['# marker sets'] = bestMarkerSet.numSets()
             summary['0'] = data[0]
             summary['1'] = data[1]
             summary['2'] = data[2]
@@ -488,9 +501,10 @@ class ResultsManager():
             summary['Completeness'] = data[6]
             summary['Contamination'] = data[7]
         elif outputFormat == 2:
-            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=False)
-            summary['# markers'] = markerSet.numMarkers()
-            summary['# marker sets'] = markerSet.numSets()
+            data, bestMarkerSet = self.geneCountsForBestMarkerSet(binMarkerSets, bIndividualMarkers)
+            summary['marker lineage'] = bestMarkerSet.lineageStr
+            summary['# markers'] = bestMarkerSet.numMarkers()
+            summary['# marker sets'] = bestMarkerSet.numSets()
             summary['0'] = data[0]
             summary['1'] = data[1]
             summary['2'] = data[2]
@@ -500,31 +514,33 @@ class ResultsManager():
             summary['Completeness'] = data[6]
             summary['Contamination'] = data[7]
             summary.update(self.binStats)   
-        elif outputFormat == 3:
-            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=True)
-            for marker,count in data.iteritems():
-                summary[marker] = count
-
         elif outputFormat == 4:
-            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=True)
-            for marker,count in data.iteritems():
+            _, bestMarkerSet = self.geneCountsForBestMarkerSet(binMarkerSets, bIndividualMarkers)
+            data = self.hitsToMarkerGene(bestMarkerSet)
+            for marker, count in data.iteritems():
                 summary[marker] = count
 
         elif outputFormat == 5:
+            _, bestMarkerSet = self.geneCountsForBestMarkerSet(binMarkerSets, bIndividualMarkers)
+            data = self.hitsToMarkerGene(bestMarkerSet)
+            for marker, count in data.iteritems():
+                summary[marker] = count
+
+        elif outputFormat == 6:
             # tabular of bin_id, marker, contig_id
             for marker, hit_list in self.markerHits.items():
                 summary[marker] = []
                 for hit in hit_list:
                     summary[marker].append(hit.target_name)
                     
-        elif outputFormat == 6:
+        elif outputFormat == 7:
             for marker, hit_list in self.markerHits.items():
                 if len(hit_list) >= 2:
                     summary[marker] = []
                     for hit in hit_list:
                         summary[marker].append(hit.target_name)
 
-        elif outputFormat == 7:
+        elif outputFormat == 8:
             # tabular - print only contigs that have more than one copy 
             # of the same marker on them
             contigs = defaultdict(dict)
@@ -543,7 +559,7 @@ class ResultsManager():
                             
                         summary[contig_name][marker_name] = marker_count
     
-        elif outputFormat == 8:
+        elif outputFormat == 9:
             # tabular - print only position of marker genes
             genesWithMarkers = {}
             for marker, hit_list in self.markerHits.items():
@@ -555,19 +571,19 @@ class ResultsManager():
                 for hit in hits:
                     summary[geneId][hit.query_accession] = summary[geneId].get(hit.query_accession, []) + [[hit.ali_from, hit.ali_to]]
                     
-        elif outputFormat == 9:
+        elif outputFormat == 10:
             pass
         else:
             print("Unknown output format: ", outputFormat)
             
         return summary
 
-    def printSummary(self, outputFormat, aai, markerSet, bIndividualMarkers, coverageBinProfiles = None, table = None):
+    def printSummary(self, outputFormat, aai, binMarkerSets, bIndividualMarkers, coverageBinProfiles = None, table = None):
         """Print out information about bin."""
         if outputFormat == 1:
-            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=False)
-            row = "%s\t%d\t%d\t%s\t%0.2f\t%0.2f\t%0.2f" % (self.binId,
-                                                markerSet.numMarkers(), markerSet.numSets(),
+            data, bestMarkerSet = self.geneCountsForBestMarkerSet(binMarkerSets, bIndividualMarkers)
+            row = "%s\t%s\t%d\t%d\t%s\t%0.2f\t%0.2f\t%0.2f" % (self.binId, bestMarkerSet.lineageStr,
+                                                bestMarkerSet.numMarkers(), bestMarkerSet.numSets(),
                                                 "\t".join([str(data[i]) for i in range(6)]),
                                                 data[6],
                                                 data[7],
@@ -576,13 +592,13 @@ class ResultsManager():
             if table == None:
                 print(row)
             else:  
-                table.add_row([self.binId, markerSet.numMarkers(), markerSet.numSets()] + data + [aai.aaiMeanBinHetero.get(self.binId, 0.0)])
+                table.add_row([self.binId, bestMarkerSet.lineageStr, bestMarkerSet.numMarkers(), bestMarkerSet.numSets()] + data + [aai.aaiMeanBinHetero.get(self.binId, 0.0)])
         elif outputFormat == 2:
-            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=False)
+            data, bestMarkerSet = self.geneCountsForBestMarkerSet(binMarkerSets, bIndividualMarkers)
             
             if table == None:
                 row = self.binId
-                row += '\t%d\t%d' % (markerSet.numMarkers(), markerSet.numSets())
+                row += '\t%s\t%d\t%d' % (bestMarkerSet.lineageStr, bestMarkerSet.numMarkers(), bestMarkerSet.numSets())
                 row += '\t%0.2f\t%0.2f\t%0.2f' % (data[6], data[7], aai.aaiMeanBinHetero.get(self.binId, 0.0))
                 row += '\t%d\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# scaffolds'], 
                                                  self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'], 
@@ -597,7 +613,7 @@ class ResultsManager():
             
                 print(row)
             else:  
-                row = [self.binId, markerSet.numMarkers(), markerSet.numSets()]
+                row = [self.binId, bestMarkerSet.lineageStr, bestMarkerSet.numMarkers(), bestMarkerSet.numSets()]
                 row.extend([data[6], data[7], aai.aaiMeanBinHetero.get(self.binId, 0.0)])
                 row.extend([self.binStats['Genome size'], self.binStats['# scaffolds'], 
                                                  self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'], 
@@ -611,9 +627,24 @@ class ResultsManager():
                         row.extend(coverageStats)
             
                 table.add_row(row)
-                    
         elif outputFormat == 3:
-            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=True)
+            for ms in binMarkerSets.markerSetIter():
+                data = self.geneCounts(ms, bIndividualMarkers)
+                row = "%s\t%s\t%s\t%d\t%d\t%d\t%s\t%0.2f\t%0.2f\t%0.2f" % (self.binId, ms.UID, ms.lineageStr, ms.numGenomes,
+                                                    ms.numMarkers(), ms.numSets(),
+                                                    "\t".join([str(data[i]) for i in range(6)]),
+                                                    data[6],
+                                                    data[7],
+                                                    aai.aaiMeanBinHetero.get(self.binId, 0.0)
+                                                    )
+                if table == None:
+                    print(row)
+                else:  
+                    table.add_row([self.binId, ms.UID, ms.lineageStr, ms.numGenomes, ms.numMarkers(), ms.numSets()] + data + [aai.aaiMeanBinHetero.get(self.binId, 0.0)])
+                    
+        elif outputFormat == 4:
+            _, bestMarkerSet = self.geneCountsForBestMarkerSet(binMarkerSets, bIndividualMarkers)
+            data = self.hitsToMarkerGene(bestMarkerSet)
             print("--------------------")
             print(self.binId)
             
@@ -624,12 +655,14 @@ class ResultsManager():
                     markerHits += 1
 
             print("Total: %d / %d (%0.2f" % (markerHits,
-                                              markerSet.numMarkers(),
-                                              100*float(markerHits)/float(markerSet.numMarkers())
+                                              bestMarkerSet.numMarkers(),
+                                              100*float(markerHits)/float(bestMarkerSet.numMarkers())
                                               )+"%)")
-        elif outputFormat == 4:
+        elif outputFormat == 5:
             # matrix of bin vs marker counts
-            data = self.calculateMarkers(markerSet, bIndividualMarkers, verbose=True)
+            _, bestMarkerSet = self.geneCountsForBestMarkerSet(binMarkerSets, bIndividualMarkers)
+            data = self.hitsToMarkerGene(bestMarkerSet)
+            
             columns = self.models.keys()
             
             rowStr = self.binId
@@ -643,13 +676,13 @@ class ResultsManager():
                     rowStr += '\t' + str(count)
             print(rowStr)
 
-        elif outputFormat == 5:
+        elif outputFormat == 6:
             # tabular of bin_id, marker, contig_id
             for marker, hit_list in self.markerHits.items():
                 for hit in hit_list:
                     print(self.binId, marker, hit.target_name, sep='\t', end='\n')
                     
-        elif outputFormat == 6:
+        elif outputFormat == 7:
             for marker, hitList in self.markerHits.items():
                 if len(hitList) >= 2:
                     print(self.binId, marker, sep='\t', end='\t')
@@ -660,7 +693,7 @@ class ResultsManager():
                         
                     print(','.join(sorted(scaffoldIds)), end='\n')
 
-        elif outputFormat == 7:
+        elif outputFormat == 8:
             for marker, hitList in self.markerHits.items():
                 if len(hitList) >= 2:
                     scaffoldsWithMultipleHits = set()
@@ -675,7 +708,7 @@ class ResultsManager():
                         print(self.binId, marker, sep='\t', end='\t')
                         print(','.join(sorted(list(scaffoldsWithMultipleHits))), end='\n')
                     
-        elif outputFormat == 8:
+        elif outputFormat == 9:
             # tabular - print only position of marker genes
             genesWithMarkers = {}
             for marker, hit_list in self.markerHits.items():
@@ -688,7 +721,7 @@ class ResultsManager():
                     rowStr += '\t' + hit.ssion + ',' + str(hit.ali_from) + ',' + str(hit.ali_to)
                 print(rowStr)
                     
-        elif outputFormat == 9:
+        elif outputFormat == 10:
             markersInScaffold = {}
             for marker, hit_list in self.markerHits.items():
                 for hit in hit_list:

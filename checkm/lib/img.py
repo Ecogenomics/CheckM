@@ -68,7 +68,15 @@ class IMG(object):
             sys.exit()
 
         return genomeIds
-
+    
+    def filterGenomeIds(self, genomeIds, metadata, fieldToFilterOn, valueToRetain):
+        filteredGenomeIds = set()
+        for genomeId in genomeIds:
+            if metadata[genomeId][fieldToFilterOn] == valueToRetain:
+                filteredGenomeIds.add(genomeId)
+                
+        return filteredGenomeIds
+        
     def geneIdToScaffoldId(self, genomeId):
         d = {}
 
@@ -411,23 +419,18 @@ class IMG(object):
         return sampledContigs
 
     def containedMarkerGenes(self, markerGenes, clusterIdToGenomePositions, startPartialGenomeContigs, contigLen):
-        contained = set()
-
+        contained = {}
         for markerGene in markerGenes:
             positions = clusterIdToGenomePositions.get(markerGene, [])
 
-            bContained = False
+            containedPos = []
             for p in positions:
                 for s in startPartialGenomeContigs:
                     if (p[0] - s) >= 0 and (p[0] - s) < contigLen:
-                        bContained = True
-                        break
+                        containedPos.append(s)
 
-                if bContained:
-                    break
-
-            if bContained:
-                contained.add(markerGene)
+            if len(containedPos) > 0:
+                contained[markerGene] = containedPos
 
         return contained
 

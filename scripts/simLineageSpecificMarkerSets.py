@@ -113,8 +113,7 @@ class SimLineageSpecificMarkerSets(object):
         boxPlot.plot(plotFilename, plotData, plotLabels, r'$\Delta$' + ' Percent Completion', '', False, title)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Identify co-located genes within genomes for a specific lineage.",
-                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('-T', '--taxonomy', help='IMG taxonomy string indicating lineage of interest', default = 'Archaea; Euryarchaeota')
     parser.add_argument('-r', '--most_specific_rank', help='Most specific rank to include in analysis', type=int, default = 1)

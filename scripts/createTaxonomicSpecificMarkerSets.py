@@ -95,7 +95,7 @@ class TaxonomicMarkerSets(object):
             sys.stdout.flush()
             
             if colocatedSets != None:
-                taxonomy = lineage.split(';')
+                taxonomy = [x.strip() for x in lineage.split(';')]
                 rankPrefix = rankPrefixes[len(taxonomy)-1]
                 
                 cladeName = taxonomy[-1].strip().replace(' ', '_')
@@ -131,8 +131,8 @@ class TaxonomicMarkerSets(object):
                 for m in mungedColocatedSets:
                     numMarkerGenes += len(m)
                     
-                taxonomy = [x.strip() for x in lineage.split(';')]
-                taxonSetOut.write(ranksByLevel[len(taxonomy)-1] + '\t' + taxonomy[-1] + '\t' + str(numGenomes) + '\t' + str(numMarkerGenes) + '\t' + str(len(mungedColocatedSets)) + '\t' + str(mungedColocatedSets) + '\n')
+                
+                taxonSetOut.write(ranksByLevel[len(taxonomy)-1] + '\t' + taxonomy[-1] + '\t' + lineage + '\t' + str(numGenomes) + '\t' + str(numMarkerGenes) + '\t' + str(len(mungedColocatedSets)) + '\t' + str(mungedColocatedSets) + '\n')
 
         sys.stdout.write('\n')
         taxonSetOut.close()
@@ -199,7 +199,7 @@ if __name__ == '__main__':
     parser.add_argument('output_dir', help='output directory')
     parser.add_argument('-u', '--ubiquity', help='ubiquity threshold for defining marker set', type=float, default = 0.97)
     parser.add_argument('-s', '--single_copy', help='single-copy threshold for defining marker set', type=float, default = 0.97)
-    parser.add_argument('-m', '--min_genomes', help='minimum genomes required to infer marker set', type=int, default = 3)
+    parser.add_argument('-m', '--min_genomes', help='minimum genomes required to infer marker set', type=int, default = 2)
     parser.add_argument('-d', '--distance_threshold', help='genomic distance to be considered co-located', type=float, default=5000)
     parser.add_argument('-g', '--genome_threshold', help='percentage of genomes required to be considered co-located', type=float, default=0.95)
     parser.add_argument('-t', '--threads', type=int, help='number of threads', default=1)

@@ -29,7 +29,7 @@ import numpy as np
 import defaultValues
 
 from timeKeeper import TimeKeeper
-from markerSet import MarkerSetParser
+from markerSets import MarkerSetParser
 from resultsParser import ResultsParser
 from hmmerAligner import HmmerAligner
 from markerGeneFinder import MarkerGeneFinder
@@ -169,6 +169,7 @@ class OptionsParser():
         self.logger.info('*******************************************************************************')
         self.logger.info(' [CheckM - lineage_set] Inferring lineage-specific marker sets.')
         self.logger.info('*******************************************************************************')
+        self.logger.info('')
                 
         checkDirExists(options.tree_folder) 
 
@@ -233,6 +234,9 @@ class OptionsParser():
         mgf = MarkerGeneFinder(options.threads)
         binIdToHmmModelFile = mgf.find(binFiles, options.out_folder, defaultValues.HMMER_TABLE_OUT, defaultValues.HMMER_OUT, options.marker_file)
         
+        markerSetParser = MarkerSetParser(options.threads)
+        binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.out_folder, getBinIdsFromOutDir(options.out_folder), options.marker_file)
+        
         self.timeKeeper.printTimeStamp()
         
         # align marker genes with multiple hits within a bin
@@ -241,6 +245,7 @@ class OptionsParser():
         HA.makeAlignmentsOfMultipleHits(options.out_folder,
                                           defaultValues.HMMER_TABLE_OUT,
                                           binIdToHmmModelFile,
+                                          binIdToBinMarkerSets,
                                           False,
                                           defaultValues.E_VAL,
                                           defaultValues.LENGTH,
@@ -273,7 +278,7 @@ class OptionsParser():
         # get HMM file for each bin
         markerSetParser = MarkerSetParser(options.threads)
         binIdToHmmModelFile = markerSetParser.createHmmModelFiles(options.analyze_folder, getBinIdsFromOutDir(options.analyze_folder), options.marker_file)
-        binIdToMarkerSet = markerSetParser.getMarkerSets(options.analyze_folder, getBinIdsFromOutDir(options.analyze_folder), options.marker_file)
+        binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.analyze_folder, getBinIdsFromOutDir(options.analyze_folder), options.marker_file)
 
         # get results for each bin
         RP = ResultsParser()
@@ -289,8 +294,8 @@ class OptionsParser():
                           )
         
         self.logger.info('')
-        RP.printSummary(options.out_format, aai, binIdToMarkerSet, options.bIndividualMarkers, options.coverage_file, options.bTabTable, options.file)
-        RP.cacheResults(options.analyze_folder, binIdToMarkerSet, options.bIndividualMarkers)
+        RP.printSummary(options.out_format, aai, binIdToBinMarkerSets, options.bIndividualMarkers, options.coverage_file, options.bTabTable, options.file)
+        RP.cacheResults(options.analyze_folder, binIdToBinMarkerSets, options.bIndividualMarkers)
                         
         if options.file != '':
             self.logger.info('  QA information written to: ' + options.file)

@@ -28,7 +28,7 @@ __license__ = "GPL3"
 __maintainer__ = "Donovan Parks"
 __email__ = "donovan.parks@gmail.com"
 __status__ = "Development"
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 import argparse
 import sys
@@ -105,16 +105,17 @@ if __name__ == '__main__':
     output_parser = argparse.ArgumentParser(add_help=False)
     output_parser.add_argument('-o', '--out_format', type=int,
             help='''desired output:
-                1. brief summary of bin completeness and contamination
-                2. summary statistics for each bin including GC distribution, genome size, completeness estimation, and contamination estimation
-                3. list of marker names and their counts
-                4. matrix of marker counts
-                5. list of bin name, marker name, scaffold name
-                6. list of markers present multiple times in a bin
-                7. list of markers present multiple times on the same scaffold
-                8. list indicating marker genes within each bin 
-                9. list of scaffold name, bin name, length, GC, coverage, marker name(s)''', 
-            default=1, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9])
+                1. summary of bin completeness and contamination
+                2. extended summary of bin statistics (includes GC, genome size, ...)
+                3. summary of bin completeness and contamination for ALL marker sets
+                4. list of marker names and their counts for selected marker set
+                5. matrix of marker counts
+                6. list of bin name, marker name, scaffold name
+                7. list of markers present multiple times in a bin
+                8. list of markers present multiple times on the same scaffold
+                9. list indicating marker genes within each bin 
+                10. list of scaffold name, bin name, length, GC, coverage, marker name(s)''', 
+            default=1, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     output_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     
     # determine placement of each genome bin in the genome tree
@@ -152,8 +153,8 @@ if __name__ == '__main__':
     lineage_set_parser.add_argument('tree_folder', help="folder specified during tree command")
     lineage_set_parser.add_argument('marker_file', help="output file describing marker set for each bin")
     lineage_set_parser.add_argument('-b', '--bootstrap', type=float, help="required bootstrap support for calculating marker set; percentage between 0 and 1", default=0)
-    lineage_set_parser.add_argument('-m', '--num_genomes_markers', type=int, help="minimum reference genomes required to calculate initial marker set", default=30)
-    lineage_set_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum reference genomes required to refine marker set", default=5)
+    lineage_set_parser.add_argument('-m', '--num_genomes_markers', type=int, help="minimum reference genomes required to calculate initial marker set", default=2)
+    lineage_set_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum reference genomes required to refine marker set", default=2)
     lineage_set_parser.add_argument('--no_lineage_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform marker set refinement")
     lineage_set_parser.add_argument('--taxonomy', dest='bRequireTaxonomy', action="store_true", default=False, help="only consider nodes with defined taxonomy")
     lineage_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")

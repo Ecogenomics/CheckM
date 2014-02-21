@@ -105,8 +105,7 @@ class SimMarkerGenesVsMarkerSets(object):
         boxPlot.plot(plotFilename, plotData, plotLabels, r'$\Delta$' + ' Percent Completion', '', False, title)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Identify co-located genes within genomes for a specific lineage.",
-                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('-T', '--taxonomy', help='IMG taxonomy string indicating lineage of interest', default = 'prokaryotes')
     parser.add_argument('-u', '--ubiquity', help='Ubiquity threshold for defining marker set', type=float, default = 0.97)

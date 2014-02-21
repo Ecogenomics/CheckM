@@ -58,73 +58,36 @@ class PFAM(object):
             self.nested[pfamAcc] = set([self.idToAcc[x] for x in nested])
     
     def pfamIdToClanId(self):
+        """Determine clan of each pfam."""
         checkFileExists(self.pfamClanFile)
         
         d = {}
         for line in open(self.pfamClanFile):
             if '#=GF AC' in line:
                 pfamAcc = line.split()[2].strip()
-                pfamAcc = pfamAcc[0:pfamAcc.rfind('.')]
             elif '#=GF CL' in line:
                 clanId = line.split()[2].strip()
                 d[pfamAcc] = clanId
     
         return d
     
-    def filterHitsFromSameClanDeprecated(self, pfamHits, pfamMarkers):
-        # check if clan and nesting need to be computer
-        if len(self.clan) == 0:
-            self.__readClansAndNesting()
+    def genesInClan(self):
+        """Determine all genes within a each clan."""
+        checkFileExists(self.pfamClanFile)
+        
+        d = defaultdict(set)
+        for line in open(self.pfamClanFile):
+            if '#=GF AC' in line:
+                pfamAcc = line.split()[2].strip()
+            elif '#=GF CL' in line:
+                clanId = line.split()[2].strip()
+                d[clanId].update([pfamAcc])
     
-        # for each gene, take only the best hit for each PFAM clan
-        hitsToPfamMarkers = {}
-        for geneId, hits in pfamHits.iteritems():
-            # sort in ascending order of e-value
-            hits.sort(key=operator.itemgetter(1))
-    
-            filtered = set()
-            for i in xrange(0, len(hits)):
-                if i in filtered:
-                    continue
-    
-                pfamIdI = hits[i][0]
-                clanI = self.clan.get(pfamIdI, None)
-                startI = hits[i][2]
-                endI = hits[i][3]
-    
-                for j in xrange(i+1, len(hits)):
-                    if j in filtered:
-                        continue
-    
-                    pfamIdJ = hits[j][0]
-                    clanJ = self.clan.get(pfamIdJ, None)
-                    startJ = hits[j][2]
-                    endJ = hits[j][3]
-    
-                    # check if hits are from the same clan
-                    if pfamIdI != None and pfamIdJ != None and clanI == clanJ:
-                        # check if hits overlap
-                        if (startI <= startJ and endI > startJ) or (startJ <= startI and endJ > startI):
-                            # check if pfams are nested
-                            if not (pfamIdI in self.nested and pfamIdJ in self.nested[pfamIdI]):
-                                # hits should be filtered as it is from the same clan, overlaps, and is not
-                                # nested with a pfam hit with a lower e-value
-                                filtered.add(j)
-    
-            # tabulate unfiltered hits
-            for i in xrange(0, len(hits)):
-                if i in filtered:
-                    continue
-    
-                pfamId = hits[i][0]
-                if pfamId in pfamMarkers:
-                    s = hitsToPfamMarkers.get(pfamId, set())
-                    s.add(geneId)
-                    hitsToPfamMarkers[pfamId] = s
-    
-        return hitsToPfamMarkers
+        return d
     
     def filterHitsFromSameClan(self, markerHits):
+        """Filter hits to ORF from same clan."""
+        
         # check if clan and nesting need to be computer
         if len(self.clan) == 0:
             self.__readClansAndNesting()
@@ -184,3 +147,24 @@ class PFAM(object):
                 filteredMarkers[hits[i].query_accession].append(hits[i])
     
         return filteredMarkers
+    
+    def genesInSameClan(self, genes):
+        """Get all genes from the PFAM clans spanned by the input gene set."""
+        
+        # get a list of clans spanned by the input gene set
+        pfamIdToClanId = self.pfamIdToClanId()
+ 
+        clans = set()
+        for gene in genes:
+            clanId = pfamIdToClanId.get(gene, None)
+            if clanId != None:
+                clans.add(clanId)
+            
+        # get a list of all other genes from these clans
+        genesInClan = self.genesInClan()
+
+        allGenesInClans = set()
+        for clan in clans:
+            allGenesInClans.update(genesInClan[clan])
+        
+        return allGenesInClans - genes

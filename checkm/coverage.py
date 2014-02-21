@@ -129,9 +129,9 @@ class Coverage():
         # redirect output
         oldStdOut = reassignStdOut(outFile)
         
-        header = 'Sequence Id\tBin Id\tSequence length (bp)\t'
+        header = 'Sequence Id\tBin Id\tSequence length (bp)'
         for bamFile in bamFiles:
-            header += 'Bam Id\tCoverage\tMapped reads'
+            header += '\tBam Id\tCoverage\tMapped reads'
         
         print(header)
 
@@ -267,6 +267,7 @@ class Coverage():
             print '      # reads failing alignment length: %d (%.1f%%)' % (totalFailedAlignLen, float(totalFailedAlignLen)*100/totalReads)
             print '      # reads failing edit distance: %d (%.1f%%)' % (totalFailedEditDist, float(totalFailedEditDist)*100/totalReads)
             print '      # reads not properly paired: %d (%.1f%%)' % (totalFailedProperPair, float(totalFailedProperPair)*100/totalReads)
+            print ''
             
     def parseCoverage(self, coverageFile):
         """Read coverage information from file."""
