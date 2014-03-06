@@ -40,6 +40,7 @@ from aminoAcidIdentity import AminoAcidIdentity
 from binComparer import BinComparer
 from binStatistics import BinStatistics
 from coverage import Coverage
+from coverageWindows import CoverageWindows
 from genomicSignatures import GenomicSignatures
 from unbinned import Unbinned
 from merger import Merger
@@ -61,6 +62,7 @@ from plot.markerGenePosPlot import MarkerGenePosPlot
 from plot.parallelCoordPlot import ParallelCoordPlot
 from plot.binQAPlot import BinQAPlot
 from plot.pcaPlot import PcaPlot
+from plot.gcBiasPlots import GcBiasPlot
 
 class OptionsParser():
     def __init__(self):
@@ -461,6 +463,7 @@ class OptionsParser():
         self.logger.info('')
         
         checkDirExists(options.bin_folder)
+        checkFileExists(options.coverage_file)
         makeSurePathExists(options.plot_folder)
             
         binFiles = self.binFiles(options.bin_folder, options.extension)  
@@ -499,6 +502,37 @@ class OptionsParser():
             
             binId = binIdFromFilename(f)
             outputFile = os.path.join(options.plot_folder, binId) + '.cov_pca_plots.' + options.image_type
+            plots.savePlot(outputFile, dpi=options.dpi)
+            self.logger.info('    Plot written to: ' + outputFile)
+            
+        self.timeKeeper.printTimeStamp()
+        
+    def gcBiasPlot(self, options):
+        """GC bias plot command"""
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - gc_bias_plot] Plotting bin coverage as a function of GC.')
+        self.logger.info('*******************************************************************************')
+        self.logger.info('')
+        
+        checkDirExists(options.bin_folder)
+        makeSurePathExists(options.plot_folder)
+            
+        binFiles = self.binFiles(options.bin_folder, options.extension) 
+        
+        coverageWindows = CoverageWindows(options.threads)
+        coverageProfile = coverageWindows.run(binFiles, options.bam_file, options.all_reads, options.min_align, options.max_edit_dist, options.window_size)
+        
+        plots = GcBiasPlot(options)
+        filesProcessed = 1
+        for f in binFiles:  
+            self.logger.info('  Plotting GC plots for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
+            filesProcessed += 1
+            
+            plots.plot(f, coverageProfile)
+            
+            binId = binIdFromFilename(f)
+            outputFile = os.path.join(options.plot_folder, binId) + '.gc_bias_plot.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('    Plot written to: ' + outputFile)
             
@@ -777,6 +811,13 @@ class OptionsParser():
         
         checkDirExists(options.bin_folder)
         
+        # setup directory structure
+        makeSurePathExists(options.out_folder)
+        makeSurePathExists(os.path.join(options.out_folder, 'bins')) 
+        makeSurePathExists(os.path.join(options.out_folder, 'storage')) 
+        makeSurePathExists(os.path.join(options.out_folder, 'storage', 'aai_qa'))
+        makeSurePathExists(os.path.join(options.out_folder, 'storage', 'hmms'))
+        
         binFiles = self.binFiles(options.bin_folder, options.extension)
         
         binIds = []
@@ -785,17 +826,16 @@ class OptionsParser():
         
         # find marker genes in genome bins                         
         mgf = MarkerGeneFinder(options.threads)
-        mgf.find(binFiles, options.out_folder, "merger.table.txt", "merger.hmmer3", options.marker_file)
+        binIdToHmmModelFile = mgf.find(binFiles, options.out_folder, "merger.table.txt", "merger.hmmer3", options.marker_file)
         
         # get HMM file for each bin
         markerSetParser = MarkerSetParser()
-        binIdToHmmModelFile = markerSetParser.createHmmModelFiles(options.out_folder, binIds, options.marker_file)
-        binIdToMarkerSet = markerSetParser.getMarkerSets(options.out_folder, binIds, options.marker_file)
+        binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.out_folder, binIds, options.marker_file)
 
         # compare markers found in each bin
         self.logger.info('')
         merger = Merger()
-        outputFile = merger.run(binFiles, options.out_folder, "merger.table.txt", binIdToHmmModelFile, binIdToMarkerSet,
+        outputFile = merger.run(binFiles, options.out_folder, "merger.table.txt", binIdToHmmModelFile, binIdToBinMarkerSets,
                                 options.delta_comp, options.delta_cont, options.merged_comp, options.merged_cont)
         
         self.logger.info('\n  Merger information written to: ' + outputFile)
@@ -1070,6 +1110,8 @@ class OptionsParser():
             self.tetraPcaPlot(options)
         elif(options.subparser_name == 'cov_pca'):
             self.coveragePcaPlot(options)
+        elif(options.subparser_name == 'gc_bias_plot'):
+            self.gcBiasPlot(options)
         elif(options.subparser_name == 'bin_qa_plot'):
             self.binQAPlot(options)
         elif(options.subparser_name == 'unbinned'):

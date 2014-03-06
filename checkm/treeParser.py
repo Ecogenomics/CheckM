@@ -35,6 +35,7 @@ from markerSets import MarkerSet, BinMarkerSets
 
 from common import checkDirExists, reassignStdOut, restoreStdOut, getBinIdsFromOutDir
 from seqUtils import readFasta
+from lib.taxonomyUtils import taxonomicPrefixes
 
 class TreeParser():
     """Parse genome tree and associated tree metadata."""
@@ -188,6 +189,73 @@ class TreeParser():
                 
         return binIdToTaxonomy
     
+    def getBinSisterTaxonomy(self, outDir, binIds): 
+        # make sure output and tree directories exist
+        checkDirExists(outDir)
+        alignOutputDir = os.path.join(outDir, 'storage', 'tree')
+        checkDirExists(alignOutputDir)
+               
+        # read genome tree
+        treeFile = os.path.join(alignOutputDir, defaultValues.PPLACER_TREE_OUT)
+        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
+        
+        # read taxonomy string for each IMG genome
+        leafIdToTaxonomy = {}
+        for line in open(os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree.taxonomy.tsv')):
+            lineSplit = line.split('\t')
+            leafIdToTaxonomy[lineSplit[0]] = lineSplit[1].rstrip()
+        
+        # find LCA of all labeled node in sister lineage
+        binIdToSisterTaxonomy = {}
+        for binId in binIds:
+            node = tree.find_node_with_taxon_label(binId)
+            
+            taxaStr = ''
+            if node != None:                
+                # get taxonomic labels of all internal nodes in sister lineages
+                sisterNodes = node.sister_nodes()
+                internalTaxonomyLabels = set()
+                leafTaxonomyLabels = set()
+                for sn in sisterNodes:
+                    for curNode in sn.postorder_iter():
+                        if curNode.is_leaf():
+                            if curNode.taxon.label:
+                                taxonomy = leafIdToTaxonomy.get(curNode.taxon.label, None)
+                                if taxonomy != None: # inserted bins will not have an assigned taxonomy
+                                    for taxa in taxonomy.split(';'):
+                                        leafTaxonomyLabels.add(taxa.strip()) 
+                        else:
+                            if curNode.label:
+                                tokens = curNode.label.split('|')
+                                if tokens[1] != '':
+                                    for taxa in tokens[1].split(';'):
+                                        internalTaxonomyLabels.add(taxa)
+                                    
+                # find LCA of taxonomic labels in rank order;
+                # only consider leaf node labels if there were no internal labels
+                labels = internalTaxonomyLabels
+                if len(labels) == 0:
+                    labels = leafTaxonomyLabels
+                    
+                for prefix in taxonomicPrefixes:
+                    taxa = []
+                    for taxon in labels:
+                        if prefix in taxon:
+                            taxa.append(taxon)
+                            
+                    if len(taxa) == 1:
+                        # unambiguous label at this rank
+                        taxaStr += taxa[0] + ';'
+                    elif len(taxa) > 1:
+                        # unable to resolve taxonomy at this rank
+                        break
+            
+            if not taxaStr:
+                taxaStr = 'unresolved'
+            binIdToSisterTaxonomy[binId] = taxaStr
+                
+        return binIdToSisterTaxonomy
+    
     def __getNextNamedNode(self, node, uniqueIdToLineageStatistics):
         """Get first parent node with taxonomy information."""
         parentNode = node.parent_node
@@ -282,7 +350,7 @@ class TreeParser():
         refinedMarkerSet = MarkerSet(markerSet.UID, markerSet.lineageStr, markerSet.numGenomes, finalMarkerSet)
     
         return refinedMarkerSet
-                
+       
     def getBinMarkerSets(self, outDir, markerFile, 
                                     numGenomesMarkers, numGenomesRefine, 
                                     bootstrap, bNoLineageSpecificRefinement, bRequireTaxonomy):
@@ -386,7 +454,7 @@ class TreeParser():
             if node == None:
                 d = {}
                 d['# genomes'] = 'NA'
-                d['taxonomy'] = 'NA'          
+                d['taxonomy'] = 'unresolved'          
                 d['gc mean'] = 'NA'
                 d['gc std'] = 'NA'
                 d['genome size mean'] = 'NA'
@@ -426,7 +494,7 @@ class TreeParser():
 
         # get taxonomy for each bin
         binIdToTaxonomy = self.getBinTaxonomy(outDir, binIds)
-        
+                
         # get weighted ML likelihood
         pplacerJsonFile = os.path.join(outDir, 'storage', 'tree', 'concatenated.pplacer.json')
         binIdToWeightedML = self.readPlacementFile(pplacerJsonFile)
@@ -435,8 +503,11 @@ class TreeParser():
         if not bLineageStatistics:
             self.__printSimpleSummaryTable(binIdToTaxonomy, binIdToWeightedML, resultsParser, bTabTable, outFile)
         else:
+            # get taxonomy of sister lineage for each bin
+            binIdToSisterTaxonomy = self.getBinSisterTaxonomy(outDir, binIds)
+        
             binIdToLineageStatistics = self.readLineageMetadata(outDir, binIds)
-            self.__printFullTable(binIdToTaxonomy, binIdToWeightedML, binIdToLineageStatistics, resultsParser, bTabTable, outFile)
+            self.__printFullTable(binIdToTaxonomy, binIdToSisterTaxonomy, binIdToWeightedML, binIdToLineageStatistics, resultsParser, bTabTable, outFile)
         
     def __printSimpleSummaryTable(self, binIdToTaxonomy, binIdToWeightedML, resultsParser, bTabTable, outFile):
         # redirect output
@@ -471,12 +542,13 @@ class TreeParser():
         # restore stdout   
         restoreStdOut(outFile, oldStdOut) 
         
-    def __printFullTable(self, binIdToTaxonomy, binIdToWeightedML, binIdToLineageStatistics, resultsParser, bTabTable, outFile):
+    def __printFullTable(self, binIdToTaxonomy, binIdToSisterTaxonomy, binIdToWeightedML, binIdToLineageStatistics, resultsParser, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
         arbitraryBinId = binIdToTaxonomy.keys()[0]
-        header = ['Bin Id', '# marker (of %d)' % len(resultsParser.models[arbitraryBinId]), 'Taxonomy', 'Weighted ML']
+        header = ['Bin Id', '# marker (of %d)' % len(resultsParser.models[arbitraryBinId])]
+        header += ['Taxonomy (contained)', 'Taxonomy (sister lineage)', 'Weighted ML']
         header += ['# descendant genomes', 'GC mean', 'GC std']
         header += ['Genome size mean (Mbps)', 'Genome size std (Mbps)']
         header += ['Genome count mean', 'Genome count std']
@@ -493,12 +565,23 @@ class TreeParser():
             pTable.float_format['Genome count std'] = '.0'
             pTable.align = 'c'
             pTable.align[header[0]] = 'l'
-            pTable.align['Taxonomy'] = 'l'
+            pTable.align['Taxonomy (contained)'] = 'l'
+            pTable.align['Taxonomy (sister lineage)'] = 'l'
             pTable.hrules = prettytable.FRAME
             pTable.vrules = prettytable.NONE
 
         for binId in sorted(binIdToTaxonomy.keys()):
-            row = [binId, str(len(resultsParser.results[binId].markerHits)), binIdToTaxonomy[binId], binIdToWeightedML.get(binId, 'NA')]
+            truncSisterLineage = binIdToSisterTaxonomy[binId]
+            for taxa in binIdToTaxonomy[binId].split(';'):    
+                truncSisterLineage = truncSisterLineage.replace(taxa + ';', '')
+
+            if len(truncSisterLineage) == 0:
+                truncSisterLineage = 'unresolved'  
+            elif truncSisterLineage[-1] == ';':
+                truncSisterLineage = truncSisterLineage[0:-1]
+            
+            row = [binId, str(len(resultsParser.results[binId].markerHits))]
+            row += [binIdToTaxonomy[binId], truncSisterLineage, binIdToWeightedML.get(binId, 'NA')]
             row += [binIdToLineageStatistics[binId]['# genomes']]
             row += [binIdToLineageStatistics[binId]['gc mean']]
             row += [binIdToLineageStatistics[binId]['gc std']]
@@ -508,7 +591,7 @@ class TreeParser():
             row += [binIdToLineageStatistics[binId]['gene count std']]
             
             if bTabTable:
-                print('\t'.join(row))
+                print('\t'.join(map(str, row)))
             else:
                 pTable.add_row(row)
                 

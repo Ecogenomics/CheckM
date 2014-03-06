@@ -419,7 +419,6 @@ class ResultsManager():
                 
         return ret
 
-        
     def geneCountsForBestMarkerSet(self, binMarkerSets, bIndividualMarkers):
         """Report number of times each marker gene was found along with 
            a completeness and contamination estimation for the best marker
@@ -427,7 +426,7 @@ class ResultsManager():
         bestPercComp = -1
         bestMarkerSet = None
         for ms in binMarkerSets.markerSetIter():
-            geneCounts = self.geneCounts(ms, bIndividualMarkers)
+            geneCounts = self.geneCounts(ms, self.markerHits, bIndividualMarkers)
             
             if geneCounts[6] > bestPercComp:
                 bestPercComp = geneCounts[6]
@@ -436,25 +435,25 @@ class ResultsManager():
         
         return bestGeneCount, bestMarkerSet
         
-    def geneCounts(self, markerSet, bIndividualMarkers):
+    def geneCounts(self, markerSet, markerHits, bIndividualMarkers):
         """ Determine number of marker genes with 0-5 hits 
             as well as the total completeness and contamination."""   
         geneCounts = [0]*6
         multiCopyCount = 0
         for marker in markerSet.getMarkerGenes():
-            if marker in self.markerHits:
-                if len(self.markerHits[marker]) > 5:
+            if marker in markerHits:
+                if len(markerHits[marker]) > 5:
                     markerCount = 5
                 else:
-                    markerCount = len(self.markerHits[marker])
+                    markerCount = len(markerHits[marker])
                     
-                multiCopyCount += (len(self.markerHits[marker]) - 1)
+                multiCopyCount += (len(markerHits[marker]) - 1)
             else:
                 markerCount = 0
             
             geneCounts[markerCount] += 1
             
-        percComp, percCont = markerSet.genomeCheck(self.markerHits, bIndividualMarkers)
+        percComp, percCont = markerSet.genomeCheck(markerHits, bIndividualMarkers)
         
         geneCounts.append(percComp)
         geneCounts.append(percCont)
@@ -629,7 +628,7 @@ class ResultsManager():
                 table.add_row(row)
         elif outputFormat == 3:
             for ms in binMarkerSets.markerSetIter():
-                data = self.geneCounts(ms, bIndividualMarkers)
+                data = self.geneCounts(ms, self.markerHits, bIndividualMarkers)
                 row = "%s\t%s\t%s\t%d\t%d\t%d\t%s\t%0.2f\t%0.2f\t%0.2f" % (self.binId, ms.UID, ms.lineageStr, ms.numGenomes,
                                                     ms.numMarkers(), ms.numSets(),
                                                     "\t".join([str(data[i]) for i in range(6)]),

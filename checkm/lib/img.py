@@ -405,35 +405,6 @@ class IMG(object):
 
         return table
 
-    def sampleGenome(self, genomeLen, percentComplete, contigLen):
-        contigsInGenome = genomeLen / contigLen
-
-        contigsToSample = int(contigsInGenome*percentComplete + 0.5)
-
-        sampledContigs = random.sample(xrange(contigsInGenome), contigsToSample)
-        sampledContigs.sort()
-
-        for i in xrange(contigsToSample):
-            sampledContigs[i] *= contigLen
-
-        return sampledContigs
-
-    def containedMarkerGenes(self, markerGenes, clusterIdToGenomePositions, startPartialGenomeContigs, contigLen):
-        contained = {}
-        for markerGene in markerGenes:
-            positions = clusterIdToGenomePositions.get(markerGene, [])
-
-            containedPos = []
-            for p in positions:
-                for s in startPartialGenomeContigs:
-                    if (p[0] - s) >= 0 and (p[0] - s) < contigLen:
-                        containedPos.append(s)
-
-            if len(containedPos) > 0:
-                contained[markerGene] = containedPos
-
-        return contained
-
     def identifyMitochondrialChloroplastGenes(self, genomeId):
         # identify mitochondrial or chloroplast sequences
         mitoChloroSeqs = set()

@@ -44,55 +44,56 @@ def printHelp():
   Assess quality of putative genome bins.
     
   Lineage-specific marker set:
-    tree        -> Place bins in the genome tree
-    tree_qa     -> Assess phylogenetic markers found in each bin
-    lineage_set -> Infer lineage-specific marker sets for each bin
+    tree         -> Place bins in the genome tree
+    tree_qa      -> Assess phylogenetic markers found in each bin
+    lineage_set  -> Infer lineage-specific marker sets for each bin
     
   Taxonomic-specific marker set:
-    taxon_list  -> List available taxonomic-specific marker sets
-    taxon_set   -> Infer taxonomic-specific marker set
+    taxon_list   -> List available taxonomic-specific marker sets
+    taxon_set    -> Infer taxonomic-specific marker set
     
   Apply marker set to genome bins:   
-    analyze     -> Identify marker genes in bins
-    qa          -> Assess bins for contamination and completeness
+    analyze      -> Identify marker genes in bins
+    qa           -> Assess bins for contamination and completeness
       
   Bin QA plots:
-    bin_qa_plot -> Bar plot of bin completeness, contamination, and strain heterogeneity   
+    bin_qa_plot  -> Bar plot of bin completeness, contamination, and strain heterogeneity   
          
   Reference distribution plots:  
-    gc_plot     -> Create GC histogram and delta-GC plot
-    coding_plot -> Create coding density (CD) histogram and delta-CD plot
-    tetra_plot  -> Create tetranucleotide distance (TD) histogram and delta-TD plot
-    dist_plot   -> Create image with GC, CD, and TD distribution plots together
+    gc_plot      -> Create GC histogram and delta-GC plot
+    coding_plot  -> Create coding density (CD) histogram and delta-CD plot
+    tetra_plot   -> Create tetranucleotide distance (TD) histogram and delta-TD plot
+    dist_plot    -> Create image with GC, CD, and TD distribution plots together
   
   General plots:
-    nx_plot     -> Create Nx-plots
-    len_plot    -> Cumulative sequence length plot
-    len_hist    -> Sequence length histogram
-    marker_plot -> Plot position of marker genes on sequences
-    par_plot    -> Parallel coordinate plot of GC and coverage
+    nx_plot      -> Create Nx-plots
+    len_plot     -> Cumulative sequence length plot
+    len_hist     -> Sequence length histogram
+    marker_plot  -> Plot position of marker genes on sequences
+    par_plot     -> Parallel coordinate plot of GC and coverage
+    gc_bias_plot -> Plot bin coverage as a function of GC
       
   Sequence subspace plots:
-    cov_pca     -> PCA plot of coverage profiles
-    tetra_pca   -> PCA plot of tetranucleotide signatures
+    cov_pca      -> PCA plot of coverage profiles
+    tetra_pca    -> PCA plot of tetranucleotide signatures
     
   Bin exploration and modification:
-    merge       -> Identify bins with complementary sets of marker genes
-    outliers    -> Identify outlier in bins relative to reference distributions
-    modify      -> Modify sequences in a bin
-    unique      -> Ensure no sequences are assigned to multiple bins
+    merge        -> Identify bins with complementary sets of marker genes
+    outliers     -> Identify outlier in bins relative to reference distributions
+    modify       -> Modify sequences in a bin
+    unique       -> Ensure no sequences are assigned to multiple bins
      
   Utility functions:
-    unbinned    -> Identify unbinned sequences  
-    coverage    -> Calculate coverage of sequences
-    tetra       -> Calculate tetranucleotide signature of sequences
-    profile     -> Calculate percentage of reads mapped to each bin
-    join_tables -> Join tab-separated value tables containing bin information
-    ssu_finder  -> Identify SSU (16S/18S) rRNAs in sequences
-    bin_compare -> Compare two sets of bins (e.g., from alternative binning methods)
+    unbinned     -> Identify unbinned sequences  
+    coverage     -> Calculate coverage of sequences
+    tetra        -> Calculate tetranucleotide signature of sequences
+    profile      -> Calculate percentage of reads mapped to each bin
+    join_tables  -> Join tab-separated value tables containing bin information
+    ssu_finder   -> Identify SSU (16S/18S) rRNAs in sequences
+    bin_compare  -> Compare two sets of bins (e.g., from alternative binning methods)
     
   Testing:
-    test        -> Process E.coli K12-W3310 and verify operation of CheckM
+    test         -> Process E.coli K12-W3310 and verify operation of CheckM
 
   Use: checkm <command> -h for command specific help
     '''
@@ -136,7 +137,7 @@ if __name__ == '__main__':
     tree_qa_parser.add_argument('-o', '--out_format', type = int,
                                     help='''desired output:
                                         1. brief summary of genome tree placement
-                                        2. summary of genome tree placement with lineage-specific statistics
+                                        2. detailed summary of genome tree placement including lineage-specific statistics
                                         3. genome tree in Newick format decorated with IMG genome ids
                                         4. genome tree in Newick format decorated with taxonomy strings
                                         5. multiple sequence alignment of reference genomes and bins''', 
@@ -159,7 +160,7 @@ if __name__ == '__main__':
     lineage_set_parser.add_argument('--taxonomy', dest='bRequireTaxonomy', action="store_true", default=False, help="only consider nodes with defined taxonomy")
     lineage_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
-    # list of avaliable taxonomic-specific marker set
+    # list of available taxonomic-specific marker set
     taxon_list_parser = subparsers.add_parser('taxon_list',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         description='''List available taxonomic-specific marker sets.''')
@@ -302,6 +303,19 @@ if __name__ == '__main__':
     plot_tetra_pca_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
     plot_tetra_pca_parser.add_argument('--height', type = float, default = 6.5, help='height of output image')
     plot_tetra_pca_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # GC bias plots
+    plot_gc_bias_parser = subparsers.add_parser('gc_bias_plot',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        parents=[plot_double_parser],
+                                        description= 'Plot bin coverage as a function of GC.')
+    plot_gc_bias_parser.add_argument('bam_file', help="BAM file to interrogate for coverage information")
+    plot_gc_bias_parser.add_argument('-w', '--window_size', help="window size used to calculate plot statistics", type=int, default=5000)  
+    plot_gc_bias_parser.add_argument('-r', '--all_reads', action='store_true', help="use all reads to estimate coverage instead of just those in proper pairs")
+    plot_gc_bias_parser.add_argument('-a', '--min_align', help='minimum alignment length as percentage of read length', type=float, default = 0.98)
+    plot_gc_bias_parser.add_argument('-e', '--max_edit_dist', help='maximum edit distance as percentage of read length', type=float, default = 0.02)
+    plot_gc_bias_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
+    plot_gc_bias_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # PCA plot of coverage profiles
     plot_cov_pca_parser = subparsers.add_parser('cov_pca',

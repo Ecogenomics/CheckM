@@ -57,6 +57,9 @@ class BinMarkerSets():
             markerGenes.update(ms.getMarkerGenes())
                 
         return markerGenes
+    
+    def getMostSpecificMarkerSet(self):
+        return self.markerSets[0]
             
     def write(self, fout):
         """Write marker set to file."""
