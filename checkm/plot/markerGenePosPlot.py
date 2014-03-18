@@ -99,7 +99,7 @@ class MarkerGenePosPlot(AbstractPlot):
         self.fig.set_size_inches(self.options.width, self.options.height)
         yLabelBounds = self.yLabelExtents(yLabels, self.options.font_size)
 
-        heightBottomLabels = 0.3 + self.options.fig_padding                                # inches
+        heightBottomLabels = 0.4 + self.options.fig_padding                                # inches
         widthSideLabel = yLabelBounds.width*self.options.width + self.options.fig_padding  # inches
 
         widthPerBin = (self.options.width - widthSideLabel - self.options.fig_padding) / MAX_BINS

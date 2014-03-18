@@ -28,7 +28,7 @@ from AbstractPlot import AbstractPlot
 from checkm.common import binIdFromFilename
 from checkm.seqUtils import readFasta, baseCount
 
-from numpy import mean, array, log
+from numpy import mean, array, log, poly1d, polyfit
 
 class GcBiasPlot(AbstractPlot):
     def __init__(self, options):
@@ -79,8 +79,17 @@ class GcBiasPlot(AbstractPlot):
         windowAxes.scatter(gc, coverage, c=abs(array(coverage)), s=10, lw=0.5, cmap=pylab.cm.Greys)    
         windowAxes.set_xlabel('GC (mean = %.1f%%)' % (mean(gc)*100))
         windowAxes.set_ylabel('Coverage (mean = %.1f)' % mean(coverage))
-        windowAxes.set_title('GC vs. Coverage\n(window size = %d)' % self.options.window_size)
         
+        # plot linear regression line
+        if len(gc) > 1:
+            slope, inter = polyfit(gc, coverage,1)
+            fit_fn = poly1d([slope, inter]) # fit_fn is now a function which takes in x and returns an estimate for y
+            windowAxes.plot([min(gc), max(gc)], fit_fn([min(gc), max(gc)]), '--r', lw=0.5)
+            windowAxes.set_title('GC vs. Coverage\n(window size = %d bp, slope = %.2f)' % (self.options.window_size, slope))
+        else:
+            # not possible to calculate best fit line
+            windowAxes.set_title('GC vs. Coverage\n(window size = %d bp, no best fit line)' % self.options.window_size)
+         
         # Prettify plot     
         for a in windowAxes.yaxis.majorTicks:
             a.tick1On=True

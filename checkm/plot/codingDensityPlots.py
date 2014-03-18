@@ -117,7 +117,7 @@ class CodingDensityPlots(AbstractPlot):
            
         # Delta-CD vs sequence length plot 
         axesDeltaCD.scatter(deltaCDs, seqLens, c=abs(deltaCDs), s=10, lw=0.5, cmap=pylab.cm.Greys)    
-        axesDeltaCD.set_xlabel(r'$\Delta$ CD (mean coding density = %.1f)' % (meanCD*100))
+        axesDeltaCD.set_xlabel(r'$\Delta$ CD (mean coding density = %.1f%%)' % (meanCD*100))
         axesDeltaCD.set_ylabel('Sequence length (Kbps)')
         
         _, yMaxSeqs = axesDeltaCD.get_ylim()

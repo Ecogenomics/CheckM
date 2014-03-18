@@ -64,7 +64,12 @@ class GcPlots(AbstractPlot):
             
             while(end < seqLen):
                 a, c, g, t = baseCount(seq[start:end])
-                data.append(float(g + c) / (a + c + g + t))
+                try:
+                    data.append(float(g + c) / (a + c + g + t))
+                except:
+                    # it is possible to reach a long stretch of 
+                    # N's that causes a division by zero error
+                    pass 
                 
                 start = end
                 end += self.options.gc_window_size
@@ -108,7 +113,7 @@ class GcPlots(AbstractPlot):
                 
         # Delta-GC vs Sequence length plot 
         axesDeltaGC.scatter(deltaGCs, seqLens, c=abs(deltaGCs), s=10, lw=0.5, cmap=pylab.cm.Greys)    
-        axesDeltaGC.set_xlabel(r'$\Delta$ GC (mean GC = %.1f)' % (meanGC*100))
+        axesDeltaGC.set_xlabel(r'$\Delta$ GC (mean GC = %.1f%%)' % (meanGC*100))
         axesDeltaGC.set_ylabel('Sequence length (Kbps)')
         
         _, yMaxSeqs = axesDeltaGC.get_ylim()

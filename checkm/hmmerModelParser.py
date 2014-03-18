@@ -34,7 +34,7 @@ class HmmModel(object):
         
         for key, value in keys.items():
             setattr(self, key, value)
-            
+
             if key == 'ga':
                 setattr(self, 'isGatheringThreshold', True)
             elif key == 'tc':

@@ -149,23 +149,15 @@ class BinTools():
     def codingDensityDist(self, seqs, prodigalParser):
         """Coding density statistics for bin."""
         CDs = []
-        seqLens = []
         
         codingBasesTotal = 0
         basesTotal = 0
         for seqId, seq in seqs.iteritems():
-            seqLens.append(len(seq))
-
             codingBases = prodigalParser.codingBases(seqId)
                 
-            a, c, g, t = baseCount(seq)
-            validBases = a + c +g + t
-            CDs.append(float(codingBases) / validBases)
-            
+            CDs.append(float(codingBases) / len(seq))
             codingBasesTotal += codingBases
-            basesTotal += validBases
-            
-            seqLens.append(len(seq))
+            basesTotal += len(seq)
 
         meanCD = float(codingBasesTotal) / basesTotal
         deltaCDs = np.array(CDs) - meanCD
