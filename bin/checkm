@@ -28,7 +28,7 @@ __license__ = "GPL3"
 __maintainer__ = "Donovan Parks"
 __email__ = "donovan.parks@gmail.com"
 __status__ = "Development"
-__version__ = "0.5.1"
+__version__ = "0.6.0"
 
 import argparse
 import sys
@@ -44,7 +44,7 @@ def printHelp():
   Assess quality of putative genome bins.
     
   Lineage-specific marker set:
-    tree         -> Place bins in the genome tree
+    tree         -> Place bins in the reference genome tree
     tree_qa      -> Assess phylogenetic markers found in each bin
     lineage_set  -> Infer lineage-specific marker sets for each bin
     
@@ -121,18 +121,20 @@ if __name__ == '__main__':
     
     # determine placement of each genome bin in the genome tree
     tree_parser = subparsers.add_parser('tree', 
-                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        description='''Place bins in the genome tree.''')
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter, 
+                                        description='Place bins in the genome tree.',
+                                        epilog='Example: checkm tree ./bins ./output')
     tree_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     tree_parser.add_argument('out_folder', help="folder to write output files")
-    tree_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
+    tree_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     tree_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     tree_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # do QA on phylogenetic marker genes
-    tree_qa_parser = subparsers.add_parser('tree_qa',
+    tree_qa_parser = subparsers.add_parser('tree_qa', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        description='''Assess phylogenetic markers found in each bin.''')
+                                        description='Assess phylogenetic markers found in each bin.',
+                                        epilog='Example: checkm tree_qa ./output')
     tree_qa_parser.add_argument('tree_folder', help="folder specified during tree command")
     tree_qa_parser.add_argument('-o', '--out_format', type = int,
                                     help='''desired output:
@@ -148,55 +150,63 @@ if __name__ == '__main__':
     
     
     # calculate lineage-specific marker set for genome bins
-    lineage_set_parser = subparsers.add_parser('lineage_set',
+    lineage_set_parser = subparsers.add_parser('lineage_set', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        description='''Infer lineage-specific marker sets for each bin.''')
+                                        description='Infer lineage-specific marker sets for each bin.',
+                                        epilog='Example: checkm lineage_set ./output lineage.ms')
     lineage_set_parser.add_argument('tree_folder', help="folder specified during tree command")
     lineage_set_parser.add_argument('marker_file', help="output file describing marker set for each bin")
-    lineage_set_parser.add_argument('-b', '--bootstrap', type=float, help="required bootstrap support for calculating marker set; percentage between 0 and 1", default=0)
-    lineage_set_parser.add_argument('-m', '--num_genomes_markers', type=int, help="minimum reference genomes required to calculate initial marker set", default=2)
     lineage_set_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum reference genomes required to refine marker set", default=2)
-    lineage_set_parser.add_argument('--no_lineage_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform marker set refinement")
-    lineage_set_parser.add_argument('--taxonomy', dest='bRequireTaxonomy', action="store_true", default=False, help="only consider nodes with defined taxonomy")
+    lineage_set_parser.add_argument('--no_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform marker set refinement")
+    lineage_set_parser.add_argument('--force_domain', dest='bForceDomain', action="store_true", default=False, help="use domain-level sets for all bins")
     lineage_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
+    # Note: these selection criteria are currently incompatible with how the selected lineage-specific marker set is defined
+    #lineage_set_parser.add_argument('-b', '--bootstrap', type=float, help="required bootstrap support for calculating marker set; percentage between 0 and 1", default=0)
+    #lineage_set_parser.add_argument('-m', '--num_genomes_markers', type=int, help="minimum reference genomes required to calculate initial marker set", default=2)
+    #lineage_set_parser.add_argument('--taxonomy', dest='bRequireTaxonomy', action="store_true", default=False, help="only consider nodes with defined taxonomy")
+    
     # list of available taxonomic-specific marker set
-    taxon_list_parser = subparsers.add_parser('taxon_list',
+    taxon_list_parser = subparsers.add_parser('taxon_list', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        description='''List available taxonomic-specific marker sets.''')
+                                        description='List available taxonomic-specific marker sets.',
+                                        epilog='Example: checkm taxon_list --rank phylum')
     taxon_list_parser.add_argument('--rank', help="restrict list to specified taxonomic rank", choices=['ALL'] + taxonomicRanks, default='ALL')
     
     # calculate taxonomic-specific marker set
-    taxon_set_parser = subparsers.add_parser('taxon_set',
+    taxon_set_parser = subparsers.add_parser('taxon_set', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        description='''Infer taxonomic-specific marker set.''')
+                                        description='Infer taxonomic-specific marker set.',
+                                        epilog = 'Example: checkm taxon_set domain Bacteria bacteria.ms')
     taxon_set_parser.add_argument('rank', help="taxonomic rank", choices=['domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'])
     taxon_set_parser.add_argument('taxon', help="taxon of interest")
     taxon_set_parser.add_argument('marker_file', help="output file describing taxonomic-specific marker set")
     taxon_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # identify marker genes within binned contigs and calculate genome statistics
-    analyze_parser = subparsers.add_parser('analyze',
+    analyze_parser = subparsers.add_parser('analyze', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        description='''Identify marker genes in bins and calculate genome statistics.''')
+                                        description='Identify marker genes in bins and calculate genome statistics.',
+                                        epilog='Example: checkm analyze lineage.ms ./bins ./output')
     analyze_parser.add_argument('marker_file', help="markers for assessing bins (marker set or HMM file)")
     analyze_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     analyze_parser.add_argument('out_folder', help="folder to write output files")
-    analyze_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
+    analyze_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     analyze_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     analyze_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # do QA on pre-processed contigs
-    qa_parser = subparsers.add_parser('qa',
+    qa_parser = subparsers.add_parser('qa', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[output_parser],
-                                        description='''Assess bins for contamination and completeness.''')
+                                        description='Assess bins for contamination and completeness.',
+                                        epilog='Example: checkm qa lineage.ms ./output')
     qa_parser.add_argument('marker_file', help="marker file specified during analyze command")
     qa_parser.add_argument('analyze_folder', help="folder specified during analyze command")
     qa_parser.add_argument('--individual_markers', dest='bIndividualMarkers', action="store_true", default=False, help="treat marker as independent (i.e., ignore co-located set structure)")
     qa_parser.add_argument('--skip_orf_correction', dest='bSkipOrfCorrection', action="store_true", default=False, help="skip identification of ORF errors affecting marker genes")
     qa_parser.add_argument('--ignore_thresholds', dest='bIgnoreThresholds', action="store_true", default=False, help="ignore model-specific score thresholds")
-    qa_parser.add_argument('--aai_strain', type=float, default=0.95, help="AAI threshold used to identify strain heterogeneity")
+    qa_parser.add_argument('--aai_strain', type=float, default=0.9, help="AAI threshold used to identify strain heterogeneity")
     qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.E_VAL, help="e-value cut off")
     qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.LENGTH, help="percent overlap between target and query")
     qa_parser.add_argument('-c', '--coverage_file', default=None, help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
@@ -215,32 +225,30 @@ if __name__ == '__main__':
     plot_parser.add_argument('--image_type', default = 'png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
     plot_parser.add_argument('--dpi', type = int, default = 300, help='desired DPI of output image')
     plot_parser.add_argument('--font_size', type = int, default = 8, help='Desired font size')
-    plot_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
+    plot_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     
     plot_single_parser = argparse.ArgumentParser('plot_single',
-                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_parser], add_help=False)
     plot_single_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
     plot_single_parser.add_argument('--height', type = float, default = 6.5, help='height of output image')
     
     plot_double_parser = argparse.ArgumentParser('plot_double',
-                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_parser], add_help=False)
     plot_double_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
     plot_double_parser.add_argument('--height', type = float, default = 3.5, help='height of output image')
     
     plot_rows_parser = argparse.ArgumentParser('plot_rows',
-                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_parser], add_help=False)
     plot_rows_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
     plot_rows_parser.add_argument('--row_height', type = float, default = 0.3, help='height of each row in the output image')
     
     # GC plot
-    plot_gc_parser = subparsers.add_parser('gc_plot',
+    plot_gc_parser = subparsers.add_parser('gc_plot', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         help= 'Create GC histogram and delta-GC plot.',
                                         parents=[plot_double_parser],
-                                        description= 'Create GC histogram and delta-GC plot.')
+                                        description= 'Create GC histogram and delta-GC plot.',
+                                        epilog='Example: checkm gc_plot ./bins ./plots 95')
     
     plot_gc_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
     plot_gc_parser.add_argument('-w', '--gc_window_size', help="window size used to calculate GC histogram", type=int, default=5000)
@@ -248,10 +256,11 @@ if __name__ == '__main__':
     plot_gc_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Coding density plot
-    plot_coding_parser = subparsers.add_parser('coding_plot',
+    plot_coding_parser = subparsers.add_parser('coding_plot', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_need_qa_results_parser, plot_double_parser],
-                                        description= 'Create coding density (CD) histogram and delta-CD plot.')
+                                        description= 'Create coding density (CD) histogram and delta-CD plot.',
+                                        epilog='Example: checkm coding_plot ./output ./bins ./plots 95')
     
     plot_coding_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
     plot_coding_parser.add_argument('-w', '--cd_window_size', help="window size used to calculate CD histogram", type=int, default=10000)
@@ -259,10 +268,11 @@ if __name__ == '__main__':
     plot_coding_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Tetranucleotide distance  plot
-    plot_tetra_parser = subparsers.add_parser('tetra_plot',
+    plot_tetra_parser = subparsers.add_parser('tetra_plot', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_need_qa_results_parser, plot_double_parser],
-                                        description= 'Create tetranucleotide distance (TD) histogram and delta-TD plot.')
+                                        description= 'Create tetranucleotide distance (TD) histogram and delta-TD plot.',
+                                        epilog='Example: checkm tetra_plot ./output ./bins ./plots tetra.tsv 95')
     plot_tetra_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each bin (see tetra command)')
     plot_tetra_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
     plot_tetra_parser.add_argument('-w', '--td_window_size', help="window size used to calculate TD histogram", type=int, default=5000)
@@ -270,9 +280,10 @@ if __name__ == '__main__':
     plot_tetra_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Reference distribution  plot
-    plot_dist_parser = subparsers.add_parser('dist_plot',
+    plot_dist_parser = subparsers.add_parser('dist_plot', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        description= 'Create image with GC, CD, and TD distribution plots together.')
+                                        description= 'Create image with GC, CD, and TD distribution plots together.',
+                                        epilog='Example: checkm dist_plot ./output ./bins ./plots tetra.tsv 95')
     plot_dist_parser.add_argument('out_folder', help="folder specified during tree command")
     plot_dist_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
     plot_dist_parser.add_argument('plot_folder', help="folder to hold plots")
@@ -282,7 +293,7 @@ if __name__ == '__main__':
     plot_dist_parser.add_argument('--image_type', default = 'png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
     plot_dist_parser.add_argument('--dpi', type = int, default = 600, help='desired DPI of output image')
     plot_dist_parser.add_argument('--font_size', type = int, default = 8, help='Desired font size')
-    plot_dist_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
+    plot_dist_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     plot_dist_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
     plot_dist_parser.add_argument('--height', type = float, default = 8, help='height of output image')
     
@@ -295,20 +306,22 @@ if __name__ == '__main__':
     plot_dist_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # PCA plot of tetranucleotide signatures
-    plot_tetra_pca_parser = subparsers.add_parser('tetra_pca',
+    plot_tetra_pca_parser = subparsers.add_parser('tetra_pca', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_parser],
-                                        description= 'PCA plot of tetranucleotide signatures.')
+                                        description= 'PCA plot of tetranucleotide signatures.',
+                                        epilog='Example: checkm tetra_pca ./bins ./plots tetra.tsv')
     plot_tetra_pca_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
     plot_tetra_pca_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
     plot_tetra_pca_parser.add_argument('--height', type = float, default = 6.5, help='height of output image')
     plot_tetra_pca_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # GC bias plots
-    plot_gc_bias_parser = subparsers.add_parser('gc_bias_plot',
+    plot_gc_bias_parser = subparsers.add_parser('gc_bias_plot', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_double_parser],
-                                        description= 'Plot bin coverage as a function of GC.')
+                                        description= 'Plot bin coverage as a function of GC.',
+                                        epilog='Example: checkm gc_bias_plot ./bins ./plots example.bam')
     plot_gc_bias_parser.add_argument('bam_file', help="BAM file to interrogate for coverage information")
     plot_gc_bias_parser.add_argument('-w', '--window_size', help="window size used to calculate plot statistics", type=int, default=5000)  
     plot_gc_bias_parser.add_argument('-r', '--all_reads', action='store_true', help="use all reads to estimate coverage instead of just those in proper pairs")
@@ -318,88 +331,97 @@ if __name__ == '__main__':
     plot_gc_bias_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # PCA plot of coverage profiles
-    plot_cov_pca_parser = subparsers.add_parser('cov_pca',
+    plot_cov_pca_parser = subparsers.add_parser('cov_pca', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_parser],
-                                        description= 'PCA plot of coverage profiles.')
+                                        description= 'PCA plot of coverage profiles.',
+                                        epilog='Example: checkm cov_pca ./bins ./plots coverate.tsv')
     plot_cov_pca_parser.add_argument('coverage_file', help="file indicating coverage of each sequence (see coverage command)")
     plot_cov_pca_parser.add_argument('--width', type = float, default = 6.5, help='width of output image')
     plot_cov_pca_parser.add_argument('--height', type = float, default = 6.5, help='height of output image')
     plot_cov_pca_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Nx-plot
-    plot_nx_parser = subparsers.add_parser('nx_plot',
+    plot_nx_parser = subparsers.add_parser('nx_plot', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_single_parser],
-                                        description='Create Nx-plots.')
+                                        description='Create Nx-plots.',
+                                        epilog='Example: checkm nx_plot ./bins ./plots')
     
     plot_nx_parser.add_argument('-s', '--step_size', help="x step size for calculating Nx", type=float, default=0.05)
     plot_nx_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Cumulative sequence length plot
-    plot_len_parser = subparsers.add_parser('len_plot',
+    plot_len_parser = subparsers.add_parser('len_plot', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_single_parser],
-                                        description='Cumulative sequence length plot.')
+                                        description='Cumulative sequence length plot.',
+                                        epilog='Example: checkm len_plot ./bins ./plots')
 
     plot_len_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Sequence length distribution plot
-    hist_len_parser = subparsers.add_parser('len_hist',
+    hist_len_parser = subparsers.add_parser('len_hist', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        parents=[plot_single_parser],
-                                        description='Sequence length histogram.')
+                                            parents=[plot_single_parser],
+                                            description='Sequence length histogram.',
+                                        epilog='Example: checkm len_hist ./bins ./plots')
 
     hist_len_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Marker position plot
-    marker_plot_parser = subparsers.add_parser('marker_plot',
+    marker_plot_parser = subparsers.add_parser('marker_plot', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_need_qa_results_parser, plot_single_parser],
-                                        description='Plot position of marker genes on sequences.')
+                                        description='Plot position of marker genes on sequences.',
+                                        epilog='Example: checkm marker_plot ./output ./bins ./plots')
 
     marker_plot_parser.add_argument('--fig_padding', type = float, default = 0.2, help='white space to place around figure (in inches)')
     marker_plot_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # Parallel coordinate plot
-    parallel_coord_plot_parser = subparsers.add_parser('par_plot',
+    parallel_coord_plot_parser = subparsers.add_parser('par_plot', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_need_qa_results_parser, plot_single_parser],
-                                        description='Parallel coordinate plot of GC and coverage.')
+                                        description='Parallel coordinate plot of GC and coverage.',
+                                        epilog='Example: checkm par_plot ./output ./bins ./plots coverage.tsv')
     parallel_coord_plot_parser.add_argument('coverage_file', help="file indicating coverage of each sequence (see coverage command)")
     parallel_coord_plot_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Bin QA plot
-    bin_qa_plot_parser = subparsers.add_parser('bin_qa_plot',
+    bin_qa_plot_parser = subparsers.add_parser('bin_qa_plot', 
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         parents=[plot_need_qa_results_parser, plot_rows_parser],
-                                        description='Bar plot of bin completeness, contamination, and strain heterogeneity.')
+                                        description='Bar plot of bin completeness, contamination, and strain heterogeneity.',
+                                        epilog='Example: checkm bin_qa_plot ./output ./bins ./plots')
     bin_qa_plot_parser.add_argument('--ignore_hetero', dest='bIgnoreHetero', action="store_true", help="do not plot strain heterogeneity")
-    bin_qa_plot_parser.add_argument('--aai_strain', type=float, default=0.95, help="AAI threshold used to identify strain heterogeneity")
+    bin_qa_plot_parser.add_argument('--aai_strain', type=float, default=0.9, help="AAI threshold used to identify strain heterogeneity")
     bin_qa_plot_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     
     # Identify unbinned sequences
-    unbinned_parser = subparsers.add_parser('unbinned',
+    unbinned_parser = subparsers.add_parser('unbinned', 
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            description='Identify unbinned sequences.')
+                                            description='Identify unbinned sequences.',
+                                            epilog='Example: checkm unbinned ./bins seqs.fna unbinned.fna unbinned_stats.tsv')
     unbinned_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     unbinned_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
     unbinned_parser.add_argument('output_seq_file', help="write unbinned sequences to file")
     unbinned_parser.add_argument('output_stats_file', help="write unbinned sequence statistics to file")
-    unbinned_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
+    unbinned_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     unbinned_parser.add_argument('-s', '--min_seq_len', type=int, default=0, help="required length of sequence")
     unbinned_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Calculate coverage
-    coverage_parser = subparsers.add_parser('coverage',
+    coverage_parser = subparsers.add_parser('coverage', 
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            description='Calculate coverage of sequences.')
+                                            description='Calculate coverage of sequences.',
+                                            epilog='Example: checkm coverage ./bins coverage.tsv example_1.bam example_2.bam')
     
     coverage_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     coverage_parser.add_argument('output_file', help="print results to file")
     coverage_parser.add_argument('bam_files', nargs='+', help="BAM files to parse")
-    coverage_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
+    coverage_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     coverage_parser.add_argument('-r', '--all_reads', action='store_true', help="use all reads to estimate coverage instead of just those in proper pairs")
     coverage_parser.add_argument('-a', '--min_align', help='minimum alignment length as percentage of read length', type=float, default = 0.98)
     coverage_parser.add_argument('-e', '--max_edit_dist', help='maximum edit distance as percentage of read length', type=float, default = 0.02)
@@ -407,9 +429,10 @@ if __name__ == '__main__':
     coverage_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Calculate tetranucleotide signatures
-    tetra_parser = subparsers.add_parser('tetra',
+    tetra_parser = subparsers.add_parser('tetra', 
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            description='Calculate tetranucleotide signature of sequences.')
+                                            description='Calculate tetranucleotide signature of sequences.',
+                                            epilog='Example: checkm tetra seqs.fna tetra.tsv')
     
     tetra_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
     tetra_parser.add_argument('output_file', help="print results to file")
@@ -417,53 +440,58 @@ if __name__ == '__main__':
     tetra_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Calculate community profile
-    profile_parser = subparsers.add_parser('profile',
+    profile_parser = subparsers.add_parser('profile', 
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            description='Calculate percentage of reads mapped to each bin.')
+                                            description='Calculate percentage of reads mapped to each bin.',
+                                            epilog='Example: checkm profile coverage.tsv')
     profile_parser.add_argument('coverage_file', help="file indicating coverage of each sequence (see coverage command)")
     profile_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     profile_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     profile_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Join tab-separated values file
-    join_parser = subparsers.add_parser('join_tables',
+    join_parser = subparsers.add_parser('join_tables', 
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            description='Join tab-separated value tables containing bin information.')
+                                            description='Join tab-separated value tables containing bin information.',
+                                            epilog='Example: checkm join_tables table1.tsv table2.tsv')
     join_parser.add_argument('tables', nargs='+', help="tab-separated table files with bin ids as their primary key")
     join_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     join_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Find SSU rRNAs in sequences
-    ssu_finder_parser = subparsers.add_parser('ssu_finder',
-                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            description='Identify SSU (16S/18S) rRNAs in sequences.')
+    ssu_finder_parser = subparsers.add_parser('ssu_finder', 
+                                              formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                              description='Identify SSU (16S/18S) rRNAs in sequences.',
+                                              epilog='Example: checkm ssu_finder seqs.fna ./bins ./ssu_finder')
     ssu_finder_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
     ssu_finder_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     ssu_finder_parser.add_argument('out_folder', help="folder to write output files")
 
-    ssu_finder_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
+    ssu_finder_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     ssu_finder_parser.add_argument('-e', '--evalue', help='e-value threshold for identifying hits', type=float, default = 1e-5)
     ssu_finder_parser.add_argument('-c', '--concatenate', help='concatenate hits that are within the specified number of base pairs', type=int, default = 100)
     ssu_finder_parser.add_argument('-t', '--threads', help='number of threads', type=int, default = 1)
     ssu_finder_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Compare two sets of bins (e.g., from alternative binning methods)
-    bin_compare_parser = subparsers.add_parser('bin_compare',
-                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            description='Compare two sets of bins.')
+    bin_compare_parser = subparsers.add_parser('bin_compare', 
+                                               formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                               description='Compare two sets of bins.',
+                                               epilog='Example: checkm bin_compare seqs.fna ./bins1 ./bins2 bin_comparison.tsv')
     bin_compare_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
     bin_compare_parser.add_argument('bin_folder1', help="folder containing bins (fasta format)")
     bin_compare_parser.add_argument('bin_folder2', help="folder containing bins (fasta format)")
     bin_compare_parser.add_argument('output_file', help="output file showing overlap between bins")
 
-    bin_compare_parser.add_argument('-x', '--extension1', default='fa', help="extension of bins in folder 1")
-    bin_compare_parser.add_argument('-y', '--extension2', default='fa', help="extension of bins in folder 2")
+    bin_compare_parser.add_argument('-x', '--extension1', default='fna', help="extension of bins in folder 1")
+    bin_compare_parser.add_argument('-y', '--extension2', default='fna', help="extension of bins in folder 2")
     bin_compare_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Identify bins with complementary marker sets
-    merge_parser = subparsers.add_parser('merge',
+    merge_parser = subparsers.add_parser('merge', 
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            description='Identify bins with complementary sets of marker genes.')
+                                            description='Identify bins with complementary sets of marker genes.',
+                                            epilog='Example: checkm merge lineage.ms ./bins ./output')
     merge_parser.add_argument('marker_file', help="marker file to use for assessing potential bin mergers (marker set or HMM file)")
     merge_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     merge_parser.add_argument('out_folder', help="folder to write output files")
@@ -471,25 +499,26 @@ if __name__ == '__main__':
     merge_parser.add_argument('--delta_cont', help="maximum increase in contamination to report pair", type=float, default = 5.0)
     merge_parser.add_argument('--merged_comp', help="minimum merged completeness to report pair", type=float, default = 70.0)
     merge_parser.add_argument('--merged_cont', help="maximum merged contamination to report pair", type=float, default = 10.0)
-    merge_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
+    merge_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     merge_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     merge_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Identify outlier sequences
-    outlier_parser = subparsers.add_parser('outliers',
+    outlier_parser = subparsers.add_parser('outliers', 
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                             parents=[plot_need_qa_results_parser],
-                                            description='Identify outliers in bins relative to reference distributions.')
+                                            description='Identify outliers in bins relative to reference distributions.',
+                                            epilog='Example: checkm outliers ./bins tetra.tsv outliers.tsv')
     outlier_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     outlier_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
     outlier_parser.add_argument('output_file', help="print results to file")
-    outlier_parser.add_argument('-d', '--distribution', help='reference distribution used to identify outliers; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95)
+    outlier_parser.add_argument('-d', '--distributions', help='reference distribution used to identify outliers; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
     outlier_parser.add_argument('-r', '--report_type', help="report sequences that are outliers in 'all' or 'any' reference distribution", choices=['any', 'all'], default='any')
-    outlier_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (other files in folder are ignored)")
+    outlier_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     outlier_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Modify a bin
-    modify_parser = subparsers.add_parser('modify',
+    modify_parser = subparsers.add_parser('modify', 
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                             description='Modify sequences in a bin.',
                                             epilog='Example: checkm modify -r seq_id1 -r seq_id2 seqs.fna bin.fna new_bin.fna')
@@ -502,16 +531,18 @@ if __name__ == '__main__':
     modify_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     
     # Ensure uniqueness of bins 
-    unique_parser = subparsers.add_parser('unique',
+    unique_parser = subparsers.add_parser('unique', 
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            description='Ensure no sequences are assigned to multiple bins.')
+                                            description='Ensure no sequences are assigned to multiple bins.',
+                                            epilog='Example: checkm unique ./bins')
     unique_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    unique_parser.add_argument('-x', '--extension', default='fa', help="extension of bins (all other files in bin folder are ignored)")
+    unique_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (all other files in bin folder are ignored)")
     
     # Test operation of CheckM using E.Coli K12-W3110
-    test_parser = subparsers.add_parser('test',
+    test_parser = subparsers.add_parser('test', 
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            description='Process E.coli K12-W3310 and verify operation of CheckM.')
+                                            description='Process E.coli K12-W3310 and verify operation of CheckM.',
+                                            epilog='Example: checkm test ./test')
     test_parser.add_argument('out_folder', help="folder to write output files")
     test_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     test_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_false", default=True, help=argparse.SUPPRESS)

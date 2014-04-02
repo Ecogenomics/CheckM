@@ -166,8 +166,8 @@ class HMMERModelExtractor():
             if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
                 numModelsExtracted += 1
                 statusStr = '    Finished extracting %d of %d (%.2f%%) HMMs.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
-                sys.stdout.write('%s\r' % statusStr)
-                sys.stdout.flush()
+                sys.stderr.write('%s\r' % statusStr)
+                sys.stderr.flush()
                 
             for line in open(fetchFilename):
                 fout.write(line)
@@ -175,7 +175,7 @@ class HMMERModelExtractor():
             os.remove(fetchFilename)
          
         if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stdout.write('\n')
+            sys.stderr.write('\n')
             
         fout.close()
         

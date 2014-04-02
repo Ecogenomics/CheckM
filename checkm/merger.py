@@ -39,9 +39,9 @@ class Merger():
         self.logger.info('  Comparing marker sets between all pairs of bins.')
         
         # ensure all bins are using the same marker set
-        markerGenesI = binIdToBinMarkerSets[binIdToBinMarkerSets.keys()[0]].getMostSpecificMarkerSet().getMarkerGenes()
+        markerGenesI = binIdToBinMarkerSets[binIdToBinMarkerSets.keys()[0]].mostSpecificMarkerSet().getMarkerGenes()
         for binIdJ in binIdToBinMarkerSets:
-            if markerGenesI != binIdToBinMarkerSets[binIdJ].getMostSpecificMarkerSet().getMarkerGenes():
+            if markerGenesI != binIdToBinMarkerSets[binIdJ].mostSpecificMarkerSet().getMarkerGenes():
                 self.logger.error('  [Error] All bins must use the same marker set to assess potential mergers.')
                 sys.exit(0)
             
@@ -67,14 +67,14 @@ class Merger():
             binIdI = binIds[i]
             markersI = set(binMarkerHits[binIdI].markerHits.keys())
             
-            geneCountsI = binMarkerHits[binIdI].geneCounts(binIdToBinMarkerSets[binIdI].getMostSpecificMarkerSet(), binMarkerHits[binIdI].markerHits, True)
+            geneCountsI = binMarkerHits[binIdI].geneCounts(binIdToBinMarkerSets[binIdI].mostSpecificMarkerSet(), binMarkerHits[binIdI].markerHits, True)
             completenessI, contaminationI = geneCountsI[6:8]
              
             for j in xrange(i+1, len(binMarkerHits)):               
                 binIdJ = binIds[j]
                 markersJ = (binMarkerHits[binIdJ].markerHits.keys())
                 
-                geneCountsJ = binMarkerHits[binIdJ].geneCounts(binIdToBinMarkerSets[binIdJ].getMostSpecificMarkerSet(), binMarkerHits[binIdJ].markerHits, True)
+                geneCountsJ = binMarkerHits[binIdJ].geneCounts(binIdToBinMarkerSets[binIdJ].mostSpecificMarkerSet(), binMarkerHits[binIdJ].markerHits, True)
                 completenessJ, contaminationJ = geneCountsJ[6:8]
                 
                 # merge together hits from both bins and calculate completeness and contamination
@@ -88,7 +88,7 @@ class Merger():
                     else:
                         mergedHits[markerId] = hits
                 
-                geneCountsMerged = binMarkerHits[binIdI].geneCounts(binIdToBinMarkerSets[binIdJ].getMostSpecificMarkerSet(), mergedHits, True)
+                geneCountsMerged = binMarkerHits[binIdI].geneCounts(binIdToBinMarkerSets[binIdJ].mostSpecificMarkerSet(), mergedHits, True)
                 completenessMerged, contaminationMerged = geneCountsMerged[6:8]
                 
                 if not (completenessMerged >= minMergedComp and contaminationMerged < maxMergedCont):

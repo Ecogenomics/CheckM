@@ -40,14 +40,14 @@ class PplacerRunner():
         self.__checkForPplacer()
         self.__checkForGuppy()
           
-    def run(self, binFiles, outDir):
+    def run(self, binFiles, resultsParser, outDir):
         # make sure output and tree directories exist
         checkDirExists(outDir)
         alignOutputDir = os.path.join(outDir, 'storage', 'tree')
         checkDirExists(alignOutputDir)
 
         # create concatenated alignment file for each bin
-        concatenatedAlignFile = self.__createConcatenatedAlignment(binFiles, alignOutputDir)
+        concatenatedAlignFile = self.__createConcatenatedAlignment(binFiles, resultsParser, alignOutputDir)
         
         # run pplacer to place bins in reference genome tree
         self.logger.info('  Placing %d bins in the genome tree with pplacer (be patient).' % len(binFiles))
@@ -62,7 +62,7 @@ class PplacerRunner():
         cmd = 'guppy tog -o %s %s' % (treeFile, pplacerJsonOut)
         os.system(cmd)
 
-    def __createConcatenatedAlignment(self, binFiles, alignOutputDir):
+    def __createConcatenatedAlignment(self, binFiles, resultsParser, alignOutputDir):
         """Create a concatenated alignment of marker genes for each bin."""
                 
         # read alignment files
@@ -72,7 +72,7 @@ class PplacerRunner():
         binIds = set()
         for f in files:
             if f.endswith('.masked.faa'):
-                markerId = f[0:f.find('.')]
+                markerId = f[0:f.find('.masked.faa')]
                 seqs = readFasta(os.path.join(alignOutputDir, f))
                 
                 for seqId, seq in seqs.iteritems():
@@ -80,16 +80,18 @@ class PplacerRunner():
 
                     alignments[markerId][binId] = seq
                     binIds.add(binId)
+                    
+        # get all markers and their lengths
+        markerIds = resultsParser.models[resultsParser.models.keys()[0]].keys()
+        markerIdLens = {}
+        for markerId in markerIds:
+            markerIdLens[markerId] = resultsParser.models[resultsParser.models.keys()[0]][markerId].leng
 
         # create concatenated alignment
         self.logger.info('  Concatenating alignments.')
         concatenatedSeqs = {}
-        t = 0
-        for markerId in sorted(alignments.keys()):
+        for markerId in sorted(markerIds):
             seqs = alignments[markerId]
-            alignLen = len(seqs[seqs.keys()[0]])
-            
-            t += alignLen
 
             for binId in binIds:
                 if binId in seqs:
@@ -97,7 +99,7 @@ class PplacerRunner():
                     concatenatedSeqs[binId] = concatenatedSeqs.get(binId, '') + seqs[binId]
                 else:
                     # missing gene
-                    concatenatedSeqs[binId] = concatenatedSeqs.get(binId, '') + '-'*alignLen
+                    concatenatedSeqs[binId] = concatenatedSeqs.get(binId, '') + '-'*markerIdLens[markerId]
 
         # save concatenated alignment
         concatenatedAlignFile = os.path.join(alignOutputDir, defaultValues.PPLACER_CONCAT_SEQ_OUT)

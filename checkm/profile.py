@@ -64,7 +64,7 @@ class Profile():
                 totalMappedReads[bamId] = totalMappedReads.get(bamId, 0) + mappedReads       
                 readsMappedToBin[binId][bamId] = readsMappedToBin[binId].get(bamId, 0) + mappedReads
                 
-        # calculate percentage of mapped reads and binned populations
+        # calculate percentage of mapped reads to binned populations
         perMappedReads = {}
         normBinCoverage = {}
         sumNormBinCoverage = {}

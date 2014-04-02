@@ -112,15 +112,15 @@ class GenomicSignatures(object):
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedSeq += 1
                 statusStr = '    Finished processing %d of %d (%.2f%%) sequences.' % (numProcessedSeq, totalSeqs, float(numProcessedSeq)*100/totalSeqs)
-                sys.stdout.write('%s\r' % statusStr)
-                sys.stdout.flush()
+                sys.stderr.write('%s\r' % statusStr)
+                sys.stderr.flush()
             
             fout.write(seqId)
             fout.write('\t' + '\t'.join(map(str, sig)))
             fout.write('\n')
             
         if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stdout.write('\n')
+            sys.stderr.write('\n')
             
         fout.close()
         

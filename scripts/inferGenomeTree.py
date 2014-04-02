@@ -36,7 +36,7 @@ from checkm.seqUtils import readFasta, writeFasta
 
 from checkm.lib.img import IMG
 
-from lib.taxonomyUtils import taxonomyWithRanks
+from checkm.lib.taxonomyUtils import taxonomyWithRanks
 
 class InferGenomeTree(object):
     def __init__(self):
@@ -114,7 +114,7 @@ class InferGenomeTree(object):
         
         fout.close()
 
-    def run(self, geneTreeDir, alignmentDir, extension, outputAlignFile, outputTree, outputTaxonomy):
+    def run(self, geneTreeDir, alignmentDir, extension, outputAlignFile, outputTree, outputTaxonomy, bSupportValues = False):
         # read gene trees
         print 'Reading gene trees.'
         geneIds = set()
@@ -179,7 +179,12 @@ class InferGenomeTree(object):
         # infer genome tree
         print 'Inferring genome tree.'
         outputLog = outputTree[0:outputTree.rfind('.')] + '.log'
-        cmd = 'FastTreeMP -nosupport -wag -gamma -log ' + outputLog + ' ' + outputAlignFile + ' > ' + outputTree
+        
+        supportStr = ' '
+        if not bSupportValues:
+            supportStr = ' -nosupport '
+        
+        cmd = 'FastTreeMP' + supportStr + '-wag -gamma -log ' + outputLog + ' ' + outputAlignFile + ' > ' + outputTree
         os.system(cmd)
 
 if __name__ == '__main__':

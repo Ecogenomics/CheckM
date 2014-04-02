@@ -29,7 +29,7 @@ import numpy as np
 import defaultValues
 
 from timeKeeper import TimeKeeper
-from markerSets import MarkerSetParser
+from markerSets import MarkerSetParser, BinMarkerSets
 from resultsParser import ResultsParser
 from hmmerAligner import HmmerAligner
 from markerGeneFinder import MarkerGeneFinder
@@ -50,6 +50,7 @@ from ssuFinder import SSU_Finder
 from PCA import PCA
 from testing import Testing
 from common import makeSurePathExists, checkFileExists, binIdFromFilename, reassignStdOut, restoreStdOut, getBinIdsFromOutDir, checkDirExists
+
 
 from plot.gcPlots import GcPlots
 from plot.codingDensityPlots import CodingDensityPlots
@@ -86,7 +87,7 @@ class OptionsParser():
         """Tree command"""   
         self.logger.info('')
         self.logger.info('*******************************************************************************')
-        self.logger.info(' [CheckM - tree] Placing bins in genome tree.')
+        self.logger.info(' [CheckM - tree] Placing bins in reference genome tree.')
         self.logger.info('*******************************************************************************')
         self.logger.info('')
                 
@@ -117,7 +118,7 @@ class OptionsParser():
         # align identified marker genes
         self.logger.info('')
         HA = HmmerAligner(options.threads)
-        HA.makeAlignmentToCommonMarkers(options.out_folder,
+        resultsParser = HA.makeAlignmentToCommonMarkers(options.out_folder,
                                           defaultValues.HMMER_TABLE_PHYLO_OUT,
                                           binIdToHmmModelFile,
                                           False,
@@ -129,7 +130,7 @@ class OptionsParser():
         # place bins into genome tree
         self.logger.info('')
         pplacer = PplacerRunner(options.threads)
-        pplacer.run(binFiles, options.out_folder)
+        pplacer.run(binFiles, resultsParser, options.out_folder)
                 
         self.timeKeeper.printTimeStamp()
         
@@ -150,17 +151,19 @@ class OptionsParser():
         
         # calculate marker gene statistics
         RP = ResultsParser()
-        RP.analyseResults(options.tree_folder, 
-                          defaultValues.BIN_STATS_PHYLO_OUT, 
-                          defaultValues.SEQ_STATS_PHYLO_OUT, 
-                          defaultValues.HMMER_TABLE_PHYLO_OUT, 
-                          binIdToHmmModelFile)
+        binStats, _ = RP.analyseResults(options.tree_folder, 
+                                          defaultValues.BIN_STATS_PHYLO_OUT, 
+                                          defaultValues.SEQ_STATS_PHYLO_OUT, 
+                                          defaultValues.HMMER_TABLE_PHYLO_OUT, 
+                                          binIdToHmmModelFile)
 
         # determine taxonomy of each bin
+        self.logger.info('')
         treeParser = TreeParser()
-        treeParser.printSummary(options.out_format, options.tree_folder, RP, options.bTabTable, options.file)
+        treeParser.printSummary(options.out_format, options.tree_folder, RP, options.bTabTable, options.file, binStats)
          
         if options.file != '':
+            self.logger.info('')
             self.logger.info('  QA information written to: ' + options.file)
             
         self.timeKeeper.printTimeStamp()
@@ -174,12 +177,18 @@ class OptionsParser():
         self.logger.info('')
                 
         checkDirExists(options.tree_folder) 
+        
+        # This options are incompatible with how the lineage-specific marker set is selected, so
+        # the default values are currently hard-coded
+        options.num_genomes_markers = 2
+        options.bootstrap = 0
+        options.bRequireTaxonomy = False
 
         treeParser = TreeParser()
         treeParser.getBinMarkerSets(options.tree_folder, options.marker_file, 
                                     options.num_genomes_markers, options.num_genomes_refine, 
-                                    options.bootstrap, options. bNoLineageSpecificRefinement,
-                                    options.bRequireTaxonomy)
+                                    options.bootstrap, options.bNoLineageSpecificRefinement,
+                                    options.bForceDomain, options.bRequireTaxonomy)
         
         self.logger.info('')
         self.logger.info('  Marker set written to: ' + options.marker_file)
@@ -811,11 +820,15 @@ class OptionsParser():
         
         checkDirExists(options.bin_folder)
         
+        markerSetParser = MarkerSetParser()
+        if markerSetParser.markerFileType(options.marker_file) == BinMarkerSets.TREE_MARKER_SET:
+            self.logger.error('  [Error] Merge command requires a taxonomic-specific marker set or a user-defined HMM file.\n')
+            return
+        
         # setup directory structure
         makeSurePathExists(options.out_folder)
         makeSurePathExists(os.path.join(options.out_folder, 'bins')) 
         makeSurePathExists(os.path.join(options.out_folder, 'storage')) 
-        makeSurePathExists(os.path.join(options.out_folder, 'storage', 'aai_qa'))
         makeSurePathExists(os.path.join(options.out_folder, 'storage', 'hmms'))
         
         binFiles = self.binFiles(options.bin_folder, options.extension)
@@ -856,7 +869,7 @@ class OptionsParser():
         binFiles = self.binFiles(options.bin_folder, options.extension)
         
         binTools = BinTools()
-        binTools.identifyOutliers(options.out_folder, binFiles, options.tetra_profile, options.distribution, options.report_type, options.output_file)
+        binTools.identifyOutliers(options.out_folder, binFiles, options.tetra_profile, options.distributions, options.report_type, options.output_file)
 
         self.logger.info('\n  Outlier information written to: ' + options.output_file)
             

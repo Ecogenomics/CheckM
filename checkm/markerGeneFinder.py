@@ -109,8 +109,8 @@ class MarkerGeneFinder():
         numProcessedBins = 0
         if self.logger.getEffectiveLevel() <= logging.INFO:
             statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
-            sys.stdout.write('%s\r' % statusStr)
-            sys.stdout.flush()
+            sys.stderr.write('%s\r' % statusStr)
+            sys.stderr.flush()
         
         while True:
             binId = queueIn.get(block=True, timeout=None)
@@ -120,9 +120,9 @@ class MarkerGeneFinder():
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
                 statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
-                sys.stdout.write('%s\r' % statusStr)
-                sys.stdout.flush()
+                sys.stderr.write('%s\r' % statusStr)
+                sys.stderr.flush()
          
         if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stdout.write('\n')
+            sys.stderr.write('\n')
             

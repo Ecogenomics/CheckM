@@ -42,11 +42,11 @@ class TreeParser():
     def __init__(self):
         self.logger = logging.getLogger()
         
-    def printSummary(self, outputFormat, outDir, resultsParser, bTabTable, outFile):
+    def printSummary(self, outputFormat, outDir, resultsParser, bTabTable, outFile, binStats):
         if outputFormat == 1:
-            self.reportBinTaxonomy(outDir, resultsParser, bTabTable, outFile, bLineageStatistics = False)
+            self.reportBinTaxonomy(outDir, resultsParser, bTabTable, outFile, binStats, bLineageStatistics = False)
         elif outputFormat == 2:
-            self.reportBinTaxonomy(outDir, resultsParser, bTabTable, outFile, bLineageStatistics = True)
+            self.reportBinTaxonomy(outDir, resultsParser, bTabTable, outFile, binStats, bLineageStatistics = True)
         elif outputFormat == 3:
             self.reportNewickTree(outDir, outFile, None)
         elif outputFormat == 4:
@@ -182,12 +182,35 @@ class TreeParser():
                             taxaStr = tokens[1]
                 
                 parentNode = parentNode.parent_node
-            
+
             if not taxaStr:
-                taxaStr = 'k__unclassified'
+                domainNode = self.__findDomainNode(node)
+                taxaStr = domainNode.label.split('|')[1] + ' (root)'
+     
             binIdToTaxonomy[node.taxon.label] = taxaStr
                 
         return binIdToTaxonomy
+    
+    def __findDomainNode(self, binNode):
+        """Find node defining the domain. Assumes 'binNode' is the leaf node of a bin on either the archaeal or bacterial branch."""
+        
+        # bin is either on the bacterial or archaeal branch descendant from the root,
+        # so descend tree to first internal node with a label. Note that there may
+        # be multiple bins inserted in the tree creating unlabelled internal nodes
+        for child in binNode.parent_node.child_nodes():
+            if child.is_internal():
+                curChild = child
+                    
+        while True:
+            if curChild.label:
+                break
+            else:
+                # descend to next child that is an internal node
+                for child in curChild.child_nodes():
+                    if child.is_internal():
+                        curChild = child
+                        
+        return curChild
     
     def getBinSisterTaxonomy(self, outDir, binIds): 
         # make sure output and tree directories exist
@@ -275,29 +298,33 @@ class TreeParser():
     
     def __getMarkerSet(self, parentNode, tree, uniqueIdToLineageStatistics, 
                                     numGenomesMarkers, numGenomesRefine, bootstrap, 
-                                    bRequireTaxonomy):
+                                    bForceDomain, bRequireTaxonomy):
         """Get marker set for next parent node meeting selection criteria."""
         
         # ascend tree to root finding first node meeting all selection criteria 
         selectedParentNode = parentNode
+        taxonomyStr = 'root'
         while True:
             if selectedParentNode.label: # nodes inserted by PPLACER will not have a label
                 trustedUniqueId = selectedParentNode.label.split('|')[0]
-                
+                nodeTaxonomy = selectedParentNode.label.split('|')[1]
+   
                 stats = uniqueIdToLineageStatistics[trustedUniqueId]
                 if stats['# genomes'] >= numGenomesMarkers and stats['bootstrap'] >= bootstrap:
-                    if not bRequireTaxonomy or stats['taxonomy'] != '':
-                        # get closest taxonomic label
-                        taxonomyStr = stats['taxonomy']
-                        if not bRequireTaxonomy and stats['taxonomy'] == '':
-                            taxonomyStr = self.__getNextNamedNode(selectedParentNode, uniqueIdToLineageStatistics)
-                            
-                        # all criteria meet, so use marker set from this node
-                        break
+                    if not bForceDomain or nodeTaxonomy in ['k__Bacteria', 'k__Archaea']:    
+                        if not bRequireTaxonomy or stats['taxonomy'] != '':
+                            # get closest taxonomic label
+                            taxonomyStr = stats['taxonomy']
+                            if not bRequireTaxonomy and stats['taxonomy'] == '':
+                                taxonomyStr = self.__getNextNamedNode(selectedParentNode, uniqueIdToLineageStatistics)
+    
+                            # all criteria meet, so use marker set from this node
+                            break
+            
+            if selectedParentNode.parent_node == None:
+                break # reached the root node so terminate
             
             selectedParentNode = selectedParentNode.parent_node
-            if selectedParentNode == None:
-                break # reached the root node so terminate
             
         # get marker set meeting all criteria required for a trusted marker set        
         taxonomyStr = taxonomyStr.split(';')[-1] # extract most specific taxonomy identifier
@@ -353,10 +380,11 @@ class TreeParser():
        
     def getBinMarkerSets(self, outDir, markerFile, 
                                     numGenomesMarkers, numGenomesRefine, 
-                                    bootstrap, bNoLineageSpecificRefinement, bRequireTaxonomy):
+                                    bootstrap, bNoLineageSpecificRefinement, 
+                                    bForceDomain, bRequireTaxonomy):
         """Determine marker sets for each bin."""
 
-        self.logger.info('  Determining marker set for each genome bin.')
+        self.logger.info('  Determining marker sets for each genome bin.')
         
         # get all bin ids
         binIds = getBinIdsFromOutDir(outDir)
@@ -377,25 +405,42 @@ class TreeParser():
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
                 statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, len(binIds), float(numProcessedBins)*100/len(binIds))
-                sys.stdout.write('%s\r' % statusStr)
-                sys.stdout.flush()
+                sys.stderr.write('%s\r' % statusStr)
+                sys.stderr.flush()
                 
             node = tree.find_node_with_taxon_label(binId)
-            binMarkerSets = BinMarkerSets(binId)
+            binMarkerSets = BinMarkerSets(binId, BinMarkerSets.TREE_MARKER_SET)
             if node == None:
                 # bin is not in tree
                 node, markerSet = self.__getMarkerSet(rootNode, tree, uniqueIdToLineageStatistics, 
                                                         numGenomesMarkers, numGenomesRefine, bootstrap, 
-                                                        bRequireTaxonomy)
+                                                        bForceDomain, bRequireTaxonomy)
                 binMarkerSets.addMarkerSet(markerSet)
             else:
+                # special case: if node is on the bacterial or archaeal branch descendant from the root,
+                # then move down the tree to include the domain-specific marker set
+                parentNode = node.parent_node
+                while parentNode != None:
+                    if parentNode.label:
+                        bRoot = (parentNode.parent_node == None)
+                        break
+                        
+                    parentNode = parentNode.parent_node
+                    
+                if bRoot:
+                    # since the root is the first labeled node, we need to descend the 
+                    # tree to incorporate the domain-specific marker set
+                    domainNode = self.__findDomainNode(node)
+                    curNode = domainNode.child_nodes()[0] 
+                else:
+                    curNode = node
+                    
                 # ascend tree to root, recording all marker sets 
-                curNode = node
                 while curNode.parent_node != None:
                     curNode, markerSet = self.__getMarkerSet(curNode.parent_node, tree, uniqueIdToLineageStatistics, 
                                                                 numGenomesMarkers, numGenomesRefine, bootstrap, 
-                                                                bRequireTaxonomy)
-                    if not bNoLineageSpecificRefinement:
+                                                                bForceDomain, bRequireTaxonomy)
+                    if not bNoLineageSpecificRefinement and bRoot == False:
                         markerSet = self.__refineMarkerSet(markerSet, node.parent_node, tree, uniqueIdToLineageStatistics, numGenomesRefine)
                     
                     binMarkerSets.addMarkerSet(markerSet)
@@ -403,7 +448,7 @@ class TreeParser():
             binMarkerSets.write(fout)
                 
         if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stdout.write('\n')
+            sys.stderr.write('\n')
                 
         fout.close()
                 
@@ -483,7 +528,7 @@ class TreeParser():
                 
         return binIdToLineageStatistics
     
-    def reportBinTaxonomy(self, outDir, resultsParser, bTabTable, outFile, bLineageStatistics):
+    def reportBinTaxonomy(self, outDir, resultsParser, bTabTable, outFile, binStats, bLineageStatistics):
         # make sure output and tree directories exist
         checkDirExists(outDir)
         alignOutputDir = os.path.join(outDir, 'storage', 'tree')
@@ -507,14 +552,15 @@ class TreeParser():
             binIdToSisterTaxonomy = self.getBinSisterTaxonomy(outDir, binIds)
         
             binIdToLineageStatistics = self.readLineageMetadata(outDir, binIds)
-            self.__printFullTable(binIdToTaxonomy, binIdToSisterTaxonomy, binIdToWeightedML, binIdToLineageStatistics, resultsParser, bTabTable, outFile)
+            self.__printFullTable(binIdToTaxonomy, binIdToSisterTaxonomy, binIdToWeightedML, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile)
         
     def __printSimpleSummaryTable(self, binIdToTaxonomy, binIdToWeightedML, resultsParser, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
         arbitraryBinId = binIdToTaxonomy.keys()[0]
-        header = ['Bin Id', '# marker (of %d)' % len(resultsParser.models[arbitraryBinId]), 'Taxonomy', 'Weighted ML']
+        markerCountLabel = '# marker (of %d)' % len(resultsParser.models[arbitraryBinId])
+        header = ['Bin Id', markerCountLabel, 'Taxonomy', 'Weighted ML']
         
         if bTabTable: 
             pTable = None
@@ -529,7 +575,7 @@ class TreeParser():
             pTable.vrules = prettytable.NONE
 
         for binId in sorted(binIdToTaxonomy.keys()):
-            row = [binId, str(len(resultsParser.results[binId].markerHits)), binIdToTaxonomy[binId], binIdToWeightedML.get(binId, 'NA')]
+            row = [binId, len(resultsParser.results[binId].markerHits), binIdToTaxonomy[binId], binIdToWeightedML.get(binId, 'NA')]
             
             if bTabTable:
                 print('\t'.join(map(str, row)))
@@ -537,21 +583,23 @@ class TreeParser():
                 pTable.add_row(row)
                 
         if not bTabTable :  
-            print(pTable.get_string())
+            print(pTable.get_string(sortby=markerCountLabel, reversesort=True))
             
         # restore stdout   
         restoreStdOut(outFile, oldStdOut) 
         
-    def __printFullTable(self, binIdToTaxonomy, binIdToSisterTaxonomy, binIdToWeightedML, binIdToLineageStatistics, resultsParser, bTabTable, outFile):
+    def __printFullTable(self, binIdToTaxonomy, binIdToSisterTaxonomy, binIdToWeightedML, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
         arbitraryBinId = binIdToTaxonomy.keys()[0]
-        header = ['Bin Id', '# marker (of %d)' % len(resultsParser.models[arbitraryBinId])]
+        markerCountLabel = '# marker (of %d)' % len(resultsParser.models[arbitraryBinId])
+        header = ['Bin Id', markerCountLabel]
         header += ['Taxonomy (contained)', 'Taxonomy (sister lineage)', 'Weighted ML']
-        header += ['# descendant genomes', 'GC mean', 'GC std']
-        header += ['Genome size mean (Mbps)', 'Genome size std (Mbps)']
-        header += ['Genome count mean', 'Genome count std']
+        header += ['GC', 'Genome size (Mbps)', 'Gene count', 'Coding density', 'Translation table']
+        header += ['# descendant genomes', 'Lineage: GC mean', 'Lineage: GC std']
+        header += ['Lineage: genome size (Mbps) mean', 'Lineage: genome size (Mbps) std']
+        header += ['Lineage: gene count mean', 'Lineage: gene count std']
         
         if bTabTable: 
             pTable = None
@@ -559,10 +607,11 @@ class TreeParser():
         else:
             pTable = prettytable.PrettyTable(header)
             pTable.float_format = '.2'
-            pTable.float_format['GC mean'] = '.1'
-            pTable.float_format['GC std'] = '.1'
-            pTable.float_format['Genome count mean'] = '.0'
-            pTable.float_format['Genome count std'] = '.0'
+            pTable.float_format['GC'] = '.1'
+            pTable.float_format['Lineage: GC mean'] = '.1'
+            pTable.float_format['Lineage: GC std'] = '.1'
+            pTable.float_format['Lineage: gene count mean'] = '.0'
+            pTable.float_format['Lineage: gene count std'] = '.0'
             pTable.align = 'c'
             pTable.align[header[0]] = 'l'
             pTable.align['Taxonomy (contained)'] = 'l'
@@ -580,8 +629,13 @@ class TreeParser():
             elif truncSisterLineage[-1] == ';':
                 truncSisterLineage = truncSisterLineage[0:-1]
             
-            row = [binId, str(len(resultsParser.results[binId].markerHits))]
+            row = [binId, len(resultsParser.results[binId].markerHits)]
             row += [binIdToTaxonomy[binId], truncSisterLineage, binIdToWeightedML.get(binId, 'NA')]
+            row += [binStats[binId]['GC'] * 100]
+            row += [float(binStats[binId]['Genome size']) / 1e6]
+            row += [binStats[binId]['# predicted ORFs']]
+            row += [binStats[binId]['Coding density']]
+            row += [binStats[binId]['Translation table']]
             row += [binIdToLineageStatistics[binId]['# genomes']]
             row += [binIdToLineageStatistics[binId]['gc mean']]
             row += [binIdToLineageStatistics[binId]['gc std']]
@@ -596,7 +650,7 @@ class TreeParser():
                 pTable.add_row(row)
                 
         if not bTabTable :  
-            print(pTable.get_string())
+            print(pTable.get_string(sortby=markerCountLabel, reversesort=True))
             
         # restore stdout   
         restoreStdOut(outFile, oldStdOut)   

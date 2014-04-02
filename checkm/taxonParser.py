@@ -91,7 +91,7 @@ class TaxonParser():
         markerSet = taxonMarkerSets[rank][taxon]
  
         taxonomy = markerSet.lineageStr.split(';')[::-1]
-        binMarkerSets = BinMarkerSets(taxon)
+        binMarkerSets = BinMarkerSets(taxon, BinMarkerSets.TAXONOMIC_MARKER_SET)
         for i, taxon in enumerate(taxonomy):
             rank = ranksByLevel[len(taxonomy)-i-1]
             markerSet = taxonMarkerSets[rank][taxon]

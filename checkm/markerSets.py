@@ -32,10 +32,18 @@ from lib.pfam import PFAM
 
 class BinMarkerSets():
     """A collection of one or more marker sets associated with a bin."""
-    def __init__(self, binId):
+    
+    # type of marker set 
+    TAXONOMIC_MARKER_SET = 1
+    TREE_MARKER_SET = 2
+    HMM_MODELS_SET = 3
+    
+    def __init__(self, binId, markerSetType):
         self.logger = logging.getLogger()
         self.markerSets = []
         self.binId = binId
+        self.markerSetType = markerSetType
+        self.selectedLinageSpecificMarkerSet = None
              
     def numMarkerSets(self):
         """Number of marker sets associated with bin."""
@@ -58,9 +66,42 @@ class BinMarkerSets():
                 
         return markerGenes
     
-    def getMostSpecificMarkerSet(self):
+    def mostSpecificMarkerSet(self):
         return self.markerSets[0]
+    
+    def treeMarkerSet(self):
+        pass
+    
+    def selectedMarkerSet(self):
+        """Return the 'selected' marker set for this bin."""
+        if self.markerSetType == self.TAXONOMIC_MARKER_SET:
+            return self.mostSpecificMarkerSet()
+        elif self.markerSetType == self.TREE_MARKER_SET:
+            return self.selectedLinageSpecificMarkerSet
+        else:
+            # there should be a single marker set associate with this bin
+            if len(self.markerSets) == 1:
+                return self.markerSets[0]
             
+            self.logger.error('  [Error] Expected a single marker set to be associated with each bin.\n')
+            sys.exit()
+            
+    def setLineageSpecificSelectedMarkerSet(self, selectedMarkerSetMap):
+        uid = self.mostSpecificMarkerSet().UID
+        
+        selectedId = selectedMarkerSetMap[uid]
+        
+        self.selectedLinageSpecificMarkerSet = None
+        for ms in self.markerSets:
+            if ms.UID == selectedId:
+                self.selectedLinageSpecificMarkerSet = ms
+                break
+            
+        if self.selectedLinageSpecificMarkerSet == None:
+            # something has gone wrong
+            self.logger.error('  [Error] Failed to set a selected lineage-specific marker set.\n')
+            sys.exit()
+                
     def write(self, fout):
         """Write marker set to file."""
         fout.write(self.binId)
@@ -158,26 +199,22 @@ class MarkerSetParser():
     def __init__(self, threads=1):
         self.logger = logging.getLogger()
         self.numThreads = threads
-        
-        self.TAXONOMIC_MARKER_FILE = 1
-        self.TREE_MARKER_FILE = 2
-        self.HMM_MODELs_FILE = 3
-        
+                
     def getMarkerSets(self, outDir, binIds, markerFile):
         """Determine marker set for each bin."""
         
         # determine type of marker set file
-        markerFileType = self.__markerFileType(markerFile)
+        markerFileType = self.markerFileType(markerFile)
         
         # get marker set for each bin
         binIdToBinMarkerSets = {}
         
-        if markerFileType == self.TAXONOMIC_MARKER_FILE:
+        if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
             binMarkerSets = self.__parseTaxonomicMarkerSetFile(markerFile)
             
             for binId in binIds:
                 binIdToBinMarkerSets[binId] = binMarkerSets
-        elif markerFileType == self.TREE_MARKER_FILE:
+        elif markerFileType == BinMarkerSets.TREE_MARKER_SET:
             binIdToBinMarkerSets = self.__parseLineageMarkerSetFile(markerFile)
         else:
             markers = [set()]
@@ -187,7 +224,7 @@ class MarkerSetParser():
             markerSet = MarkerSet(0, "N/A", -1, markers)
             
             for binId in binIds:
-                binMarkerSets = BinMarkerSets(binId)
+                binMarkerSets = BinMarkerSets(binId, BinMarkerSets.HMM_MODELS_SET)
                 binMarkerSets.addMarkerSet(markerSet)
                 binIdToBinMarkerSets[binId] = binMarkerSets
         
@@ -197,50 +234,50 @@ class MarkerSetParser():
         """Create HMM file for each bins marker set."""
 
         # determine type of marker set file
-        markerFileType = self.__markerFileType(markerFile)
+        markerFileType = self.markerFileType(markerFile)
 
         # get HMM file for each bin
         binIdToHmmModelFile = {}
-        if markerFileType == self.TAXONOMIC_MARKER_FILE:
+        if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
             binMarkerSets = self.__parseTaxonomicMarkerSetFile(markerFile)
             hmmModelFile = os.path.join(outDir, 'storage', 'hmms', 'taxonomic.hmm')
             self.__createMarkerHMMs(binMarkerSets, hmmModelFile)
             
             for binId in binIds:
                 binIdToHmmModelFile[binId] = hmmModelFile
-        elif markerFileType == self.TREE_MARKER_FILE:
+        elif markerFileType == BinMarkerSets.TREE_MARKER_SET:
             binIdToBinMarkerSets = self.__parseLineageMarkerSetFile(markerFile)
 
             self.logger.info('  Extracting lineage-specific HMMs with %d threads:' % self.numThreads)
             for i, binId in enumerate(binIdToBinMarkerSets):
                 if self.logger.getEffectiveLevel() <= logging.INFO:
                     statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (i+1, len(binIdToBinMarkerSets), float(i+1)*100/len(binIdToBinMarkerSets))
-                    sys.stdout.write('%s\r' % statusStr)
-                    sys.stdout.flush()
+                    sys.stderr.write('%s\r' % statusStr)
+                    sys.stderr.flush()
                 
                 hmmModelFile = os.path.join(outDir, 'storage', 'hmms', binId + '.hmm')
                 self.__createMarkerHMMs(binIdToBinMarkerSets[binId], hmmModelFile, False)
                 binIdToHmmModelFile[binId] = hmmModelFile 
                 
             if self.logger.getEffectiveLevel() <= logging.INFO:
-                sys.stdout.write('\n')
+                sys.stderr.write('\n')
         else:
             for binId in binIds:
                 binIdToHmmModelFile[binId] = markerFile
                 
         return binIdToHmmModelFile
                 
-    def __markerFileType(self, markerFile):
+    def markerFileType(self, markerFile):
         """Determine type of marker file."""
         with open(markerFile, 'r') as f:
             header = f.readline()
             
         if defaultValues.TAXON_MARKER_FILE_HEADER in header:
-            return self.TAXONOMIC_MARKER_FILE
+            return BinMarkerSets.TAXONOMIC_MARKER_SET
         elif defaultValues.LINEAGE_MARKER_FILE_HEADER in header:
-            return self.TREE_MARKER_FILE
+            return BinMarkerSets.TREE_MARKER_SET
         elif 'HMMER3' in header:
-            return self.HMM_MODELs_FILE
+            return BinMarkerSets.HMM_MODELS_SET
         else:
             self.logger.error('Unrecognized file type: ' + markerFile)
             sys.exit()
@@ -271,13 +308,15 @@ class MarkerSetParser():
             
             binLine = f.readline()
             taxonId = binLine.split('\t')[0]
-            binMarkerSets = BinMarkerSets(taxonId)
+            binMarkerSets = BinMarkerSets(taxonId, BinMarkerSets.TAXONOMIC_MARKER_SET)
             binMarkerSets.read(binLine)
         
         return binMarkerSets
     
     def __parseLineageMarkerSetFile(self, markerSetFile):
         """Parse marker sets from a lineage-specific marker set file."""
+        
+        # read all marker sets 
         binIdToBinMarkerSets = {}
         with open(markerSetFile) as f:
             f.readline() # skip header
@@ -286,9 +325,25 @@ class MarkerSetParser():
                 lineSplit = line.split('\t')
                 binId = lineSplit[0]
                 
-                binMarkerSets = BinMarkerSets(binId)
+                binMarkerSets = BinMarkerSets(binId, BinMarkerSets.TREE_MARKER_SET)
                 binMarkerSets.read(line)
+  
+                # determine selected marker set
+                selectedMarkerSetMap = self.__parseSelectedMarkerSetMap() 
+                binMarkerSets.setLineageSpecificSelectedMarkerSet(selectedMarkerSetMap)
                 
                 binIdToBinMarkerSets[binId] = binMarkerSets
         
         return binIdToBinMarkerSets   
+    
+    def __parseSelectedMarkerSetMap(self):
+        selectedMarkerSetMap = {}
+        for line in open(defaultValues.SELECTED_MARKER_SETS):
+            lineSplit = line.split('\t')
+            internalID = lineSplit[0]
+            selectedID = lineSplit[1].rstrip()
+            
+            selectedMarkerSetMap[internalID] = selectedID
+            
+        return selectedMarkerSetMap
+            

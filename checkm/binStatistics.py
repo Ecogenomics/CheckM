@@ -28,6 +28,7 @@ import logging
 import defaultValues
 from seqUtils import readFasta, baseCount, calculateN50
 from common import binIdFromFilename, makeSurePathExists
+from prodigal import ProdigalGeneFeatureParser
 
 from numpy import mean
 
@@ -101,8 +102,9 @@ class BinStatistics():
             binStats['N50 (contigs)'] = contig_N50
             
             # calculate coding density statistics            
-            codingDensity, numORFs = self.calculateCodingDensity(binDir, genomeSize, scaffoldStats)
+            codingDensity, translationTable, numORFs = self.calculateCodingDensity(binDir, genomeSize, scaffoldStats)
             binStats['Coding density'] = codingDensity
+            binStats['Translation table'] = translationTable
             binStats['# predicted ORFs'] = numORFs
             
             queueOut.put((binId, binStats, scaffoldStats))
@@ -113,8 +115,8 @@ class BinStatistics():
         numProcessedBins = 0
         if self.logger.getEffectiveLevel() <= logging.INFO:
             statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
-            sys.stdout.write('%s\r' % statusStr)
-            sys.stdout.flush()
+            sys.stderr.write('%s\r' % statusStr)
+            sys.stderr.flush()
         
         binStats = {}
         seqStats = {}
@@ -129,11 +131,11 @@ class BinStatistics():
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
                 statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
-                sys.stdout.write('%s\r' % statusStr)
-                sys.stdout.flush()
+                sys.stderr.write('%s\r' % statusStr)
+                sys.stderr.flush()
                 
         if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stdout.write('\n')
+            sys.stderr.write('\n')
        
         # save results
         storagePath = os.path.join(outDir, 'storage')  
@@ -202,6 +204,8 @@ class BinStatistics():
         
     def calculateCodingDensity(self, outDir, genomeSize, seqStats):
         """Calculate coding density of putative genome bin."""
+        prodigalParserGFF = ProdigalGeneFeatureParser(os.path.join(outDir, defaultValues.PRODIGAL_GFF))
+
         ntFile = os.path.join(outDir, defaultValues.PRODIGAL_NT)
         ntGenes = readFasta(ntFile)
         
@@ -213,6 +217,6 @@ class BinStatistics():
             seqStats[scaffoldId]['# ORFs'] = seqStats[scaffoldId].get('# ORFs', 0) + 1
             seqStats[scaffoldId]['Coding bases'] = seqStats[scaffoldId].get('Coding bases', 0) + len(gene)
             
-        return float(codingBasePairs) / genomeSize, len(ntGenes)
+        return float(codingBasePairs) / genomeSize, prodigalParserGFF.translationTable, len(ntGenes)
         
             

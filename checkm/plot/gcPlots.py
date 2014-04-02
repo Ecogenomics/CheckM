@@ -69,10 +69,15 @@ class GcPlots(AbstractPlot):
                 except:
                     # it is possible to reach a long stretch of 
                     # N's that causes a division by zero error
+
                     pass 
                 
                 start = end
                 end += self.options.gc_window_size
+                
+        if len(data) == 0:
+            axesHist.set_xlabel('[Error] No seqs >= %d, the specified window size' % self.options.gc_window_size)
+            return
             
         # Histogram plot 
         bins = [0.0]

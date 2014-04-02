@@ -31,6 +31,7 @@ LINEAGE_MARKER_FILE_HEADER = '# [Lineage Marker File]'
 SEQ_CONCAT_CHAR = '&&'
 
 HMM_MODELS = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'pfam_tigrfam.hmm')
+SELECTED_MARKER_SETS = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'selected_marker_sets.tsv')
 
 HMMER_TABLE_PHYLO_OUT = 'hmmer.tree.txt'
 HMMER_PHYLO_OUT = 'hmmer.tree.hmmer3'

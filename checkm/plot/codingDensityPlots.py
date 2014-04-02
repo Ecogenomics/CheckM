@@ -77,6 +77,10 @@ class CodingDensityPlots(AbstractPlot):
                 
                 start = end
                 end += self.options.cd_window_size
+                
+        if len(data) == 0:
+            axesHist.set_xlabel('[Error] No seqs >= %d, the specified window size' % self.options.cd_window_size)
+            return
             
         # Histogram plot 
         bins = [0.0]

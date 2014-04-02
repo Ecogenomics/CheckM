@@ -78,6 +78,10 @@ class TetraDistPlots(AbstractPlot):
                 start = end
                 end += self.options.td_window_size
                 
+        if len(data) == 0:
+            axesHist.set_xlabel('[Error] No seqs >= %d, the specified window size' % self.options.td_window_size)
+            return
+                
         deltaTDs = np.array(deltaTDs)
             
         # Histogram plot 

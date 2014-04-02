@@ -23,6 +23,7 @@ import os
 import sys
 import logging
 from collections import defaultdict
+import re
 
 from numpy import mean
 
@@ -103,9 +104,25 @@ class AminoAcidIdentity():
     def aai(self, seq1, seq2):  
         assert len(seq1) == len(seq2)
         
+        # calculation of AAI should ignore missing data at 
+        # the start of end of each sequence
+        startIndex = 0
+        for i in xrange(0, len(seq1)):
+            if seq1[i] == '-' or seq2[i] == '-':
+                startIndex = i+1
+            else:
+                break
+        
+        endIndex = len(seq1)
+        for i in xrange(len(seq1)-1, 0, -1):
+            if seq1[i] == '-' or seq2[i] == '-':
+                endIndex = i
+            else:
+                break
+                
         mismatches = 0  
         seqLen = 0    
-        for i in xrange(0, len(seq1)):
+        for i in xrange(startIndex, endIndex):
             if seq1[i] != seq2[i]:
                 mismatches += 1
                 seqLen += 1
@@ -114,5 +131,8 @@ class AminoAcidIdentity():
             else:
                 seqLen += 1
                 
+        if seqLen == 0:
+            return 1.0 # assume genes that do not overlap are similar
+   
         return 1.0 - (float(mismatches) / seqLen)
                 

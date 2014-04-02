@@ -23,13 +23,14 @@ import os
 import sys
 import subprocess
 import logging
+import shutil
 
 import numpy as np
 
 import defaultValues
 
 from common import checkFileExists
-from seqUtils import readFastaBases
+from seqUtils import readFastaBases, readFasta
 
 class ProdigalError(BaseException): pass
 
@@ -45,16 +46,46 @@ class ProdigalRunner():
         self.ntGeneFile = os.path.join(outDir, defaultValues.PRODIGAL_NT)
         self.gffFile = os.path.join(outDir, defaultValues.PRODIGAL_GFF)
         
-    def run(self, query, translationTable=11): 
+    def run(self, query): 
         binSize = readFastaBases(query)
         
         metaFlag = ''
         if binSize < 100000:
             # bin contain insufficient data to learn ORF model parameters, so use preset parameters
             metaFlag = '-p meta'
+        
+        # call ORFs with different translation tables and select the one with the highest coding density
+        tableCodingDensity = {}
+        for translationTable in [4, 11]:    
+            aaGeneFile = self.aaGeneFile + '.' + str(translationTable)
+            ntGeneFile = self.ntGeneFile + '.' + str(translationTable)
+            gffFile = self.gffFile + '.' + str(translationTable)
+            cmd = ('prodigal ' + metaFlag + ' -q -c -m -f gff -g %d -a %s -d %s -i %s > %s' % (translationTable, aaGeneFile, ntGeneFile, query, gffFile))
+            os.system(cmd)
             
-        cmd = ('prodigal ' + metaFlag + ' -q -c -m -f gff -g %s -a %s -d %s -i %s > %s' % (str(translationTable), self.aaGeneFile, self.ntGeneFile, query, self.gffFile))
-        os.system(cmd)
+            # determine coding density
+            prodigalParser = ProdigalGeneFeatureParser(gffFile)
+            seqs = readFasta(query)
+            
+            codingBases = 0
+            totalBases = 0
+            for seqId, seq in seqs.iteritems():
+                codingBases += prodigalParser.codingBases(seqId)
+                totalBases += len(seq)
+                
+            codingDensity = float(codingBases) / totalBases
+            tableCodingDensity[translationTable] = codingDensity
+                        
+        #bestTranslationTable = max(tableCodingDensity, key=tableCodingDensity.get)
+        bestTranslationTable = 11
+        if (tableCodingDensity[4] - tableCodingDensity[11] > 0.05) and tableCodingDensity[4] > 0.7:
+            bestTranslationTable = 4
+            
+        shutil.copyfile(self.aaGeneFile + '.' + str(bestTranslationTable), self.aaGeneFile)
+        shutil.copyfile(self.ntGeneFile + '.' + str(bestTranslationTable), self.ntGeneFile)
+        shutil.copyfile(self.gffFile + '.' + str(bestTranslationTable), self.gffFile)       
+        
+        return bestTranslationTable
     
     def areORFsCalled(self):
         return os.path.exists(self.aaGeneFile)
@@ -107,7 +138,13 @@ class ProdigalGeneFeatureParser():
 
     def __parseGFF(self, filename):
         """Parse genes from GFF file."""
+        bGetTranslationTable = True
         for line in open(filename):
+            if bGetTranslationTable and line.startswith('# Model Data'):
+                self.translationTable = line.split(';')[4]
+                self.translationTable = int(self.translationTable[self.translationTable.find('=')+1:])
+                bGetTranslationTable = False       
+            
             if line[0] == '#':
                 continue
 
