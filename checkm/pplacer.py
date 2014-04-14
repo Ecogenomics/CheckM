@@ -54,8 +54,7 @@ class PplacerRunner():
         refpkg = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree_prok.refpkg')
         pplacerJsonOut = os.path.join(alignOutputDir, defaultValues.PPLACER_JSON_OUT)
         pplacerOut = os.path.join(alignOutputDir, defaultValues.PPLACER_OUT)
-        cmd = 'pplacer -j %d -c %s %s > %s' % (self.numThreads, refpkg, concatenatedAlignFile, pplacerOut)
-        print cmd
+        cmd = 'pplacer -j %d -c %s -o %s %s > %s' % (self.numThreads, refpkg, pplacerJsonOut, concatenatedAlignFile, pplacerOut)
         os.system(cmd)
         
         # extract tree
