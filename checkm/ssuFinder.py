@@ -24,7 +24,7 @@ import logging
 
 import defaultValues
 from common import binIdFromFilename
-from seqUtils import readFasta, readFastaSeqIds
+from lib.seqUtils import readFasta, readFastaSeqIds
 
 class SSU_Finder(object):
     def __init__(self, threads):

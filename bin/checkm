@@ -28,7 +28,7 @@ __license__ = "GPL3"
 __maintainer__ = "Donovan Parks"
 __email__ = "donovan.parks@gmail.com"
 __status__ = "Development"
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 import argparse
 import sys
@@ -126,6 +126,8 @@ if __name__ == '__main__':
                                         epilog='Example: checkm tree ./bins ./output')
     tree_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     tree_parser.add_argument('out_folder', help="folder to write output files")
+    tree_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
+    tree_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
     tree_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     tree_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     tree_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -191,6 +193,8 @@ if __name__ == '__main__':
     analyze_parser.add_argument('marker_file', help="markers for assessing bins (marker set or HMM file)")
     analyze_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     analyze_parser.add_argument('out_folder', help="folder to write output files")
+    analyze_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
+    analyze_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
     analyze_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     analyze_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     analyze_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")

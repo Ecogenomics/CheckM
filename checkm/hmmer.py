@@ -21,10 +21,6 @@
 
 import os
 import sys
-import uuid
-import logging
-import multiprocessing as mp
-import tempfile
 from re import split as re_split
 
 class FormatError(BaseException): pass
@@ -49,7 +45,7 @@ class HMMERRunner():
         else:
             raise HMMMERModeError("Mode %s not understood" % mode)
         
-    def search(self, db, query, tableOut, hmmerOut, cmdlineOptions=''):
+    def search(self, db, query, tableOut, hmmerOut, cmdlineOptions='', bKeepOutput=True):
         """Run hmmsearch"""
         # make the output dir and files
         if self.mode != 'domtblout' and self.mode != 'tblout':
@@ -57,7 +53,10 @@ class HMMERRunner():
         
         cmd = ('hmmsearch --%s %s %s %s %s > %s' % (self.mode, tableOut, cmdlineOptions, db, query, hmmerOut))
         os.system(cmd)
-
+        
+        if not bKeepOutput:
+            os.remove(hmmerOut)
+            
     def align(self, db, query, outputFile, writeMode='>', outputFormat='PSIBLAST', trim=True):
         """Run hmmalign"""
         if self.mode != 'align':
@@ -76,13 +75,16 @@ class HMMERRunner():
             cmd = cmd.replace('--allcol','')
             os.system(cmd)
             
-    def fetch(self, db, key, fetchFileName):
+    def fetch(self, db, key, fetchFileName, bKeyFile=False):
         """Run hmmfetch"""
         if self.mode != 'fetch':
             raise HMMMERModeError("Mode %s not compatible with fetch" % self.mode)
         
-        # run hmmer
-        os.system('hmmfetch %s %s > %s' % (db, key, fetchFileName))
+        keyFileOpt = ''
+        if bKeyFile:
+            keyFileOpt = '-f'
+
+        os.system('hmmfetch ' + keyFileOpt + ' %s %s > %s' % (db, key, fetchFileName))
         
     def index(self, hmmModelFile):
         """Index a HMM file."""
@@ -101,89 +103,6 @@ class HMMERRunner():
     
         if exit_status != 0:
             raise HMMERError("Error attempting to run hmmsearch, is it in your path?")
-        
-class HMMERModelExtractor():
-    """Extract HMMs."""
-    def __init__(self, threads):
-        self.logger = logging.getLogger()
-        self.totalThreads = threads
-    
-    def extract(self, hmmModelFile, modelAccIds, ouputModelFile, bReportProgress = True):
-        """Make temporary HMM files used to create HMM alignments.""" 
-        
-        if bReportProgress:
-            self.logger.info("  Extracting %d HMMs with %d threads:" % (len(modelAccIds), self.totalThreads))
-        
-        # process each marker in parallel
-        workerQueue = mp.Queue()
-        writerQueue = mp.Queue()
-
-        for modelAcc in modelAccIds:
-            fetchFilename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-            workerQueue.put((modelAcc, fetchFilename))
-
-        for _ in range(self.totalThreads):
-            workerQueue.put((None, None))
-
-        calcProc = [mp.Process(target = self.__extractModel, args = (hmmModelFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target = self.__reportModelExtractionProgress, args = (ouputModelFile, len(modelAccIds), bReportProgress, writerQueue))
-
-        writeProc.start()
-        
-        for p in calcProc:
-            p.start()
-
-        for p in calcProc:
-            p.join()
-            
-        writerQueue.put((None, None))
-        writeProc.join()
-            
-    def __extractModel(self, hmmModelFile, queueIn, queueOut):
-        """Extract HMM."""
-        HF = HMMERRunner(mode='fetch')
-        
-        while True:    
-            modelAcc, fetchFilename = queueIn.get(block=True, timeout=None) 
-            if modelAcc == None:
-                break  
-        
-            HF.fetch(hmmModelFile, modelAcc, fetchFilename)
-            
-            queueOut.put((modelAcc, fetchFilename))
-            
-    def __reportModelExtractionProgress(self, ouputModelFile, numMarkers, bReportProgress, queueIn):
-        """Report number of extracted HMMs."""      
-        
-        fout = open(ouputModelFile, 'w')
-        
-        numModelsExtracted = 0       
-        while True:
-            modelAcc, fetchFilename = queueIn.get(block=True, timeout=None)
-            if modelAcc == None:
-                break
-            
-            if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
-                numModelsExtracted += 1
-                statusStr = '    Finished extracting %d of %d (%.2f%%) HMMs.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
-                
-            for line in open(fetchFilename):
-                fout.write(line)
-                
-            os.remove(fetchFilename)
-         
-        if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
-            
-        fout.close()
-        
-        # index the model file
-        if os.path.exists(ouputModelFile + '.ssi'):
-            os.remove(ouputModelFile + '.ssi')
-        HF = HMMERRunner(mode='fetch')
-        HF.index(ouputModelFile)
         
 class HMMERParser():
     """Parses tabular output."""

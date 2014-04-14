@@ -25,7 +25,7 @@ import numpy as np
 
 from AbstractPlot import AbstractPlot
 
-from checkm.seqUtils import readFasta
+from checkm.lib.seqUtils import readFasta
 from checkm.common import readDistribution, findNearest
 from checkm.genomicSignatures import GenomicSignatures
 from checkm.binTools import BinTools

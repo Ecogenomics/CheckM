@@ -26,7 +26,7 @@ import matplotlib.pyplot as pylab
 from AbstractPlot import AbstractPlot
 
 from checkm.common import binIdFromFilename
-from checkm.seqUtils import readFasta, baseCount
+from checkm.lib.seqUtils import readFasta, baseCount
 
 from numpy import mean, array, log, poly1d, polyfit
 

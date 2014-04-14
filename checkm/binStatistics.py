@@ -26,7 +26,7 @@ import math
 import logging
 
 import defaultValues
-from seqUtils import readFasta, baseCount, calculateN50
+from lib.seqUtils import readFasta, baseCount, calculateN50
 from common import binIdFromFilename, makeSurePathExists
 from prodigal import ProdigalGeneFeatureParser
 
@@ -206,17 +206,17 @@ class BinStatistics():
         """Calculate coding density of putative genome bin."""
         prodigalParserGFF = ProdigalGeneFeatureParser(os.path.join(outDir, defaultValues.PRODIGAL_GFF))
 
-        ntFile = os.path.join(outDir, defaultValues.PRODIGAL_NT)
-        ntGenes = readFasta(ntFile)
+        aaFile = os.path.join(outDir, defaultValues.PRODIGAL_AA) # use AA file as nucleotide file is optional
+        aaGenes = readFasta(aaFile)
         
         codingBasePairs = 0
-        for geneId, gene in ntGenes.iteritems():
-            codingBasePairs += len(gene)
+        for geneId, gene in aaGenes.iteritems():
+            codingBasePairs += len(gene)*3
             
             scaffoldId = geneId[0:geneId.rfind('_')]
             seqStats[scaffoldId]['# ORFs'] = seqStats[scaffoldId].get('# ORFs', 0) + 1
-            seqStats[scaffoldId]['Coding bases'] = seqStats[scaffoldId].get('Coding bases', 0) + len(gene)
+            seqStats[scaffoldId]['Coding bases'] = seqStats[scaffoldId].get('Coding bases', 0) + len(gene)*3
             
-        return float(codingBasePairs) / genomeSize, prodigalParserGFF.translationTable, len(ntGenes)
+        return float(codingBasePairs) / genomeSize, prodigalParserGFF.translationTable, len(aaGenes)
         
             

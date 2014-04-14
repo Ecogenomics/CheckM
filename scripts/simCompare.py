@@ -68,7 +68,7 @@ class SimCompare(object):
         if 'UID2' in simResults[simId]:
             return 'UID2', simResults[simId]['UID2'][0], simResults[simId]['UID2'][1],  simResults[simId]['UID2'][2] # archaea
         
-        return 'UID170', simResults[simId]['UID170'][0], simResults[simId]['UID170'][1],  simResults[simId]['UID170'][2] # bacteria
+        return 'UID203', simResults[simId]['UID203'][0], simResults[simId]['UID203'][1],  simResults[simId]['UID203'][2] # bacteria
     
     def __inferredMarkerSet(self, tree, genomeId, inferredMarkerSet):
         curNode = tree.find_node_with_taxon_label('IMG_' + genomeId)
@@ -82,8 +82,8 @@ class SimCompare(object):
             # return domain-specific set if reached that far
             if uniqueId == 'UID2':
                 return 'UID2'
-            elif uniqueId == 'UID170':
-                return 'UID170'
+            elif uniqueId == 'UID203':
+                return 'UID203'
             
             curNode = curNode.parent_node
             

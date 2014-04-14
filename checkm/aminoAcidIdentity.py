@@ -29,7 +29,7 @@ from numpy import mean
 
 import defaultValues
 from common import getBinIdsFromOutDir
-from seqUtils import readFasta
+from lib.seqUtils import readFasta
 
 class AminoAcidIdentity():
     """Calculate AAI between sequences aligned to an HMM."""
@@ -85,21 +85,25 @@ class AminoAcidIdentity():
                             sys.exit()
                         
         # calculate strain heterogeneity for each marker gene in each bin
+        strainCount = 0
+        multiCopyPairs = 0
         for binId, markerIds in self.aaiRawScores.iteritems():
             self.aaiHetero[binId] = {}
             
             binHetero = []
             for markerId, aaiScores in markerIds.iteritems():
-                strainCount = 0
+                localStrainCount = 0
                 for aaiScore in aaiScores:
+                    multiCopyPairs += 1
                     if aaiScore > aaiStrainThreshold:
                         strainCount += 1
-                    
-                strainHetero = float(strainCount) / len(aaiScores)
+                        localStrainCount += 1
+
+                strainHetero = float(localStrainCount) / len(aaiScores)
                 self.aaiHetero[binId][markerId] = strainHetero
                 binHetero.append(strainHetero)
                 
-            self.aaiMeanBinHetero[binId] = 100 * mean(binHetero)
+            self.aaiMeanBinHetero[binId] = 100 * float(strainCount) / multiCopyPairs
                         
     def aai(self, seq1, seq2):  
         assert len(seq1) == len(seq2)

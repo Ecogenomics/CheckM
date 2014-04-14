@@ -36,7 +36,7 @@ class TaxonParser():
     def __init__(self):
         self.logger = logging.getLogger()
         
-    def __readMarkerSets(self):
+    def readMarkerSets(self):
         taxonMarkerSetFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'taxon_marker_sets.tsv')
         
         taxonMarkerSets = defaultdict(dict)
@@ -55,7 +55,7 @@ class TaxonParser():
     def list(self, rankFilter='ALL'):
         """ List all available marker sets from the specified rank."""
 
-        taxonMarkerSets = self.__readMarkerSets()
+        taxonMarkerSets = self.readMarkerSets()
         
         header = ['Rank', 'Taxon', '# genomes', '# marker genes', '# marker sets']
         pTable = prettytable.PrettyTable(header)
@@ -79,7 +79,7 @@ class TaxonParser():
     def markerSet(self, rank, taxon, markerFile):
         """Obtain specified taxonomic-specific marker set."""
     
-        taxonMarkerSets = self.__readMarkerSets()
+        taxonMarkerSets = self.readMarkerSets()
         
         if rank not in taxonMarkerSets:
             self.logger.error('  Unrecognized taxonomic rank: ' + rank)
@@ -94,6 +94,9 @@ class TaxonParser():
         binMarkerSets = BinMarkerSets(taxon, BinMarkerSets.TAXONOMIC_MARKER_SET)
         for i, taxon in enumerate(taxonomy):
             rank = ranksByLevel[len(taxonomy)-i-1]
+            if rank == 'species':
+                taxon = taxonomy[1] + ' ' + taxonomy[0]
+            
             markerSet = taxonMarkerSets[rank][taxon]
             numMarkers, numMarkerSets = markerSet.size()
             self.logger.info('  Marker set for %s contains %d marker genes arranged in %d sets.' % (taxon, numMarkers, numMarkerSets))

@@ -26,7 +26,7 @@ import logging
 import numpy as np
 
 from common import binIdFromFilename, checkFileExists, readDistribution, findNearest
-from seqUtils import readFasta, readFastaSeqIds, writeFasta, baseCount
+from lib.seqUtils import readFasta, readFastaSeqIds, writeFasta, baseCount
 from genomicSignatures import GenomicSignatures
 from prodigal import ProdigalGeneFeatureParser
 

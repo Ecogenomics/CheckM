@@ -33,11 +33,6 @@ __status__ = 'Development'
 import os
 import sys
 import argparse
-import gzip
-
-from collections import defaultdict
-
-from numpy import array, mean, std, percentile
 
 import dendropy
 from  dendropy.dataobject.taxon import Taxon
@@ -55,8 +50,8 @@ class CreateSelectedMarkerSetMapping(object):
             # return domain-specific set if reached that far
             if uniqueId == 'UID2':
                 return 'UID2'
-            elif uniqueId == 'UID170':
-                return 'UID170'
+            elif uniqueId == 'UID203':
+                return 'UID203'
             
             node = node.parent_node
 
@@ -65,7 +60,7 @@ class CreateSelectedMarkerSetMapping(object):
         return uniqueId
         
     def run(self):   
-        fout = open('../data/selected_marker_sets.tsv', 'w')    
+        fout = open('./simulations/selected_marker_sets.tsv', 'w')    
         
         # read tree
         treeFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
@@ -73,7 +68,7 @@ class CreateSelectedMarkerSetMapping(object):
         
         # reading marker set inferred via simulation
         inferredMarkerSet = {}
-        with open('./experiments/simInferBestMarkerSet.tsv') as f:
+        with open('./simulations/simInferBestMarkerSet.tsv') as f:
             f.readline()
             for line in f:
                 lineSplit = line.split('\t')
@@ -90,8 +85,7 @@ class CreateSelectedMarkerSetMapping(object):
             fout.write(uniqueId + '\t' + selectedUID + '\n')
                  
         fout.close()
-                
-      
+                  
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 

@@ -30,7 +30,7 @@ from collections import defaultdict
 import defaultValues
 
 from common import makeSurePathExists
-from seqUtils import readFasta
+from lib.seqUtils import readFasta
 from hmmer import HMMERRunner
 from resultsParser import ResultsParser
 

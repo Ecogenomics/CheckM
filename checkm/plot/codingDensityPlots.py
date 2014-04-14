@@ -28,7 +28,7 @@ import numpy as np
 from AbstractPlot import AbstractPlot
 
 from checkm.prodigal import ProdigalGeneFeatureParser
-from checkm.seqUtils import readFasta, baseCount
+from checkm.lib.seqUtils import readFasta, baseCount
 from checkm.common import readDistribution, findNearest, binIdFromFilename
 from checkm.binTools import BinTools
 

@@ -21,53 +21,28 @@
 
 import os
 import sys
-import ast
-import random
 import logging
+from collections import defaultdict
 
+from seqUtils import readFasta
 from taxonomyUtils import ranksByLabel
 
 class IMG(object):
     metadataFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data','img', 'img_metadata.tsv')
-    trustedGenomeFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data','img', 'genomes_trusted.tsv')
-    geneCountFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data','img', 'geneCounts.txt') 
     redundantTIGRFAMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data','pfam', 'tigrfam2pfam.tsv')
     
-    genomeDir = '/srv/whitlam/bio/db/img/4.1/genomes/'
+    genomeDir = '/srv/whitlam/bio/db/img//07042014/genomes/'
     pfamExtension = '.pfam.tab.txt'
     tigrExtension = '.tigrfam.tab.txt'
+    
     pfamHMMs = '/srv/whitlam/bio/db/pfam/27/Pfam-A.hmm'
     tigrHMMs = '/srv/whitlam/bio/db/tigrfam/13.0/Tigr.hmm'
 
     def __init__(self):
         self.logger = logging.getLogger()
         
-        self.numScaffoldThreshold = 300
-        self.N50Threshold = 10000
-
-    def trustedGenomes(self):
-        genomeIds = set()
-        with open(IMG.trustedGenomeFile) as f:
-            f.readline()
-            for line in f:
-                genomeIds.add(line.split('\t')[0])
-
-        return genomeIds
-
-    def genomeIds(self, metadata, genomeFilter = 'all'):
-        genomeIds = set()
-
-        if genomeFilter == 'all':
-            for genomeId, data in metadata.iteritems():
-                if data['Donovan Note'] == '':
-                    genomeIds.add(genomeId)
-        elif genomeFilter == 'trusted':
-                genomeIds = self.trustedGenomes()
-        else:
-            self.logger.error('Unrecognized filter flag: ' + genomeFilter)
-            sys.exit()
-
-        return genomeIds
+        self.cachedGenomeSeqLens = None
+        self.cachedGenomeFamilyPositions = None
     
     def filterGenomeIds(self, genomeIds, metadata, fieldToFilterOn, valueToRetain):
         filteredGenomeIds = set()
@@ -104,7 +79,8 @@ class IMG(object):
         d = {}
 
         bHeader = True
-        for line in open(self.genomeDir + genomeId + '/' + genomeId + extension):
+        geneAnnotationFile = os.path.join(self.genomeDir, genomeId, genomeId + extension)
+        for line in open(geneAnnotationFile):
             if bHeader:
                 bHeader = False
                 continue
@@ -116,27 +92,20 @@ class IMG(object):
             d[clusterId] = d.get(clusterId, []) + [geneId]
 
         return d
-
-    def genomeIdToTaxonomy(self):
-        metadata = self.genomeMetadata()
-
-        d= {}
-        for genomeId in metadata:
-            d[genomeId] = '; '.join(metadata[genomeId]['taxonomy'])
-
-        return d
-
+    
     def genomeMetadata(self):
+        return self.genomeMetadataFromFile(IMG.metadataFile)
+
+    def genomeMetadataFromFile(self, metadataFile):
         metadata = {}
 
         bHeader = True
-        for line in open(IMG.metadataFile):
+        for line in open(metadataFile):
             lineSplit = line.split('\t')
             lineSplit = [x.strip() for x in lineSplit]
 
             if bHeader:
                 statusIndex = lineSplit.index('Status')
-                proposalNameIndex = lineSplit.index('Proposal Name')
                 scaffoldCountIndex = lineSplit.index('Scaffold Count')
                 gcIndex = lineSplit.index('GC Count')
                 genomeSizeIndex = lineSplit.index('Genome Size')
@@ -144,23 +113,30 @@ class IMG(object):
                 codingBaseCountIndex = lineSplit.index('Coding Base Count')
                 bioticRelationshipsIndex = lineSplit.index('Biotic Relationships')
                 n50Index = lineSplit.index('N50')
-                donovanNoteIndex = lineSplit.index('Donovan Note')
+                
+                domainIndex = lineSplit.index('Domain')
+                phylumIndex = lineSplit.index('Phylum')
+                classIndex = lineSplit.index('Class')
+                orderIndex = lineSplit.index('Order')
+                familyIndex = lineSplit.index('Family')
+                genusIndex = lineSplit.index('Genus')
+                speciesIndex = lineSplit.index('Species')
+                
                 bHeader = False
                 continue
 
             genomeId = lineSplit[0].strip()
 
-            rDomain = lineSplit[1].strip()
-            rPhylum = lineSplit[6].strip()
-            rClass = lineSplit[7].strip()
-            rOrder = lineSplit[8].strip()
-            rFamily = lineSplit[9].strip()
-            rGenus = lineSplit[10].strip()
-            rSpecies = lineSplit[11].strip()
+            rDomain = lineSplit[domainIndex].strip()
+            rPhylum = lineSplit[phylumIndex].strip()
+            rClass = lineSplit[classIndex].strip()
+            rOrder = lineSplit[orderIndex].strip()
+            rFamily = lineSplit[familyIndex].strip()
+            rGenus = lineSplit[genusIndex].strip()
+            rSpecies = lineSplit[speciesIndex].strip()
 
             metadata[genomeId] = {}
             metadata[genomeId]['status'] = lineSplit[statusIndex]
-            metadata[genomeId]['proposal name'] = lineSplit[proposalNameIndex]
             metadata[genomeId]['taxonomy'] = [rDomain, rPhylum, rClass, rOrder, rFamily, rGenus, rSpecies]
             metadata[genomeId]['scaffold count'] = int(lineSplit[scaffoldCountIndex])
             
@@ -188,7 +164,6 @@ class IMG(object):
 
             metadata[genomeId]['biotic relationships'] = lineSplit[bioticRelationshipsIndex]
             metadata[genomeId]['N50'] = int(lineSplit[n50Index])
-            metadata[genomeId]['Donovan Note'] = lineSplit[donovanNoteIndex]
 
         return metadata
 
@@ -220,12 +195,10 @@ class IMG(object):
 
         return missing
 
-    def genomeIdsByTaxonomy(self, taxonStr, metadata, genomeFilter = 'all'):
-        genomeIds = self.genomeIds(metadata, genomeFilter)
-
+    def genomeIdsByTaxonomy(self, taxonStr, metadata):
         searchTaxa = taxonStr.split(';')
         genomeIdsOfInterest = set()
-        for genomeId in genomeIds:
+        for genomeId in metadata:
             bKeep = True
             for r in xrange(0, len(searchTaxa)):
                 if taxonStr == 'universal':
@@ -243,12 +216,10 @@ class IMG(object):
 
         return genomeIdsOfInterest
     
-    def getGenomesByClade(self, rank, clade, metadata, genomeFilter = 'all'):
-        genomeIds = self.genomeIds(metadata, genomeFilter)
-
+    def getGenomesByClade(self, rank, clade, metadata):
         rankIndex = ranksByLabel[rank]
         genomeIdsOfInterest = set()
-        for genomeId in genomeIds:
+        for genomeId in metadata:
             if metadata[genomeId]['taxonomy'][rankIndex] == clade:
                 genomeIdsOfInterest.add(genomeId)
 
@@ -289,14 +260,24 @@ class IMG(object):
         for genomeId in genomeIds:
             count = {}
             bHeader = True
+            
+            geneIdToFamilyIds = defaultdict(set)
             for line in open(os.path.join(self.genomeDir, genomeId, genomeId + extension)):
                 if bHeader:
                     bHeader = False
                     continue
 
                 lineSplit = line.split('\t')
+                
+                geneId = lineSplit[0]
                 clusterId = lineSplit[clusterIdIndex]
-                count[clusterId] = count.get(clusterId, 0) + 1
+                
+                # IMG may annotate multiple parts of a gene as coming
+                # from the same cluster (PFAM, TIGRFAM), but this should
+                # only count as 1 gene having this annotation
+                if clusterId not in geneIdToFamilyIds[geneId]:
+                    geneIdToFamilyIds[geneId].add(clusterId)
+                    count[clusterId] = count.get(clusterId, 0) + 1
 
             for clusterId, c in count.iteritems():
                 if clusterId not in table:
@@ -309,20 +290,6 @@ class IMG(object):
         self.__readTable(table, genomeIds, self.tigrExtension, 6)
 
         return table
-    
-    def readGeneCountTable(self, genomeIds):
-        # read entire gene count table
-        with open(self.geneCountFile, 'r') as f:
-            s = f.read()
-            geneCounts = ast.literal_eval(s)
-            
-        # filter to specified set of genomes
-        for _, genomeCounts in geneCounts.iteritems():
-            for genomeId in genomeCounts:
-                if genomeId not in genomeIds:
-                    genomeCounts.pop(genomeId)
-
-        return geneCounts
 
     def filterGeneCountTable(self, genomeIds, table, ubiquityThreshold = 0.9, singleCopyThreshold = 0.9):
         idsToFilter = []
@@ -345,61 +312,151 @@ class IMG(object):
             table.pop(clusterId)
 
         return table
+    
 
-    def clusterIdToGeneIds(self, markerGenes, filename, clusterIdIndex):
-        bHeader = True
-        geneIdsToClusterIds = {}
-        for line in open(filename):
-            if bHeader:
-                bHeader = False
+    def familyIdToGeneId(self, filename, clusterIdIndex):
+        """Determine gene ids associated with PFAMs or TIGRFAMs."""
+        familyIdToGeneId = defaultdict(list)
+        with open(filename) as f:
+            f.readline()
+            for line in f:
+                lineSplit = line.split('\t')
+                
+                geneId = lineSplit[0]
+                familyId = lineSplit[clusterIdIndex]
+                familyIdToGeneId[familyId] += [geneId]
+
+        return familyIdToGeneId
+    
+    def __genomeSeqLens(self, genomeId):
+        """Determine length of contigs/scaffolds comprising genome."""
+        genomeFile = os.path.join(self.genomeDir, genomeId, genomeId + '.fna')
+        seqs = readFasta(genomeFile)
+    
+        seqLens = {}
+        for seqId, seq in seqs.iteritems():
+            seqLens[seqId] = len(seq)
+            
+        return seqLens
+    
+    def precomputeGenomeSeqLens(self, genomeIds):
+        """Cache the length of contigs/scaffolds for all genomes."""
+        
+        # This function is intended to speed up functions, such as geneDistTable(),
+        # that are called multiple times (typically during simulations)
+        
+        self.cachedGenomeSeqLens = {}
+        for genomeId in genomeIds:
+            self.cachedGenomeSeqLens[genomeId] = self.__genomeSeqLens(genomeId)
+            
+    def __genomeFamilyPositions(self, genomeId, seqLens, spacingBetweenContigs):
+        """Determine position of PFAM and TIGRFAM genes in genome."""
+        
+        # determine mapping from gene ids to PFAM/TIGRFAM ids
+        familyFile = os.path.join(self.genomeDir, genomeId, genomeId)
+        pfamIdToGeneIds = self.familyIdToGeneId(familyFile + self.pfamExtension, 8)
+        tigrIdToGeneIds = self.familyIdToGeneId(familyFile + self.tigrExtension, 6)
+        
+        # determine position of genes from GFF file
+        gffFile = os.path.join(self.genomeDir, genomeId, genomeId + '.gff')
+            
+        genePosition = {}
+        contigStart = 0
+        curSeqId = None
+        for line in open(gffFile):
+            if line[0] == '#':
                 continue
 
             lineSplit = line.split('\t')
-            geneId = lineSplit[0]
-            clusterId = lineSplit[clusterIdIndex]
-            if clusterId in markerGenes:
-                geneIdsToClusterIds[clusterId] = geneIdsToClusterIds.get(clusterId, []) + [geneId]
+            if len(lineSplit) != 9:
+                continue # line likely annotates a CRISPR
+            
+            # check if we've moved to the next contig
+            if curSeqId == None:
+                curSeqId = lineSplit[0]
+                 
+            if curSeqId != lineSplit[0]:
+                contigStart += spacingBetweenContigs + seqLens[curSeqId]
+                curSeqId = lineSplit[0]
+                
+                
+            geneId = lineSplit[8].split(';')[0]
+            geneId = geneId[geneId.find('=')+1:]
 
-        return geneIdsToClusterIds
+            start = int(lineSplit[3])
+            end = int(lineSplit[4])
 
-    def geneDistTable(self, genomeIds, markerGenes):
-        table = {}
-        for genomeId in genomeIds:
-            # read cluster table for gene identifiers
-            filename = self.genomeDir + genomeId + '/' + genomeId
-            pfamIdToGeneIds = self.clusterIdToGeneIds(markerGenes, filename + self.pfamExtension, 8)
-            tigrIdToGeneIds = self.clusterIdToGeneIds(markerGenes, filename + self.tigrExtension, 6)
-
-            # read gene locations
-            genePosition = {}
-            gffFile = self.genomeDir + genomeId + '/' + genomeId + '.gff'
-            for line in open(gffFile):
-                if line[0] == '#':
-                    continue
-
-                lineSplit = line.split('\t')
-
-                geneId = lineSplit[8].split(';')[0]
-                geneId = geneId[geneId.find('=')+1:]
-
-                start = int(lineSplit[3])
-                end = int(lineSplit[4])
-
-                genePosition[geneId] = [start, end]
-
-            # create gene mapping table
-            clusterIdToGenomePositions = {}
+            genePosition[geneId] = [contigStart + start, contigStart + end]
+            
+        # create gene mapping table
+        try:
+            # In theory, every PFAM or TIGRFAM gene identified should have
+            # an entry in the GFF file and thus a position. In practice, there
+            # are a few cases where this isn't tree (?) so only PFAMs/TIGRFAMs
+            # with GFF entries are considered.
+            familyIdToGenomePositions = {}
             for pfamId, geneIds in pfamIdToGeneIds.iteritems():
                 positions = []
                 for geneId in geneIds:
-                    positions += [genePosition[geneId]]
-                clusterIdToGenomePositions[pfamId] = positions
-
+                    position = genePosition.get(geneId, None)
+                    if position != None:
+                        positions.append(position)
+                        
+                if positions:
+                    familyIdToGenomePositions[pfamId] = positions
+    
             for tigrId, geneIds in tigrIdToGeneIds.iteritems():
                 positions = []
                 for geneId in geneIds:
-                    positions += [genePosition[geneId]]
-                clusterIdToGenomePositions[tigrId] = positions
+                    position = genePosition.get(geneId, None)
+                    if position != None:
+                        positions.append(position)
+
+                if positions:
+                    familyIdToGenomePositions[tigrId] = positions
+        except:
+            print '[BUG]: __genomeFamilyPositions' 
+            print sys.exc_info()[0]
+            print genomeId, geneId, tigrId, pfamId
+            sys.exit()
+            
+        return familyIdToGenomePositions
+            
+    def precomputeGenomeFamilyPositions(self, genomeIds, spacingBetweenContigs):
+        """Cache position of PFAM and TIGRFAM genes in genomes."""
+        
+        # This function is intended to speed up functions, such as geneDistTable(),
+        # that are called multiple times (typically during simulations)
+        self.cachedGenomeFamilyPositions = {}
+        for genomeId in genomeIds:
+            self.cachedGenomeFamilyPositions[genomeId] = self.__genomeFamilyPositions(genomeId, self.cachedGenomeSeqLens[genomeId], spacingBetweenContigs)
+            
+    def geneDistTable(self, genomeIds, markerGenes, spacingBetweenContigs=5000):
+        """Create table indicating position of each marker gene in a genome."""
+        
+        # Note: genomes split into multiple contigs are still treated as contiguous,
+        # with a spacing between contigs as specified
+        
+        table = {}
+        for genomeId in genomeIds:
+            # read length of scaffolds/contigs in genome
+            if self.cachedGenomeSeqLens:
+                seqLens = self.cachedGenomeSeqLens[genomeId]
+            else:
+                seqLens = self.__genomeSeqLens(genomeId)
+
+            # read position of protein families on genome
+            if self.cachedGenomeFamilyPositions:
+                genomeFamilyPositions = self.cachedGenomeFamilyPositions[genomeId]
+            else:
+                genomeFamilyPositions = self.__genomeFamilyPositions(genomeId, seqLens, spacingBetweenContigs)
+            
+            # create marker gene position table for genome
+            clusterIdToGenomePositions = {}
+            for markerGene in markerGenes:
+                positions =  genomeFamilyPositions.get(markerGene, None)
+                if positions != None:
+                    clusterIdToGenomePositions[markerGene] = genomeFamilyPositions[markerGene]
 
             table[genomeId] = clusterIdToGenomePositions
 

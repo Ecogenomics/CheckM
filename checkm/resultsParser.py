@@ -246,7 +246,7 @@ class ResultsParser():
             
             if coverageBinProfiles != None:
                 for bamId in coverageBinProfiles[coverageBinProfiles.keys()[0]]:
-                    header += ['Coverage (' + bamId + ')', 'Coverage std']
+                    header += ['Coverage (' + bamId + ')', 'Coverage std (' + bamId + ')']
 
             if defaultValues.MIN_SEQ_LEN_GC_STD != 1000:
                 self.logger.error('  [Error] Labeling error: GC std (scaffolds > 1Kbps)')
@@ -330,13 +330,20 @@ class ResultsManager():
         
         # preferentially use model specific bit score thresholds, before
         # using the user specified e-value and length criteria
-        if model.isGatheringThreshold and not self.bIgnoreThresholds:
+        
+        # Give preference to the gathering threshold unless the model
+        # is marked as TIGR (i.e., TIGRFAM model)
+        if model.isNoiseCutoff and not self.bIgnoreThresholds and 'TIGR' in model.acc:
+            if model.nc[0] <= hit.full_score and model.nc[1] <= hit.dom_score:
+                return True  
+        elif model.isGatheringThreshold and not self.bIgnoreThresholds:
             if model.ga[0] <= hit.full_score and model.ga[1] <= hit.dom_score:
                 return True
         elif model.isTrustedCutoff and not self.bIgnoreThresholds:
             if model.tc[0] <= hit.full_score and model.tc[1] <= hit.dom_score:
                 return True
         elif model.isNoiseCutoff and not self.bIgnoreThresholds:
+            print('TIGR')
             if model.nc[0] <= hit.full_score and model.nc[1] <= hit.dom_score:
                 return True
         else:

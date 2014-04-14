@@ -32,6 +32,8 @@ import argparse
 
 from checkm.lib.img import IMG
 
+from numpy import mean
+
 class GeneCountDict(object):
     def __init__(self):
         pass
@@ -49,6 +51,14 @@ class GeneCountDict(object):
         
         print 'Calculating gene copy number for each genome.'
         countTable = img.geneCountTable(genomeIds)
+        
+        counts = []
+        for _, count in countTable['pfam00318'].iteritems():
+            counts.append(count)
+                
+        print len(genomeIds)
+        print len(counts)
+        print mean(counts)
          
         fout = open(outputFile, 'w')
         fout.write(str(countTable))

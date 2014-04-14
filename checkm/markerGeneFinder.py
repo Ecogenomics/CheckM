@@ -37,7 +37,7 @@ class MarkerGeneFinder():
         self.logger = logging.getLogger()                  
         self.totalThreads = threads
 
-    def find(self, binFiles, outDir, tableOut, hmmerOut, markerFile):
+    def find(self, binFiles, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs):
         """Identify marker genes in each bin using prodigal and HMMER."""
                 
         # get bin ids
@@ -63,7 +63,7 @@ class MarkerGeneFinder():
         for _ in range(self.totalThreads):
             workerQueue.put(None)
 
-        calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, binIdToHmmModelFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, binIdToHmmModelFile, bKeepAlignment, bNucORFs, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
         writeProc = mp.Process(target = self.__reportProgress, args = (len(binFiles), writerQueue))
 
         writeProc.start()
@@ -79,7 +79,7 @@ class MarkerGeneFinder():
         
         return binIdToHmmModelFile
               
-    def __processBin(self, outDir, tableOut, hmmerOut, binIdToHmmModelFile, queueIn, queueOut):
+    def __processBin(self, outDir, tableOut, hmmerOut, binIdToHmmModelFile, bKeepAlignment, bNucORFs, queueIn, queueOut):
         """Thread safe bin processing."""      
         while True:    
             binFile = queueIn.get(block=True, timeout=None) 
@@ -93,13 +93,17 @@ class MarkerGeneFinder():
             # run Prodigal     
             prodigal = ProdigalRunner(binDir) 
             if not prodigal.areORFsCalled():
-                prodigal.run(binFile)
+                prodigal.run(binFile, bNucORFs)
     
             # run HMMER
             hmmer = HMMERRunner()
             tableOutPath = os.path.join(binDir, tableOut)
             hmmerOutPath = os.path.join(binDir, hmmerOut)
-            hmmer.search(binIdToHmmModelFile[binId], prodigal.aaGeneFile, tableOutPath, hmmerOutPath, '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 1 --domE 1')
+            
+            keepAlignStr = ''
+            if not bKeepAlignment:
+                keepAlignStr = '--noali'
+            hmmer.search(binIdToHmmModelFile[binId], prodigal.aaGeneFile, tableOutPath, hmmerOutPath, '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr, bKeepAlignment)
     
             queueOut.put(binId)
             

@@ -28,7 +28,7 @@ import logging
 
 import numpy as np
 
-from seqUtils import readFasta
+from lib.seqUtils import readFasta
 
 class GenomicSignatures(object):
     def __init__(self, K, threads):

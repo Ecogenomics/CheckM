@@ -27,7 +27,7 @@ import numpy as np
 
 from AbstractPlot import AbstractPlot
 
-from checkm.seqUtils import readFasta
+from checkm.lib.seqUtils import readFasta
 from checkm.prodigal import ProdigalFastaParser
 from checkm.common import binIdFromFilename
 import checkm.defaultValues as defaultValues

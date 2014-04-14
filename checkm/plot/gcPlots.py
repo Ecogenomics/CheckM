@@ -26,7 +26,7 @@ import numpy as np
 from AbstractPlot import AbstractPlot
 
 from checkm.binTools import BinTools
-from checkm.seqUtils import readFasta, baseCount
+from checkm.lib.seqUtils import readFasta, baseCount
 from checkm.common import findNearest, readDistribution
 
 class GcPlots(AbstractPlot):

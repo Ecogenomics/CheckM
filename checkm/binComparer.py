@@ -23,7 +23,7 @@ import logging
 from collections import defaultdict
 
 from common import binIdFromFilename
-from seqUtils import readFasta, readFastaSeqIds
+from lib.seqUtils import readFasta, readFastaSeqIds
 
 class BinComparer(object):
     def __init__(self):

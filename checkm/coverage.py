@@ -30,7 +30,7 @@ import pysam
 
 import defaultValues
 from common import reassignStdOut, restoreStdOut, binIdFromFilename
-from seqUtils import readFasta
+from lib.seqUtils import readFasta
 
 from numpy import mean, std
 

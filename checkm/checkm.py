@@ -102,7 +102,7 @@ class OptionsParser():
         # find phylogenetically informative genes in genome bins 
         phyloHMMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'phylo.hmm')                              
         mgf = MarkerGeneFinder(options.threads)
-        mgf.find(binFiles, options.out_folder, defaultValues.HMMER_TABLE_PHYLO_OUT, defaultValues.HMMER_PHYLO_OUT, phyloHMMs)
+        mgf.find(binFiles, options.out_folder, defaultValues.HMMER_TABLE_PHYLO_OUT, defaultValues.HMMER_PHYLO_OUT, phyloHMMs, options.bKeepAlignment, options.bNucORFs)
         
         # calculate statistics for each genome bin
         self.logger.info('')
@@ -243,7 +243,7 @@ class OptionsParser():
         
         # find marker genes in genome bins    
         mgf = MarkerGeneFinder(options.threads)
-        binIdToHmmModelFile = mgf.find(binFiles, options.out_folder, defaultValues.HMMER_TABLE_OUT, defaultValues.HMMER_OUT, options.marker_file)
+        binIdToHmmModelFile = mgf.find(binFiles, options.out_folder, defaultValues.HMMER_TABLE_OUT, defaultValues.HMMER_OUT, options.marker_file, options.bKeepAlignment, options.bNucORFs)
         
         markerSetParser = MarkerSetParser(options.threads)
         binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.out_folder, getBinIdsFromOutDir(options.out_folder), options.marker_file)

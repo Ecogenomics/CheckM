@@ -33,12 +33,14 @@ __status__ = 'Development'
 import sys
 import argparse
 
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 from lib.plots.boxplot import BoxPlot
 from checkm.lib.img import IMG
 
 from numpy import mean, abs, array
+
+from scipy.stats import scoreatpercentile
 
 class SimComparePlots(object):
     def __init__(self):
@@ -86,14 +88,23 @@ class SimComparePlots(object):
         comps = set()
         conts = set()
         seqLens = set()
+        
+        compOutliers = defaultdict(list)
+        contOutliers = defaultdict(list)
         for simId in results:
             itemsProcessed += 1
-            statusStr = '    Finished processing %d of %d (%.2f%%) test cases.' % (itemsProcessed, len(results), float(itemsProcessed)*100/len(results))
-            sys.stdout.write('%s\r' % statusStr)
-            sys.stdout.flush()
+            #statusStr = '    Finished processing %d of %d (%.2f%%) test cases.' % (itemsProcessed, len(results), float(itemsProcessed)*100/len(results))
+            #sys.stdout.write('%s\r' % statusStr)
+            #sys.stdout.flush()
             
-            _, seqLen, comp, cont = simId.split('-')
+            genomeId, seqLen, comp, cont = simId.split('-')
             expCondStr = str(float(comp)) + '-' + str(float(cont)) + '-' + str(int(seqLen))
+            
+            if genomeId == '647000339' and seqLen == '5000' and comp != '1.00':
+                print simId
+                print genomeId
+                print [('%.1f' % r) for r in results[simId][4]]
+                print '*************************'
             
             comps.add(float(comp))
             conts.add(float(cont))
@@ -103,10 +114,15 @@ class SimComparePlots(object):
             compDataDict[expCondStr]['domain'] += results[simId][2]
             compDataDict[expCondStr]['selected'] += results[simId][4]
             
+            for dComp in results[simId][4]:
+                compOutliers[expCondStr] += [[dComp, genomeId]]
             
             contDataDict[expCondStr]['best'] += results[simId][1]
             contDataDict[expCondStr]['domain'] += results[simId][3]
             contDataDict[expCondStr]['selected'] += results[simId][5]
+            
+            for dCont in results[simId][5]:
+                contOutliers[expCondStr] += [[dCont, genomeId]]
               
         sys.stdout.write('\n')
         
@@ -117,6 +133,9 @@ class SimComparePlots(object):
         compData = []
         contData = []
         rowLabels = []
+        
+        foutComp = open('./experiments/simulation.draft.conditions.comp_outliers.tsv', 'w')
+        foutCont = open('./experiments/simulation.draft.conditions.cont_outliers.tsv', 'w')
         for comp in [0.5, 0.7, 0.9]: #sorted(comps):
             for cont in [0.05, 0.1, 0.2]:
                 for msStr in ['best', 'selected', 'domain']:
@@ -125,7 +144,50 @@ class SimComparePlots(object):
                         
                         expCondStr = str(comp) + '-' + str(cont) + '-' + str(seqLen)
                         compData.append(compDataDict[expCondStr][msStr])
-                        contData.append(contDataDict[expCondStr][msStr])    
+                        contData.append(contDataDict[expCondStr][msStr])  
+                    
+                # report completenes outliers
+                foutComp.write(expCondStr)
+
+                compOutliers[expCondStr].sort()
+                
+                dComps = array([r[0] for r in compOutliers[expCondStr]])
+                perc5 = scoreatpercentile(dComps, 5)
+                perc95 = scoreatpercentile(dComps, 95)
+                print expCondStr, perc5, perc95
+                
+                outliers = []
+                for item in compOutliers[expCondStr]:
+                    if item[0] < perc5 or item[0] > perc95:
+                        outliers.append(item[1])
+                        
+                outlierCount = Counter(outliers)
+                for genomeId, count in outlierCount.most_common():
+                    foutComp.write('\t' + genomeId + ': ' + str(count))
+                foutComp.write('\n')
+                
+                # report contamination outliers
+                foutCont.write(expCondStr)
+
+                contOutliers[expCondStr].sort()
+                
+                dConts = array([r[0] for r in contOutliers[expCondStr]])
+                perc5 = scoreatpercentile(dConts, 5)
+                perc95 = scoreatpercentile(dConts, 95)
+                
+                outliers = []
+                for item in contOutliers[expCondStr]:
+                    if item[0] < perc5 or item[0] > perc95:
+                        outliers.append(item[1])
+                        
+                outlierCount = Counter(outliers)
+                for genomeId, count in outlierCount.most_common():
+                    foutCont.write('\t' + genomeId + ': ' + str(count))
+                foutCont.write('\n')
+                
+        foutComp.close()
+        foutCont.close()
+                        
                         
         print 'best:\t%.2f\t%.2f' % (mean(abs(array(compData[0::3]))), mean(abs(array(contData[0::3]))))
         print 'selected:\t%.2f\t%.2f' % (mean(abs(array(compData[1::3]))), mean(abs(array(contData[1::3]))))   
@@ -312,11 +374,11 @@ class SimComparePlots(object):
         print '\n'         
         self.conditionsPlot(results)
         
-        print '\n'
-        self.taxonomicPlots(results)
+        #print '\n'
+        #self.taxonomicPlots(results)
         
-        print '\n'
-        self.refinementPlots(results)
+        #print '\n'
+        #self.refinementPlots(results)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)

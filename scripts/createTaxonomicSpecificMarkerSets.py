@@ -36,7 +36,7 @@ import multiprocessing as mp
 
 from checkm.lib.img import IMG
 from checkm.lib.taxonomyUtils import rankPrefixes, ranksByLevel
-from lib.markerSet import MarkerSet
+from lib.markerSetBuilder import MarkerSetBuilder
 
 class TaxonomicMarkerSets(object):
     def __init__(self):
@@ -50,25 +50,17 @@ class TaxonomicMarkerSets(object):
         """Process each data item in parallel."""
         
         img = IMG()
-        markerset = MarkerSet()
+        markerSetBuilder = MarkerSetBuilder()
 
         while True:
             lineage = queueIn.get(block=True, timeout=None)
             if lineage == None:
                 break
 
-            genomeIds = img.genomeIdsByTaxonomy(lineage, metadata, 'trusted')
+            genomeIds = img.genomeIdsByTaxonomy(lineage, metadata)
             if len(genomeIds) >= minGenomes:
-                geneCountTable = img.geneCountTable(genomeIds)
-                geneCountTable = img.filterGeneCountTable(genomeIds, geneCountTable, 0.9*ubiquityThreshold, 0.9*singleCopyThreshold)
-                
-                markerGenes = markerset.markerGenes(genomeIds, geneCountTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
-                tigrToRemove = img.identifyRedundantTIGRFAMs(markerGenes)
-                markerGenes = markerGenes - tigrToRemove
-    
-                geneDistTable = img.geneDistTable(genomeIds, markerGenes)
-                colocatedGenes = markerset.colocatedGenes(geneDistTable, colocatedDistThreshold, colocatedGenomeThreshold)
-                colocatedSets = markerset.colocatedSets(colocatedGenes, markerGenes)
+                markerSet = markerSetBuilder.buildMarkerSet(genomeIds, ubiquityThreshold, singleCopyThreshold, colocatedDistThreshold)
+                colocatedSets = markerSet.markerSet
             else:
                 colocatedSets = None
 
@@ -81,7 +73,7 @@ class TaxonomicMarkerSets(object):
                        outputDir, numDataItems, writerQueue):
         """Store or write results of worker threads in a single thread."""
         
-        taxonSetOut = open(os.path.join(outputDir, 'taxon_marker_sets.tsv'), 'w')
+        taxonSetOut = open(os.path.join('..', 'data', 'taxon_marker_sets.tsv'), 'w')
         
         processedItems = 0
         while True:
@@ -125,14 +117,16 @@ class TaxonomicMarkerSets(object):
                 fout.write(str(mungedColocatedSets))
                 fout.close()
                 
-
                 # write out single taxonomic-specific marker set file
                 numMarkerGenes = 0
                 for m in mungedColocatedSets:
                     numMarkerGenes += len(m)
                     
-                
-                taxonSetOut.write(ranksByLevel[len(taxonomy)-1] + '\t' + taxonomy[-1] + '\t' + lineage + '\t' + str(numGenomes) + '\t' + str(numMarkerGenes) + '\t' + str(len(mungedColocatedSets)) + '\t' + str(mungedColocatedSets) + '\n')
+                taxon = taxonomy[-1]
+                if len(taxonomy) == 7:
+                    taxon = taxonomy[5] + ' ' + taxonomy[6]
+                    
+                taxonSetOut.write(ranksByLevel[len(taxonomy)-1] + '\t' + taxon + '\t' + lineage + '\t' + str(numGenomes) + '\t' + str(numMarkerGenes) + '\t' + str(len(mungedColocatedSets)) + '\t' + str(mungedColocatedSets) + '\n')
 
         sys.stdout.write('\n')
         taxonSetOut.close()

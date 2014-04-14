@@ -29,9 +29,10 @@ __email__ = 'donovan.parks@gmail.com'
 __status__ = 'Development'
 
 import argparse
+from collections import defaultdict
 
 from checkm.lib.img import IMG
-from lib.markerSet import MarkerSet
+from lib.markerSetBuilder import MarkerSetBuilder
 
 class QcGenomes(object):
     def __init__(self):
@@ -52,11 +53,9 @@ class QcGenomes(object):
 
         return genomeStr
 
-    def run(self, maxContigs, minN50, ubiquityThreshold, singleCopyThreshold, trustedCompleteness, trustedContamination):
+    def run(self, inputMetadataFile, outputMetadataFile, ubiquityThreshold, singleCopyThreshold, trustedCompleteness, trustedContamination):
         img = IMG()
-        markerset = MarkerSet()
-
-        metadata = img.genomeMetadata()
+        markerSetBuilder = MarkerSetBuilder()
 
         allOut = open('./data/genomes_all.tsv', 'w')
         allOut.write('Genome Id\tLineage\tGenome size (Mbps)\tScaffold count\tGene count\tCoding base count\tN50\tBiotic Relationship\tStatus\tCompleteness\tContamination\tMissing markers\tDuplicate markers\n')
@@ -67,14 +66,38 @@ class QcGenomes(object):
         filteredOut = open('./data/genomes_filtered.tsv', 'w')
         filteredOut.write('Genome Id\tLineage\tGenome size (Mbps)\tScaffold count\tGene count\tCoding base count\tN50\tBiotic Relationship\tStatus\tCompleteness\tContamination\tMissing markers\tDuplicate markers\n')
 
-        allTrustedGenomeIds = set()
-        for lineage in ['Archaea', 'Bacteria']:
-            print '[' + lineage + ']\n'
+        metadataOut = open(outputMetadataFile, 'w')
+        
+        # read input metadata file
+        metadata = img.genomeMetadataFromFile(inputMetadataFile)
+        
+        finishedGenomes = defaultdict(set)
+        allGenomes = defaultdict(set)
+        
+        metadataLine = {}
+        
+        bHeader = True
+        for line in open(inputMetadataFile):
+            if bHeader:
+                metadataOut.write(line)
+                bHeader = False
+                continue
+            
+            lineSplit = line.split('\t')
+            genomeId = lineSplit[0]
+            domain = lineSplit[1]
+            status = lineSplit[2]
+            
+            if status == 'Finished':
+                finishedGenomes[domain].add(genomeId)
+            
+            allGenomes[domain].add(genomeId)
+            metadataLine[genomeId] = line
 
-            # get all genomes in lineage
-            print 'Identifying all ' + lineage + ' genomes.'
-            allLineageGenomeIds = img.genomeIdsByTaxonomy(lineage, metadata, 'all')
-            print '  Number of genomes: ' + str(len(allLineageGenomeIds))
+        allTrustedGenomeIds = set()
+        for lineage, allLineageGenomeIds in allGenomes.iteritems():
+            print '[' + lineage + ']'
+            print '  Number of genomes: %d' % len(allLineageGenomeIds)
 
             # tabulate genomes from each phylum
             allPhylumCounts = {}
@@ -82,65 +105,13 @@ class QcGenomes(object):
                 taxon = metadata[genomeId]['taxonomy'][1]
                 allPhylumCounts[taxon] = allPhylumCounts.get(taxon, 0) + 1
 
-            # filter out genomes missing sequence data
-            print '\nFilter out genomes missing data.'
-            missing = img.genomesWithMissingData(allLineageGenomeIds)
-            filteredStatus = {}
-            for genomeId in missing:
-                filteredStatus[metadata[genomeId]['status']] = filteredStatus.get(metadata[genomeId]['status'], 0) + 1
-
-                genomeStr = self.__genomeString(genomeId, metadata, -2, -2, set(['Missing data']), set())
-                allOut.write(genomeStr)
-
-            print '  Filtered genomes: %d (%.2f%%)' % (len(missing), len(missing)*100.0 / len(allLineageGenomeIds))
-            print '  ' + str(filteredStatus)
-            retainedGenomeIds = allLineageGenomeIds - missing
-
-            # filter out low-quality genomes
-            print '\nFiltering out low quality genomes.'
-            filteredGenomeIds = set()
-            filteredStatus = {}
-            for genomeId in retainedGenomeIds:
-                if metadata[genomeId]['scaffold count'] > maxContigs or metadata[genomeId]['N50'] < minN50:
-                    filteredStatus[metadata[genomeId]['status']] = filteredStatus.get(metadata[genomeId]['status'], 0) + 1
-                    filteredGenomeIds.add(genomeId)
-
-                    genomeStr = self.__genomeString(genomeId, metadata, -1, -1, set(['Low quality genome']), set())
-                    filteredOut.write(genomeStr)
-                    allOut.write(genomeStr)
-
-            print '  Filtered genomes: %d (%.2f%%)' % (len(filteredGenomeIds), len(filteredGenomeIds)*100.0 / len(allLineageGenomeIds))
-            print '  ' + str(filteredStatus)
-            retainedGenomeIds = retainedGenomeIds - filteredGenomeIds
-
-            # build gene count table
+            # identify marker genes for finished genomes
             print '\nDetermining initial marker gene sets for genome filtering.'
+            markerSet = markerSetBuilder.buildMarkerSet(finishedGenomes[lineage], ubiquityThreshold, singleCopyThreshold)
 
-            print '  Determining count table.'
-            countTable = img.geneCountTable(retainedGenomeIds)
-            countTable = img.filterGeneCountTable(retainedGenomeIds, countTable, 0.9*ubiquityThreshold, 0.9*singleCopyThreshold)
-
-            # identify marker genes for genomes
-            markerGenes = markerset.markerGenes(retainedGenomeIds, countTable, ubiquityThreshold*len(retainedGenomeIds), singleCopyThreshold*len(retainedGenomeIds))
-            print '  Marker genes: ' + str(len(markerGenes))
-
-            tigrToRemove = img.identifyRedundantTIGRFAMs(markerGenes)
-            markerGenes = markerGenes - tigrToRemove
-            print '  Marker genes after filtering redundant TIGRFAMs: ' + str(len(markerGenes))
-
-            fout = open('./data/trusted_marker_genes_' + lineage + '.txt', 'w')
-            fout.write(str(markerGenes))
-            fout.close()
-
-            # identify marker sets
-            geneDistTable = img.geneDistTable(retainedGenomeIds, markerGenes)
-            colocatedGenes = markerset.colocatedGenes(geneDistTable)
-            colocatedSets = markerset.colocatedSets(colocatedGenes, markerGenes)
-
-            print '  Marker set size: ' + str(len(colocatedSets))
-
+            print '  Marker set consists of %s marker genes organized into %d sets.' % (markerSet.numMarkers(), markerSet.numSets())
             fout = open('./data/trusted_marker_sets_' + lineage + '.txt', 'w')
-            fout.write(str(colocatedSets))
+            fout.write(str(markerSet.markerSet))
             fout.close()
 
             # identifying trusted genomes (highly complete, low contamination genomes)
@@ -149,9 +120,10 @@ class QcGenomes(object):
             filteredGenomes = set()
             retainedStatus = {}
             filteredStatus = {}
-            for genomeId in retainedGenomeIds:
-                completeness, contamination, missingMarkers, duplicateMarkers = markerset.genomeCheck(colocatedSets, genomeId, countTable)
-
+            geneCountTable = img.geneCountTable(allLineageGenomeIds)
+            for genomeId in allLineageGenomeIds:
+                completeness, contamination, missingMarkers, duplicateMarkers = markerSetBuilder.genomeCheck(markerSet.markerSet, genomeId, geneCountTable)
+                
                 genomeStr = self.__genomeString(genomeId, metadata, completeness, contamination, missingMarkers, duplicateMarkers)
 
                 if completeness >= trustedCompleteness and contamination <= trustedContamination:
@@ -161,6 +133,8 @@ class QcGenomes(object):
 
                     trustedOut.write(genomeStr)
                     allOut.write(genomeStr)
+                    
+                    metadataOut.write(metadataLine[genomeId])
                 else:
                     filteredGenomes.add(genomeId)
                     filteredStatus[metadata[genomeId]['status']] = filteredStatus.get(metadata[genomeId]['status'], 0) + 1
@@ -187,6 +161,7 @@ class QcGenomes(object):
         allOut.close()
         trustedOut.close()
         filteredOut.close()
+        metadataOut.close()
 
         # write out lineage statistics for genome distribution
         allStats = {}
@@ -212,9 +187,9 @@ if __name__ == '__main__':
     print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('input_file', help='input IMG metadata file')
+    parser.add_argument('output_file', help='new IMG metadata file')
 
-    parser.add_argument('-m', '--max_contigs', help='maximum number of contigs/scaffolds to retain genome', type=int, default = 100)
-    parser.add_argument('-n', '--min_N50', help='minimum N50 for retaining genome', type=int, default = 100000)
     parser.add_argument('-u', '--ubiquity', help='ubiquity threshold for defining marker set', type=float, default = 0.97)
     parser.add_argument('-s', '--single_copy', help='single-copy threshold for defining marker set', type=float, default = 0.97)
     parser.add_argument('-c', '--trusted_completeness', help='completeness threshold for defining trusted genomes', type=float, default = 0.97)
@@ -223,4 +198,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     qcGenomes = QcGenomes()
-    qcGenomes.run(args.max_contigs, args.min_N50, args.ubiquity, args.single_copy, args.trusted_completeness, args.trusted_contamination)
+    qcGenomes.run(args.input_file, args.output_file, args.ubiquity, args.single_copy, args.trusted_completeness, args.trusted_contamination)

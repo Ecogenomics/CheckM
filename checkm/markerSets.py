@@ -22,10 +22,13 @@
 import os
 import sys
 import logging
+import uuid
+import tempfile
+import multiprocessing as mp
 
 import defaultValues
 
-from hmmer import HMMERModelExtractor
+from hmmer import HMMERRunner
 from hmmerModelParser import HmmModelParser
 
 from lib.pfam import PFAM
@@ -248,24 +251,79 @@ class MarkerSetParser():
         elif markerFileType == BinMarkerSets.TREE_MARKER_SET:
             binIdToBinMarkerSets = self.__parseLineageMarkerSetFile(markerFile)
 
-            self.logger.info('  Extracting lineage-specific HMMs with %d threads:' % self.numThreads)
-            for i, binId in enumerate(binIdToBinMarkerSets):
-                if self.logger.getEffectiveLevel() <= logging.INFO:
-                    statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (i+1, len(binIdToBinMarkerSets), float(i+1)*100/len(binIdToBinMarkerSets))
-                    sys.stderr.write('%s\r' % statusStr)
-                    sys.stderr.flush()
-                
-                hmmModelFile = os.path.join(outDir, 'storage', 'hmms', binId + '.hmm')
-                self.__createMarkerHMMs(binIdToBinMarkerSets[binId], hmmModelFile, False)
-                binIdToHmmModelFile[binId] = hmmModelFile 
-                
-            if self.logger.getEffectiveLevel() <= logging.INFO:
-                sys.stderr.write('\n')
+            binIdToHmmModelFile = self.__fetchLineageMarkerSets(outDir, binIdToBinMarkerSets)
         else:
             for binId in binIds:
                 binIdToHmmModelFile[binId] = markerFile
                 
         return binIdToHmmModelFile
+    
+    def __fetchLineageMarkerSets(self, outDir, binIdToBinMarkerSets):
+        """Fetch lineage-specific marker sets for each bin."""
+        
+        self.logger.info('  Extracting lineage-specific HMMs with %d threads:' % self.numThreads)
+        
+        workerQueue = mp.Queue()
+        writerQueue = mp.Queue()
+        
+        binIdToHmmModelFile = {}
+        for binId, binMarkerSet in binIdToBinMarkerSets.iteritems():
+            hmmModelFile = os.path.join(outDir, 'storage', 'hmms', binId + '.hmm')
+            workerQueue.put((binId, hmmModelFile))
+            binIdToHmmModelFile[binId] = hmmModelFile 
+            
+        for _ in range(self.numThreads):
+            workerQueue.put((None, None))
+            
+        calcProc = [mp.Process(target = self.__fetchModels, args = (binIdToBinMarkerSets, workerQueue, writerQueue)) for _ in range(self.numThreads)]
+        writeProc = mp.Process(target = self.__reportFetchProgress, args = (len(binIdToBinMarkerSets), writerQueue))
+
+        writeProc.start()
+        
+        for p in calcProc:
+            p.start()
+
+        for p in calcProc:
+            p.join()
+            
+        writerQueue.put(None)
+        writeProc.join()
+                     
+        return binIdToHmmModelFile
+
+    def __fetchModels(self, binIdToBinMarkerSets, queueIn, queueOut):
+        """Fetch HMM."""
+        while True:    
+            binId, hmmModelFile = queueIn.get(block=True, timeout=None) 
+            if binId == None:
+                break  
+        
+            self.__createMarkerHMMs(binIdToBinMarkerSets[binId], hmmModelFile, False)
+            
+            queueOut.put(binId)
+            
+    def __reportFetchProgress(self, numBins, queueIn):
+        """Report progress of extracted HMMs."""      
+        
+        numProcessedBins = 0   
+        if self.logger.getEffectiveLevel() <= logging.INFO:
+                statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
+                sys.stderr.write('%s\r' % statusStr)
+                sys.stderr.flush()
+                    
+        while True:
+            binId = queueIn.get(block=True, timeout=None)
+            if binId == None:
+                break
+            
+            if self.logger.getEffectiveLevel() <= logging.INFO:
+                numProcessedBins += 1
+                statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
+                sys.stderr.write('%s\r' % statusStr)
+                sys.stderr.flush()
+
+        if self.logger.getEffectiveLevel() <= logging.INFO:
+            sys.stderr.write('\n')
                 
     def markerFileType(self, markerFile):
         """Determine type of marker file."""
@@ -298,8 +356,24 @@ class MarkerSetParser():
         if bReportProgress:
             self.logger.info("  There are %d genes in the marker set and %d genes from the same PFAM clan." % (len(markerGenes), len(genesInSameClan)))
             
-        modelExtractor = HMMERModelExtractor(self.numThreads)
-        modelExtractor.extract(defaultValues.HMM_MODELS, allMarkers, outputFile, bReportProgress)
+        # create file with all model accession numbers
+        keyFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+        fout = open(keyFile, 'w')
+        for modelAcc in allMarkers:
+            fout.write(modelAcc + '\n')
+        fout.close()
+        
+        # fetch specified models
+        HF = HMMERRunner(mode='fetch')
+        HF.fetch(defaultValues.HMM_MODELS, keyFile, outputFile, bKeyFile=True)
+        
+        # index the HMM file
+        if os.path.exists(outputFile + '.ssi'):
+            os.remove(outputFile + '.ssi')
+        HF.index(outputFile)
+        
+        # remove key file
+        os.remove(keyFile)
               
     def __parseTaxonomicMarkerSetFile(self, markerSetFile):
         """Parse marker set from a taxonomic-specific marker set file."""

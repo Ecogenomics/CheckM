@@ -42,18 +42,16 @@ class Tigr2Pfam(object):
     def __init__(self):
         pass
 
-    def run(self, percentThreshold):
+    def run(self, metadataFile, percentThreshold):
         img = IMG()
 
-        metadata = img.genomeMetadata()
-
-        genomeIds = img.genomeIdsByTaxonomy('prokaryotes', metadata, 'all')
+        metadata = img.genomeMetadataFromFile(metadataFile)
 
         matches = {}
         pfamCount = {}
         tigrCount = {}
-        for genomeCounter, genomeId in enumerate(genomeIds):
-            statusStr = '  Finished processing %d of %d (%.2f%%) genomes.' % (genomeCounter+1, len(genomeIds), float(genomeCounter+1)*100/len(genomeIds))
+        for genomeCounter, genomeId in enumerate(metadata):
+            statusStr = '  Finished processing %d of %d (%.2f%%) genomes.' % (genomeCounter+1, len(metadata), float(genomeCounter+1)*100/len(metadata))
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
 
@@ -121,7 +119,7 @@ class Tigr2Pfam(object):
         sys.stdout.write('\n')
 
         # find TIGRFAMs that generally hit the same gene as a PFAM
-        fout = open('../data/tigrfam2pfam.tsv', 'w')
+        fout = open('../data/pfam/tigrfam2pfam.tsv', 'w')
         for key, genomeSet in matches.iteritems():
             pfam, tigr = key.split('-')
 
@@ -136,9 +134,10 @@ if __name__ == '__main__':
     print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('metadata_file', help='IMG metadata file')
     parser.add_argument('-p', '--percent', help='percent threshold for matching a TIGRFAM to a PFAM', type = float, default = 0.90)
 
     args = parser.parse_args()
 
     tigr2Pfam = Tigr2Pfam()
-    tigr2Pfam.run(args.percent)
+    tigr2Pfam.run(args.metadata_file, args.percent)

@@ -34,7 +34,7 @@ import defaultValues
 from markerSets import MarkerSet, BinMarkerSets
 
 from common import checkDirExists, reassignStdOut, restoreStdOut, getBinIdsFromOutDir
-from seqUtils import readFasta
+from lib.seqUtils import readFasta
 from lib.taxonomyUtils import taxonomicPrefixes
 
 class TreeParser():
@@ -332,21 +332,23 @@ class TreeParser():
         
         return selectedParentNode, markerSet
     
-    def __refineMarkerSet(self, markerSet, parentNode, tree, uniqueIdToLineageStatistics, numGenomesRefine):
+    def __refineMarkerSet(self, markerSet, binNode, tree, uniqueIdToLineageStatistics, numGenomesRefine):
         """Refine marker set to account for lineage-specific gene loss and duplication."""
         
+        # lineage-specific refine is done with the sister lineage to where the bin is inserted
+        
         # get lineage-specific marker set which will be used to refine the above marker set
-        selectedParentNode = parentNode
+        curNode = binNode.sister_nodes()[0]
         while True:
-            if selectedParentNode.label: # nodes inserted by PPLACER will not have a label
-                uniqueId = selectedParentNode.label.split('|')[0]
+            if curNode.label: # nodes inserted by PPLACER will not have a label
+                uniqueId = curNode.label.split('|')[0]
                 stats = uniqueIdToLineageStatistics[uniqueId]
                 
                 if stats['# genomes'] >= numGenomesRefine:
                     break
             
-            selectedParentNode = selectedParentNode.parent_node
-            if selectedParentNode == None:
+            curNode = curNode.parent_node
+            if curNode == None:
                 break # reached the root node so terminate
             
         # get lineage-specific marker set       
@@ -390,7 +392,7 @@ class TreeParser():
         binIds = getBinIdsFromOutDir(outDir)
                 
         # get statistics for internal nodes
-        uniqueIdToLineageStatistics = self.__readNodeMetadata()
+        uniqueIdToLineageStatistics = self.readNodeMetadata()
                 
         # determine marker set for each bin
         treeFile = os.path.join(outDir, 'storage', 'tree', defaultValues.PPLACER_TREE_OUT)
@@ -441,7 +443,7 @@ class TreeParser():
                                                                 numGenomesMarkers, numGenomesRefine, bootstrap, 
                                                                 bForceDomain, bRequireTaxonomy)
                     if not bNoLineageSpecificRefinement and bRoot == False:
-                        markerSet = self.__refineMarkerSet(markerSet, node.parent_node, tree, uniqueIdToLineageStatistics, numGenomesRefine)
+                        markerSet = self.__refineMarkerSet(markerSet, node, tree, uniqueIdToLineageStatistics, numGenomesRefine)
                     
                     binMarkerSets.addMarkerSet(markerSet)
             
@@ -452,11 +454,11 @@ class TreeParser():
                 
         fout.close()
                 
-    def __readNodeMetadata(self):
+    def readNodeMetadata(self):
         """Read metadata for internal nodes."""
         
         uniqueIdToLineageStatistics = {}
-        metadataFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'metadata.tsv')
+        metadataFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree.metadata.tsv')
         with open(metadataFile) as f:
             f.readline()
             for line in f:
@@ -486,7 +488,7 @@ class TreeParser():
     def readLineageMetadata(self, outDir, binIds): 
         """Get metadata for each bin."""
         
-        uniqueIdToLineageStatistics = self.__readNodeMetadata()
+        uniqueIdToLineageStatistics = self.readNodeMetadata()
           
         # read genome tree
         treeFile = os.path.join(outDir, 'storage', 'tree', defaultValues.PPLACER_TREE_OUT)
@@ -542,25 +544,25 @@ class TreeParser():
                 
         # get weighted ML likelihood
         pplacerJsonFile = os.path.join(outDir, 'storage', 'tree', 'concatenated.pplacer.json')
-        binIdToWeightedML = self.readPlacementFile(pplacerJsonFile)
+        #binIdToWeightedML = self.readPlacementFile(pplacerJsonFile)
         
         # write table
         if not bLineageStatistics:
-            self.__printSimpleSummaryTable(binIdToTaxonomy, binIdToWeightedML, resultsParser, bTabTable, outFile)
+            self.__printSimpleSummaryTable(binIdToTaxonomy, resultsParser, bTabTable, outFile)
         else:
             # get taxonomy of sister lineage for each bin
             binIdToSisterTaxonomy = self.getBinSisterTaxonomy(outDir, binIds)
         
             binIdToLineageStatistics = self.readLineageMetadata(outDir, binIds)
-            self.__printFullTable(binIdToTaxonomy, binIdToSisterTaxonomy, binIdToWeightedML, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile)
+            self.__printFullTable(binIdToTaxonomy, binIdToSisterTaxonomy, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile)
         
-    def __printSimpleSummaryTable(self, binIdToTaxonomy, binIdToWeightedML, resultsParser, bTabTable, outFile):
+    def __printSimpleSummaryTable(self, binIdToTaxonomy, resultsParser, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
         arbitraryBinId = binIdToTaxonomy.keys()[0]
         markerCountLabel = '# marker (of %d)' % len(resultsParser.models[arbitraryBinId])
-        header = ['Bin Id', markerCountLabel, 'Taxonomy', 'Weighted ML']
+        header = ['Bin Id', markerCountLabel, 'Taxonomy']
         
         if bTabTable: 
             pTable = None
@@ -575,7 +577,7 @@ class TreeParser():
             pTable.vrules = prettytable.NONE
 
         for binId in sorted(binIdToTaxonomy.keys()):
-            row = [binId, len(resultsParser.results[binId].markerHits), binIdToTaxonomy[binId], binIdToWeightedML.get(binId, 'NA')]
+            row = [binId, len(resultsParser.results[binId].markerHits), binIdToTaxonomy[binId]]
             
             if bTabTable:
                 print('\t'.join(map(str, row)))
@@ -588,14 +590,14 @@ class TreeParser():
         # restore stdout   
         restoreStdOut(outFile, oldStdOut) 
         
-    def __printFullTable(self, binIdToTaxonomy, binIdToSisterTaxonomy, binIdToWeightedML, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile):
+    def __printFullTable(self, binIdToTaxonomy, binIdToSisterTaxonomy, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
         arbitraryBinId = binIdToTaxonomy.keys()[0]
         markerCountLabel = '# marker (of %d)' % len(resultsParser.models[arbitraryBinId])
         header = ['Bin Id', markerCountLabel]
-        header += ['Taxonomy (contained)', 'Taxonomy (sister lineage)', 'Weighted ML']
+        header += ['Taxonomy (contained)', 'Taxonomy (sister lineage)']
         header += ['GC', 'Genome size (Mbps)', 'Gene count', 'Coding density', 'Translation table']
         header += ['# descendant genomes', 'Lineage: GC mean', 'Lineage: GC std']
         header += ['Lineage: genome size (Mbps) mean', 'Lineage: genome size (Mbps) std']
@@ -630,7 +632,7 @@ class TreeParser():
                 truncSisterLineage = truncSisterLineage[0:-1]
             
             row = [binId, len(resultsParser.results[binId].markerHits)]
-            row += [binIdToTaxonomy[binId], truncSisterLineage, binIdToWeightedML.get(binId, 'NA')]
+            row += [binIdToTaxonomy[binId], truncSisterLineage]
             row += [binStats[binId]['GC'] * 100]
             row += [float(binStats[binId]['Genome size']) / 1e6]
             row += [binStats[binId]['# predicted ORFs']]

@@ -19,12 +19,11 @@
 #                                                                             #
 ###############################################################################
 
-from seqUtils import readFasta
 import logging
 
 from common import checkFileExists
 
-from seqUtils import baseCount
+from lib.seqUtils import baseCount, readFasta
 
 class Unbinned():
     def __init__(self):

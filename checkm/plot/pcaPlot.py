@@ -25,7 +25,7 @@ from matplotlib.ticker import MaxNLocator
 
 from AbstractPlot import AbstractPlot
 
-from checkm.seqUtils import readFasta
+from checkm.lib.seqUtils import readFasta
 
 class PcaPlot(AbstractPlot):
     def __init__(self, options):

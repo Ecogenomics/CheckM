@@ -23,7 +23,7 @@ import numpy as np
 
 from AbstractPlot import AbstractPlot
 
-from checkm.seqUtils import readFasta
+from checkm.lib.seqUtils import readFasta
 
 class NxPlot(AbstractPlot):
     def __init__(self, options):

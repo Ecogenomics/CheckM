@@ -25,7 +25,7 @@ from AbstractPlot import AbstractPlot
 
 from matplotlib.ticker import MaxNLocator
 
-from checkm.seqUtils import readFasta
+from checkm.lib.seqUtils import readFasta
 
 class LengthHistogram(AbstractPlot):
     def __init__(self, options):
