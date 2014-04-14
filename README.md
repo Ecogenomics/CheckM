@@ -1,3 +1,6 @@
+# Work in Progress
+CheckM is in active development and currently not suitable for general use. We expect to have a public version ready in May.
+
 # Overview
 Determining if contigs 'binned' into a putative genome represent a complete genomes or contain sequence data from other genomes is an open problem in metagenomic assembly. These issues must be addressed to make informed inferences about the gene content and metabolic function of putative population genomes. CheckM provides a set of tools for assessing the quality of putative genome bins. It provides robust estimates of genome completeness and contamination using lineage-specific sets of single-copy, ubiquitious genes and explicitly accounting for gene co-location. Assessment of bin quality can also be examined using plots depicting key genomic characteristics (e.g., GC, coding density) which highlight contigs outside the expected distributions of a typical genome. CheckM also provides tools for identifying bins that are likely candidates for merging based on marker set compatibility, similarity in genomic characteristics, and proximity within a reference genome tree.
 
