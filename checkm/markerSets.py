@@ -258,6 +258,26 @@ class MarkerSetParser():
                 
         return binIdToHmmModelFile
     
+    def createHmmModelFile(self, binId, markerFile):
+        """Create HMM file for from a bin's marker set."""
+
+        # determine type of marker set file
+        markerFileType = self.markerFileType(markerFile)
+
+        # get HMM file for each bin
+        if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
+            binMarkerSets = self.__parseTaxonomicMarkerSetFile(markerFile)
+            hmmModelFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+            self.__createMarkerHMMs(binMarkerSets, hmmModelFile, bReportProgress=False)
+        elif markerFileType == BinMarkerSets.TREE_MARKER_SET:
+            binIdToBinMarkerSets = self.__parseLineageMarkerSetFile(markerFile)
+            hmmModelFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+            self.__createMarkerHMMs(binIdToBinMarkerSets[binId], hmmModelFile, bReportProgress=False)
+        else:
+            hmmModelFile = markerFile
+                
+        return hmmModelFile
+    
     def __fetchLineageMarkerSets(self, outDir, binIdToBinMarkerSets):
         """Fetch lineage-specific marker sets for each bin."""
         
@@ -267,7 +287,7 @@ class MarkerSetParser():
         writerQueue = mp.Queue()
         
         binIdToHmmModelFile = {}
-        for binId, binMarkerSet in binIdToBinMarkerSets.iteritems():
+        for binId in binIdToBinMarkerSets:
             hmmModelFile = os.path.join(outDir, 'storage', 'hmms', binId + '.hmm')
             workerQueue.put((binId, hmmModelFile))
             binIdToHmmModelFile[binId] = hmmModelFile 

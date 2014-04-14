@@ -718,7 +718,7 @@ class ResultsManager():
             # matrix of bin vs marker counts
             data = self.hitsToMarkerGene(binMarkerSets.selectedMarkerSet())
             
-            columns = self.models.keys()
+            columns = binMarkerSets.selectedMarkerSet().getMarkerGenes()
             
             rowStr = self.binId
             for marker in columns:

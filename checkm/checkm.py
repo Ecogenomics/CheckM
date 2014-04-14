@@ -97,8 +97,7 @@ class OptionsParser():
         makeSurePathExists(options.out_folder)
         makeSurePathExists(os.path.join(options.out_folder, 'bins')) 
         makeSurePathExists(os.path.join(options.out_folder, 'storage')) 
-        makeSurePathExists(os.path.join(options.out_folder, 'storage', 'hmms'))
-        
+         
         # find phylogenetically informative genes in genome bins 
         phyloHMMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'phylo.hmm')                              
         mgf = MarkerGeneFinder(options.threads)
