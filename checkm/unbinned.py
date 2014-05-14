@@ -54,7 +54,7 @@ class Unbinned():
         self.logger.info('    Read %d (%.2f Mbps) sequences.' % (len(allSeqs), float(totalBases)/1e6))
            
         # write all unbinned sequences
-        self.logger.info('  Identifying unbinned sequences.')
+        self.logger.info('  Identifying unbinned sequences >= %d bps.' % minSeqLen)
         seqOut = open(outSeqFile, 'w')
         
         statsOut = open(outStatsFile, 'w')
@@ -67,7 +67,7 @@ class Unbinned():
                 if len(seq) >= minSeqLen:
                     unbinnedCount += 1
                     seqOut.write('>' + seqId + '\n')
-                    seqOut.write(seq)
+                    seqOut.write(seq + '\n')
                     
                     unbinnedBases += len(seq)
                     

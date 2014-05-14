@@ -32,10 +32,9 @@ class SSU_Finder(object):
         
         self.totalThreads = threads
         
-        # *** THESE PATHS NEED TO BE CHANGED
-        self.bacteriaModelFile = '/srv/whitlam/bio/db/communitym/SSU_bacteria.hmm'
-        self.archaeaModelFile = '/srv/whitlam/bio/db/communitym/SSU_archaea.hmm'
-        self.eukModelFile = '/srv/whitlam/bio/db/communitym/SSU_euk.hmm'
+        self.bacteriaModelFile = '/srv/db/checkm/hmms_ssu/SSU_bacteria.hmm'
+        self.archaeaModelFile = '/srv/db/checkm/hmms_ssu/SSU_archaea.hmm'
+        self.eukModelFile = '/srv/db/checkm/hmms_ssu/SSU_euk.hmm'
 
     def __hmmSearch(self, seqFile, evalue, outputPrefix):
         if seqFile.endswith('gz'):
@@ -129,9 +128,6 @@ class SSU_Finder(object):
                 info[4] = str(endNew - start + 1)
                 hits[concateSeqId] = info
                 bConcatenate = True
-                
-                if bRevNew != bRev:
-                    print 'huh?2', seqId
 
             index += 1
             newSeqId = baseSeqId + '-#' + str(index)

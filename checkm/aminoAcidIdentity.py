@@ -23,9 +23,6 @@ import os
 import sys
 import logging
 from collections import defaultdict
-import re
-
-from numpy import mean
 
 import defaultValues
 from common import getBinIdsFromOutDir
@@ -39,10 +36,13 @@ class AminoAcidIdentity():
         self.aaiHetero = defaultdict(dict)
         self.aaiMeanBinHetero = {}
         
-    def run(self, aaiStrainThreshold, outDir):
+    def run(self, aaiStrainThreshold, outDir, alignmentOutputFile):
         """Calculate AAI between input alignments."""
         
         self.logger.info('  Calculating AAI between multi-copy marker genes.')
+        
+        if alignmentOutputFile:
+            fout = open(alignmentOutputFile, 'w')
         
         # calculate AAI for duplicate marker genes
         binIds = getBinIdsFromOutDir(outDir)
@@ -55,7 +55,7 @@ class AminoAcidIdentity():
             for f in os.listdir(binPath): 
                 if not f.endswith('.masked.faa'):
                     continue
-                
+                                
                 markerId = f[0:f.find('.')]
                 
                 seqs = readFasta(os.path.join(binPath, f))
@@ -76,6 +76,13 @@ class AminoAcidIdentity():
                         if binIdI == binIdJ:
                             aai = self.aai(seqI, seqJ)
                             
+                            if alignmentOutputFile:
+                                fout.write(binId + ',' + markerId + '\n')
+                                fout.write(seqIdI + '\t' + seqI + '\n')
+                                fout.write(seqIdJ + '\t' + seqJ + '\n')
+                                fout.write('AAI: %.3f\n' % aai)
+                                fout.write('\n')
+                            
                             if binIdI not in self.aaiRawScores:
                                 self.aaiRawScores[binIdI] = defaultdict(list)
                             self.aaiRawScores[binIdI][markerId].append(aai)
@@ -83,11 +90,15 @@ class AminoAcidIdentity():
                             # something is wrong as the bin Ids should always be the same
                             self.logger.error('  [Error] Bin ids do not match.')
                             sys.exit()
+                            
+        if alignmentOutputFile:
+            fout.close()
                         
         # calculate strain heterogeneity for each marker gene in each bin
-        strainCount = 0
-        multiCopyPairs = 0
         for binId, markerIds in self.aaiRawScores.iteritems():
+            strainCount = 0
+            multiCopyPairs = 0
+        
             self.aaiHetero[binId] = {}
             
             binHetero = []

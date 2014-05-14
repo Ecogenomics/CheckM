@@ -46,28 +46,39 @@ class ProdigalRunner():
         self.ntGeneFile = os.path.join(outDir, defaultValues.PRODIGAL_NT)
         self.gffFile = os.path.join(outDir, defaultValues.PRODIGAL_GFF)
         
-    def run(self, query, bNucORFs=True):  
+    def run(self, query, bNucORFs=True):
+        # gather statistics about query file
+        seqs = readFasta(query)
+        totalBases = 0
+        for seqId, seq in seqs.iteritems():
+            totalBases += len(seq)
+          
         # call ORFs with different translation tables and select the one with the highest coding density
         tableCodingDensity = {}
         for translationTable in [4, 11]:    
             aaGeneFile = self.aaGeneFile + '.' + str(translationTable)
             ntGeneFile = self.ntGeneFile + '.' + str(translationTable)
             gffFile = self.gffFile + '.' + str(translationTable)
-            if bNucORFs:
-                cmd = ('prodigal -p meta -q -c -m -f gff -g %d -a %s -d %s -i %s > %s' % (translationTable, aaGeneFile, ntGeneFile, query, gffFile))
+            
+            # check if there is sufficient bases to calculate prodigal parameters
+            if totalBases < 100000:
+                procedureStr = 'meta'   # use best precalculated parameters
             else:
-                cmd = ('prodigal -p meta -q -c -m -f gff -g %d -a %s -i %s > %s' % (translationTable, aaGeneFile, query, gffFile))
+                procedureStr = 'single'      # estimate parameters from data
+            
+            if bNucORFs:
+                cmd = ('prodigal -p %s -q -c -m -f gff -g %d -a %s -d %s -i %s > %s' % (procedureStr, translationTable, aaGeneFile, ntGeneFile, query, gffFile))
+            else:
+                cmd = ('prodigal -p %s -q -c -m -f gff -g %d -a %s -i %s > %s' % (procedureStr, translationTable, aaGeneFile, query, gffFile))
+                                
             os.system(cmd)
             
             # determine coding density
             prodigalParser = ProdigalGeneFeatureParser(gffFile)
-            seqs = readFasta(query)
-            
+              
             codingBases = 0
-            totalBases = 0
             for seqId, seq in seqs.iteritems():
                 codingBases += prodigalParser.codingBases(seqId)
-                totalBases += len(seq)
                 
             codingDensity = float(codingBases) / totalBases
             tableCodingDensity[translationTable] = codingDensity
@@ -76,7 +87,7 @@ class ProdigalRunner():
         bestTranslationTable = 11
         if (tableCodingDensity[4] - tableCodingDensity[11] > 0.05) and tableCodingDensity[4] > 0.7:
             bestTranslationTable = 4
-            
+
         shutil.copyfile(self.aaGeneFile + '.' + str(bestTranslationTable), self.aaGeneFile)
         shutil.copyfile(self.gffFile + '.' + str(bestTranslationTable), self.gffFile)    
         if bNucORFs:

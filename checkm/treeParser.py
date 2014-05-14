@@ -68,7 +68,7 @@ class TreeParser():
         duplicateNodes = self.__readDuplicateSeqs()
         
         # write reference alignments to file
-        seqs = readFasta(os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.concatenated.derep.fasta'))
+        seqs = readFasta(os.path.join(defaultValues.PPLACER_REF_PACKAGE, 'genome_tree.concatenated.derep.fasta'))
         for seqId, seq in seqs.iteritems():
             print('>' + seqId)
             print(seq)
@@ -135,7 +135,7 @@ class TreeParser():
         if leafLabels == 'taxonomy':
             # read taxonomy string for each IMG genome
             taxonomy = {}
-            for line in open(os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree.taxonomy.tsv')):
+            for line in open(os.path.join(defaultValues.GENOME_TREE_DIR, 'genome_tree.taxonomy.tsv')):
                 lineSplit = line.split('\t')
                 taxonomy[lineSplit[0]] = lineSplit[1].rstrip()
                 
@@ -224,7 +224,7 @@ class TreeParser():
         
         # read taxonomy string for each IMG genome
         leafIdToTaxonomy = {}
-        for line in open(os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree.taxonomy.tsv')):
+        for line in open(os.path.join(defaultValues.GENOME_TREE_DIR, 'genome_tree.taxonomy.tsv')):
             lineSplit = line.split('\t')
             leafIdToTaxonomy[lineSplit[0]] = lineSplit[1].rstrip()
         
@@ -458,7 +458,7 @@ class TreeParser():
         """Read metadata for internal nodes."""
         
         uniqueIdToLineageStatistics = {}
-        metadataFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree.metadata.tsv')
+        metadataFile = os.path.join(defaultValues.GENOME_TREE_DIR, 'genome_tree.metadata.tsv')
         with open(metadataFile) as f:
             f.readline()
             for line in f:
@@ -543,7 +543,7 @@ class TreeParser():
         binIdToTaxonomy = self.getBinTaxonomy(outDir, binIds)
                 
         # get weighted ML likelihood
-        pplacerJsonFile = os.path.join(outDir, 'storage', 'tree', 'concatenated.pplacer.json')
+        #pplacerJsonFile = os.path.join(outDir, 'storage', 'tree', 'concatenated.pplacer.json')
         #binIdToWeightedML = self.readPlacementFile(pplacerJsonFile)
         
         # write table
@@ -660,7 +660,7 @@ class TreeParser():
     def __readDuplicateSeqs(self):
         """Parse file indicating duplicate sequence alignments."""
         duplicateSeqs = {}
-        for line in open(os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree.derep.txt')):
+        for line in open(os.path.join(defaultValues.GENOME_TREE_DIR, 'genome_tree.derep.txt')):
             lineSplit = line.rstrip().split()
             if len(lineSplit) > 1:
                 duplicateSeqs[lineSplit[0]] = lineSplit[1:]

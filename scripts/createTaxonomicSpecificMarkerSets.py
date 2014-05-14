@@ -57,7 +57,10 @@ class TaxonomicMarkerSets(object):
             if lineage == None:
                 break
 
-            genomeIds = img.genomeIdsByTaxonomy(lineage, metadata)
+            if lineage == 'Universal':
+                genomeIds = img.genomeIdsByTaxonomy('prokaryotes', metadata)
+            else:
+                genomeIds = img.genomeIdsByTaxonomy(lineage, metadata)
             if len(genomeIds) >= minGenomes:
                 markerSet = markerSetBuilder.buildMarkerSet(genomeIds, ubiquityThreshold, singleCopyThreshold, colocatedDistThreshold)
                 colocatedSets = markerSet.markerSet
@@ -150,6 +153,7 @@ class TaxonomicMarkerSets(object):
         img = IMG()
         metadata = img.genomeMetadata()
         lineages = img.lineagesSorted(metadata)
+        lineages.append('Universal')
         
         # determine HMM model accession numbers
         pfamIdToPfamAcc = self.__pfamIdToPfamAcc(img)

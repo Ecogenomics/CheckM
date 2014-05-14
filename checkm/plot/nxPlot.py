@@ -70,7 +70,7 @@ class NxPlot(AbstractPlot):
         # Create plot
         axes.plot(x, nx, 'ko-', ms = 4)    
         axes.set_xlabel('Nx')
-        axes.set_ylabel('Sequence length (Kbps)')
+        axes.set_ylabel('Sequence length (kbps)')
         
         # Change sequence lengths from bps to kbps
         yticks = axes.get_yticks()

@@ -27,22 +27,20 @@ from collections import defaultdict
 from seqUtils import readFasta
 from taxonomyUtils import ranksByLabel
 
-class IMG(object):
-    metadataFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data','img', 'img_metadata.tsv')
-    redundantTIGRFAMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data','pfam', 'tigrfam2pfam.tsv')
-    
+class IMG(object):    
     genomeDir = '/srv/whitlam/bio/db/img//07042014/genomes/'
     pfamExtension = '.pfam.tab.txt'
     tigrExtension = '.tigrfam.tab.txt'
-    
-    pfamHMMs = '/srv/whitlam/bio/db/pfam/27/Pfam-A.hmm'
-    tigrHMMs = '/srv/whitlam/bio/db/tigrfam/13.0/Tigr.hmm'
 
-    def __init__(self):
+    def __init__(self, imgMetadataFile, redundantTIGRFAMsFile):
         self.logger = logging.getLogger()
+        
+        self.metadataFile = imgMetadataFile
+        self.redundantTIGRFAMs = redundantTIGRFAMsFile
         
         self.cachedGenomeSeqLens = None
         self.cachedGenomeFamilyPositions = None
+        self.cachedGenomeFamilyScaffolds = None
     
     def filterGenomeIds(self, genomeIds, metadata, fieldToFilterOn, valueToRetain):
         filteredGenomeIds = set()
@@ -94,7 +92,7 @@ class IMG(object):
         return d
     
     def genomeMetadata(self):
-        return self.genomeMetadataFromFile(IMG.metadataFile)
+        return self.genomeMetadataFromFile(self.metadataFile)
 
     def genomeMetadataFromFile(self, metadataFile):
         metadata = {}
@@ -313,10 +311,81 @@ class IMG(object):
 
         return table
     
+    def __genomeIdToClusterScaffold(self, genomeId):
+        """Determine position of PFAM and TIGRFAM genes in genome."""
+        
+        # determine mapping from gene ids to PFAM/TIGRFAM ids
+        familyFile = os.path.join(self.genomeDir, genomeId, genomeId)
+        pfamIdToGeneIds = self.familyIdToGeneId(familyFile + self.pfamExtension, 8)
+        tigrIdToGeneIds = self.familyIdToGeneId(familyFile + self.tigrExtension, 6)
+        
+        # determine scaffold of genes from GFF file
+        gffFile = os.path.join(self.genomeDir, genomeId, genomeId + '.gff')
+            
+        genePosition = {}
+        for line in open(gffFile):
+            if line[0] == '#':
+                continue
 
+            lineSplit = line.split('\t')
+            if len(lineSplit) != 9:
+                continue # line likely annotates a CRISPR
+            
+            seqId = lineSplit[0]
+                 
+            geneId = lineSplit[8].split(';')[0]
+            geneId = geneId[geneId.find('=')+1:]
+
+            genePosition[geneId] = seqId
+            
+        # create gene mapping table
+        try:
+            # In theory, every PFAM or TIGRFAM gene identified should have
+            # an entry in the GFF file and thus a position. In practice, there
+            # are a few cases where this isn't tree (?) so only PFAMs/TIGRFAMs
+            # with GFF entries are considered.
+            familyIdToScaffoldIds = {}
+            for pfamId, geneIds in pfamIdToGeneIds.iteritems():
+                scaffolds = []
+                for geneId in geneIds:
+                    scaffold = genePosition.get(geneId, None)
+                    if scaffold != None:
+                        scaffolds.append(scaffold)
+                        
+                if scaffolds:
+                    familyIdToScaffoldIds[pfamId] = scaffolds
+    
+            for tigrId, geneIds in tigrIdToGeneIds.iteritems():
+                scaffolds = []
+                for geneId in geneIds:
+                    scaffold = genePosition.get(geneId, None)
+                    if scaffold != None:
+                        scaffolds.append(scaffold)
+
+                if scaffold:
+                    familyIdToScaffoldIds[tigrId] = scaffolds
+        except:
+            print '[BUG]: __genomeIdToClusterScaffold' 
+            print sys.exc_info()[0]
+            print genomeId, geneId, tigrId, pfamId
+            sys.exit()
+            
+        return familyIdToScaffoldIds
+    
+    def precomputeGenomeFamilyScaffolds(self, genomeIds):
+        """Cache scaffold of PFAM and TIGRFAM genes in genomes."""
+        
+        # This function is intended to speed up functions, such as geneDistTable(),
+        # that are called multiple times (typically during simulations)
+        self.cachedGenomeFamilyScaffolds = {}
+        for genomeId in genomeIds:
+            self.cachedGenomeFamilyScaffolds[genomeId] = self.__genomeIdToClusterScaffold(genomeId)
+            
+        return self.cachedGenomeFamilyScaffolds
+    
     def familyIdToGeneId(self, filename, clusterIdIndex):
         """Determine gene ids associated with PFAMs or TIGRFAMs."""
-        familyIdToGeneId = defaultdict(list)
+        familyIdToGeneId = defaultdict(set)
         with open(filename) as f:
             f.readline()
             for line in f:
@@ -324,7 +393,7 @@ class IMG(object):
                 
                 geneId = lineSplit[0]
                 familyId = lineSplit[clusterIdIndex]
-                familyIdToGeneId[familyId] += [geneId]
+                familyIdToGeneId[familyId].update([geneId])
 
         return familyIdToGeneId
     
@@ -348,6 +417,8 @@ class IMG(object):
         self.cachedGenomeSeqLens = {}
         for genomeId in genomeIds:
             self.cachedGenomeSeqLens[genomeId] = self.__genomeSeqLens(genomeId)
+            
+        return self.cachedGenomeSeqLens
             
     def __genomeFamilyPositions(self, genomeId, seqLens, spacingBetweenContigs):
         """Determine position of PFAM and TIGRFAM genes in genome."""
@@ -487,7 +558,7 @@ class IMG(object):
 
     def identifyRedundantTIGRFAMs(self, markerGenes):
         tigrIdToPfamId = {}
-        for line in open(IMG.redundantTIGRFAMs):
+        for line in open(self.redundantTIGRFAMs):
             lineSplit = line.split('\t')
             pfamId = lineSplit[0]
             tigrId = lineSplit[1].rstrip()

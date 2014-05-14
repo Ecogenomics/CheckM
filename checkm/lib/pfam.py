@@ -19,16 +19,13 @@
 #                                                                             #
 ###############################################################################
 
-import os
-import sys
-import operator
 from collections import defaultdict
 
 from checkm.common import checkFileExists
 
 class PFAM(object):
-    def __init__(self):
-        self.pfamClanFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'pfam', 'Pfam-A.hmm.dat')
+    def __init__(self, pfamClanFile):
+        self.pfamClanFile = pfamClanFile
         self.idToAcc = {}   # map ids to pfam accessions
         self.clan = {}      # map pfam accessions to clans
         self.nested = {}    # map pfam accessions to nested pfam accessions

@@ -27,6 +27,8 @@ import logging
 
 import numpy as np
 
+import defaultValues
+
 def getBinIdsFromOutDir(outDir):
     """Get bin ids."""
     binIds = []
@@ -41,7 +43,7 @@ def getBinIdsFromOutDir(outDir):
 
 def readDistribution(prefix):
     """Read distribution file."""
-    distFile = os.path.join(os.path.dirname(sys.argv[0]) + '/../data/distributions',  prefix + '.txt')
+    distFile = os.path.join(defaultValues.DISTRIBUTION_DIR,  prefix + '.txt')
     checkFileExists(distFile)
     
     with open(distFile, 'r') as f:

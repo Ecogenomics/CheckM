@@ -37,10 +37,8 @@ class TaxonParser():
         self.logger = logging.getLogger()
         
     def readMarkerSets(self):
-        taxonMarkerSetFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'taxon_marker_sets.tsv')
-        
         taxonMarkerSets = defaultdict(dict)
-        for line in open(taxonMarkerSetFile):
+        for line in open(defaultValues.TAXON_MARKER_SETS):
             lineSplit = line.split('\t')
             rank = lineSplit[0]
             taxon = lineSplit[1]
@@ -81,6 +79,7 @@ class TaxonParser():
     
         taxonMarkerSets = self.readMarkerSets()
         
+
         if rank not in taxonMarkerSets:
             self.logger.error('  Unrecognized taxonomic rank: ' + rank)
             return False
@@ -93,7 +92,9 @@ class TaxonParser():
         taxonomy = markerSet.lineageStr.split(';')[::-1]
         binMarkerSets = BinMarkerSets(taxon, BinMarkerSets.TAXONOMIC_MARKER_SET)
         for i, taxon in enumerate(taxonomy):
-            rank = ranksByLevel[len(taxonomy)-i-1]
+            if rank != 'life':
+                rank = ranksByLevel[len(taxonomy)-i-1]
+                
             if rank == 'species':
                 taxon = taxonomy[1] + ' ' + taxonomy[0]
             

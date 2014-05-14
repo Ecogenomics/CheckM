@@ -99,12 +99,14 @@ class Coverage():
         self.logger.info('  Determining bin assignment of each sequence.')
             
         seqIdToBinId = {}
+        seqIdToSeqLen = {}
         for binFile in binFiles:
             binId = binIdFromFilename(binFile)
             
             seqs = readFasta(binFile)
-            for seqId in seqs.keys():
+            for seqId, seq in seqs.iteritems():
                 seqIdToBinId[seqId] = binId
+                seqIdToSeqLen[seqId] = len(seq)
         
         # process each fasta file
         self.logger.info("  Processing %d file(s) with %d threads.\n" % (len(bamFiles), self.totalThreads))
@@ -127,6 +129,7 @@ class Coverage():
             coverageInfo[bamFile] = self.__processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, coverageInfo[bamFile]) 
             
         # redirect output
+        self.logger.info('  Writing coverage information to file.')
         oldStdOut = reassignStdOut(outFile)
         
         header = 'Sequence Id\tBin Id\tSequence length (bp)'
@@ -134,12 +137,23 @@ class Coverage():
             header += '\tBam Id\tCoverage\tMapped reads'
         
         print(header)
+        
+        # get length of all seqs
+        for bamFile, seqIds in coverageInfo.iteritems():
+            for seqId in seqIds.keys():
+                seqIdToSeqLen[seqId] = seqIds[seqId].seqLen
 
-        for seqId in coverageInfo[coverageInfo.keys()[0]].keys():
-            rowStr = seqId + '\t' + seqIdToBinId.get(seqId, defaultValues.UNBINNED) + '\t' + str(coverageInfo[coverageInfo.keys()[0]][seqId].seqLen)
+        # write coverage stats for all scaffolds to file
+        for seqId, seqLen in seqIdToSeqLen.iteritems():
+            rowStr = seqId + '\t' + seqIdToBinId.get(seqId, defaultValues.UNBINNED) + '\t' + str(seqLen)
             for bamFile in bamFiles:
                 bamId = binIdFromFilename(bamFile)
-                rowStr += '\t' + bamId + '\t' + str(coverageInfo[bamFile][seqId].coverage) + '\t' + str(coverageInfo[bamFile][seqId].mappedReads)
+                
+                if seqId in coverageInfo[bamFile]:
+                    rowStr += '\t%s\t%f\t%d' % (bamId, coverageInfo[bamFile][seqId].coverage, coverageInfo[bamFile][seqId].mappedReads)
+                else:
+                    rowStr += '\t%s\t%f\t%d' % (bamId, 0, 0)
+                
             print(rowStr)
         
         # restore stdout

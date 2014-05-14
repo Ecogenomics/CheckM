@@ -51,12 +51,12 @@ class HMMERRunner():
         if self.mode != 'domtblout' and self.mode != 'tblout':
             raise HMMMERModeError("Mode %s not compatible with search" % self.mode)
         
+        if not bKeepOutput:
+            hmmerOut = '/dev/null'
+        
         cmd = ('hmmsearch --%s %s %s %s %s > %s' % (self.mode, tableOut, cmdlineOptions, db, query, hmmerOut))
         os.system(cmd)
-        
-        if not bKeepOutput:
-            os.remove(hmmerOut)
-            
+          
     def align(self, db, query, outputFile, writeMode='>', outputFormat='PSIBLAST', trim=True):
         """Run hmmalign"""
         if self.mode != 'align':

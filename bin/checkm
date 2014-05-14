@@ -55,6 +55,10 @@ def printHelp():
   Apply marker set to genome bins:   
     analyze      -> Identify marker genes in bins
     qa           -> Assess bins for contamination and completeness
+    
+  Common workflows (combines above commands):
+    lineage_wf   -> Runs tree, lineage_set, analyze, qa
+    taxonomy_wf  -> Runs taxon_set, analyze, qa
       
   Bin QA plots:
     bin_qa_plot  -> Bar plot of bin completeness, contamination, and strain heterogeneity   
@@ -180,7 +184,7 @@ if __name__ == '__main__':
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                         description='Infer taxonomic-specific marker set.',
                                         epilog = 'Example: checkm taxon_set domain Bacteria bacteria.ms')
-    taxon_set_parser.add_argument('rank', help="taxonomic rank", choices=['domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'])
+    taxon_set_parser.add_argument('rank', help="taxonomic rank", choices=taxonomicRanks)
     taxon_set_parser.add_argument('taxon', help="taxon of interest")
     taxon_set_parser.add_argument('marker_file', help="output file describing taxonomic-specific marker set")
     taxon_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -198,6 +202,8 @@ if __name__ == '__main__':
     analyze_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     analyze_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     analyze_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    analyze_parser.add_argument('--ali_top_hits', dest='bAlignTopHit', action="store_true", default=False, help=argparse.SUPPRESS) # [hidden argument] align top marker hits (used by genome tree database)
 
     # do QA on pre-processed contigs
     qa_parser = subparsers.add_parser('qa', 
@@ -209,14 +215,64 @@ if __name__ == '__main__':
     qa_parser.add_argument('analyze_folder', help="folder specified during analyze command")
     qa_parser.add_argument('--individual_markers', dest='bIndividualMarkers', action="store_true", default=False, help="treat marker as independent (i.e., ignore co-located set structure)")
     qa_parser.add_argument('--skip_orf_correction', dest='bSkipOrfCorrection', action="store_true", default=False, help="skip identification of ORF errors affecting marker genes")
-    qa_parser.add_argument('--ignore_thresholds', dest='bIgnoreThresholds', action="store_true", default=False, help="ignore model-specific score thresholds")
     qa_parser.add_argument('--aai_strain', type=float, default=0.9, help="AAI threshold used to identify strain heterogeneity")
+    qa_parser.add_argument('-a', '--alignment_file', default=None, help="produce file showing alignment of multi-copy genes and their AAI identity")
+    qa_parser.add_argument('--ignore_thresholds', dest='bIgnoreThresholds', action="store_true", default=False, help="ignore model-specific score thresholds")
     qa_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.E_VAL, help="e-value cut off")
     qa_parser.add_argument('-l', '--length', type=float, default=defaultValues.LENGTH, help="percent overlap between target and query")
     qa_parser.add_argument('-c', '--coverage_file', default=None, help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
     qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     qa_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     qa_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    
+    # run lineage-specific workflow
+    lineage_wf_parser = subparsers.add_parser('lineage_wf', 
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter, 
+                                        description='Runs tree, lineage_set, analyze, qa',
+                                        epilog='Example: checkm lineage_wf ./bins ./output')
+    lineage_wf_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
+    lineage_wf_parser.add_argument('out_folder', help="folder to write output files")
+    lineage_wf_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
+    lineage_wf_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
+    lineage_wf_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum reference genomes required to refine marker set", default=2)
+    lineage_wf_parser.add_argument('--no_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform marker set refinement")
+    lineage_wf_parser.add_argument('--force_domain', dest='bForceDomain', action="store_true", default=False, help="use domain-level sets for all bins")
+    lineage_wf_parser.add_argument('--individual_markers', dest='bIndividualMarkers', action="store_true", default=False, help="treat marker as independent (i.e., ignore co-located set structure)")
+    lineage_wf_parser.add_argument('--skip_orf_correction', dest='bSkipOrfCorrection', action="store_true", default=False, help="skip identification of ORF errors affecting marker genes")
+    lineage_wf_parser.add_argument('--aai_strain', type=float, default=0.9, help="AAI threshold used to identify strain heterogeneity")
+    lineage_wf_parser.add_argument('--ignore_thresholds', dest='bIgnoreThresholds', action="store_true", default=False, help="ignore model-specific score thresholds")
+    lineage_wf_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.E_VAL, help="e-value cut off")
+    lineage_wf_parser.add_argument('-l', '--length', type=float, default=defaultValues.LENGTH, help="percent overlap between target and query")
+    lineage_wf_parser.add_argument('-c', '--coverage_file', default=None, help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
+    lineage_wf_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
+    lineage_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    lineage_wf_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
+    lineage_wf_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # run taxonomic-specific workflow
+    taxonomy_wf_parser = subparsers.add_parser('taxonomy_wf', 
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter, 
+                                        description='Runs taxon_set, analyze, qa',
+                                        epilog='Example: checkm taxonomy_wf domain Bacteria ./bins ./output')
+                                        
+    taxonomy_wf_parser.add_argument('rank', help="taxonomic rank", choices=['domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'])
+    taxonomy_wf_parser.add_argument('taxon', help="taxon of interest")
+    taxonomy_wf_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
+    taxonomy_wf_parser.add_argument('out_folder', help="folder to write output files")
+    taxonomy_wf_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
+    taxonomy_wf_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
+    taxonomy_wf_parser.add_argument('--individual_markers', dest='bIndividualMarkers', action="store_true", default=False, help="treat marker as independent (i.e., ignore co-located set structure)")
+    taxonomy_wf_parser.add_argument('--skip_orf_correction', dest='bSkipOrfCorrection', action="store_true", default=False, help="skip identification of ORF errors affecting marker genes")
+    taxonomy_wf_parser.add_argument('--aai_strain', type=float, default=0.9, help="AAI threshold used to identify strain heterogeneity")
+    taxonomy_wf_parser.add_argument('--ignore_thresholds', dest='bIgnoreThresholds', action="store_true", default=False, help="ignore model-specific score thresholds")
+    taxonomy_wf_parser.add_argument('-e', '--e_value', type=float, default=defaultValues.E_VAL, help="e-value cut off")
+    taxonomy_wf_parser.add_argument('-l', '--length', type=float, default=defaultValues.LENGTH, help="percent overlap between target and query")
+    taxonomy_wf_parser.add_argument('-c', '--coverage_file', default=None, help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
+    taxonomy_wf_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
+    taxonomy_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    taxonomy_wf_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
+    taxonomy_wf_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
         
     # generic arguments for plots

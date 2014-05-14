@@ -30,6 +30,7 @@ from hmmer import HMMERRunner
 from prodigal import ProdigalRunner
 
 from markerSets import MarkerSetParser
+from hmmerModelParser import HmmModelParser
 
 class MarkerGeneFinder():
     """Identify marker genes within binned sequences using Prodigal and HMMER."""
@@ -40,19 +41,10 @@ class MarkerGeneFinder():
     def find(self, binFiles, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs):
         """Identify marker genes in each bin using prodigal and HMMER."""
                 
-        # get bin ids
-        binIds = []
-        for binFile in binFiles:
-            binIds.append(binIdFromFilename(binFile))
-                
-        # create HMM file(s)
-        markerSetParser = MarkerSetParser(self.totalThreads)
-        binIdToHmmModelFile = markerSetParser.createHmmModelFiles(outDir, binIds, markerFile)
-
         # process each fasta file
         self.threadsPerSearch = max(1, int(self.totalThreads / len(binFiles)))
         self.logger.info("  Identifying marker genes in %d bins with %d threads:" % (len(binFiles), self.totalThreads))
-        
+
         # process each bin in parallel
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
@@ -63,7 +55,8 @@ class MarkerGeneFinder():
         for _ in range(self.totalThreads):
             workerQueue.put(None)
 
-        calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, binIdToHmmModelFile, bKeepAlignment, bNucORFs, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        binIdToModels = mp.Manager().dict()
+        calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, binIdToModels, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
         writeProc = mp.Process(target = self.__reportProgress, args = (len(binFiles), writerQueue))
 
         writeProc.start()
@@ -77,15 +70,23 @@ class MarkerGeneFinder():
         writerQueue.put(None)
         writeProc.join()
         
-        return binIdToHmmModelFile
+        # create a standard dictionary from the managed dictionary
+        d = {}
+        for binId in binIdToModels.keys():
+            d[binId] = binIdToModels[binId]
+        
+        return d
               
-    def __processBin(self, outDir, tableOut, hmmerOut, binIdToHmmModelFile, bKeepAlignment, bNucORFs, queueIn, queueOut):
-        """Thread safe bin processing."""      
+    def __processBin(self, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, binIdToModels, queueIn, queueOut):
+        """Thread safe bin processing."""     
+        
+        markerSetParser = MarkerSetParser(self.threadsPerSearch)
+         
         while True:    
             binFile = queueIn.get(block=True, timeout=None) 
             if binFile == None:
                 break   
-            
+
             binId = binIdFromFilename(binFile)
             binDir = os.path.join(outDir, 'bins', binId)
             makeSurePathExists(binDir)
@@ -94,7 +95,14 @@ class MarkerGeneFinder():
             prodigal = ProdigalRunner(binDir) 
             if not prodigal.areORFsCalled():
                 prodigal.run(binFile, bNucORFs)
-    
+                
+            # extract HMMs into temporary file
+            hmmModelFile = markerSetParser.createHmmModelFile(binId, markerFile)
+
+            # parse HMM file
+            modelParser = HmmModelParser(hmmModelFile)
+            binIdToModels[binId] = modelParser.models()
+
             # run HMMER
             hmmer = HMMERRunner()
             tableOutPath = os.path.join(binDir, tableOut)
@@ -103,10 +111,14 @@ class MarkerGeneFinder():
             keepAlignStr = ''
             if not bKeepAlignment:
                 keepAlignStr = '--noali'
-            hmmer.search(binIdToHmmModelFile[binId], prodigal.aaGeneFile, tableOutPath, hmmerOutPath, '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr, bKeepAlignment)
+            hmmer.search(hmmModelFile, prodigal.aaGeneFile, tableOutPath, hmmerOutPath, 
+                         '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr, 
+                         bKeepAlignment)
+
+            os.remove(hmmModelFile)
     
             queueOut.put(binId)
-            
+
     def __reportProgress(self, numBins, queueIn):
         """Report number of processed bins."""      
         

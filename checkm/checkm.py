@@ -98,33 +98,38 @@ class OptionsParser():
         makeSurePathExists(os.path.join(options.out_folder, 'bins')) 
         makeSurePathExists(os.path.join(options.out_folder, 'storage')) 
          
-        # find phylogenetically informative genes in genome bins 
-        phyloHMMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'phylo.hmm')                              
+        # find phylogenetically informative genes in genome bins                            
         mgf = MarkerGeneFinder(options.threads)
-        mgf.find(binFiles, options.out_folder, defaultValues.HMMER_TABLE_PHYLO_OUT, defaultValues.HMMER_PHYLO_OUT, phyloHMMs, options.bKeepAlignment, options.bNucORFs)
+        binIdToModels = mgf.find(binFiles, 
+                                 options.out_folder, 
+                                 defaultValues.HMMER_TABLE_PHYLO_OUT, 
+                                 defaultValues.HMMER_PHYLO_OUT, 
+                                 defaultValues.PHYLO_HMM_MODELS, 
+                                 options.bKeepAlignment, 
+                                 options.bNucORFs)
+        
+        # write module information to file
+        markerSetParser = MarkerSetParser(options.threads)
+        hmmModelInfoFile = os.path.join(options.out_folder, 'storage', defaultValues.PHYLO_HMM_MODEL_INFO)
+        markerSetParser.writeBinModels(binIdToModels, hmmModelInfoFile)
         
         # calculate statistics for each genome bin
         self.logger.info('')
         binStats = BinStatistics(options.threads)
         binStats.calculate(binFiles, options.out_folder, defaultValues.BIN_STATS_PHYLO_OUT, defaultValues.SEQ_STATS_PHYLO_OUT)
         
-        # set HMM file for each bin
-        binIdToHmmModelFile = {}
-        for binFile in binFiles:
-            binId = binIdFromFilename(binFile)
-            binIdToHmmModelFile[binId] = phyloHMMs
-        
         # align identified marker genes
         self.logger.info('')
         HA = HmmerAligner(options.threads)
-        resultsParser = HA.makeAlignmentToCommonMarkers(options.out_folder,
-                                          defaultValues.HMMER_TABLE_PHYLO_OUT,
-                                          binIdToHmmModelFile,
-                                          False,
-                                          defaultValues.E_VAL,
-                                          defaultValues.LENGTH,
-                                          os.path.join(options.out_folder, 'storage', 'tree')
-                                          )
+        resultsParser = HA.makeAlignmentToPhyloMarkers(options.out_folder,
+                                                            defaultValues.PHYLO_HMM_MODELS,
+                                                            defaultValues.HMMER_TABLE_PHYLO_OUT,
+                                                            binIdToModels,
+                                                            False,
+                                                            defaultValues.E_VAL,
+                                                            defaultValues.LENGTH,
+                                                            os.path.join(options.out_folder, 'storage', 'tree')
+                                                            )
         
         # place bins into genome tree
         self.logger.info('')
@@ -143,18 +148,17 @@ class OptionsParser():
 
         checkDirExists(options.tree_folder)
         
-        # set HMM file for each bin
-        phyloHMMs = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'phylo.hmm') 
+        # set HMM file for each bin 
         markerSetParser = MarkerSetParser()
-        binIdToHmmModelFile = markerSetParser.createHmmModelFiles(options.tree_folder, getBinIdsFromOutDir(options.tree_folder), phyloHMMs)
+        hmmModelInfoFile = os.path.join(options.tree_folder, 'storage', defaultValues.PHYLO_HMM_MODEL_INFO)
+        binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
         
         # calculate marker gene statistics
-        RP = ResultsParser()
+        RP = ResultsParser(binIdToModels)
         binStats, _ = RP.analyseResults(options.tree_folder, 
                                           defaultValues.BIN_STATS_PHYLO_OUT, 
                                           defaultValues.SEQ_STATS_PHYLO_OUT, 
-                                          defaultValues.HMMER_TABLE_PHYLO_OUT, 
-                                          binIdToHmmModelFile)
+                                          defaultValues.HMMER_TABLE_PHYLO_OUT)
 
         # determine taxonomy of each bin
         self.logger.info('')
@@ -214,6 +218,10 @@ class OptionsParser():
         self.logger.info('*******************************************************************************')          
         self.logger.info('')
         
+        path = os.path.split(options.marker_file)[0]
+        if path:
+            makeSurePathExists(path)
+        
         taxonParser = TaxonParser()
         bValidSet = taxonParser.markerSet(options.rank, options.taxon, options.marker_file)
         
@@ -238,23 +246,40 @@ class OptionsParser():
         makeSurePathExists(os.path.join(options.out_folder, 'bins')) 
         makeSurePathExists(os.path.join(options.out_folder, 'storage')) 
         makeSurePathExists(os.path.join(options.out_folder, 'storage', 'aai_qa'))
-        makeSurePathExists(os.path.join(options.out_folder, 'storage', 'hmms'))
         
         # find marker genes in genome bins    
         mgf = MarkerGeneFinder(options.threads)
-        binIdToHmmModelFile = mgf.find(binFiles, options.out_folder, defaultValues.HMMER_TABLE_OUT, defaultValues.HMMER_OUT, options.marker_file, options.bKeepAlignment, options.bNucORFs)
-        
+        binIdToModels = mgf.find(binFiles, 
+                                 options.out_folder, 
+                                 defaultValues.HMMER_TABLE_OUT, 
+                                 defaultValues.HMMER_OUT, 
+                                 options.marker_file, 
+                                 options.bKeepAlignment, 
+                                 options.bNucORFs)
+       
         markerSetParser = MarkerSetParser(options.threads)
-        binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.out_folder, getBinIdsFromOutDir(options.out_folder), options.marker_file)
+        binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.out_folder, 
+                                                             getBinIdsFromOutDir(options.out_folder), 
+                                                             options.marker_file)
+        
+        hmmModelInfoFile = os.path.join(options.out_folder, 'storage', defaultValues.CHECKM_HMM_MODEL_INFO)
+        markerSetParser.writeBinModels(binIdToModels, hmmModelInfoFile)
         
         self.timeKeeper.printTimeStamp()
+        
+        # HMM model file
+        if markerSetParser.markerFileType(options.marker_file) == BinMarkerSets.HMM_MODELS_SET:
+            markerFile = options.marker_file
+        else:
+            markerFile = defaultValues.HMM_MODELS
         
         # align marker genes with multiple hits within a bin
         self.logger.info('')
         HA = HmmerAligner(options.threads)
         HA.makeAlignmentsOfMultipleHits(options.out_folder,
+                                          markerFile,
                                           defaultValues.HMMER_TABLE_OUT,
-                                          binIdToHmmModelFile,
+                                          binIdToModels,
                                           binIdToBinMarkerSets,
                                           False,
                                           defaultValues.E_VAL,
@@ -271,6 +296,37 @@ class OptionsParser():
         
         self.timeKeeper.printTimeStamp()
 
+        
+        # align top hit to each marker if requested
+        if options.bAlignTopHit:
+            alignmentOutputFolder = os.path.join(options.out_folder, 'storage', 'alignments')
+            makeSurePathExists(alignmentOutputFolder)
+            
+            self.logger.info('')
+            HA = HmmerAligner(options.threads)
+            resultsParser = HA.makeAlignmentToPhyloMarkers(options.out_folder,
+                                                                options.marker_file,
+                                                                defaultValues.HMMER_TABLE_OUT,
+                                                                binIdToModels,
+                                                                False,
+                                                                defaultValues.E_VAL,
+                                                                defaultValues.LENGTH,
+                                                                alignmentOutputFolder
+                                                                )
+            
+            # report marker gene data
+            fout = open(os.path.join(alignmentOutputFolder, 'alignment_info.tsv'), 'w')
+            fout.write('Marker Id\tLength (bp)\n')
+            markerIds = resultsParser.models[resultsParser.models.keys()[0]].keys()
+            for markerId in markerIds:
+                fout.write('%s\t%d\n' % (markerId, resultsParser.models[resultsParser.models.keys()[0]][markerId].leng))
+            fout.close()
+            
+            self.logger.info('')
+            self.logger.info('  Alignments to top hits stored in: ' + alignmentOutputFolder)
+        
+        self.timeKeeper.printTimeStamp()
+
     def qa(self, options):
         """QA command"""
         self.logger.info('')
@@ -283,20 +339,23 @@ class OptionsParser():
 
         # calculate AAI between marks with multiple hits in a single bin
         aai = AminoAcidIdentity()
-        aai.run(options.aai_strain, options.analyze_folder)
+        aai.run(options.aai_strain, options.analyze_folder, options.alignment_file)
         
         # get HMM file for each bin
+        self.logger.info('')
         markerSetParser = MarkerSetParser(options.threads)
-        binIdToHmmModelFile = markerSetParser.createHmmModelFiles(options.analyze_folder, getBinIdsFromOutDir(options.analyze_folder), options.marker_file)
+        
+        hmmModelInfoFile = os.path.join(options.analyze_folder, 'storage', defaultValues.CHECKM_HMM_MODEL_INFO)
+        binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
+      
         binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.analyze_folder, getBinIdsFromOutDir(options.analyze_folder), options.marker_file)
 
         # get results for each bin
-        RP = ResultsParser()
+        RP = ResultsParser(binIdToModels)
         RP.analyseResults(options.analyze_folder, 
                           defaultValues.BIN_STATS_OUT, 
                           defaultValues.SEQ_STATS_OUT,
                           defaultValues.HMMER_TABLE_OUT,
-                          binIdToHmmModelFile,
                           bIgnoreThresholds = options.bIgnoreThresholds,
                           evalueThreshold = options.e_value,
                           lengthThreshold = options.length,
@@ -641,7 +700,7 @@ class OptionsParser():
         # generate plot for each bin    
         binFiles = self.binFiles(options.bin_folder, options.extension)
         
-        resultsParser = ResultsParser()
+        resultsParser = ResultsParser(None)
         markerGeneStats = resultsParser.parseMarkerGeneStats(options.out_folder)
         binStats = resultsParser.parseBinStatsExt(options.out_folder)
             
@@ -678,7 +737,7 @@ class OptionsParser():
         binFiles = self.binFiles(options.bin_folder, options.extension)
 
         # read sequence stats file
-        resultsParser = ResultsParser()
+        resultsParser = ResultsParser(None)
         seqStats = resultsParser.parseSeqStats(options.out_folder, defaultValues.SEQ_STATS_OUT)
 
         # read coverage stats file
@@ -714,10 +773,14 @@ class OptionsParser():
 
         binFiles = self.binFiles(options.bin_folder, options.extension)
         
+        # read model info
+        #hmmModelInfoFile = os.path.join(options.analyze_folder, 'storage', defaultValues.CHECKM_HMM_MODEL_INFO)
+        #binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
+        
         # read sequence stats file
-        resultsParser = ResultsParser()
+        resultsParser = ResultsParser(None)
         binStatsExt = resultsParser.parseBinStatsExt(options.out_folder)
-  
+        
         # create plot for each bin
         plot = BinQAPlot(options)
         if not options.bIgnoreHetero:
@@ -1009,13 +1072,13 @@ class OptionsParser():
         print '[CheckM - test] Processing E.coli K12-W3310 and verify operation of CheckM.'
         print '*******************************************************************************'
   
-        ecoliFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'test_data', '637000110.fna')
+        ecoliFile = os.path.join(defaultValues.CHECKM_DATA_DIR, 'test_data', '637000110.fna')
         makeSurePathExists(ecoliFile)
         
         testing = Testing()
         
         print '  [Step 1]: Verifying tree command.'
-        options.bin_folder = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'test_data')
+        options.bin_folder = os.path.join(defaultValues.CHECKM_DATA_DIR, 'test_data')
         options.extension = 'fna'
         options.bQuiet = True
         self.tree(options)
@@ -1099,6 +1162,26 @@ class OptionsParser():
         elif(options.subparser_name == 'analyze'):
             self.analyze(options)
         elif(options.subparser_name == 'qa'):
+            self.qa(options)
+        elif(options.subparser_name == 'lineage_wf'):
+            options.marker_file = os.path.join(options.out_folder, 'lineage.ms')
+            options.tree_folder = options.out_folder
+            options.analyze_folder = options.out_folder
+            options.out_format = 1
+            options.file = ''
+            
+            self.tree(options)
+            self.lineageSet(options)
+            self.analyze(options)
+            self.qa(options)
+        elif(options.subparser_name == 'taxonomy_wf'):
+            options.marker_file = os.path.join(options.out_folder, options.taxon + '.ms')
+            options.analyze_folder = options.out_folder
+            options.out_format = 1
+            options.file = ''
+            
+            self.taxonSet(options)
+            self.analyze(options)
             self.qa(options)
         elif(options.subparser_name == 'gc_plot'):
             self.gcPlot(options)

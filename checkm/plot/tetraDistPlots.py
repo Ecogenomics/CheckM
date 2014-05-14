@@ -123,7 +123,7 @@ class TetraDistPlots(AbstractPlot):
         # Delta-TD vs Sequence length plot 
         axesDeltaTD.scatter(deltaTDs, seqLens, c=abs(deltaTDs), s=10, lw=0.5, cmap=pylab.cm.Greys)    
         axesDeltaTD.set_xlabel(r'$\Delta$ TD (mean TD = %.2f)' % meanTD)
-        axesDeltaTD.set_ylabel('Sequence length (Kbps)')
+        axesDeltaTD.set_ylabel('Sequence length (kbps)')
         
         _, yMaxSeqs = axesDeltaTD.get_ylim()
         xMinSeqs, xMaxSeqs = axesDeltaTD.get_xlim()

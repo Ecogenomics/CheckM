@@ -44,14 +44,22 @@ from  dendropy.dataobject.taxon import Taxon
 
 class SimCompare(object):
     def __init__(self):
-        pass
-    
+        self.resultsSummaryFile = './simulations/simulation.draft.summary.tsv'
+        self.resultsFullFile = './simulations/simulation.draft.tsv.gz'
+        self.simCompareSummaryOut = './simulations/simCompare.draft.summary.tsv'
+        self.simCompareFullOut = './simulations/simCompare.draft.full.tsv'
+        
+        #self.resultsSummaryFile = './simulations/simulation.scaffolds.draft.summary.tsv'
+        #self.resultsFullFile = './simulations/simulation.scaffolds.draft.tsv.gz'
+        #self.simCompareSummaryOut = './simulations/simCompare.scaffolds.draft.summary.tsv'
+        #self.simCompareFullOut = './simulations/simCompare.scaffolds.draft.full.tsv'
+            
     def __bestMarkerSet(self, simId, simResults):
         """Get stats for best marker set."""
         bestUID, numDescendantsBest, dCompBest, dContBest = self.__domainMarkerSet(simId, simResults)
         curBest = dCompBest + dContBest
         for uid, results in simResults[simId].iteritems():
-            numDescendants, dComp, dCont, _, _, _, _ = results
+            numDescendants, dComp, dCont, _, _, _, _, _, _ = results
             if numDescendants < 10:
                 continue 
             
@@ -102,6 +110,9 @@ class SimCompare(object):
                 uid = lineSplit[5].split('|')[0].strip()
                 numDescendants = int(lineSplit[6])
                 
+                compUnmodified = float(lineSplit[7].rstrip())
+                contUnmodified = float(lineSplit[8].rstrip())
+                
                 compIM = float(lineSplit[9].rstrip())
                 contIM = float(lineSplit[11].rstrip())
                 
@@ -111,7 +122,7 @@ class SimCompare(object):
                 compRMS = float(lineSplit[21].rstrip())
                 contRMS = float(lineSplit[23].rstrip())
                 
-                summaryResults[simId][uid] = [numDescendants, compIM, contIM, compMS, contMS, compRMS, contRMS]
+                summaryResults[simId][uid] = [numDescendants, compIM, contIM, compMS, contMS, compRMS, contRMS, compUnmodified, contUnmodified]
                 
         print '    Number of test genomes: ' + str(len(genomeIds))
         
@@ -150,15 +161,15 @@ class SimCompare(object):
         treeFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
         
-        # read simulation results
+        # read simulation results        
         print '  Reading summary simulation results.'
-        summaryResults = self.__readSummaryResults('./experiments/simulation.draft.summary.tsv')
+        summaryResults = self.__readSummaryResults(self.resultsSummaryFile)
         print '  Reading full simulation results.'
-        fullResults = self.__readFullResults('./experiments/simulation.draft.tsv.gz')
+        fullResults = self.__readFullResults(self.resultsFullFile)
                 
         # reading marker set inferred via simulation
         inferredMarkerSet = {}
-        with open('./experiments/simInferBestMarkerSet.tsv') as f:
+        with open('./simulations/simInferBestMarkerSet.tsv') as f:
             f.readline()
             for line in f:
                 lineSplit = line.split('\t')
@@ -169,11 +180,11 @@ class SimCompare(object):
                 
         # determine best marker set
         print '  Comparing best marker set to selected marker set.'
-        foutSummary = open('./experiments/simCompare.draft.summary.tsv', 'w')
+        foutSummary = open(self.simCompareSummaryOut, 'w')
         foutSummary.write('Sim Id\tBest Id\tDescendants\tSelected Id\tDescendants\tDomain Id')
         foutSummary.write('\tdComp Best\tdContBest\tComp domain\tCont domain\tComp sim\tCont sim\tComp sim [MS]\tCont sim [MS]\tComp sim [RMS]\tCont sim [RMS]\n')
         
-        foutFull = open('./experiments/simCompare.draft.full.tsv', 'w')
+        foutFull = open(self.simCompareFullOut, 'w')
         foutFull.write('Sim Id\tBest Id\tDescendants\tSelected Id\tDescendants\tDomain Id\tdComp Best [IM]\tdCont Best [IM]\tdComp domain [IM]\tdCont domain [IM]\tdComp sim [IM]\tdCont sim [IM]\tdComp sim [MS]\tdCont sim [MS]\tdComp sim [RMS]\tdCont sim [RMS]\n')
         
         itemsProcessed = 0
@@ -186,6 +197,31 @@ class SimCompare(object):
         dCompSimList = defaultdict(lambda : defaultdict(list))
         dContSimList = defaultdict(lambda : defaultdict(list))
         
+        
+        # DEBUG:
+        unmodifiedComp = []
+        unmodifiedCont = []
+        incompleteGenomesSelected = set()
+        contaminatedGenomesSelected = set()
+        incompleteGenomesDomain = set()
+        contaminatedGenomesDomain = set()
+        incompleteGenomesBest = set()
+        contaminatedGenomesBest = set()
+        totalGenomes = set()
+        
+        
+        dCompDomOverall = []
+        dContDomOverall = []
+        dCompSelectedOverall = []
+        dContSelectedOverall = []
+                  
+        domBetter = 0
+        simBetter = 0
+        
+        msBetter = 0
+        rmsBetter = 0
+        
+        briefSummaryOut = open('./simulations/briefSummaryOut.tsv', 'w')
         for simId in summaryResults:
             itemsProcessed += 1
             statusStr = '    Finished processing %d of %d (%.2f%%) test cases.' % (itemsProcessed, len(summaryResults), float(itemsProcessed)*100/len(summaryResults))
@@ -193,19 +229,68 @@ class SimCompare(object):
             sys.stdout.flush()
             
             genomeId, _, comp, cont = simId.split('-')
+            
+            #if genomeId != '2529293088':
+            #    continue
 
             # get results for best performing marker set
             bestUID, numDescendantsBest, dCompBestSummary, dContBestSummary = self.__bestMarkerSet(simId, summaryResults)
             _, dCompBestFull, dContBestFull, _, _, _, _ = fullResults[simId][bestUID]
-            
+                        
             # get results for domain-level marker set
             domainUID, _, dCompDomSummary, dContDomSummary = self.__domainMarkerSet(simId, summaryResults)
-            _, dCompDomFull, dContDomFull, _, _, _, _ = fullResults[simId][domainUID]
+            _, dCompDomFull, dContDomFull, dCompDomFullMS, dContDomFullMS, _, _ = fullResults[simId][domainUID]
             
             # get results for selected marker set
             simUID = self.__inferredMarkerSet(tree, genomeId, inferredMarkerSet)
-            numDescendantsSim, dCompSimSummaryIM, dContSimSummaryIM, dCompSimSummaryMS, dContSimSummaryMS, dCompSimSummaryRMS, dContSimSummaryRMS = summaryResults[simId][simUID]
+            numDescendantsSim, dCompSimSummaryIM, dContSimSummaryIM, dCompSimSummaryMS, dContSimSummaryMS, dCompSimSummaryRMS, dContSimSummaryRMS, _, _ = summaryResults[simId][simUID]
             _, dCompSimFullIM, dContSimFullIM, dCompSimFullMS, dContSimFullMS, dCompSimFullRMS, dContSimFullRMS = fullResults[simId][simUID]
+               
+            for a, b, c, d, e, f in zip(dCompDomFullMS.split(','), dCompSimFullMS.split(','), dCompSimFullRMS.split(','), dContDomFullMS.split(','), dContSimFullMS.split(','), dContSimFullRMS.split(',')):
+                briefSummaryOut.write('%f\t%f\t%f\t%f\t%f\t%f\n' % (float(a), float(b), float(c), float(d), float(e), float(f)))
+
+            for a, b in zip(dCompDomFullMS.split(','), dCompSimFullMS.split(',')):
+                if abs(abs(float(a)) - abs(float(b))) > 8:             
+                    if abs(float(a)) < abs(float(b)):
+                        domBetter += 1
+                    else:
+                        simBetter += 1
+              
+            for a, b in zip(dCompSimFullMS.split(','), dCompSimFullRMS.split(',')):
+                if abs(abs(float(a)) - abs(float(b))) > 8:    
+                    if abs(float(a)) < abs(float(b)):
+                        rmsBetter += 1
+                    else:
+                        msBetter += 1
+            
+            # DEBUG
+            unmodifiedComp.append(summaryResults[simId][bestUID][7])
+            unmodifiedCont.append(summaryResults[simId][bestUID][8])
+            
+            totalGenomes.add(genomeId)
+            if summaryResults[simId][simUID][7] < 95:
+                incompleteGenomesSelected.add(genomeId)
+            if summaryResults[simId][simUID][8] > 5:
+                contaminatedGenomesSelected.add(genomeId)
+                 
+            if summaryResults[simId][domainUID][7] < 95:
+                incompleteGenomesDomain.add(genomeId)
+            if summaryResults[simId][domainUID][8] > 5:
+                contaminatedGenomesDomain.add(genomeId)
+                
+            if summaryResults[simId][bestUID][7] < 95:
+                incompleteGenomesBest.add(genomeId)
+            if summaryResults[simId][bestUID][8] > 5:
+                contaminatedGenomesBest.add(genomeId)    
+                
+                
+                
+            dCompDomOverall.append(dCompDomSummary)
+            dContDomOverall.append(dContDomSummary)
+            dCompSelectedOverall.append(dCompSimSummaryIM)
+            dContSelectedOverall.append(dContSimSummaryIM)
+                
+                   
             
             dCompSimBestList[comp][cont].append(dCompSimSummaryIM - dCompBestSummary)
             dContSimBestList[comp][cont].append(dContSimSummaryIM - dContBestSummary)
@@ -223,9 +308,10 @@ class SimCompare(object):
                                                                                                  dCompBestFull, dContBestFull, 
                                                                                                  dCompDomFull, dContDomFull, 
                                                                                                  dCompSimFullIM, dContSimFullIM, dCompSimFullMS, dContSimFullMS, dCompSimFullRMS, dContSimFullRMS))
+
         foutSummary.close()
         foutFull.close()
-        
+                
         sys.stdout.write('\n')
         
         print '\nOverall results:'
@@ -247,6 +333,37 @@ class SimCompare(object):
                 print 'Comp Sim: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dCompSim)), std(abs(dCompSim)), percentile(dCompSim, 10), percentile(dCompSim, 90))
                 print 'Cont Sim: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dContSim)), std(abs(dContSim)), percentile(dContSim, 10), percentile(dContSim, 90))
                 print '\n'
+                
+        print 'Unmodified comp for best ms: mean = %.1f, 5th = %.1f, 95th = %.1f, std = %.2f, min = %.1f' % (mean(unmodifiedComp), percentile(unmodifiedComp, 5), percentile(unmodifiedComp, 95), std(unmodifiedComp), min(unmodifiedComp))
+        print 'Unmodified cont for best ms: mean = %.1f, 5th = %.1f, 95th = %.1f, std = %.2f, max = %.1f' % (mean(unmodifiedCont), percentile(unmodifiedCont, 5), percentile(unmodifiedCont, 95), std(unmodifiedCont), max(unmodifiedCont))
+        
+        print 'There are %d of %d (%.2f%%) genomes with a comp < 95%% on the domain ms.' % (len(incompleteGenomesDomain), len(totalGenomes), len(incompleteGenomesDomain)*100.0/len(totalGenomes))
+        print 'There are %d of %d (%.2f%%) genomes with a cont > 5%% on the domain ms.' % (len(contaminatedGenomesDomain), len(totalGenomes), len(contaminatedGenomesDomain)*100.0/len(totalGenomes))
+        
+        print 'There are %d of %d (%.2f%%) genomes with a comp < 95%% on the selected ms.' % (len(incompleteGenomesSelected), len(totalGenomes), len(incompleteGenomesSelected)*100.0/len(totalGenomes))
+        print 'There are %d of %d (%.2f%%) genomes with a cont > 5%% on the selected ms.' % (len(contaminatedGenomesSelected), len(totalGenomes), len(contaminatedGenomesSelected)*100.0/len(totalGenomes))
+        
+        print 'There are %d of %d (%.2f%%) genomes with a comp < 95%% on the best ms.' % (len(incompleteGenomesBest), len(totalGenomes), len(incompleteGenomesBest)*100.0/len(totalGenomes))
+        print 'There are %d of %d (%.2f%%) genomes with a cont > 5%% on the best ms.' % (len(contaminatedGenomesBest), len(totalGenomes), len(contaminatedGenomesBest)*100.0/len(totalGenomes))
+                
+        #for genomeId in contaminatedGenomesDomain:
+        #    os.system('cp /srv/db/img/07042014/genomes/' + genomeId + '/' + genomeId + '.fna ./genome_test/incomplete_dom10')
+        
+        print 'Completeness for domain and selected: %.2f +/- %.2f, %.2f +/- %.2f' % (mean(abs(array(dCompDomOverall))), std(abs(array(dCompDomOverall))), mean(abs(array(dCompSelectedOverall))), std(abs(array(dCompSelectedOverall))))
+        print 'Contamination for domain and selected: %.2f +/- %.2f, %.2f +/- %.2f' % (mean(abs(array(dContDomOverall))), std(abs(array(dContDomOverall))), mean(abs(array(dContSelectedOverall))), std(abs(array(dContSelectedOverall))))
+            
+            
+        print ''
+        print domBetter, simBetter
+        print 'Domain better: %.2f' % (float(domBetter)*100/(domBetter+simBetter))
+        print 'Sim better: %.2f' % (float(simBetter)*100/(domBetter+simBetter))
+        
+        print ''
+        print msBetter, rmsBetter
+        print 'MS better: %.2f' % (float(msBetter)*100/(msBetter+rmsBetter))
+        print 'RMS better: %.2f' % (float(rmsBetter)*100/(msBetter+rmsBetter))
+        
+        briefSummaryOut.close()
                 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)

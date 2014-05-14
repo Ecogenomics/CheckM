@@ -92,8 +92,8 @@ class BinComparer(object):
         # report summary results
         self.logger.info('')
         self.logger.info('  Total seqs = %d (%.2f Mbps)' % (len(seqs), float(totalBases)/1e6))
-        self.logger.info('    # seqs > 1 Kbps = %d (%.2f Mbps)' % (numSeq1K, float(totalBases1K)/1e6))
-        self.logger.info('    # seqs > 5 Kbps= %d (%.2f Mbps)' % (numSeq5K, float(totalBases5K)/1e6))
+        self.logger.info('    # seqs > 1 kbps = %d (%.2f Mbps)' % (numSeq1K, float(totalBases1K)/1e6))
+        self.logger.info('    # seqs > 5 kbps= %d (%.2f Mbps)' % (numSeq5K, float(totalBases5K)/1e6))
         self.logger.info('')
         self.logger.info('  Binned seqs statistics:')
         self.logger.info('    1) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbps (%.2f%%)' % (len(bins1), totalBinnedSeqs1, float(totalBinnedSeqs1)*100 / len(seqs), float(totalBinnedBases1)/1e6, float(totalBinnedBases1)*100/totalBases)) 

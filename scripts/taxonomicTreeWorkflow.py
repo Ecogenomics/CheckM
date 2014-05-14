@@ -88,7 +88,8 @@ class GenomeTreeWorkflow(object):
         self.phyloUbiquity = 0.90
         self.phyloSingleCopy = 0.90
         self.paralogAcceptPer = 0.01
-        self.consistencyAcceptPer = 0.95 # note that domain, phylum, etc... may be 1.0 depending on the taxonomic being considered
+        #self.consistencyAcceptPer = 0.95    # for trees at the class-level
+        self.consistencyAcceptPer = 0.906   # for trees at the phylum-level
         self.consistencyMinTaxa = 20
 
         # create output directories
@@ -258,7 +259,20 @@ class GenomeTreeWorkflow(object):
     def __taxonomicMarkers(self, taxaStr, metadata, ubiquityThreshold, singleCopyThreshold):
         """Get genomes and marker genes for a specific lineage."""
 
-        genomeIds = self. img.genomeIdsByTaxonomy(taxaStr, metadata)
+        genomeIds = self.img.genomeIdsByTaxonomy(taxaStr, metadata)
+        
+        # hack to add in other genomes with incorrect taxonomy
+        aceIds = set()
+        for line in open('./taxonomicTrees/firmicutes.nds'):
+            aceIds.add(line.strip())
+            
+        aceIdsToImgIds = self.aceIdsToImgIds()
+        for aceId in aceIds:
+            if aceId in aceIdsToImgIds:
+                genomeId = aceIdsToImgIds[aceId]
+                if genomeId in metadata:
+                    genomeIds.add(genomeId)
+        
         markerGenes = self.markerSetBuilder.buildMarkerGenes(genomeIds, ubiquityThreshold, singleCopyThreshold )
 
         return genomeIds, markerGenes
@@ -279,10 +293,9 @@ class GenomeTreeWorkflow(object):
         print ''
         print 'Identifying genomes and marker genes of interest:'
         metadata = self.img.genomeMetadata()
-        ingroupGenomeIds, ingroupMarkers = self.__taxonomicMarkers('Bacteria;Firmicutes;Clostridia', metadata, phyloUbiquityThreshold, phyloSingleCopyThreshold)
-        outgroupGenomeIds, _ = self.__taxonomicMarkers('Bacteria;Firmicutes;Bacilli', metadata, phyloUbiquityThreshold, phyloSingleCopyThreshold)
+        ingroupGenomeIds, ingroupMarkers = self.__taxonomicMarkers('Bacteria;Firmicutes', metadata, phyloUbiquityThreshold, phyloSingleCopyThreshold)
+        outgroupGenomeIds = self.img.genomeIdsByTaxonomy('Bacteria;Coprothermobacter', metadata)
         #alphaGenomeIds, _ = self.__taxonomicMarkers('Bacteria;Proteobacteria;Alphaproteobacteria', metadata, phyloUbiquityThreshold, phyloSingleCopyThreshold)
-
 
         print '  Identified ingroup genomes: %d' % len(ingroupGenomeIds)
         print '  Identified outgroup genomes: %d' % len(outgroupGenomeIds)
@@ -324,7 +337,14 @@ class GenomeTreeWorkflow(object):
         print '  Number of genomes without an ACE id: ' + str(missing)
 
         return imgIdToAceId
+    
+    def aceIdsToImgIds(self):
+        aceIdsToImgIds = {}
+        for line in open('ggg_tax_img.feb_2014.txt'):
+            lineSplit = line.split('\t')
+            aceIdsToImgIds[lineSplit[0].strip()] = lineSplit[1].strip()
 
+        return aceIdsToImgIds
 
     def run(self, numThreads, outgroupSize):
 
@@ -369,7 +389,7 @@ class GenomeTreeWorkflow(object):
 
             for genomeId in genomeIds:
                 if genomeId in imgIdToAceId:
-                    tree = tree.replace(genomeId, imgIdToAceId[genomeId])
+                    tree = tree.replace('IMG_' + genomeId, imgIdToAceId[genomeId])
 
         fout = open(self.treeOutAce, 'w')
         fout.write(tree)

@@ -51,10 +51,13 @@ class PplacerRunner():
         
         # run pplacer to place bins in reference genome tree
         self.logger.info('  Placing %d bins in the genome tree with pplacer (be patient).' % len(binFiles))
-        refpkg = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree_prok.refpkg')
         pplacerJsonOut = os.path.join(alignOutputDir, defaultValues.PPLACER_JSON_OUT)
         pplacerOut = os.path.join(alignOutputDir, defaultValues.PPLACER_OUT)
-        cmd = 'pplacer -j %d -c %s -o %s %s > %s' % (self.numThreads, refpkg, pplacerJsonOut, concatenatedAlignFile, pplacerOut)
+        cmd = 'pplacer -j %d -c %s -o %s %s > %s' % (self.numThreads, 
+                                                     defaultValues.PPLACER_REF_PACKAGE, 
+                                                     pplacerJsonOut, 
+                                                     concatenatedAlignFile, 
+                                                     pplacerOut)
         os.system(cmd)
         
         # extract tree

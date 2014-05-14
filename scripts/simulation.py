@@ -35,7 +35,6 @@ import sys
 import argparse
 import multiprocessing as mp
 from collections import defaultdict
-import random
 import gzip
 import time
 
@@ -54,8 +53,8 @@ class Simulation(object):
         self.img = IMG()
         
         self.contigLens = [5000]
-        self.percentComps = [0.5, 0.7, 0.9]
-        self.percentConts = [0.05, 0.1, 0.2]
+        self.percentComps = [0.5, 0.7, 0.9, 1.0]
+        self.percentConts = [0.0, 0.05, 0.1, 0.2]
     
     def __workerThread(self, tree, metadata, ubiquityThreshold, singleCopyThreshold, numReplicates, queueIn, queueOut):
         """Process each data item in parallel."""
@@ -64,10 +63,10 @@ class Simulation(object):
             testGenomeId = queueIn.get(block=True, timeout=None)
             if testGenomeId == None:
                 break
-            
+
             # build marker sets for evaluating test genome
             testNode = tree.find_node_with_taxon_label('IMG_' + testGenomeId)
-            binMarkerSets, refinedBinMarkerSet = self.markerSetBuilder.buildBinMarkerSet(tree, testNode.parent_node, ubiquityThreshold, singleCopyThreshold, bMarkerSet = True, genomeIdsToRemove = [testGenomeId])
+            binMarkerSets, refinedBinMarkerSet = self.markerSetBuilder.buildBinMarkerSet(tree, testNode.parent_node, ubiquityThreshold, singleCopyThreshold, bMarkerSet = True, genomeIdsToRemove = [testGenomeId])    
 
             # determine distribution of all marker genes within the test genome
             geneDistTable = self.img.geneDistTable([testGenomeId], binMarkerSets.getMarkerGenes(), spacingBetweenContigs=0)
@@ -112,7 +111,7 @@ class Simulation(object):
                                 completeness, contamination = ms.genomeCheck(containedDomainMarkerGenes, bIndividualMarkers=True)
                                 deltaComp[ms.lineageStr].append(completeness - trueComp)
                                 deltaCont[ms.lineageStr].append(contamination - trueCont)
-                                
+
                                 completeness, contamination = ms.genomeCheck(containedDomainMarkerGenes, bIndividualMarkers=False)
                                 deltaCompSet[ms.lineageStr].append(completeness - trueComp)
                                 deltaContSet[ms.lineageStr].append(contamination - trueCont)
@@ -134,6 +133,7 @@ class Simulation(object):
         """Store or write results of worker threads in a single thread."""
         
         summaryOut = open('/tmp/simulation.draft.summary.tsv', 'w')
+        #summaryOut = open('/tmp/tmp.summary.tsv', 'w')
         summaryOut.write('Genome Id\tContig len\t% comp\t% cont')
         summaryOut.write('\tTaxonomy\tMarker set\t# descendants')
         summaryOut.write('\tUnmodified comp\tUnmodified cont')
@@ -143,6 +143,7 @@ class Simulation(object):
         summaryOut.write('\tRMS comp\tRMS comp std\tRMS cont\tRMS cont std\n')
         
         fout = gzip.open('/tmp/simulation.draft.tsv.gz', 'wb')
+        #fout = gzip.open('/tmp/tmp.tsv.gz', 'wb')
         fout.write('Genome Id\tContig len\t% comp\t% cont')
         fout.write('\tTaxonomy\tMarker set\t# descendants')
         fout.write('\tUnmodified comp\tUnmodified cont')
@@ -197,8 +198,6 @@ class Simulation(object):
         sys.stdout.write('\n')
 
     def run(self, ubiquityThreshold, singleCopyThreshold, numReplicates, numThreads):
-        random.seed(0)
-          
         print '\n  Reading reference genome tree.'
         treeFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)

@@ -20,7 +20,6 @@
 ###############################################################################
 
 import os
-import sys
 
 E_VAL = 1e-10
 LENGTH = 0.7
@@ -30,8 +29,23 @@ LINEAGE_MARKER_FILE_HEADER = '# [Lineage Marker File]'
 
 SEQ_CONCAT_CHAR = '&&'
 
-HMM_MODELS = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'hmms', 'checkm.hmm')
-SELECTED_MARKER_SETS = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'selected_marker_sets.tsv')
+CHECKM_DATA_DIR = '/srv/db/checkm'
+PHYLO_HMM_MODELS = phyloHMMs = os.path.join(CHECKM_DATA_DIR, 'hmms', 'phylo.hmm') 
+HMM_MODELS = os.path.join(CHECKM_DATA_DIR, 'hmms', 'checkm.hmm')
+PFAM_CLAN_FILE = os.path.join(CHECKM_DATA_DIR, 'pfam', 'Pfam-A.hmm.dat')
+
+IMG_METADATA_FILE = os.path.join(CHECKM_DATA_DIR,'img', 'img_metadata.tsv')
+REDUNDANT_TIGRFAM_FILE = os.path.join(CHECKM_DATA_DIR,'pfam', 'tigrfam2pfam.tsv')
+
+SELECTED_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'selected_marker_sets.tsv')
+TAXON_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'taxon_marker_sets.tsv')
+
+GENOME_TREE_DIR = os.path.join(CHECKM_DATA_DIR, 'genome_tree')
+PPLACER_REF_PACKAGE = os.path.join(GENOME_TREE_DIR, 'genome_tree_prok.refpkg')
+DISTRIBUTION_DIR = os.path.join(CHECKM_DATA_DIR, 'distributions')
+
+PHYLO_HMM_MODEL_INFO = 'phylo_hmm_info.pkl.gz'
+CHECKM_HMM_MODEL_INFO = 'checkm_hmm_info.pkl.gz'
 
 HMMER_TABLE_PHYLO_OUT = 'hmmer.tree.txt'
 HMMER_PHYLO_OUT = 'hmmer.tree.hmmer3'

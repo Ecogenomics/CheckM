@@ -34,24 +34,22 @@ from common import reassignStdOut, restoreStdOut, checkFileExists
 from coverage import Coverage
 
 from hmmer import HMMERParser
-from hmmerModelParser import HmmModelParser
 
 from lib.pfam import PFAM
 
 class ResultsParser():
     """Parse output of Prodigal+HMMER run and derived statistics."""
-    def __init__(self):
+    def __init__(self, binIdToModels):
         self.logger = logging.getLogger()
 
         self.results = {}
-        self.models = defaultdict(dict)
+        self.models = binIdToModels
     
     def analyseResults(self,
                        outDir,
                        binStatsFile,
                        seqStatsFile,
                        hmmTableFile,
-                       binIdToHmmModelFile,
                        bIgnoreThresholds = False,
                        evalueThreshold = defaultValues.E_VAL,
                        lengthThreshold = defaultValues.LENGTH,
@@ -59,9 +57,6 @@ class ResultsParser():
                        ):
         """Parse results in the output directory."""
 
-        # parse information from HMMs
-        self.parseHmmerModels(binIdToHmmModelFile)
-        
         # read bin and sequence stats into dictionaries
         binStats = self.parseBinStats(outDir, binStatsFile)
         seqStats = self.parseSeqStats(outDir, seqStatsFile)
@@ -76,25 +71,6 @@ class ResultsParser():
         self.__writeBinStatsExt(outDir, binIdToBinMarkerSets, bIndividualMarkers)
         self.__writeMarkerGeneStats(outDir, binIdToBinMarkerSets, bIndividualMarkers)
         
-    def parseHmmerModels(self, binIdToHmmModelFile):
-        """Parse each bin's HMM file to collect model information."""
-        self.logger.info('  Parsing HMM model files:')
-        numBinsProcessed = 0
-        for binId, hmmModelFile in binIdToHmmModelFile.iteritems():
-            
-            if self.logger.getEffectiveLevel() <= logging.INFO:
-                numBinsProcessed += 1
-                statusStr = '    Finished parsing HMM models for %d of %d (%.2f%%) bins.' % (numBinsProcessed, len(binIdToHmmModelFile), float(numBinsProcessed)*100/len(binIdToHmmModelFile))
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
-                
-            modelParser = HmmModelParser(hmmModelFile)
-            for model in modelParser.parse():
-                self.models[binId][model.acc] = model
-
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
-
     def parseBinHits(self, outDir, 
                      hmmTableFile, 
                      bSkipOrfCorrection = False, 
@@ -142,7 +118,7 @@ class ResultsParser():
         binStatsExtFile = os.path.join(directory, 'storage', defaultValues.BIN_STATS_EXT_OUT) 
         fout = open(binStatsExtFile, 'w')
         fout.write(str(binStatsExt))
-        fout.close
+        fout.close()
         
     def __writeMarkerGeneStats(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
         markerGenes = {}
@@ -152,7 +128,7 @@ class ResultsParser():
         markerGenesFile = os.path.join(directory, 'storage', defaultValues.MARKER_GENE_STATS)
         fout = open(markerGenesFile, 'w')
         fout.write(str(markerGenes))
-        fout.close
+        fout.close()
                          
     def parseBinStats(self, resultsFolder, binStatsFile):
         """Read bin statistics from file."""
@@ -219,7 +195,7 @@ class ResultsParser():
                     resultsManager.addHit(hit)
 
             # retain only best hit to PFAM clan
-            pfam = PFAM()
+            pfam = PFAM(defaultValues.PFAM_CLAN_FILE)
             resultsManager.markerHits = pfam.filterHitsFromSameClan(resultsManager.markerHits)
             
             # correct for errors in ORF calling      
@@ -229,7 +205,7 @@ class ResultsParser():
         except IOError as detail:
             sys.stderr.write(str(detail)+"\n")
 
-    def __getHeader(self, outputFormat, coverageBinProfiles = None):
+    def __getHeader(self, outputFormat, binMarkerSets, coverageBinProfiles = None):
         """Get header for requested output table."""
                 
         # keep count of single, double, triple genes etc...
@@ -240,7 +216,7 @@ class ResultsParser():
             header += ['Marker lineage', '# genomes', '# markers', '# marker sets']
             header += ['Completeness','Contamination', 'Strain heterogeneity']
             header += ['Genome size (bp)', '# scaffolds', '# contigs', 'N50 (scaffolds)', 'N50 (contigs)', 'Longest scaffold (bp)', 'Longest contig (bp)']
-            header += ['GC', 'GC std (scaffolds > 1Kbps)']
+            header += ['GC', 'GC std (scaffolds > 1kbps)']
             header += ['Coding density', 'Translation table', '# predicted ORFs']
             header += ['0','1','2','3','4','5+']
             
@@ -249,14 +225,16 @@ class ResultsParser():
                     header += ['Coverage (' + bamId + ')', 'Coverage std (' + bamId + ')']
 
             if defaultValues.MIN_SEQ_LEN_GC_STD != 1000:
-                self.logger.error('  [Error] Labeling error: GC std (scaffolds > 1Kbps)')
+                self.logger.error('  [Error] Labeling error: GC std (scaffolds > 1kbps)')
                 sys.exit() 
         elif outputFormat == 3:
             header = ['Bin Id', 'Marker Id', 'Marker lineage', '# genomes', '# markers','# marker sets','0','1','2','3','4','5+','Completeness','Contamination','Strain heterogeneity']
         elif outputFormat == 4:
             header = []
         elif outputFormat == 5:
-            header = [''] + self.models[self.models.keys()[0]].keys()
+            columns = binMarkerSets.selectedMarkerSet().getMarkerGenes() 
+            header = [''] 
+            header.extend(columns)
         elif outputFormat == 6:
             header = ['Bin Id','Marker Id','Scaffold Id']
         elif outputFormat == 7:
@@ -282,7 +260,7 @@ class ResultsParser():
                 
         prettyTableFormats = [1, 2, 3]      
           
-        header = self.__getHeader(outputFormat, coverageBinProfiles) 
+        header = self.__getHeader(outputFormat, binIdToBinMarkerSets[binIdToBinMarkerSets.keys()[0]], coverageBinProfiles) 
         if bTabTable or outputFormat not in prettyTableFormats: 
             bTabTable = True
             pTable = None
@@ -333,13 +311,14 @@ class ResultsManager():
         
         # Give preference to the gathering threshold unless the model
         # is marked as TIGR (i.e., TIGRFAM model)
-        if model.isNoiseCutoff and not self.bIgnoreThresholds and 'TIGR' in model.acc:
+
+        if model.nc != None and not self.bIgnoreThresholds and 'TIGR' in model.acc:
             if model.nc[0] <= hit.full_score and model.nc[1] <= hit.dom_score:
                 return True  
-        elif model.isGatheringThreshold and not self.bIgnoreThresholds:
+        elif model.ga != None and not self.bIgnoreThresholds:
             if model.ga[0] <= hit.full_score and model.ga[1] <= hit.dom_score:
                 return True
-        elif model.isTrustedCutoff and not self.bIgnoreThresholds:
+        elif model.tc != None and not self.bIgnoreThresholds:
             if model.tc[0] <= hit.full_score and model.tc[1] <= hit.dom_score:
                 return True
         elif model.isNoiseCutoff and not self.bIgnoreThresholds:

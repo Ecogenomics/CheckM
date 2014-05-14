@@ -25,9 +25,9 @@ class HmmModelError(Exception):
 class HmmModel(object):
     """Store HMM parameters."""
     def __init__(self, keys):
-        setattr(self, 'isGatheringThreshold', False)
-        setattr(self, 'isTrustedCutoff', False)
-        setattr(self, 'isNoiseCutoff', False)
+        setattr(self, 'ga', None)
+        setattr(self, 'tc', None)
+        setattr(self, 'nc', None)
         
         if 'acc' not in keys:
             setattr(self, 'acc', keys['name'])
@@ -35,19 +35,53 @@ class HmmModel(object):
         for key, value in keys.items():
             setattr(self, key, value)
 
-            if key == 'ga':
-                setattr(self, 'isGatheringThreshold', True)
-            elif key == 'tc':
-                setattr(self, 'isTrustedCutoff', True)
-            elif key == 'nc':
-                setattr(self, 'isNoiseCutoff', True)
-                
 class HmmModelParser(object):
     """Parse HMM file."""
     def __init__(self, hmmFile):
         self.hmmFile = open(hmmFile)
+        
+    def models(self):
+        """Parse all models from HMM file."""
+        models = {}
+        for model in self.simpleParse():
+            models[model.acc] = model
+            
+        return models
+    
+    def simpleParse(self):
+        """Parse simplified description of single model from HMM file."""
+        fields = []
+        headerKeys = dict()
+        for line in self.hmmFile:
+            if line.startswith("HMMER"):
+                headerKeys['format'] = line.rstrip()
+            elif line.startswith("HMM"):
+                # beginning of the hmm; iterate through till end of model
+                for line in self.hmmFile:
+                    if line.startswith("//"):
+                        yield HmmModel(headerKeys)
+                        break
+            else:
+                # header sections
+                fields = line.rstrip().split(None, 1)
+                if len(fields) != 2:
+                    raise HmmModelError
+                else:
+                    # transform some data based on some of the header tags
+                    if fields[0] == 'ACC':
+                        headerKeys[fields[0].lower()] = fields[1]
+                    elif fields[0] == "LENG":
+                        headerKeys[fields[0].lower()] = int(fields[1])
+                    elif fields[0] == "GA" or fields[0] == "TC" or fields[0] == "NC":
+                        params = fields[1].split()
+                        if len(params) != 2:
+                            raise HmmModelError
+                        headerKeys[fields[0].lower()] = (float(params[0].replace(';','')), float(params[1].replace(';','')))
+                    else:
+                        pass
 
     def parse(self):
+        """Parse full description of single model from HMM file."""
         fields = []
         headerKeys = dict()
         for line in self.hmmFile:

@@ -28,6 +28,7 @@ __maintainer__ = 'Donovan Parks'
 __email__ = 'donovan.parks@gmail.com'
 __status__ = 'Development'
 
+import os
 import argparse
 from collections import defaultdict
 
@@ -53,17 +54,17 @@ class QcGenomes(object):
 
         return genomeStr
 
-    def run(self, inputMetadataFile, outputMetadataFile, ubiquityThreshold, singleCopyThreshold, trustedCompleteness, trustedContamination):
+    def run(self, inputMetadataFile, outputMetadataFile, outputDir, ubiquityThreshold, singleCopyThreshold, trustedCompleteness, trustedContamination):
         img = IMG()
         markerSetBuilder = MarkerSetBuilder()
 
-        allOut = open('./data/genomes_all.tsv', 'w')
+        allOut = open(os.path.join(outputDir, 'genomes_all.tsv'), 'w')
         allOut.write('Genome Id\tLineage\tGenome size (Mbps)\tScaffold count\tGene count\tCoding base count\tN50\tBiotic Relationship\tStatus\tCompleteness\tContamination\tMissing markers\tDuplicate markers\n')
 
-        trustedOut = open('./data/genomes_trusted.tsv', 'w')
+        trustedOut = open(os.path.join(outputDir, 'genomes_trusted.tsv'), 'w')
         trustedOut.write('Genome Id\tLineage\tGenome size (Mbps)\tScaffold count\tGene count\tCoding base count\tN50\tBiotic Relationship\tStatus\tCompleteness\tContamination\tMissing markers\tDuplicate markers\n')
 
-        filteredOut = open('./data/genomes_filtered.tsv', 'w')
+        filteredOut = open(os.path.join(outputDir, 'genomes_filtered.tsv'), 'w')
         filteredOut.write('Genome Id\tLineage\tGenome size (Mbps)\tScaffold count\tGene count\tCoding base count\tN50\tBiotic Relationship\tStatus\tCompleteness\tContamination\tMissing markers\tDuplicate markers\n')
 
         metadataOut = open(outputMetadataFile, 'w')
@@ -110,7 +111,7 @@ class QcGenomes(object):
             markerSet = markerSetBuilder.buildMarkerSet(finishedGenomes[lineage], ubiquityThreshold, singleCopyThreshold)
 
             print '  Marker set consists of %s marker genes organized into %d sets.' % (markerSet.numMarkers(), markerSet.numSets())
-            fout = open('./data/trusted_marker_sets_' + lineage + '.txt', 'w')
+            fout = open(os.path.join(outputDir, 'trusted_marker_sets_' + lineage + '.txt'), 'w')
             fout.write(str(markerSet.markerSet))
             fout.close()
 
@@ -176,7 +177,7 @@ class QcGenomes(object):
 
         sortedLineages = img.lineagesSorted(metadata)
 
-        fout = open('./data/lineage_stats.tsv', 'w')
+        fout = open(os.path.join(outputDir, 'lineage_stats.tsv'), 'w')
         fout.write('Lineage\tGenomes with metadata\tTrusted genomes\n')
         for lineage in sortedLineages:
             fout.write(lineage + '\t' + str(allStats.get(lineage, 0))+ '\t' + str(trustedStats.get(lineage, 0))+ '\n')
@@ -189,6 +190,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('input_file', help='input IMG metadata file')
     parser.add_argument('output_file', help='new IMG metadata file')
+    parser.add_argument('output_dir', help='output dir')
 
     parser.add_argument('-u', '--ubiquity', help='ubiquity threshold for defining marker set', type=float, default = 0.97)
     parser.add_argument('-s', '--single_copy', help='single-copy threshold for defining marker set', type=float, default = 0.97)
@@ -198,4 +200,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     qcGenomes = QcGenomes()
-    qcGenomes.run(args.input_file, args.output_file, args.ubiquity, args.single_copy, args.trusted_completeness, args.trusted_contamination)
+    qcGenomes.run(args.input_file, args.output_file, args.output_dir, args.ubiquity, args.single_copy, args.trusted_completeness, args.trusted_contamination)
