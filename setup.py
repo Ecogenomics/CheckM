@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='checkm-ACE',
-    version='0.5.0',
+    version='0.7.0',
     author='Donovan Parks, Michael Imelfort, Connor Skennerton',
     author_email='donovan.parks@gmail.com',
     packages=['checkm', 'checkm.plot', 'checkm.test', 'checkm.lib'],
