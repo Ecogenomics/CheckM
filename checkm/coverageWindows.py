@@ -28,9 +28,8 @@ from collections import defaultdict
 
 import pysam
 
-import defaultValues
-from common import reassignStdOut, restoreStdOut, binIdFromFilename
-from lib.seqUtils import readFasta
+from checkm.common import reassignStdOut, restoreStdOut, binIdFromFilename
+from checkm.util.seqUtils import readFasta
 
 from numpy import mean, std, zeros
 

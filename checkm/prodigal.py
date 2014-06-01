@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# prodigal.py - runs prodigal and provides functions for parsing output  
+# prodigal.py - runs prodigal and provides functions for parsing output
 #
 ###############################################################################
 #                                                                             #
@@ -27,10 +27,9 @@ import shutil
 
 import numpy as np
 
-import defaultValues
-
-from common import checkFileExists
-from lib.seqUtils import readFasta
+from checkm.defaultValues import DefaultValues
+from checkm.common import checkFileExists
+from checkm.util.seqUtils import readFasta
 
 class ProdigalError(BaseException): pass
 
@@ -38,76 +37,76 @@ class ProdigalRunner():
     """Wrapper for running prodigal."""
     def __init__(self, outDir):
         self.logger = logging.getLogger()
-        
+
         # make sure prodigal is installed
         self.checkForProdigal()
-        
-        self.aaGeneFile = os.path.join(outDir, defaultValues.PRODIGAL_AA)
-        self.ntGeneFile = os.path.join(outDir, defaultValues.PRODIGAL_NT)
-        self.gffFile = os.path.join(outDir, defaultValues.PRODIGAL_GFF)
-        
+
+        self.aaGeneFile = os.path.join(outDir, DefaultValues.PRODIGAL_AA)
+        self.ntGeneFile = os.path.join(outDir, DefaultValues.PRODIGAL_NT)
+        self.gffFile = os.path.join(outDir, DefaultValues.PRODIGAL_GFF)
+
     def run(self, query, bNucORFs=True):
         # gather statistics about query file
         seqs = readFasta(query)
         totalBases = 0
         for seqId, seq in seqs.iteritems():
             totalBases += len(seq)
-          
+
         # call ORFs with different translation tables and select the one with the highest coding density
         tableCodingDensity = {}
-        for translationTable in [4, 11]:    
+        for translationTable in [4, 11]:
             aaGeneFile = self.aaGeneFile + '.' + str(translationTable)
             ntGeneFile = self.ntGeneFile + '.' + str(translationTable)
             gffFile = self.gffFile + '.' + str(translationTable)
-            
+
             # check if there is sufficient bases to calculate prodigal parameters
             if totalBases < 100000:
                 procedureStr = 'meta'   # use best precalculated parameters
             else:
                 procedureStr = 'single'      # estimate parameters from data
-            
+
             if bNucORFs:
                 cmd = ('prodigal -p %s -q -c -m -f gff -g %d -a %s -d %s -i %s > %s' % (procedureStr, translationTable, aaGeneFile, ntGeneFile, query, gffFile))
             else:
                 cmd = ('prodigal -p %s -q -c -m -f gff -g %d -a %s -i %s > %s' % (procedureStr, translationTable, aaGeneFile, query, gffFile))
-                                
+
             os.system(cmd)
-            
+
             # determine coding density
             prodigalParser = ProdigalGeneFeatureParser(gffFile)
-              
+
             codingBases = 0
             for seqId, seq in seqs.iteritems():
                 codingBases += prodigalParser.codingBases(seqId)
-                
+
             codingDensity = float(codingBases) / totalBases
             tableCodingDensity[translationTable] = codingDensity
-                        
+
         # determine best translation table
         bestTranslationTable = 11
         if (tableCodingDensity[4] - tableCodingDensity[11] > 0.05) and tableCodingDensity[4] > 0.7:
             bestTranslationTable = 4
 
         shutil.copyfile(self.aaGeneFile + '.' + str(bestTranslationTable), self.aaGeneFile)
-        shutil.copyfile(self.gffFile + '.' + str(bestTranslationTable), self.gffFile)    
+        shutil.copyfile(self.gffFile + '.' + str(bestTranslationTable), self.gffFile)
         if bNucORFs:
             shutil.copyfile(self.ntGeneFile + '.' + str(bestTranslationTable), self.ntGeneFile)
-        
+
         # clean up redundant prodigal results
-        for translationTable in [4, 11]: 
-            os.remove(self.aaGeneFile + '.' + str(translationTable))  
-            os.remove(self.gffFile + '.' + str(translationTable))  
+        for translationTable in [4, 11]:
+            os.remove(self.aaGeneFile + '.' + str(translationTable))
+            os.remove(self.gffFile + '.' + str(translationTable))
             if bNucORFs:
-                os.remove(self.ntGeneFile + '.' + str(translationTable))  
-        
+                os.remove(self.ntGeneFile + '.' + str(translationTable))
+
         return bestTranslationTable
-    
+
     def areORFsCalled(self):
         return os.path.exists(self.aaGeneFile)
 
     def checkForProdigal(self):
         """Check to see if Prodigal is on the system before we try to run it."""
-    
+
         # Assume that a successful prodigal -h returns 0 and anything
         # else returns something non-zero
         try:
@@ -120,10 +119,10 @@ class ProdigalFastaParser():
     """Parses prodigal FASTA output."""
     def __init__(self):
         pass
-    
+
     def genePositions(self, filename):
         checkFileExists(filename)
-        
+
         gp = {}
         for line in open(filename):
             if line[0] == '>':
@@ -132,22 +131,22 @@ class ProdigalFastaParser():
                 geneId = lineSplit[0]
                 startPos = int(lineSplit[2])
                 endPos = int(lineSplit[4])
-        
+
                 gp[geneId] = [startPos, endPos]
-        
+
         return gp
-    
+
 class ProdigalGeneFeatureParser():
     """Parses prodigal FASTA output."""
     def __init__(self, filename):
         checkFileExists(filename)
-        
+
         self.genes = {}
         self.lastCodingBase = {}
-        
+
         self.__parseGFF(filename)
-        
-        self.codingBaseMasks = {}   
+
+        self.codingBaseMasks = {}
         for seqId in self.genes:
             self.codingBaseMasks[seqId] = self.__buildCodingBaseMask(seqId)
 
@@ -158,8 +157,8 @@ class ProdigalGeneFeatureParser():
             if bGetTranslationTable and line.startswith('# Model Data'):
                 self.translationTable = line.split(';')[4]
                 self.translationTable = int(self.translationTable[self.translationTable.find('=')+1:])
-                bGetTranslationTable = False       
-            
+                bGetTranslationTable = False
+
             if line[0] == '#':
                 continue
 
@@ -169,37 +168,36 @@ class ProdigalGeneFeatureParser():
                 geneCounter = 0
                 self.genes[seqId] = {}
                 self.lastCodingBase[seqId] = 0
-                
+
             geneId = seqId + '_' + str(geneCounter)
             geneCounter += 1
-            
+
             start = int(lineSplit[3])
             end = int(lineSplit[4])
-  
+
             self.genes[seqId][geneId] = [start, end]
             self.lastCodingBase[seqId] = max(self.lastCodingBase[seqId], end)
-            
+
     def __buildCodingBaseMask(self, seqId):
         """Build mask indicating which bases in a sequences are coding."""
-        
+
         # safe way to calculate coding bases as it accounts
         # for the potential of overlapping genes
         codingBaseMask = np.zeros(self.lastCodingBase[seqId])
         for pos in self.genes[seqId].values():
-            codingBaseMask[pos[0]:pos[1]+1] = 1    
-            
+            codingBaseMask[pos[0]:pos[1]+1] = 1
+
         return codingBaseMask
-    
+
     def codingBases(self, seqId, start=0, end=None):
         """Calculate number of coding bases in sequence between [start, end)."""
-        
+
         # check if sequence has any genes
         if seqId not in self.genes:
             return 0
-        
+
         # set end to last coding base if not specified
         if end == None:
             end = self.lastCodingBase[seqId]
-                         
+
         return np.sum(self.codingBaseMasks[seqId][start:end])
-        

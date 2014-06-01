@@ -21,58 +21,60 @@
 
 import os
 
-E_VAL = 1e-10
-LENGTH = 0.7
+class DefaultValues():
+	"""Default values for filenames and common constants."""
+	E_VAL = 1e-10
+	LENGTH = 0.7
 
-TAXON_MARKER_FILE_HEADER = '# [Taxon Marker File]'
-LINEAGE_MARKER_FILE_HEADER = '# [Lineage Marker File]'
+	TAXON_MARKER_FILE_HEADER = '# [Taxon Marker File]'
+	LINEAGE_MARKER_FILE_HEADER = '# [Lineage Marker File]'
 
-SEQ_CONCAT_CHAR = '&&'
+	SEQ_CONCAT_CHAR = '&&'
 
-CHECKM_DATA_DIR = '/srv/db/checkm'
-PHYLO_HMM_MODELS = phyloHMMs = os.path.join(CHECKM_DATA_DIR, 'hmms', 'phylo.hmm') 
-HMM_MODELS = os.path.join(CHECKM_DATA_DIR, 'hmms', 'checkm.hmm')
-PFAM_CLAN_FILE = os.path.join(CHECKM_DATA_DIR, 'pfam', 'Pfam-A.hmm.dat')
+	CHECKM_DATA_DIR = '/srv/db/checkm'
+	PHYLO_HMM_MODELS = phyloHMMs = os.path.join(CHECKM_DATA_DIR, 'hmms', 'phylo.hmm')
+	HMM_MODELS = os.path.join(CHECKM_DATA_DIR, 'hmms', 'checkm.hmm')
+	PFAM_CLAN_FILE = os.path.join(CHECKM_DATA_DIR, 'pfam', 'Pfam-A.hmm.dat')
 
-IMG_METADATA_FILE = os.path.join(CHECKM_DATA_DIR,'img', 'img_metadata.tsv')
-REDUNDANT_TIGRFAM_FILE = os.path.join(CHECKM_DATA_DIR,'pfam', 'tigrfam2pfam.tsv')
+	IMG_METADATA_FILE = os.path.join(CHECKM_DATA_DIR,'img', 'img_metadata.tsv')
+	REDUNDANT_TIGRFAM_FILE = os.path.join(CHECKM_DATA_DIR,'pfam', 'tigrfam2pfam.tsv')
 
-SELECTED_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'selected_marker_sets.tsv')
-TAXON_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'taxon_marker_sets.tsv')
+	SELECTED_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'selected_marker_sets.tsv')
+	TAXON_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'taxon_marker_sets.tsv')
 
-GENOME_TREE_DIR = os.path.join(CHECKM_DATA_DIR, 'genome_tree')
-PPLACER_REF_PACKAGE = os.path.join(GENOME_TREE_DIR, 'genome_tree_prok.refpkg')
-DISTRIBUTION_DIR = os.path.join(CHECKM_DATA_DIR, 'distributions')
+	GENOME_TREE_DIR = os.path.join(CHECKM_DATA_DIR, 'genome_tree')
+	PPLACER_REF_PACKAGE = os.path.join(GENOME_TREE_DIR, 'genome_tree_prok.refpkg')
+	DISTRIBUTION_DIR = os.path.join(CHECKM_DATA_DIR, 'distributions')
 
-PHYLO_HMM_MODEL_INFO = 'phylo_hmm_info.pkl.gz'
-CHECKM_HMM_MODEL_INFO = 'checkm_hmm_info.pkl.gz'
+	PHYLO_HMM_MODEL_INFO = 'phylo_hmm_info.pkl.gz'
+	CHECKM_HMM_MODEL_INFO = 'checkm_hmm_info.pkl.gz'
 
-HMMER_TABLE_PHYLO_OUT = 'hmmer.tree.txt'
-HMMER_PHYLO_OUT = 'hmmer.tree.hmmer3'
+	HMMER_TABLE_PHYLO_OUT = 'hmmer.tree.txt'
+	HMMER_PHYLO_OUT = 'hmmer.tree.hmmer3'
 
-HMMER_TABLE_OUT = 'hmmer.analyze.txt'
-HMMER_OUT = 'hmmer.analyze.hmmer3'
+	HMMER_TABLE_OUT = 'hmmer.analyze.txt'
+	HMMER_OUT = 'hmmer.analyze.hmmer3'
 
-PRODIGAL_AA = 'prodigal.faa'
-PRODIGAL_NT = 'prodigal.fna'
-PRODIGAL_GFF = 'prodigal.gff'
+	PRODIGAL_AA = 'prodigal.faa'
+	PRODIGAL_NT = 'prodigal.fna'
+	PRODIGAL_GFF = 'prodigal.gff'
 
-PPLACER_CONCAT_SEQ_OUT = 'concatenated.fasta'
-PPLACER_JSON_OUT = 'concatenated.pplacer.json'
-PPLACER_OUT = 'pplacer.out'
-PPLACER_TREE_OUT = 'concatenated.tre'
+	PPLACER_CONCAT_SEQ_OUT = 'concatenated.fasta'
+	PPLACER_JSON_OUT = 'concatenated.pplacer.json'
+	PPLACER_OUT = 'pplacer.out'
+	PPLACER_TREE_OUT = 'concatenated.tre'
 
-BIN_STATS_PHYLO_OUT = 'bin_stats.tree.tsv'
-SEQ_STATS_PHYLO_OUT = 'seq_stats.tree.tsv'
+	BIN_STATS_PHYLO_OUT = 'bin_stats.tree.tsv'
+	SEQ_STATS_PHYLO_OUT = 'seq_stats.tree.tsv'
 
-BIN_STATS_OUT = 'bin_stats.analyze.tsv'
-SEQ_STATS_OUT = 'seq_stats.analyze.tsv'
+	BIN_STATS_OUT = 'bin_stats.analyze.tsv'
+	SEQ_STATS_OUT = 'seq_stats.analyze.tsv'
 
-BIN_STATS_EXT_OUT = 'bin_stats_ext.tsv'
-MARKER_GENE_STATS = 'marker_gene_stats.tsv'
+	BIN_STATS_EXT_OUT = 'bin_stats_ext.tsv'
+	MARKER_GENE_STATS = 'marker_gene_stats.tsv'
 
-CONTIG_BREAK = 'NNNNNNNNNN'
+	CONTIG_BREAK = 'NNNNNNNNNN'
 
-UNBINNED = 'unbinned'
+	UNBINNED = 'unbinned'
 
-MIN_SEQ_LEN_GC_STD = 1000
+	MIN_SEQ_LEN_GC_STD = 1000

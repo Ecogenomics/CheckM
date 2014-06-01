@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# cumulativeLengthPlot.py - Create a cumulative sequence length plot. 
+# cumulativeLengthPlot.py - Create a cumulative sequence length plot.
 #
 ###############################################################################
 #                                                                             #
@@ -23,29 +23,29 @@ import numpy as np
 
 from AbstractPlot import AbstractPlot
 
-from checkm.lib.seqUtils import readFasta
+from checkm.util.seqUtils import readFasta
 
 class CumulativeLengthPlot(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
-    
-    def plot(self, fastaFile):       
+
+    def plot(self, fastaFile):
         # Set size of figure
         self.fig.clear()
         self.fig.set_size_inches(self.options.width, self.options.height)
         axes = self.fig.add_subplot(111)
-        
+
         # calculate cumulative sequence length
         seqs = readFasta(fastaFile)
-        
+
         seqLens = []
         for seq in seqs.values():
             seqLens.append(len(seq))
-            
+
         seqLens.sort(reverse=True)
         x = np.arange(0, len(seqLens))
-        
-        
+
+
         y = []
         cumLen = 0
         for seqLen in seqLens:
@@ -53,14 +53,14 @@ class CumulativeLengthPlot(AbstractPlot):
             y.append(cumLen)
 
         # Create plot
-        axes.plot(x, y, 'k-',)    
+        axes.plot(x, y, 'k-',)
         axes.set_xlabel('Sequence index')
         axes.set_ylabel('Cumulative sequence length (Mbps)')
-        
+
         # ensure y-axis include zero
         _, end = axes.get_ylim()
         axes.set_ylim([0, end])
-        
+
         # Change sequence lengths from bps to kbps
         yticks = axes.get_yticks()
         kbpLabels = []
@@ -71,27 +71,27 @@ class CumulativeLengthPlot(AbstractPlot):
                 label = label[0:-1]
             kbpLabels.append(label)
         axes.set_yticklabels(kbpLabels)
-            
-        # Prettify plot     
+
+        # Prettify plot
         for a in axes.yaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-                
+
         for a in axes.xaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-            
-        for line in axes.yaxis.get_ticklines(): 
+
+        for line in axes.yaxis.get_ticklines():
             line.set_color(self.axesColour)
-                
-        for line in axes.xaxis.get_ticklines(): 
+
+        for line in axes.xaxis.get_ticklines():
             line.set_color(self.axesColour)
-            
+
         for loc, spine in axes.spines.iteritems():
             if loc in ['right','top']:
-                spine.set_color('none') 
+                spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)
-             
-        self.fig.tight_layout(pad=5)              
+
+        self.fig.tight_layout(pad=5)
         self.draw()

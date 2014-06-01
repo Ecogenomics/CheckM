@@ -22,16 +22,16 @@
 import os
 import logging
 
-import defaultValues
-from common import binIdFromFilename
-from lib.seqUtils import readFasta, readFastaSeqIds
+from checkm.defaultValues import DefaultValues
+from checkm.common import binIdFromFilename
+from checkm.util.seqUtils import readFasta, readFastaSeqIds
 
 class SSU_Finder(object):
     def __init__(self, threads):
         self.logger = logging.getLogger()
-        
+
         self.totalThreads = threads
-        
+
         self.bacteriaModelFile = '/srv/db/checkm/hmms_ssu/SSU_bacteria.hmm'
         self.archaeaModelFile = '/srv/db/checkm/hmms_ssu/SSU_archaea.hmm'
         self.eukModelFile = '/srv/db/checkm/hmms_ssu/SSU_euk.hmm'
@@ -44,10 +44,10 @@ class SSU_Finder(object):
 
         self.logger.info('    Identifying bacterial 16S.')
         os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.bacteria.txt --tblout ' + outputPrefix + '.bacteria.table.txt -E ' + str(evalue) + ' ' + self.bacteriaModelFile + ' -')
-    
+
         self.logger.info('    Identifying archaeal 16S.')
         os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.archaea.txt --tblout ' + outputPrefix + '.archaea.table.txt -E ' + str(evalue) + ' ' + self.archaeaModelFile + ' -')
-    
+
         self.logger.info('    Identifying eukaryotic 18S.')
         os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.euk.txt --tblout ' + outputPrefix + '.euk.table.txt -E ' + str(evalue) + ' ' + self.eukModelFile + ' -')
 
@@ -73,12 +73,12 @@ class SSU_Finder(object):
                     iEvalue = lineSplit[3]
                     aliFrom = int(lineSplit[7])
                     aliTo = int(lineSplit[8])
-                    
+
                     revComp = False
                     if aliFrom > aliTo:
                         revComp = True
                         aliFrom, aliTo = aliTo, aliFrom
-                        
+
                     alignLen = int(aliTo) - int(aliFrom) + 1
 
                     if float(iEvalue) <= evalueThreshold:
@@ -88,7 +88,7 @@ class SSU_Finder(object):
 
     def __addHit(self, hits, seqId, info, concatenateThreshold):
         """Add hits from individual HMMs and concatenate nearby hits."""
-        
+
         # check if this is the first hit to this sequence
         if seqId not in hits:
             hits[seqId] = info
@@ -119,7 +119,7 @@ class SSU_Finder(object):
                 info[4] = str(end - startNew + 1)
                 hits[concateSeqId] = info
                 bConcatenate = True
-                
+
             elif abs(startNew - end) < concatenateThreshold and bRevNew == bRev:
                 # new hit closely follows old hit and is on same strand
                 del hits[seqId]
@@ -247,7 +247,7 @@ class SSU_Finder(object):
             if seqId in seqIdToBinId:
                 binId = seqIdToBinId[seqId]
             else:
-                binId = defaultValues.UNBINNED
+                binId = DefaultValues.UNBINNED
 
             seqInfo = [origSeqId] + bestHits[origSeqId]
             hitsToBins[binId] = hitsToBins.get(binId, []) + [seqInfo]
@@ -260,7 +260,7 @@ class SSU_Finder(object):
 
                 seq = seqs[seqId]
                 summaryOut.write(binId + '\t' + '\t'.join(seqInfo) + '\t' + str(len(seq)) + '\n')
-                seqOut.write('>' + binId + defaultValues.SEQ_CONCAT_CHAR + seqInfo[0] + '\n')
+                seqOut.write('>' + binId + DefaultValues.SEQ_CONCAT_CHAR + seqInfo[0] + '\n')
                 seqOut.write(seq[int(seqInfo[3]):int(seqInfo[4])] + '\n')
 
         summaryOut.close()

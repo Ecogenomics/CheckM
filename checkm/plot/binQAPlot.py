@@ -1,7 +1,7 @@
 ###############################################################################
 #
-# binQAPlot.py - Bar plot of bin completeness, contamination, 
-#                  and strain heterogeneity. 
+# binQAPlot.py - Bar plot of bin completeness, contamination,
+#                  and strain heterogeneity.
 #
 ###############################################################################
 #                                                                             #
@@ -34,37 +34,37 @@ from checkm.common import binIdFromFilename
 class BinQAPlot(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
-        self.logger = logging.getLogger() 
-        
+        self.logger = logging.getLogger()
+
     def __sortBinsByCompleteness(self, binFiles, binStatsExt):
         sortedBinIds = []
         for binFile in binFiles:
             binId = binIdFromFilename(binFile)
-            
+
             sortedBinIds.append([binId, binStatsExt[binId]['Completeness']])
-            
+
         sortedBinIds.sort(key=itemgetter(1, 0))
 
         return [x[0] for x in sortedBinIds]
-        
+
     def plot(self, binFiles, binStatsExt, bIgnoreHetero, aaiHetero):
         self.fig.clear()
-        
+
         height = self.options.row_height * (len(binFiles) + 3)
         self.fig.set_size_inches(self.options.width, height)
-        
+
         self.logger.info('  Plotting bin completeness, contamination, and strain heterogeneity.')
-        
+
         sortedBinIds = self.__sortBinsByCompleteness(binFiles, binStatsExt)
-        
+
         for i, binId in enumerate(sortedBinIds):
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 statusStr = '    Plotting bin %d of %d (%.2f%%) bins.' % (i+1, len(binFiles), float(i+1)*100/len(binFiles))
                 sys.stdout.write('%s\r' % statusStr)
                 sys.stdout.flush()
-                 
+
             axes = self.fig.add_subplot(len(binFiles)+3, 1, i+1)
-            
+
             # create a vector for each column indicating:
             #  0) single-copy
             #  1-4) increasing levels of strain heterogeneity
@@ -73,7 +73,7 @@ class BinQAPlot(AbstractPlot):
             data = []
             for i in range(binStatsExt[binId]['1']):
                 data.append([1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-                
+
             if bIgnoreHetero:
                 for i in range(binStatsExt[binId]['2']):
                     data.append([0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0])
@@ -87,30 +87,30 @@ class BinQAPlot(AbstractPlot):
                 for geneCountNumber, index in zip(['GCN2', 'GCN3', 'GCN4', 'GCN5+'], [1, 2, 3, 4]):
                     strainHetero = []
                     for markerId in binStatsExt[binId][geneCountNumber]:
-                        strainHetero.append(aaiHetero[binId].get(markerId, 0))  
-                        
+                        strainHetero.append(aaiHetero[binId].get(markerId, 0))
+
                     for sh in sorted(strainHetero, reverse=True):
                         d = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
                         d[index] = sh
                         d[index+4] = 1.0 - sh
                         data.append(d)
-                    
+
             for i in range(binStatsExt[binId]['0']):
                 data.append([0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0])
-                
+
             blues = ['#e0f3f8', '#abd9e9', '#74add1', '#4575b4'] # blue gradient
             reds = ['#fee090', '#fdae61', '#f46d43', '#d73027'] # red gradient
-            
+
             colors = ['#b2df8a'] # green
             colors += blues
             colors += reds
             colors += ['#777777'] # grey
-            
+
             self.skylinePlot(binId, axes, data, colors)
-            
+
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stdout.write('\n')
-            
+
         # legends
         discreteColourMap = mpl.colors.ListedColormap([colors[0]])
         axisColourMap = self.fig.add_axes([0.5 - 9.5*(self.options.row_height/self.options.width), self.options.row_height/height, 4*(self.options.row_height/self.options.width), self.options.row_height/height])
@@ -120,7 +120,7 @@ class BinQAPlot(AbstractPlot):
         colourBar.outline.set_linewidth(0.5)
         colourBar.dividers.set_linewidth(0.5)
         axisColourMap.set_title('Single-copy')
-        
+
         discreteColourMap = mpl.colors.ListedColormap([colors[-1]])
         axisColourMap = self.fig.add_axes([0.5 - 4.5*(self.options.row_height/self.options.width), self.options.row_height/height, 4*(self.options.row_height/self.options.width), self.options.row_height/height])
         colourBar = mpl.colorbar.ColorbarBase(axisColourMap, cmap=discreteColourMap, orientation='horizontal', drawedges=True)
@@ -129,7 +129,7 @@ class BinQAPlot(AbstractPlot):
         colourBar.outline.set_linewidth(0.5)
         colourBar.dividers.set_linewidth(0.5)
         axisColourMap.set_title('Missing')
-        
+
         discreteColourMap = mpl.colors.ListedColormap(blues)
         axisColourMap = self.fig.add_axes([0.5 + 0.5*(self.options.row_height/self.options.width), self.options.row_height/height, 4*(self.options.row_height/self.options.width), self.options.row_height/height])
         colourBar = mpl.colorbar.ColorbarBase(axisColourMap, cmap=discreteColourMap, orientation='horizontal', drawedges=True)
@@ -138,7 +138,7 @@ class BinQAPlot(AbstractPlot):
         colourBar.outline.set_linewidth(0.5)
         colourBar.dividers.set_linewidth(0.5)
         axisColourMap.set_title('Heterogeneity')
-        
+
         discreteColourMap = mpl.colors.ListedColormap(reds)
         axisColourMap = self.fig.add_axes([0.5 + 5.5*(self.options.row_height/self.options.width), self.options.row_height/height, 4*(self.options.row_height/self.options.width), self.options.row_height/height])
         colourBar = mpl.colorbar.ColorbarBase(axisColourMap, cmap=discreteColourMap, orientation='horizontal', drawedges=True)
@@ -147,10 +147,10 @@ class BinQAPlot(AbstractPlot):
         colourBar.outline.set_linewidth(0.5)
         colourBar.dividers.set_linewidth(0.5)
         axisColourMap.set_title('Contamination')
-            
-        self.fig.tight_layout(pad=5)       
+
+        self.fig.tight_layout(pad=5)
         self.draw()
-        
+
     def skylinePlot(self,
                        binId,
                        ax,                                 # axes to plot onto
@@ -180,7 +180,7 @@ class BinQAPlot(AbstractPlot):
                linewidth=0.5,
                align='center'
                )
-        
+
         for i in np.arange(1,levels):
             ax.bar(x,
                    data_copy[i],
@@ -194,19 +194,18 @@ class BinQAPlot(AbstractPlot):
         # ticks
         ax.set_xticks([])
         ax.set_yticks([])
-        
+
         # limits
         ax.set_xlim(-0.5, num_bars)
         ax.set_ylim(0, np.max(data_stack))
 
         # labels
         ax.set_ylabel(binId, rotation = 0)
-       
+
         # borders
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
-        ax.spines["bottom"].set_visible(False)    
+        ax.spines["bottom"].set_visible(False)
         #ax.axhline(linewidth=0.5, color="black")
-                   
-        
+

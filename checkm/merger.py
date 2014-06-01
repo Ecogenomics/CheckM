@@ -23,35 +23,34 @@ import os
 import sys
 import logging
 
-from common import checkDirExists
-from resultsParser import ResultsParser
+from checkm.common import checkDirExists
+from checkm.resultsParser import ResultsParser
 
 class Merger():
     def __init__(self):
         self.logger = logging.getLogger()
-    
-    def run(self, binFiles, outDir, hmmTableFile, 
-                binIdToHmmModelFile, binIdToBinMarkerSets, 
-                minDeltaComp, maxDeltaCont, 
-                minMergedComp, maxMergedCont):   
+
+    def run(self, binFiles, outDir, hmmTableFile,
+                binIdToModels, binIdToBinMarkerSets,
+                minDeltaComp, maxDeltaCont,
+                minMergedComp, maxMergedCont):
         checkDirExists(outDir)
-        
+
         self.logger.info('  Comparing marker sets between all pairs of bins.')
-        
+
         # ensure all bins are using the same marker set
         markerGenesI = binIdToBinMarkerSets[binIdToBinMarkerSets.keys()[0]].mostSpecificMarkerSet().getMarkerGenes()
         for binIdJ in binIdToBinMarkerSets:
             if markerGenesI != binIdToBinMarkerSets[binIdJ].mostSpecificMarkerSet().getMarkerGenes():
                 self.logger.error('  [Error] All bins must use the same marker set to assess potential mergers.')
                 sys.exit(0)
-            
+
         # parse HMM information
-        resultsParser = ResultsParser()
-        resultsParser.parseHmmerModels(binIdToHmmModelFile)
-        
-        # get HMM hits to each bin 
+        resultsParser = ResultsParser(binIdToModels)
+
+        # get HMM hits to each bin
         resultsParser.parseBinHits(outDir, hmmTableFile)
-        
+
         # determine union and intersection of marker sets for each pair of bins
         outputFile = os.path.join(outDir, "merger.tsv")
         fout = open(outputFile, 'w')
@@ -60,56 +59,51 @@ class Merger():
         fout.write('\tBin 2 completeness\tBin 2 contamination')
         fout.write('\tDelta completeness\tDelta contamination\tMerger delta')
         fout.write('\tMerged completeness\tMerged contamination\n')
-                    
+
         binMarkerHits = resultsParser.results
         binIds = sorted(binMarkerHits.keys())
         for i in xrange(0, len(binMarkerHits)):
             binIdI = binIds[i]
-            markersI = set(binMarkerHits[binIdI].markerHits.keys())
-            
+
             geneCountsI = binMarkerHits[binIdI].geneCounts(binIdToBinMarkerSets[binIdI].mostSpecificMarkerSet(), binMarkerHits[binIdI].markerHits, True)
             completenessI, contaminationI = geneCountsI[6:8]
-             
-            for j in xrange(i+1, len(binMarkerHits)):               
+
+            for j in xrange(i+1, len(binMarkerHits)):
                 binIdJ = binIds[j]
-                markersJ = (binMarkerHits[binIdJ].markerHits.keys())
-                
+
                 geneCountsJ = binMarkerHits[binIdJ].geneCounts(binIdToBinMarkerSets[binIdJ].mostSpecificMarkerSet(), binMarkerHits[binIdJ].markerHits, True)
                 completenessJ, contaminationJ = geneCountsJ[6:8]
-                
+
                 # merge together hits from both bins and calculate completeness and contamination
                 mergedHits = {}
                 for markerId, hits in binMarkerHits[binIdI].markerHits.iteritems():
                     mergedHits[markerId] = list(hits)
-                    
+
                 for markerId, hits in binMarkerHits[binIdJ].markerHits.iteritems():
                     if markerId in mergedHits:
                         mergedHits[markerId].extend(hits)
                     else:
                         mergedHits[markerId] = hits
-                
+
                 geneCountsMerged = binMarkerHits[binIdI].geneCounts(binIdToBinMarkerSets[binIdJ].mostSpecificMarkerSet(), mergedHits, True)
                 completenessMerged, contaminationMerged = geneCountsMerged[6:8]
-                
+
                 if not (completenessMerged >= minMergedComp and contaminationMerged < maxMergedCont):
                     continue
-                     
-                # calculate merged statistics           
-                numUnion = len(markersI.union(markersJ))
-                numIntersection = len(markersI.intersection(markersJ))
+
+                # calculate merged statistics
                 deltaComp = completenessMerged - max(completenessI, completenessJ)
                 deltaCont = contaminationMerged - max(contaminationI, contaminationJ)
-                delta = deltaComp - deltaCont 
-                
-                if deltaComp >= minDeltaComp and deltaCont < maxDeltaCont:    
-                    fout.write('%s\t%s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n' % 
-                                                                        (binIdI, binIdJ, 
+                delta = deltaComp - deltaCont
+
+                if deltaComp >= minDeltaComp and deltaCont < maxDeltaCont:
+                    fout.write('%s\t%s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n' %
+                                                                        (binIdI, binIdJ,
                                                                          completenessI, contaminationI,
                                                                          completenessJ, contaminationJ,
-                                                                         deltaComp, deltaCont, delta, 
+                                                                         deltaComp, deltaCont, delta,
                                                                          completenessMerged, contaminationMerged))
-        
+
         fout.close()
-        
+
         return outputFile
-                

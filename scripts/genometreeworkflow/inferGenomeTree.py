@@ -36,7 +36,7 @@ from checkm.seqUtils import readFasta, writeFasta
 
 from checkm.lib.img import IMG
 
-from checkm.lib.taxonomyUtils import taxonomyWithRanks
+from checkm.lib.taxonomyUtils import appendTaxonomyRanks
 
 class InferGenomeTree(object):
     def __init__(self):
@@ -108,7 +108,7 @@ class InferGenomeTree(object):
         fout = open(outputTaxonomy, 'w')
         for genomeId in genomeIds:
             fout.write('IMG_' + genomeId + '\t')
-            taxonomy = taxonomyWithRanks(metadata[genomeId]['taxonomy'])
+            taxonomy = appendTaxonomyRanks(metadata[genomeId]['taxonomy'])
             taxonomy = [x.replace('unclassified', '') for x in taxonomy]
             fout.write('; '.join(taxonomy) + '\n')
         

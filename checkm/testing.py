@@ -22,8 +22,8 @@
 import os
 import ast
 
-from markerSets import MarkerSet
-import defaultValues
+from checkm.markerSets import MarkerSet
+from checkm.defaultValues import DefaultValues
 
 import numpy as np
 
@@ -35,7 +35,7 @@ class Testing():
         """Verify output of tree command."""
 
         # verify bin stats using independently verified ground truth values
-        with open(os.path.join(outdir, 'storage', defaultValues.BIN_STATS_PHYLO_OUT), 'r') as f:
+        with open(os.path.join(outdir, 'storage', DefaultValues.BIN_STATS_PHYLO_OUT), 'r') as f:
             s = f.read()
             binStats = ast.literal_eval(s)
 
@@ -52,7 +52,7 @@ class Testing():
         np.testing.assert_almost_equal(binStats['637000110']['Genome size'], 4646332, err_msg="Failed genome size test")
 
         # verify sequence stats using  independently verified ground truth values
-        with open(os.path.join(outdir, 'storage', defaultValues.SEQ_STATS_PHYLO_OUT), 'r') as f:
+        with open(os.path.join(outdir, 'storage', DefaultValues.SEQ_STATS_PHYLO_OUT), 'r') as f:
             s = f.read()
             seqStats = ast.literal_eval(s)
 
@@ -106,7 +106,7 @@ class Testing():
         """Verify output of analyze command."""
 
                 # verify bin stats using independently verified ground truth values
-        with open(os.path.join(outdir, 'storage', defaultValues.BIN_STATS_OUT), 'r') as f:
+        with open(os.path.join(outdir, 'storage', DefaultValues.BIN_STATS_OUT), 'r') as f:
             s = f.read()
             binStats = ast.literal_eval(s)
 
@@ -123,7 +123,7 @@ class Testing():
         np.testing.assert_almost_equal(binStats['637000110']['Genome size'], 4646332, err_msg="Failed genome size test")
 
         # verify sequence stats using  independently verified ground truth values
-        with open(os.path.join(outdir, 'storage', defaultValues.SEQ_STATS_OUT), 'r') as f:
+        with open(os.path.join(outdir, 'storage', DefaultValues.SEQ_STATS_OUT), 'r') as f:
             s = f.read()
             seqStats = ast.literal_eval(s)
 

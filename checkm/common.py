@@ -27,31 +27,31 @@ import logging
 
 import numpy as np
 
-import defaultValues
+from checkm.defaultValues import DefaultValues
 
 def getBinIdsFromOutDir(outDir):
     """Get bin ids."""
     binIds = []
-    
+
     binDir = os.path.join(outDir, 'bins')
-    
+
     for f in os.listdir(binDir):
-        if os.path.isdir(os.path.join(binDir, f)) and f != 'storage':  
+        if os.path.isdir(os.path.join(binDir, f)) and f != 'storage':
             binIds.append(f)
-            
+
     return binIds
 
 def readDistribution(prefix):
     """Read distribution file."""
-    distFile = os.path.join(defaultValues.DISTRIBUTION_DIR,  prefix + '.txt')
+    distFile = os.path.join(DefaultValues.DISTRIBUTION_DIR,  prefix + '.txt')
     checkFileExists(distFile)
-    
+
     with open(distFile, 'r') as f:
         s = f.read()
         d = ast.literal_eval(s)
-        
+
     return d
-    
+
 def findNearest(array, value):
     '''Find nearest array element to a given value.'''
     idx = (np.abs(np.array(array)-value)).argmin()
@@ -62,7 +62,7 @@ def checkFileExists(inputFile):
         logger = logging.getLogger()
         logger.error('  [Error] Input file does not exists: ' + inputFile + '\n')
         sys.exit()
-        
+
 def checkDirExists(inputDir):
     if not os.path.exists(inputDir):
         logger = logging.getLogger()
@@ -77,13 +77,13 @@ def makeSurePathExists(path):
             logger = logging.getLogger()
             logger.error('  [Error] Specified path does not exist: ' + path + '\n')
             sys.exit()
-        
+
 def binIdFromFilename(filename):
     binId = os.path.basename(filename)
     binId = os.path.splitext(binId)[0]
-    
+
     return binId
-        
+
 def reassignStdOut(outFile):
     oldStdOut = sys.stdout
     if(outFile != ''):
@@ -94,7 +94,7 @@ def reassignStdOut(outFile):
             logger = logging.getLogger()
             logger.error("   [Error] Error diverting stout to file: " + outFile)
             sys.exit()
-            
+
     return oldStdOut
 
 def restoreStdOut(outFile, oldStdOut):

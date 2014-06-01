@@ -24,23 +24,23 @@ import sys
 import multiprocessing as mp
 import logging
 
-from common import binIdFromFilename, makeSurePathExists
+from checkm.common import binIdFromFilename, makeSurePathExists
 
-from hmmer import HMMERRunner
-from prodigal import ProdigalRunner
+from checkm.hmmer import HMMERRunner
+from checkm.prodigal import ProdigalRunner
 
-from markerSets import MarkerSetParser
-from hmmerModelParser import HmmModelParser
+from checkm.markerSets import MarkerSetParser
+from checkm.hmmerModelParser import HmmModelParser
 
 class MarkerGeneFinder():
     """Identify marker genes within binned sequences using Prodigal and HMMER."""
-    def __init__(self, threads):  
-        self.logger = logging.getLogger()                  
+    def __init__(self, threads):
+        self.logger = logging.getLogger()
         self.totalThreads = threads
 
     def find(self, binFiles, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs):
         """Identify marker genes in each bin using prodigal and HMMER."""
-                
+
         # process each fasta file
         self.threadsPerSearch = max(1, int(self.totalThreads / len(binFiles)))
         self.logger.info("  Identifying marker genes in %d bins with %d threads:" % (len(binFiles), self.totalThreads))
@@ -60,42 +60,42 @@ class MarkerGeneFinder():
         writeProc = mp.Process(target = self.__reportProgress, args = (len(binFiles), writerQueue))
 
         writeProc.start()
-        
+
         for p in calcProc:
             p.start()
 
         for p in calcProc:
             p.join()
-            
+
         writerQueue.put(None)
         writeProc.join()
-        
+
         # create a standard dictionary from the managed dictionary
         d = {}
         for binId in binIdToModels.keys():
             d[binId] = binIdToModels[binId]
-        
+
         return d
-              
+
     def __processBin(self, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, binIdToModels, queueIn, queueOut):
-        """Thread safe bin processing."""     
-        
+        """Thread safe bin processing."""
+
         markerSetParser = MarkerSetParser(self.threadsPerSearch)
-         
-        while True:    
-            binFile = queueIn.get(block=True, timeout=None) 
+
+        while True:
+            binFile = queueIn.get(block=True, timeout=None)
             if binFile == None:
-                break   
+                break
 
             binId = binIdFromFilename(binFile)
             binDir = os.path.join(outDir, 'bins', binId)
             makeSurePathExists(binDir)
-    
-            # run Prodigal     
-            prodigal = ProdigalRunner(binDir) 
+
+            # run Prodigal
+            prodigal = ProdigalRunner(binDir)
             if not prodigal.areORFsCalled():
                 prodigal.run(binFile, bNucORFs)
-                
+
             # extract HMMs into temporary file
             hmmModelFile = markerSetParser.createHmmModelFile(binId, markerFile)
 
@@ -107,38 +107,37 @@ class MarkerGeneFinder():
             hmmer = HMMERRunner()
             tableOutPath = os.path.join(binDir, tableOut)
             hmmerOutPath = os.path.join(binDir, hmmerOut)
-            
+
             keepAlignStr = ''
             if not bKeepAlignment:
                 keepAlignStr = '--noali'
-            hmmer.search(hmmModelFile, prodigal.aaGeneFile, tableOutPath, hmmerOutPath, 
-                         '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr, 
+            hmmer.search(hmmModelFile, prodigal.aaGeneFile, tableOutPath, hmmerOutPath,
+                         '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr,
                          bKeepAlignment)
 
             os.remove(hmmModelFile)
-    
+
             queueOut.put(binId)
 
     def __reportProgress(self, numBins, queueIn):
-        """Report number of processed bins."""      
-        
+        """Report number of processed bins."""
+
         numProcessedBins = 0
         if self.logger.getEffectiveLevel() <= logging.INFO:
             statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
             sys.stderr.write('%s\r' % statusStr)
             sys.stderr.flush()
-        
+
         while True:
             binId = queueIn.get(block=True, timeout=None)
             if binId == None:
                 break
-            
+
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
                 statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
-         
+
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
-            

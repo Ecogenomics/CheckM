@@ -27,10 +27,10 @@ import numpy as np
 
 from AbstractPlot import AbstractPlot
 
-from checkm.lib.seqUtils import readFasta
+from checkm.defaultValues import DefaultValues
+from checkm.util.seqUtils import readFasta
 from checkm.prodigal import ProdigalFastaParser
 from checkm.common import binIdFromFilename
-import checkm.defaultValues as defaultValues
 
 from matplotlib.patches import Rectangle
 
@@ -46,7 +46,7 @@ class MarkerGenePosPlot(AbstractPlot):
 
         for geneId in markerGeneStats:
             scaffoldId = geneId[0:geneId.rfind('_')]
-            
+
             for markerId, hitList in markerGeneStats[geneId].iteritems():
                 for hit in hitList:
                     start = hit[0]
@@ -61,9 +61,9 @@ class MarkerGenePosPlot(AbstractPlot):
 
     def plot(self, binFile, markerGeneStats, binStats):
         binId = binIdFromFilename(binFile)
-        
+
         markerGenesPerSeq, markerGeneNum = self.getMarkerGenesPerSeq(markerGeneStats)
-        
+
         if len(markerGenesPerSeq) == 0:
             return False
 
@@ -75,7 +75,7 @@ class MarkerGenePosPlot(AbstractPlot):
         for seqId, seq in seqs.iteritems():
             seqLen = len(seq)
             binSize += seqLen
-            
+
             if seqId not in markerGenesPerSeq:
                 continue
 
@@ -91,7 +91,7 @@ class MarkerGenePosPlot(AbstractPlot):
 
         # get position of genes in bin
         prodigalFastaParser = ProdigalFastaParser()
-        geneFile = os.path.join(self.options.out_folder, 'bins', binId, defaultValues.PRODIGAL_AA)
+        geneFile = os.path.join(self.options.out_folder, 'bins', binId, DefaultValues.PRODIGAL_AA)
         genePos = prodigalFastaParser.genePositions(geneFile)
 
         # Set size of figure
@@ -183,5 +183,5 @@ class MarkerGenePosPlot(AbstractPlot):
                 spine.set_color(self.axesColour)
 
         self.draw()
-        
+
         return True

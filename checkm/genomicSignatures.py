@@ -28,18 +28,18 @@ import logging
 
 import numpy as np
 
-from lib.seqUtils import readFasta
+from checkm.util.seqUtils import readFasta
 
 class GenomicSignatures(object):
     def __init__(self, K, threads):
         self.logger = logging.getLogger()
-        
+
         self.K = K
         self.compl = maketrans('ACGT', 'TGCA')
         self.kmerCols, self.kmerToCanonicalIndex = self.__makeKmerColNames()
-        
+
         self.totalThreads = threads
-        
+
     def __makeKmerColNames(self):
         """Work out unique kmers."""
 
@@ -61,15 +61,15 @@ class GenomicSignatures(object):
                 retList.append(kmer)
 
         sorted(retList)
-        
+
         # create mapping from kmers to their canonical order position
         kmerToCanonicalIndex = {}
         for index, kmer in enumerate(retList):
             kmerToCanonicalIndex[kmer] = index
             kmerToCanonicalIndex[self.__revComp(kmer)] = index
-            
+
         return retList, kmerToCanonicalIndex
-        
+
     def __lexicographicallyLowest(self, seq):
         """Return the lexicographically lowest form of this sequence."""
         rseq = self.__revComp(seq)
@@ -81,13 +81,13 @@ class GenomicSignatures(object):
         """Return the reverse complement of a sequence."""
         # build a dictionary to know what letter to switch to
         return seq.translate(self.compl)[::-1]
-            
+
     def __calculateResults(self, queueIn, queueOut):
         """Calculate genomic signature of sequences in parallel."""
         while True:
-            seqId, seq = queueIn.get(block=True, timeout=None) 
+            seqId, seq = queueIn.get(block=True, timeout=None)
             if seqId == None:
-                break      
+                break
 
             sig = self.seqSignature(seq)
 
@@ -95,40 +95,40 @@ class GenomicSignatures(object):
 
     def __storeResults(self, seqFile, outputFile, totalSeqs, writerQueue):
         """Store genomic signatures to file."""
-        
+
         # write header
         fout = open(outputFile, 'w')
         fout.write('Sequence Id')
         for kmer in self.canonicalKmerOrder():
             fout.write('\t' + kmer)
         fout.write('\n')
-        
+
         numProcessedSeq = 0
         while True:
             seqId, sig = writerQueue.get(block=True, timeout=None)
             if seqId == None:
                 break
-            
+
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedSeq += 1
                 statusStr = '    Finished processing %d of %d (%.2f%%) sequences.' % (numProcessedSeq, totalSeqs, float(numProcessedSeq)*100/totalSeqs)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
-            
+
             fout.write(seqId)
             fout.write('\t' + '\t'.join(map(str, sig)))
             fout.write('\n')
-            
+
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
-            
+
         fout.close()
-        
+
     def canonicalKmerOrder(self):
         return self.kmerCols
-        
+
     def seqSignature(self, seq):
-        sig = [0] * len(self.kmerCols) 
+        sig = [0] * len(self.kmerCols)
 
         numMers = len(seq) - self.K + 1
         for i in range(0, numMers):
@@ -138,22 +138,22 @@ class GenomicSignatures(object):
             except KeyError:
                 # unknown kmer (e.g., contains a N)
                 pass
-            
+
         # normalize
-        sig = np.array(sig, dtype=float)    
+        sig = np.array(sig, dtype=float)
         sig /= np.sum(sig)
-  
+
         return sig
 
     def calculate(self, seqFile, outputFile):
-        """Calculate genomic signature of each sequence."""  
-        
+        """Calculate genomic signature of each sequence."""
+
         self.logger.info('  Determining tetranucleotide signature of each sequence.')
-          
+
         # process each sequence in parallel
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
-        
+
         seqs = readFasta(seqFile)
 
         for seqId, seq in seqs.iteritems():
@@ -175,10 +175,10 @@ class GenomicSignatures(object):
 
         writerQueue.put((None, None))
         writeProc.join()
-        
-    def distance(self, sig1, sig2): 
+
+    def distance(self, sig1, sig2):
         return np.sum(np.abs(sig1 - sig2))
-    
+
     def read(self, tetraProfileFile):
         sig = {}
         with open(tetraProfileFile) as f:
@@ -186,5 +186,5 @@ class GenomicSignatures(object):
             for line in f:
                 lineSplit = line.split('\t')
                 sig[lineSplit[0]] = np.array([float(x) for x in lineSplit[1:]])
-            
+
         return sig

@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# pplacer.py - runs pplacer and provides functions for parsing output  
+# pplacer.py - runs pplacer and provides functions for parsing output
 #
 ###############################################################################
 #                                                                             #
@@ -25,21 +25,21 @@ import subprocess
 import logging
 from collections import defaultdict
 
-import defaultValues
+from checkm.defaultValues import DefaultValues
 
-from common import checkDirExists
-from lib.seqUtils import readFasta, writeFasta
+from checkm.common import checkDirExists
+from checkm.util.seqUtils import readFasta, writeFasta
 
 class PplacerRunner():
     """Wrapper for running pplacer."""
     def __init__(self, threads):
         self.logger = logging.getLogger()
         self.numThreads = threads
-        
+
         # make sure pplace and guppy are on the system path
         self.__checkForPplacer()
         self.__checkForGuppy()
-          
+
     def run(self, binFiles, resultsParser, outDir):
         # make sure output and tree directories exist
         checkDirExists(outDir)
@@ -48,26 +48,26 @@ class PplacerRunner():
 
         # create concatenated alignment file for each bin
         concatenatedAlignFile = self.__createConcatenatedAlignment(binFiles, resultsParser, alignOutputDir)
-        
+
         # run pplacer to place bins in reference genome tree
         self.logger.info('  Placing %d bins in the genome tree with pplacer (be patient).' % len(binFiles))
-        pplacerJsonOut = os.path.join(alignOutputDir, defaultValues.PPLACER_JSON_OUT)
-        pplacerOut = os.path.join(alignOutputDir, defaultValues.PPLACER_OUT)
-        cmd = 'pplacer -j %d -c %s -o %s %s > %s' % (self.numThreads, 
-                                                     defaultValues.PPLACER_REF_PACKAGE, 
-                                                     pplacerJsonOut, 
-                                                     concatenatedAlignFile, 
+        pplacerJsonOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_JSON_OUT)
+        pplacerOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_OUT)
+        cmd = 'pplacer -j %d -c %s -o %s %s > %s' % (self.numThreads,
+                                                     DefaultValues.PPLACER_REF_PACKAGE,
+                                                     pplacerJsonOut,
+                                                     concatenatedAlignFile,
                                                      pplacerOut)
         os.system(cmd)
-        
+
         # extract tree
-        treeFile = os.path.join(alignOutputDir, defaultValues.PPLACER_TREE_OUT)
+        treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
         cmd = 'guppy tog -o %s %s' % (treeFile, pplacerJsonOut)
         os.system(cmd)
 
     def __createConcatenatedAlignment(self, binFiles, resultsParser, alignOutputDir):
         """Create a concatenated alignment of marker genes for each bin."""
-                
+
         # read alignment files
         self.logger.info('  Reading marker alignment files.')
         alignments = defaultdict(dict)
@@ -77,13 +77,13 @@ class PplacerRunner():
             if f.endswith('.masked.faa'):
                 markerId = f[0:f.find('.masked.faa')]
                 seqs = readFasta(os.path.join(alignOutputDir, f))
-                
+
                 for seqId, seq in seqs.iteritems():
-                    binId = seqId[0:seqId.find(defaultValues.SEQ_CONCAT_CHAR)]
+                    binId = seqId[0:seqId.find(DefaultValues.SEQ_CONCAT_CHAR)]
 
                     alignments[markerId][binId] = seq
                     binIds.add(binId)
-                    
+
         # get all markers and their lengths
         markerIds = resultsParser.models[resultsParser.models.keys()[0]].keys()
         markerIdLens = {}
@@ -105,14 +105,14 @@ class PplacerRunner():
                     concatenatedSeqs[binId] = concatenatedSeqs.get(binId, '') + '-'*markerIdLens[markerId]
 
         # save concatenated alignment
-        concatenatedAlignFile = os.path.join(alignOutputDir, defaultValues.PPLACER_CONCAT_SEQ_OUT)
+        concatenatedAlignFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_CONCAT_SEQ_OUT)
         writeFasta(concatenatedSeqs, concatenatedAlignFile)
-        
+
         return concatenatedAlignFile
 
     def __checkForPplacer(self):
         """Check to see if pplacer is on the system before we try to run it."""
-        
+
         # Assume that a successful pplacer -h returns 0 and anything
         # else returns something non-zero
         try:
@@ -120,10 +120,10 @@ class PplacerRunner():
         except:
             self.logger.error("  [Error] Make sure pplacer is on your system path.")
             sys.exit()
-            
+
     def __checkForGuppy(self):
         """Check to see if guppy is on the system before we try to run it."""
-        
+
         # Assume that a successful pplacer -h returns 0 and anything
         # else returns something non-zero
         try:
@@ -137,4 +137,4 @@ class PplacerParser():
     def __init__(self):
         pass
 
-    
+

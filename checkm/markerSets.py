@@ -29,55 +29,54 @@ import multiprocessing as mp
 import cPickle as pickle
 import gzip
 
-import defaultValues
+from checkm.defaultValues import DefaultValues
+from checkm.hmmer import HMMERRunner
+from checkm.hmmerModelParser import HmmModelParser
 
-from hmmer import HMMERRunner
-from hmmerModelParser import HmmModelParser
-
-from lib.pfam import PFAM
+from checkm.util.pfam import PFAM
 
 class BinMarkerSets():
     """A collection of one or more marker sets associated with a bin."""
-    
-    # type of marker set 
+
+    # type of marker set
     TAXONOMIC_MARKER_SET = 1
     TREE_MARKER_SET = 2
     HMM_MODELS_SET = 3
-    
+
     def __init__(self, binId, markerSetType):
         self.logger = logging.getLogger()
         self.markerSets = []
         self.binId = binId
         self.markerSetType = markerSetType
         self.selectedLinageSpecificMarkerSet = None
-             
+
     def numMarkerSets(self):
         """Number of marker sets associated with bin."""
         return len(self.markerSets)
-    
+
     def addMarkerSet(self, markerSet):
         """Add marker set to bin."""
         self.markerSets.append(markerSet)
-        
+
     def markerSetIter(self):
         """Generator function for iterating over marker sets."""
         for markerSet in self.markerSets:
-            yield markerSet      
-            
+            yield markerSet
+
     def getMarkerGenes(self):
         """Get marker genes from all marker sets."""
         markerGenes = set()
         for ms in self.markerSets:
             markerGenes.update(ms.getMarkerGenes())
-                
+
         return markerGenes
-    
+
     def mostSpecificMarkerSet(self):
         return self.markerSets[0]
-    
+
     def treeMarkerSet(self):
         pass
-    
+
     def selectedMarkerSet(self):
         """Return the 'selected' marker set for this bin."""
         if self.markerSetType == self.TAXONOMIC_MARKER_SET:
@@ -88,34 +87,34 @@ class BinMarkerSets():
             # there should be a single marker set associate with this bin
             if len(self.markerSets) == 1:
                 return self.markerSets[0]
-            
+
             self.logger.error('  [Error] Expected a single marker set to be associated with each bin.\n')
             sys.exit()
-            
+
     def setLineageSpecificSelectedMarkerSet(self, selectedMarkerSetMap):
         uid = self.mostSpecificMarkerSet().UID
-        
+
         selectedId = selectedMarkerSetMap[uid]
-        
+
         self.selectedLinageSpecificMarkerSet = None
         for ms in self.markerSets:
             if ms.UID == selectedId:
                 self.selectedLinageSpecificMarkerSet = ms
                 break
-            
+
         if self.selectedLinageSpecificMarkerSet == None:
             # something has gone wrong
             self.logger.error('  [Error] Failed to set a selected lineage-specific marker set.\n')
             sys.exit()
-                
+
     def write(self, fout):
         """Write marker set to file."""
         fout.write(self.binId)
         fout.write('\t' + str(len(self.markerSets)))
         for ms in self.markerSets:
-            fout.write('\t' + str(ms)) 
+            fout.write('\t' + str(ms))
         fout.write('\n')
-        
+
     def read(self, line):
         """Construct bin marker set data from line."""
         lineSplit = line.split('\t')
@@ -131,23 +130,23 @@ class MarkerSet():
     """A collection of marker genes organized into co-located sets."""
     def __init__(self,  UID, lineageStr, numGenomes, markerSet):
         self.logger = logging.getLogger()
-        
+
         self.UID = UID                  # unique ID of marker set
         self.lineageStr = lineageStr    # taxonomic string associated with marker set
         self.numGenomes = numGenomes    # number of genomes used to calculate marker set
         self.markerSet = markerSet      # marker genes organized into co-located sets
-           
+
     def __repr__(self):
         return str(self.UID) + '\t' + self.lineageStr + '\t' + str(self.numGenomes) + '\t' + str(self.markerSet)
-        
+
     def size(self):
         """Number of marker genes and marker gene sets."""
         numMarkerGenes = 0
         for m in self.markerSet:
             numMarkerGenes += len(m)
-            
+
         return numMarkerGenes, len(self.markerSet)
-        
+
     def numMarkers(self):
         """Number of marker genes."""
         return self.size()[0]
@@ -155,16 +154,16 @@ class MarkerSet():
     def numSets(self):
         """Number of marker sets."""
         return len(self.markerSet)
-    
+
     def getMarkerGenes(self):
         """Get marker genes within marker set."""
         markerGenes = set()
         for m in self.markerSet:
             for marker in m:
                 markerGenes.add(marker)
-                
+
         return markerGenes
-    
+
     def genomeCheck(self, hits, bIndividualMarkers):
         """Calculate genome completeness and contamination."""
         if bIndividualMarkers:
@@ -174,12 +173,12 @@ class MarkerSet():
                 if marker in hits:
                     present += 1
                     multiCopyCount += (len(hits[marker]) - 1)
-            
+
             percComp = 100 * float(present) / self.numMarkers()
             percCont = 100 * float(multiCopyCount) / self.numMarkers()
-        else: 
+        else:
             comp = 0.0
-            cont = 0.0    
+            cont = 0.0
             for ms in self.markerSet:
                 present = 0
                 multiCopy = 0
@@ -190,34 +189,34 @@ class MarkerSet():
                     elif count > 1:
                         present += 1
                         multiCopy += (count-1)
-    
+
                 comp += float(present) / len(ms)
                 cont += float(multiCopy) / len(ms)
 
             percComp = 100 * comp / len(self.markerSet)
             percCont = 100 * cont / len(self.markerSet)
-        
+
         return percComp, percCont
-                        
+
 class MarkerSetParser():
     """Parse marker set file."""
-    
+
     def __init__(self, threads=1):
         self.logger = logging.getLogger()
         self.numThreads = threads
-                
+
     def getMarkerSets(self, outDir, binIds, markerFile):
         """Determine marker set for each bin."""
-        
+
         # determine type of marker set file
         markerFileType = self.markerFileType(markerFile)
-        
+
         # get marker set for each bin
         binIdToBinMarkerSets = {}
-        
+
         if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
             binMarkerSets = self.__parseTaxonomicMarkerSetFile(markerFile)
-            
+
             for binId in binIds:
                 binIdToBinMarkerSets[binId] = binMarkerSets
         elif markerFileType == BinMarkerSets.TREE_MARKER_SET:
@@ -228,14 +227,14 @@ class MarkerSetParser():
             for model in modelParser.parse():
                 markers[0].add(model.acc)
             markerSet = MarkerSet(0, "N/A", -1, markers)
-            
+
             for binId in binIds:
                 binMarkerSets = BinMarkerSets(binId, BinMarkerSets.HMM_MODELS_SET)
                 binMarkerSets.addMarkerSet(markerSet)
                 binIdToBinMarkerSets[binId] = binMarkerSets
-        
+
         return binIdToBinMarkerSets
-            
+
     def createHmmModels(self, outDir, binIds, markerFile):
         """Create HMM model for each bins marker set."""
 
@@ -246,12 +245,12 @@ class MarkerSetParser():
         binIdToModels = {}
         if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
             hmmModelFile = self.createHmmModelFile(binIds.keys()[0], markerFile)
-            
+
             modelParser = HmmModelParser(hmmModelFile)
             models = modelParser.models()
             for binId in binIds:
                 binIdToModels[binId] = models
-                
+
             os.remove(hmmModelFile)
         elif markerFileType == BinMarkerSets.TREE_MARKER_SET:
             binIdToModels = self.__createLineageHmmModels(binIds, markerFile)
@@ -260,9 +259,9 @@ class MarkerSetParser():
             models = modelParser.models()
             for binId in binIds:
                 binIdToModels[binId] = models
-                
+
         return binIdToModels
-    
+
     def createHmmModelFile(self, binId, markerFile):
         """Create HMM file for from a bin's marker set."""
 
@@ -279,75 +278,75 @@ class MarkerSetParser():
             self.__createMarkerHMMs(binIdToBinMarkerSets[binId], hmmModelFile, bReportProgress=False)
         else:
             shutil.copyfile(markerFile, hmmModelFile)
-                
+
         return hmmModelFile
-    
+
     def __createLineageHmmModels(self, binIds, markerFile):
         """Create lineage-specific HMMs for each bin."""
-        
+
         self.logger.info('  Extracting lineage-specific HMMs with %d threads:' % self.numThreads)
-        
+
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
-        
+
         for binId in binIds:
             workerQueue.put(binId)
-            
+
         for _ in range(self.numThreads):
             workerQueue.put(None)
-            
+
         binIdToModels = mp.Manager().dict()
         calcProc = [mp.Process(target = self.__fetchModelInfo, args = (binIdToModels, markerFile, workerQueue, writerQueue)) for _ in range(self.numThreads)]
         writeProc = mp.Process(target = self.__reportFetchProgress, args = (len(binIds), writerQueue))
 
         writeProc.start()
-        
+
         for p in calcProc:
             p.start()
 
         for p in calcProc:
             p.join()
-            
+
         writerQueue.put(None)
         writeProc.join()
-        
+
         # create a standard dictionary from the managed dictionary
         d = {}
         for binId in binIdToModels.keys():
             d[binId] = binIdToModels[binId]
-        
+
         return d
 
     def __fetchModelInfo(self, binIdToModels, markerFile, queueIn, queueOut):
         """Fetch HMM."""
-        while True:    
-            binId = queueIn.get(block=True, timeout=None) 
-            if binId == None:
-                break  
-            
-            hmmModelFile = self.createHmmModelFile(binId, markerFile)
-        
-            modelParser = HmmModelParser(hmmModelFile)
-            binIdToModels[binId] = modelParser.models()
-                
-            os.remove(hmmModelFile)
-
-            queueOut.put(binId)
-            
-    def __reportFetchProgress(self, numBins, queueIn):
-        """Report progress of extracted HMMs."""      
-        
-        numProcessedBins = 0   
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-                statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
-                    
         while True:
             binId = queueIn.get(block=True, timeout=None)
             if binId == None:
                 break
-            
+
+            hmmModelFile = self.createHmmModelFile(binId, markerFile)
+
+            modelParser = HmmModelParser(hmmModelFile)
+            binIdToModels[binId] = modelParser.models()
+
+            os.remove(hmmModelFile)
+
+            queueOut.put(binId)
+
+    def __reportFetchProgress(self, numBins, queueIn):
+        """Report progress of extracted HMMs."""
+
+        numProcessedBins = 0
+        if self.logger.getEffectiveLevel() <= logging.INFO:
+                statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
+                sys.stderr.write('%s\r' % statusStr)
+                sys.stderr.flush()
+
+        while True:
+            binId = queueIn.get(block=True, timeout=None)
+            if binId == None:
+                break
+
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
                 statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
@@ -356,118 +355,117 @@ class MarkerSetParser():
 
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
-                
+
     def markerFileType(self, markerFile):
         """Determine type of marker file."""
         with open(markerFile, 'r') as f:
             header = f.readline()
-            
-        if defaultValues.TAXON_MARKER_FILE_HEADER in header:
+
+        if DefaultValues.TAXON_MARKER_FILE_HEADER in header:
             return BinMarkerSets.TAXONOMIC_MARKER_SET
-        elif defaultValues.LINEAGE_MARKER_FILE_HEADER in header:
+        elif DefaultValues.LINEAGE_MARKER_FILE_HEADER in header:
             return BinMarkerSets.TREE_MARKER_SET
         elif 'HMMER3' in header:
             return BinMarkerSets.HMM_MODELS_SET
         else:
             self.logger.error('Unrecognized file type: ' + markerFile)
             sys.exit()
-            
+
     def __createMarkerHMMs(self, binMarkerSet, outputFile, bReportProgress = True):
         """Create HMM file for taxonomic markers."""
 
-        # get list of marker genes  
+        # get list of marker genes
         markerGenes = binMarkerSet.getMarkerGenes()
-        
+
         # get all genes from the same clan as any marker gene
-        pfam = PFAM(defaultValues.PFAM_CLAN_FILE)
+        pfam = PFAM(DefaultValues.PFAM_CLAN_FILE)
         genesInSameClan = pfam.genesInSameClan(markerGenes)
-        
+
         # extract marker genes along with all genes from the same clan
         allMarkers = markerGenes | genesInSameClan
-        
+
         if bReportProgress:
             self.logger.info("  There are %d genes in the marker set and %d genes from the same PFAM clan." % (len(markerGenes), len(genesInSameClan)))
-            
+
         # create file with all model accession numbers
         keyFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         fout = open(keyFile, 'w')
         for modelAcc in allMarkers:
             fout.write(modelAcc + '\n')
         fout.close()
-        
+
         # fetch specified models
         HF = HMMERRunner(mode='fetch')
-        HF.fetch(defaultValues.HMM_MODELS, keyFile, outputFile, bKeyFile=True)
-        
+        HF.fetch(DefaultValues.HMM_MODELS, keyFile, outputFile, bKeyFile=True)
+
         # index the HMM file
         if os.path.exists(outputFile + '.ssi'):
             os.remove(outputFile + '.ssi')
         HF.index(outputFile)
-        
+
         # remove key file
         os.remove(keyFile)
-              
+
     def __parseTaxonomicMarkerSetFile(self, markerSetFile):
         """Parse marker set from a taxonomic-specific marker set file."""
         with open(markerSetFile) as f:
             f.readline() # skip header
-            
+
             binLine = f.readline()
             taxonId = binLine.split('\t')[0]
             binMarkerSets = BinMarkerSets(taxonId, BinMarkerSets.TAXONOMIC_MARKER_SET)
             binMarkerSets.read(binLine)
-        
+
         return binMarkerSets
-    
+
     def __parseLineageMarkerSetFile(self, markerSetFile):
         """Parse marker sets from a lineage-specific marker set file."""
-        
-        # read all marker sets 
+
+        # read all marker sets
         binIdToBinMarkerSets = {}
         with open(markerSetFile) as f:
             f.readline() # skip header
-             
+
             for line in f:
                 lineSplit = line.split('\t')
                 binId = lineSplit[0]
-                
+
                 binMarkerSets = BinMarkerSets(binId, BinMarkerSets.TREE_MARKER_SET)
                 binMarkerSets.read(line)
-  
+
                 # determine selected marker set
-                selectedMarkerSetMap = self.__parseSelectedMarkerSetMap() 
+                selectedMarkerSetMap = self.__parseSelectedMarkerSetMap()
                 binMarkerSets.setLineageSpecificSelectedMarkerSet(selectedMarkerSetMap)
-                
+
                 binIdToBinMarkerSets[binId] = binMarkerSets
-        
-        return binIdToBinMarkerSets   
-    
+
+        return binIdToBinMarkerSets
+
     def __parseSelectedMarkerSetMap(self):
         selectedMarkerSetMap = {}
-        for line in open(defaultValues.SELECTED_MARKER_SETS):
+        for line in open(DefaultValues.SELECTED_MARKER_SETS):
             lineSplit = line.split('\t')
             internalID = lineSplit[0]
             selectedID = lineSplit[1].rstrip()
-            
+
             selectedMarkerSetMap[internalID] = selectedID
-            
+
         return selectedMarkerSetMap
-    
+
     def writeBinModels(self, binIdToModels, filename):
         """Save HMM model info for each bin to file."""
-        
+
         self.logger.info('  Saving HMM info to file.')
-        
+
         with gzip.open(filename, 'wb') as output:
             pickle.dump(binIdToModels, output, pickle.HIGHEST_PROTOCOL)
-            
+
     def loadBinModels(self, filename):
         """Read HMM model info for each bin from file."""
-        
+
         self.logger.info('  Reading HMM info from file.')
-        
+
         with gzip.open(filename, 'rb') as f:
             binIdToModels = pickle.load(f)
-            
+
         return binIdToModels
-            

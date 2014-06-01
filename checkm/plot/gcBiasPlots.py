@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# gcBiasPlots.py - Create a pair of plots used to explore GC bias on coverage. 
+# gcBiasPlots.py - Create a pair of plots used to explore GC bias on coverage.
 #
 ###############################################################################
 #                                                                             #
@@ -26,15 +26,15 @@ import matplotlib.pyplot as pylab
 from AbstractPlot import AbstractPlot
 
 from checkm.common import binIdFromFilename
-from checkm.lib.seqUtils import readFasta, baseCount
+from checkm.util.seqUtils import readFasta, baseCount
 
 from numpy import mean, array, log, poly1d, polyfit
 
 class GcBiasPlot(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
-    
-    def plot(self, binFile, coverageProfile): 
+
+    def plot(self, binFile, coverageProfile):
         # Set size of figure
         self.fig.clear()
         self.fig.set_size_inches(self.options.width, self.options.height)
@@ -43,12 +43,12 @@ class GcBiasPlot(AbstractPlot):
         seqAxes = self.fig.add_subplot(122)
 
         self.plotOnAxes(binFile, coverageProfile, windowAxes, seqAxes)
-        
+
         self.fig.tight_layout(pad=5)
         self.draw()
-        
-    def plotOnAxes(self, binFile, coverageProfile, windowAxes, seqAxes):       
-        
+
+    def plotOnAxes(self, binFile, coverageProfile, windowAxes, seqAxes):
+
         # get GC for windows
         seqs = readFasta(binFile)
 
@@ -56,30 +56,30 @@ class GcBiasPlot(AbstractPlot):
         for seqId, seq in seqs.iteritems():
             start = 0
             end = self.options.window_size
-            
+
             windowGCs = []
             while(end < len(seq)):
                 a, c, g, t = baseCount(seq[start:end])
                 windowGCs.append(float(g + c) / (a + c + g + t))
-                
+
                 start = end
                 end += self.options.window_size
-                
+
             a, c, g, t = baseCount(seq)
             seqGC = float(g + c) / (a + c + g + t)
             gcProfile[seqId] = [seqGC, windowGCs]
-        
+
         # plot GC vs coverage for windows
         gc = []
         coverage = []
         for seqId, gcInfo in gcProfile.iteritems():
             gc += gcInfo[1]
             coverage += coverageProfile[seqId][1]
-        
-        windowAxes.scatter(gc, coverage, c=abs(array(coverage)), s=10, lw=0.5, cmap=pylab.cm.Greys)    
+
+        windowAxes.scatter(gc, coverage, c=abs(array(coverage)), s=10, lw=0.5, cmap=pylab.cm.Greys)
         windowAxes.set_xlabel('GC (mean = %.1f%%)' % (mean(gc)*100))
         windowAxes.set_ylabel('Coverage (mean = %.1f)' % mean(coverage))
-        
+
         # plot linear regression line
         if len(gc) > 1:
             slope, inter = polyfit(gc, coverage,1)
@@ -89,28 +89,28 @@ class GcBiasPlot(AbstractPlot):
         else:
             # not possible to calculate best fit line
             windowAxes.set_title('GC vs. Coverage\n(window size = %d bp, no best fit line)' % self.options.window_size)
-         
-        # Prettify plot     
+
+        # Prettify plot
         for a in windowAxes.yaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-                
+
         for a in windowAxes.xaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-            
-        for line in windowAxes.yaxis.get_ticklines(): 
+
+        for line in windowAxes.yaxis.get_ticklines():
             line.set_color(self.axesColour)
-                
-        for line in windowAxes.xaxis.get_ticklines(): 
+
+        for line in windowAxes.xaxis.get_ticklines():
             line.set_color(self.axesColour)
-            
+
         for loc, spine in windowAxes.spines.iteritems():
             if loc in ['right','top']:
-                spine.set_color('none') 
+                spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)
-        
+
         # plot GC vs coverage for entire sequences
         gc = []
         coverage = []
@@ -124,29 +124,29 @@ class GcBiasPlot(AbstractPlot):
         markerSize = log(array(seqLen)) # log-scale
         markerSize = (markerSize - min(markerSize)) / max(markerSize) # normalize between 0 and 1
         markerSize = markerSize*200 + 10 # normalize between 10 and 200
-        
-        seqAxes.scatter(gc, coverage, c=abs(array(coverage)), s=markerSize, lw=0.5, cmap=pylab.cm.Greys)    
+
+        seqAxes.scatter(gc, coverage, c=abs(array(coverage)), s=markerSize, lw=0.5, cmap=pylab.cm.Greys)
         seqAxes.set_xlabel('GC (mean = %.1f%%)' % (mean(gc)*100))
         seqAxes.set_ylabel('Coverage (mean = %.1f)' % mean(coverage))
         seqAxes.set_title('GC vs. Coverage\nIndividual Sequences')
-        
-        # Prettify plot     
+
+        # Prettify plot
         for a in seqAxes.yaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-                
+
         for a in seqAxes.xaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-            
-        for line in seqAxes.yaxis.get_ticklines(): 
+
+        for line in seqAxes.yaxis.get_ticklines():
             line.set_color(self.axesColour)
-                
-        for line in seqAxes.xaxis.get_ticklines(): 
+
+        for line in seqAxes.xaxis.get_ticklines():
             line.set_color(self.axesColour)
-            
+
         for loc, spine in seqAxes.spines.iteritems():
             if loc in ['right','top']:
-                spine.set_color('none') 
+                spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)

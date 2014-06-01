@@ -26,23 +26,23 @@ class TimeKeeper:
     def __init__(self):
         self.logger = logging.getLogger()
         self.startTime = time.time()
-        self.lastLogTime = self.startTime 
-    
+        self.lastLogTime = self.startTime
+
     def startTimer(self):
         """Restart the timer"""
         self.startTime = time.time()
-        self.lastLogTime = self.startTime 
+        self.lastLogTime = self.startTime
 
     def getTimeStamp(self):
         """Make a time stamp"""
         now = time.time()
         ret_str = "\n  { Current stage: %s || Total: %s }" % (self.secondsToStr(now - self.lastLogTime), self.secondsToStr(now - self.startTime))
         self.lastLogTime = now
-        return ret_str  
-    
+        return ret_str
+
     def printTimeStamp(self):
         self.logger.info(self.getTimeStamp())
-        
+
     def secondsToStr(self, t):
         rediv = lambda ll,b : list(divmod(ll[0],b)) + ll[1:]
         return "%d:%02d:%02d.%03d" % tuple(reduce(rediv,[[t*1000,],1000,60,60]))

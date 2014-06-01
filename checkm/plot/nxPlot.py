@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# nxPlot.py - Create a Nx-plot. 
+# nxPlot.py - Create a Nx-plot.
 #
 ###############################################################################
 #                                                                             #
@@ -23,55 +23,55 @@ import numpy as np
 
 from AbstractPlot import AbstractPlot
 
-from checkm.lib.seqUtils import readFasta
+from checkm.util.seqUtils import readFasta
 
 class NxPlot(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
-        
+
     def calculateNx(self, x, seqs):
         seqLens = []
         for _, seq in seqs.iteritems():
             seqLens.append(len(seq))
-        
+
         sumSeqLens = sum(seqLens)
-     
+
         seqLens.sort(reverse=True)
         x.sort()
-        
+
         testSum = 0
         xIndex = 0
         nxThreshold = x[xIndex]*sumSeqLens
         nx = []
         for seqLen in seqLens:
             testSum += seqLen
-            
+
             while(testSum >= nxThreshold):
                 nx.append(seqLen)
                 if len(nx) == len(x):
                     break
-                
+
                 xIndex += 1
                 nxThreshold = x[xIndex]*sumSeqLens
 
         return nx
-    
-    def plot(self, fastaFile):   
+
+    def plot(self, fastaFile):
         # Set size of figure
         self.fig.clear()
         self.fig.set_size_inches(self.options.width, self.options.height)
         axes = self.fig.add_subplot(111)
-        
+
         # calculate Nx
         seqs = readFasta(fastaFile)
         x = np.arange(0, 1.0 + 0.5*self.options.step_size, self.options.step_size)
         nx = self.calculateNx(x, seqs)
-        
+
         # Create plot
-        axes.plot(x, nx, 'ko-', ms = 4)    
+        axes.plot(x, nx, 'ko-', ms = 4)
         axes.set_xlabel('Nx')
         axes.set_ylabel('Sequence length (kbps)')
-        
+
         # Change sequence lengths from bps to kbps
         yticks = axes.get_yticks()
         kbpLabels = []
@@ -80,27 +80,27 @@ class NxPlot(AbstractPlot):
             label = label.replace('.0', '') # remove trailing zero
             kbpLabels.append(label)
         axes.set_yticklabels(kbpLabels)
-            
-        # Prettify plot     
+
+        # Prettify plot
         for a in axes.yaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-                
+
         for a in axes.xaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-            
-        for line in axes.yaxis.get_ticklines(): 
+
+        for line in axes.yaxis.get_ticklines():
             line.set_color(self.axesColour)
-                
-        for line in axes.xaxis.get_ticklines(): 
+
+        for line in axes.xaxis.get_ticklines():
             line.set_color(self.axesColour)
-            
+
         for loc, spine in axes.spines.iteritems():
             if loc in ['right','top']:
-                spine.set_color('none') 
+                spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)
-                   
-        self.fig.tight_layout(pad=5)       
+
+        self.fig.tight_layout(pad=5)
         self.draw()

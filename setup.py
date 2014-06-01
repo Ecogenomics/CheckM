@@ -5,7 +5,7 @@ setup(
     version='0.7.0',
     author='Donovan Parks, Michael Imelfort, Connor Skennerton',
     author_email='donovan.parks@gmail.com',
-    packages=['checkm', 'checkm.plot', 'checkm.test', 'checkm.lib'],
+    packages=['checkm', 'checkm.plot', 'checkm.test', 'checkm.util'],
     scripts=['bin/checkm'],
     url='http://pypi.python.org/pypi/checkm/',
     license='GPL3',

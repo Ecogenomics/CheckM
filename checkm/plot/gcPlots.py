@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# gcPlots.py - Create a GC histogram and delta-GC plot. 
+# gcPlots.py - Create a GC histogram and delta-GC plot.
 #
 ###############################################################################
 #                                                                             #
@@ -26,14 +26,14 @@ import numpy as np
 from AbstractPlot import AbstractPlot
 
 from checkm.binTools import BinTools
-from checkm.lib.seqUtils import readFasta, baseCount
+from checkm.util.seqUtils import readFasta, baseCount
 from checkm.common import findNearest, readDistribution
 
 class GcPlots(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
-    
-    def plot(self, fastaFile, distributionsToPlot): 
+
+    def plot(self, fastaFile, distributionsToPlot):
         # Set size of figure
         self.fig.clear()
         self.fig.set_size_inches(self.options.width, self.options.height)
@@ -42,14 +42,14 @@ class GcPlots(AbstractPlot):
         axesDeltaGC = self.fig.add_subplot(122)
 
         self.plotOnAxes(fastaFile, distributionsToPlot, axesHist, axesDeltaGC)
-        
+
         self.fig.tight_layout(pad=5, w_pad=10)
         self.draw()
-        
+
     def plotOnAxes(self, fastaFile, distributionsToPlot, axesHist, axesDeltaGC):
         # Read reference distributions from file
         dist = readDistribution('gc_dist')
-        
+
         # get GC for windows
         seqs = readFasta(fastaFile)
 
@@ -58,82 +58,82 @@ class GcPlots(AbstractPlot):
         for _, seq in seqs.iteritems():
             start = 0
             end = self.options.gc_window_size
-            
+
             seqLen = len(seq)
             seqLens.append(seqLen)
-            
+
             while(end < seqLen):
                 a, c, g, t = baseCount(seq[start:end])
                 try:
                     data.append(float(g + c) / (a + c + g + t))
                 except:
-                    # it is possible to reach a long stretch of 
+                    # it is possible to reach a long stretch of
                     # N's that causes a division by zero error
 
-                    pass 
-                
+                    pass
+
                 start = end
                 end += self.options.gc_window_size
-                
+
         if len(data) == 0:
             axesHist.set_xlabel('[Error] No seqs >= %d, the specified window size' % self.options.gc_window_size)
             return
-            
-        # Histogram plot 
+
+        # Histogram plot
         bins = [0.0]
         binWidth = self.options.gc_bin_width
         binEnd = binWidth
         while binEnd <= 1.0:
             bins.append(binEnd)
             binEnd += binWidth
-            
-        axesHist.hist(data, bins=bins, normed=True, color=(0.5,0.5,0.5))    
+
+        axesHist.hist(data, bins=bins, normed=True, color=(0.5,0.5,0.5))
         axesHist.set_xlabel('% GC')
         axesHist.set_ylabel('% windows (' + str(self.options.gc_window_size) + ' bp)')
-            
-        # Prettify plot     
+
+        # Prettify plot
         for a in axesHist.yaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-                
+
         for a in axesHist.xaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-            
-        for line in axesHist.yaxis.get_ticklines(): 
+
+        for line in axesHist.yaxis.get_ticklines():
             line.set_color(self.axesColour)
-                
-        for line in axesHist.xaxis.get_ticklines(): 
+
+        for line in axesHist.xaxis.get_ticklines():
             line.set_color(self.axesColour)
-            
+
         for loc, spine in axesHist.spines.iteritems():
             if loc in ['right','top']:
-                spine.set_color('none') 
+                spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)
-                
+
         # get GC bin statistics
         binTools = BinTools()
         meanGC, deltaGCs, _ = binTools.gcDist(seqs)
-                
-        # Delta-GC vs Sequence length plot 
-        axesDeltaGC.scatter(deltaGCs, seqLens, c=abs(deltaGCs), s=10, lw=0.5, cmap=pylab.cm.Greys)    
+
+        # Delta-GC vs Sequence length plot
+        axesDeltaGC.scatter(deltaGCs, seqLens, c=abs(deltaGCs), s=10, lw=0.5, cmap=pylab.cm.Greys)
         axesDeltaGC.set_xlabel(r'$\Delta$ GC (mean GC = %.1f%%)' % (meanGC*100))
         axesDeltaGC.set_ylabel('Sequence length (kbps)')
-        
+
         _, yMaxSeqs = axesDeltaGC.get_ylim()
         xMinSeqs, xMaxSeqs = axesDeltaGC.get_xlim()
-        
+
         # plot reference distributions
         for distToPlot in distributionsToPlot:
             closestGC = findNearest(np.array(dist.keys()), meanGC)
-            
+
             # find closest distribution values
             sampleSeqLen = dist[closestGC].keys()[0]
             d = dist[closestGC][sampleSeqLen]
             gcLowerBoundKey = findNearest(d.keys(), (100 - distToPlot)/2.0)
             gcUpperBoundKey = findNearest(d.keys(), (100 + distToPlot)/2.0)
-            
+
             xL = []
             xU = []
             y = []
@@ -141,7 +141,7 @@ class GcPlots(AbstractPlot):
                 xL.append(dist[closestGC][windowSize][gcLowerBoundKey])
                 xU.append(dist[closestGC][windowSize][gcUpperBoundKey])
                 y.append(windowSize)
-                
+
             # sort by y-values
             sortIndexY = np.argsort(y)
             xL = np.array(xL)[sortIndexY]
@@ -150,15 +150,15 @@ class GcPlots(AbstractPlot):
             axesDeltaGC.plot(xL, y, 'r--', lw=0.5, zorder=0)
             axesDeltaGC.plot(xU, y, 'r--', lw=0.5, zorder=0)
 
-        # ensure y-axis include zero and covers all sequences    
+        # ensure y-axis include zero and covers all sequences
         axesDeltaGC.set_ylim([0, yMaxSeqs])
-        
+
         # ensure x-axis is set appropriately for sequences
         axesDeltaGC.set_xlim([xMinSeqs, xMaxSeqs])
-        
+
         # draw vertical line at x=0
         axesDeltaGC.vlines(0, 0, yMaxSeqs, linestyle='dashed', color=self.axesColour, zorder=0)
-        
+
         # Change sequence lengths from bps to kbps
         yticks = axesDeltaGC.get_yticks()
         kbpLabels = []
@@ -167,24 +167,24 @@ class GcPlots(AbstractPlot):
             label = label.replace('.0', '') # remove trailing zero
             kbpLabels.append(label)
         axesDeltaGC.set_yticklabels(kbpLabels)
-            
-        # Prettify plot     
+
+        # Prettify plot
         for a in axesDeltaGC.yaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-                
+
         for a in axesDeltaGC.xaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-            
-        for line in axesDeltaGC.yaxis.get_ticklines(): 
+
+        for line in axesDeltaGC.yaxis.get_ticklines():
             line.set_color(self.axesColour)
-                
-        for line in axesDeltaGC.xaxis.get_ticklines(): 
+
+        for line in axesDeltaGC.xaxis.get_ticklines():
             line.set_color(self.axesColour)
-            
+
         for loc, spine in axesDeltaGC.spines.iteritems():
             if loc in ['right','top']:
-                spine.set_color('none') 
+                spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)

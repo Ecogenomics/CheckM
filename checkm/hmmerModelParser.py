@@ -28,10 +28,10 @@ class HmmModel(object):
         setattr(self, 'ga', None)
         setattr(self, 'tc', None)
         setattr(self, 'nc', None)
-        
+
         if 'acc' not in keys:
             setattr(self, 'acc', keys['name'])
-        
+
         for key, value in keys.items():
             setattr(self, key, value)
 
@@ -39,15 +39,15 @@ class HmmModelParser(object):
     """Parse HMM file."""
     def __init__(self, hmmFile):
         self.hmmFile = open(hmmFile)
-        
+
     def models(self):
         """Parse all models from HMM file."""
         models = {}
         for model in self.simpleParse():
             models[model.acc] = model
-            
+
         return models
-    
+
     def simpleParse(self):
         """Parse simplified description of single model from HMM file."""
         fields = []
@@ -68,7 +68,7 @@ class HmmModelParser(object):
                     raise HmmModelError
                 else:
                     # transform some data based on some of the header tags
-                    if fields[0] == 'ACC':
+                    if fields[0] == 'ACC' or fields[0] == 'NAME':
                         headerKeys[fields[0].lower()] = fields[1]
                     elif fields[0] == "LENG":
                         headerKeys[fields[0].lower()] = int(fields[1])

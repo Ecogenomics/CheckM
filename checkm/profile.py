@@ -23,7 +23,7 @@ import logging
 
 import prettytable
 
-import defaultValues
+from checkm.defaultValues import DefaultValues
 from common import checkFileExists, reassignStdOut, restoreStdOut
 
 class Profile():
@@ -76,7 +76,7 @@ class Profile():
                 perMR = float(readsMappedToBin[binId][bamId]) / totalMappedReads[bamId]
                 perMappedReads[binId][bamId] = perMR
                 
-                if binId == defaultValues.UNBINNED:
+                if binId == DefaultValues.UNBINNED:
                     continue
                                 
                 normCoverage = perMR / binSize[binId]
@@ -118,12 +118,12 @@ class Profile():
                 row += [readsMappedToBin[binId][bamId]]
                 row += [perMappedReads[binId][bamId]*100.0]
                  
-                if defaultValues.UNBINNED in perMappedReads:
-                    unbinnedPercentage = perMappedReads[defaultValues.UNBINNED][bamId]
+                if DefaultValues.UNBINNED in perMappedReads:
+                    unbinnedPercentage = perMappedReads[DefaultValues.UNBINNED][bamId]
                 else:
                     unbinnedPercentage = 0
                     
-                if binId == defaultValues.UNBINNED:
+                if binId == DefaultValues.UNBINNED:
                     row += ['NA'] 
                     row += [unbinnedPercentage*100.0]
                 else:

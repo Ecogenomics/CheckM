@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# seqLenPlot.py - Create a sequence length distribution histogram. 
+# seqLenPlot.py - Create a sequence length distribution histogram.
 #
 ###############################################################################
 #                                                                             #
@@ -25,64 +25,64 @@ from AbstractPlot import AbstractPlot
 
 from matplotlib.ticker import MaxNLocator
 
-from checkm.lib.seqUtils import readFasta
+from checkm.util.seqUtils import readFasta
 
 class LengthHistogram(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
-    
-    def plot(self, fastaFile):       
+
+    def plot(self, fastaFile):
         # Set size of figure
         self.fig.clear()
         self.fig.set_size_inches(self.options.width, self.options.height)
         axes = self.fig.add_subplot(111)
-        
+
         # calculate sequence lengths (in kb)
         seqs = readFasta(fastaFile)
-        
+
         seqLens = []
         for seq in seqs.values():
             seqLens.append(float(len(seq))/1e3)
 
         # set unequal bin sizes (in kb)
-        bins = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1e12] 
+        bins = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1e12]
         counts, edges = np.histogram(seqLens, bins=bins)
 
         # create histogram
         axes.bar(left=np.arange(0.1, len(counts)), height=counts, width=0.8, color=(0.5, 0.5, 0.5))
         axes.set_xlabel('Sequence length (kbps)')
         axes.set_ylabel('Number sequences (out of %d)' % len(seqs))
-        
+
         # ensure y-axis include zero
         _, end = axes.get_ylim()
         axes.set_ylim([0, end])
         axes.get_yaxis().set_major_locator(MaxNLocator(integer=True))
-        
+
         # Change sequence lengths from bps to kbps
         axes.set_xlim([0, len(counts)])
         axes.set_xticks(np.arange(0.5, len(counts)))
         axes.set_xticklabels(['<1', '1-2', '2-5', '5-10', '10-20', '20-50', '50-100', '100-200', '200-500', '>500'])
-            
-        # Prettify plot     
+
+        # Prettify plot
         for a in axes.yaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-                
+
         for a in axes.xaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-            
-        for line in axes.yaxis.get_ticklines(): 
+
+        for line in axes.yaxis.get_ticklines():
             line.set_color(self.axesColour)
-                
-        for line in axes.xaxis.get_ticklines(): 
+
+        for line in axes.xaxis.get_ticklines():
             line.set_color(self.axesColour)
-            
+
         for loc, spine in axes.spines.iteritems():
             if loc in ['right','top']:
-                spine.set_color('none') 
+                spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)
-             
-        self.fig.tight_layout(pad=5)              
+
+        self.fig.tight_layout(pad=5)
         self.draw()

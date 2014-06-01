@@ -25,10 +25,10 @@ import multiprocessing as mp
 import math
 import logging
 
-import defaultValues
-from lib.seqUtils import readFasta, baseCount, calculateN50
-from common import binIdFromFilename, makeSurePathExists
-from prodigal import ProdigalGeneFeatureParser
+from checkm.defaultValues import DefaultValues
+from checkm.util.seqUtils import readFasta, baseCount, calculateN50
+from checkm.common import binIdFromFilename, makeSurePathExists
+from checkm.prodigal import ProdigalGeneFeatureParser
 
 from numpy import mean
 
@@ -162,13 +162,19 @@ class BinStatistics():
             totalGC += gc
             totalAT += at
             
-            gcContent = float(gc) / (gc + at) 
+            if (gc + at) > 0:
+                gcContent = float(gc) / (gc + at) 
+            else:
+                gcContent = 0.0
             seqStats[seqId]['GC'] = gcContent
             
-            if len(seq) > defaultValues.MIN_SEQ_LEN_GC_STD:
+            if len(seq) > DefaultValues.MIN_SEQ_LEN_GC_STD:
                 gcPerSeq.append(gcContent)
                 
-        GC = float(totalGC) / (totalGC + totalAT)
+        if (totalGC + totalAT) > 0:
+            GC = float(totalGC) / (totalGC + totalAT)
+        else:
+            GC = 0.0
         
         varGC = 0
         if len(gcPerSeq) > 1:
@@ -184,7 +190,7 @@ class BinStatistics():
             scaffoldLen = len(scaffold)
             scaffoldLens.append(scaffoldLen)
                         
-            splitScaffold = scaffold.split(defaultValues.CONTIG_BREAK)
+            splitScaffold = scaffold.split(DefaultValues.CONTIG_BREAK)
             lenContigsInScaffold = []
             for contig in splitScaffold:
                 contigLen = len(contig.replace('N', ''))
@@ -204,11 +210,17 @@ class BinStatistics():
         
     def calculateCodingDensity(self, outDir, genomeSize, seqStats):
         """Calculate coding density of putative genome bin."""
-        prodigalParserGFF = ProdigalGeneFeatureParser(os.path.join(outDir, defaultValues.PRODIGAL_GFF))
+        prodigalParserGFF = ProdigalGeneFeatureParser(os.path.join(outDir, DefaultValues.PRODIGAL_GFF))
 
-        aaFile = os.path.join(outDir, defaultValues.PRODIGAL_AA) # use AA file as nucleotide file is optional
+        aaFile = os.path.join(outDir, DefaultValues.PRODIGAL_AA) # use AA file as nucleotide file is optional
         aaGenes = readFasta(aaFile)
         
+        codingBasePairs = self.__calculateCodingBases(aaGenes, seqStats)
+            
+        return float(codingBasePairs) / genomeSize, prodigalParserGFF.translationTable, len(aaGenes)
+    
+    def __calculateCodingBases(self, aaGenes, seqStats):
+        """Calculate number of coding bases in a set of genes."""    
         codingBasePairs = 0
         for geneId, gene in aaGenes.iteritems():
             codingBasePairs += len(gene)*3
@@ -217,6 +229,7 @@ class BinStatistics():
             seqStats[scaffoldId]['# ORFs'] = seqStats[scaffoldId].get('# ORFs', 0) + 1
             seqStats[scaffoldId]['Coding bases'] = seqStats[scaffoldId].get('Coding bases', 0) + len(gene)*3
             
-        return float(codingBasePairs) / genomeSize, prodigalParserGFF.translationTable, len(aaGenes)
+        return codingBasePairs
+        
         
             

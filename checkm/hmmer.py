@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# hmmer.py - runs HMMER and provides functions for parsing output  
+# hmmer.py - runs HMMER and provides functions for parsing output
 #
 ###############################################################################
 #                                                                             #
@@ -44,53 +44,53 @@ class HMMERRunner():
             self.mode = 'fetch'
         else:
             raise HMMMERModeError("Mode %s not understood" % mode)
-        
+
     def search(self, db, query, tableOut, hmmerOut, cmdlineOptions='', bKeepOutput=True):
         """Run hmmsearch"""
         # make the output dir and files
         if self.mode != 'domtblout' and self.mode != 'tblout':
             raise HMMMERModeError("Mode %s not compatible with search" % self.mode)
-        
+
         if not bKeepOutput:
             hmmerOut = '/dev/null'
-        
+
         cmd = ('hmmsearch --%s %s %s %s %s > %s' % (self.mode, tableOut, cmdlineOptions, db, query, hmmerOut))
         os.system(cmd)
-          
+
     def align(self, db, query, outputFile, writeMode='>', outputFormat='PSIBLAST', trim=True):
         """Run hmmalign"""
         if self.mode != 'align':
             raise HMMMERModeError("Mode %s not compatible with align" % self.mode)
-        
+
         #build up the option string
         opts=''
         if trim:
             opts += ' --trim '
-            
+
         # run hmmer
-        cmd = 'hmmalign --allcol %s --outformat %s %s %s %s %s' % (opts, outputFormat, db, query, writeMode, outputFile) 
+        cmd = 'hmmalign --allcol %s --outformat %s %s %s %s %s' % (opts, outputFormat, db, query, writeMode, outputFile)
         rtn = os.system(cmd)
         if rtn == 256:
             # assume user has a newer version of HMMER (>= 3.1b1) and the allcol parameter is no longer valid
             cmd = cmd.replace('--allcol','')
             os.system(cmd)
-            
+
     def fetch(self, db, key, fetchFileName, bKeyFile=False):
         """Run hmmfetch"""
         if self.mode != 'fetch':
             raise HMMMERModeError("Mode %s not compatible with fetch" % self.mode)
-        
+
         keyFileOpt = ''
         if bKeyFile:
             keyFileOpt = '-f'
 
         os.system('hmmfetch ' + keyFileOpt + ' %s %s > %s' % (db, key, fetchFileName))
-        
+
     def index(self, hmmModelFile):
         """Index a HMM file."""
         if self.mode != 'fetch':
             raise HMMMERModeError("Mode %s not compatible with fetch" % self.mode)
-        
+
         os.system('hmmfetch --index %s > /dev/null' % hmmModelFile)
 
     def checkForHMMER(self):
@@ -100,10 +100,10 @@ class HMMERRunner():
         except:
             print "Unexpected error!", sys.exc_info()[0]
             raise
-    
+
         if exit_status != 0:
             raise HMMERError("Error attempting to run hmmsearch, is it in your path?")
-        
+
 class HMMERParser():
     """Parses tabular output."""
     def __init__(self, fileHandle, mode='dom'):
@@ -173,11 +173,11 @@ class HmmerHitTBL():
             self.target_name = values[0]
             self.target_accession = values[1]
             self.query_name = values[2]
-            
+
             self.query_accession = values[3]
             if self.query_accession == '-':
                 self.query_accession = self.query_name
-                
+
             self.full_e_value = float(values[4])
             self.full_score = float(values[5])
             self.full_bias = float(values[6])
@@ -225,11 +225,11 @@ class HmmerHitDOM():
             self.target_accession = values[1]
             self.target_length = int(values[2])
             self.query_name = values[3]
-            
+
             self.query_accession = values[4]
             if self.query_accession == '-':
                 self.query_accession = self.query_name
-                
+
             self.query_length = int(values[5])
             self.full_e_value = float(values[6])
             self.full_score = float(values[7])
@@ -274,4 +274,3 @@ class HmmerHitDOM():
                           str(self.acc),
                           self.target_description]
                          )
-    

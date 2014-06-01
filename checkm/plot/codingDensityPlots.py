@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# codingDensityPlots.py - Create a CD histogram and a delta-CD plot. 
+# codingDensityPlots.py - Create a CD histogram and a delta-CD plot.
 #
 ###############################################################################
 #                                                                             #
@@ -28,115 +28,115 @@ import numpy as np
 from AbstractPlot import AbstractPlot
 
 from checkm.prodigal import ProdigalGeneFeatureParser
-from checkm.lib.seqUtils import readFasta, baseCount
 from checkm.common import readDistribution, findNearest, binIdFromFilename
 from checkm.binTools import BinTools
+from checkm.util.seqUtils import readFasta, baseCount
 
 class CodingDensityPlots(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
 
-    def plot(self, fastaFile, distributionsToPlot):   
+    def plot(self, fastaFile, distributionsToPlot):
         # Set size of figure
         self.fig.clear()
         self.fig.set_size_inches(self.options.width, self.options.height)
 
         axesHist = self.fig.add_subplot(121)
         axesDeltaCD = self.fig.add_subplot(122)
-        
+
         self.plotOnAxes(fastaFile, distributionsToPlot, axesHist, axesDeltaCD)
-        
+
         self.fig.tight_layout(pad=5, w_pad=10)
         self.draw()
-        
+
     def plotOnAxes(self, fastaFile, distributionsToPlot, axesHist, axesDeltaCD):
         # Read reference distributions from file
         dist = readDistribution('cd_dist')
-        
+
         # parse Prodigal output
         gffFile = os.path.join(self.options.out_folder, 'bins', binIdFromFilename(fastaFile), 'prodigal.gff')
         prodigalParser = ProdigalGeneFeatureParser(gffFile)
-        
+
         # get coding density for windows
         seqs = readFasta(fastaFile)
 
         data = []
         seqLens = []
-        for seqId, seq in seqs.iteritems():            
+        for seqId, seq in seqs.iteritems():
             start = 0
             end = self.options.cd_window_size
-            
+
             seqLen = len(seq)
             seqLens.append(seqLen)
-            
+
             while(end < seqLen):
                 codingBases = prodigalParser.codingBases(seqId, start, end)
-                
+
                 a, c, g, t = baseCount(seq[start:end])
                 data.append(float(codingBases) / (a + c + g + t))
-                
+
                 start = end
                 end += self.options.cd_window_size
-                
+
         if len(data) == 0:
             axesHist.set_xlabel('[Error] No seqs >= %d, the specified window size' % self.options.cd_window_size)
             return
-            
-        # Histogram plot 
+
+        # Histogram plot
         bins = [0.0]
         binWidth = self.options.cd_bin_width
         binEnd = binWidth
         while binEnd <= 1.0:
             bins.append(binEnd)
             binEnd += binWidth
-            
-        axesHist.hist(data, bins=bins, normed=True, color=(0.5,0.5,0.5))    
+
+        axesHist.hist(data, bins=bins, normed=True, color=(0.5,0.5,0.5))
         axesHist.set_xlabel('% coding density')
         axesHist.set_ylabel('% windows (' + str(self.options.cd_window_size) + ' bp)')
-            
-        # Prettify plot     
+
+        # Prettify plot
         for a in axesHist.yaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-                
+
         for a in axesHist.xaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-            
-        for line in axesHist.yaxis.get_ticklines(): 
+
+        for line in axesHist.yaxis.get_ticklines():
             line.set_color(self.axesColour)
-                
-        for line in axesHist.xaxis.get_ticklines(): 
+
+        for line in axesHist.xaxis.get_ticklines():
             line.set_color(self.axesColour)
-            
+
         for loc, spine in axesHist.spines.iteritems():
             if loc in ['right','top']:
-                spine.set_color('none') 
+                spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)
-                
+
         # get CD bin statistics
         binTools = BinTools()
         meanCD, deltaCDs, _ = binTools.codingDensityDist(seqs, prodigalParser)
-           
-        # Delta-CD vs sequence length plot 
-        axesDeltaCD.scatter(deltaCDs, seqLens, c=abs(deltaCDs), s=10, lw=0.5, cmap=pylab.cm.Greys)    
+
+        # Delta-CD vs sequence length plot
+        axesDeltaCD.scatter(deltaCDs, seqLens, c=abs(deltaCDs), s=10, lw=0.5, cmap=pylab.cm.Greys)
         axesDeltaCD.set_xlabel(r'$\Delta$ CD (mean coding density = %.1f%%)' % (meanCD*100))
         axesDeltaCD.set_ylabel('Sequence length (kbps)')
-        
+
         _, yMaxSeqs = axesDeltaCD.get_ylim()
         xMinSeqs, xMaxSeqs = axesDeltaCD.get_xlim()
-        
+
         # plot reference distributions
         for distToPlot in distributionsToPlot:
             closestCD = findNearest(np.array(dist.keys()), meanCD)
-            
+
             # find closest distribution values
             sampleSeqLen = dist[closestCD].keys()[0]
             d = dist[closestCD][sampleSeqLen]
             cdLowerBoundKey = findNearest(d.keys(), (100 - distToPlot)/2.0)
             cdUpperBoundKey = findNearest(d.keys(), (100 + distToPlot)/2.0)
-            
+
             xL = []
             xU = []
             y = []
@@ -144,7 +144,7 @@ class CodingDensityPlots(AbstractPlot):
                 xL.append(dist[closestCD][windowSize][cdLowerBoundKey])
                 xU.append(dist[closestCD][windowSize][cdUpperBoundKey])
                 y.append(windowSize)
-                
+
             # sort by y-values
             sortIndexY = np.argsort(y)
             xL = np.array(xL)[sortIndexY]
@@ -153,15 +153,15 @@ class CodingDensityPlots(AbstractPlot):
             axesDeltaCD.plot(xL, y, 'r--', lw=0.5, zorder=0)
             axesDeltaCD.plot(xU, y, 'r--', lw=0.5, zorder=0)
 
-        # ensure y-axis include zero and covers all sequences    
+        # ensure y-axis include zero and covers all sequences
         axesDeltaCD.set_ylim([0, yMaxSeqs])
-        
+
         # ensure x-axis is set appropriately for sequences
         axesDeltaCD.set_xlim([xMinSeqs, xMaxSeqs])
-        
+
         # draw vertical line at x=0
         axesDeltaCD.vlines(0, 0, yMaxSeqs, linestyle='dashed', color=self.axesColour, zorder=0)
-        
+
         # Change sequence lengths from bps to kbps
         yticks = axesDeltaCD.get_yticks()
         kbpLabels = []
@@ -170,24 +170,24 @@ class CodingDensityPlots(AbstractPlot):
             label = label.replace('.0', '') # remove trailing zero
             kbpLabels.append(label)
         axesDeltaCD.set_yticklabels(kbpLabels)
-            
-        # Prettify plot     
+
+        # Prettify plot
         for a in axesDeltaCD.yaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-                
+
         for a in axesDeltaCD.xaxis.majorTicks:
             a.tick1On=True
             a.tick2On=False
-            
-        for line in axesDeltaCD.yaxis.get_ticklines(): 
+
+        for line in axesDeltaCD.yaxis.get_ticklines():
             line.set_color(self.axesColour)
-                
-        for line in axesDeltaCD.xaxis.get_ticklines(): 
+
+        for line in axesDeltaCD.xaxis.get_ticklines():
             line.set_color(self.axesColour)
-            
+
         for loc, spine in axesDeltaCD.spines.iteritems():
             if loc in ['right','top']:
-                spine.set_color('none') 
+                spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)

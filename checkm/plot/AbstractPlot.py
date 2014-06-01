@@ -43,6 +43,7 @@ class AbstractPlot(FigureCanvas):
 		mpl.rcParams['xtick.labelsize'] = self.options.font_size
 		mpl.rcParams['ytick.labelsize'] = self.options.font_size
 		mpl.rcParams['legend.fontsize'] = self.options.font_size
+		mpl.rcParams['svg.fonttype'] = 'none'
 
 		self.fig = Figure(facecolor='white', dpi=options.dpi)
 

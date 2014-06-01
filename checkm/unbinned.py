@@ -21,20 +21,20 @@
 
 import logging
 
-from common import checkFileExists
+from checkm.common import checkFileExists
 
-from lib.seqUtils import baseCount, readFasta
+from checkm.util.seqUtils import baseCount, readFasta
 
 class Unbinned():
     def __init__(self):
         self.logger = logging.getLogger()
-    
-    def run(self, binFiles, seqFile, outSeqFile, outStatsFile, minSeqLen):       
+
+    def run(self, binFiles, seqFile, outSeqFile, outStatsFile, minSeqLen):
         checkFileExists(seqFile)
-        
+
         # get list of sequences in bins
         self.logger.info('  Reading binned sequences.')
-            
+
         binnedSeqs = {}
         totalBinnedBases = 0
         for binFile in binFiles:
@@ -42,9 +42,9 @@ class Unbinned():
             binnedSeqs.update(seqs)
             for seq in seqs.values():
                 totalBinnedBases += len(seq)
-            
+
         self.logger.info('    Read %d (%.2f Mbps) binned sequences.' % (len(binnedSeqs), float(totalBinnedBases)/1e6))
-            
+
         # get list of all sequences
         self.logger.info('  Reading all sequences.')
         allSeqs = readFasta(seqFile)
@@ -52,14 +52,14 @@ class Unbinned():
         for seq in allSeqs.values():
             totalBases += len(seq)
         self.logger.info('    Read %d (%.2f Mbps) sequences.' % (len(allSeqs), float(totalBases)/1e6))
-           
+
         # write all unbinned sequences
         self.logger.info('  Identifying unbinned sequences >= %d bps.' % minSeqLen)
         seqOut = open(outSeqFile, 'w')
-        
+
         statsOut = open(outStatsFile, 'w')
         statsOut.write('Sequence Id\tLength\tGC\n')
-        
+
         unbinnedCount = 0
         unbinnedBases = 0
         for seqId, seq in allSeqs.iteritems():
@@ -68,19 +68,18 @@ class Unbinned():
                     unbinnedCount += 1
                     seqOut.write('>' + seqId + '\n')
                     seqOut.write(seq + '\n')
-                    
+
                     unbinnedBases += len(seq)
-                    
+
                     a, c, g, t = baseCount(seq)
-                    
+
                     statsOut.write('%s\t%d\t%.2f\n' % (seqId, len(seq), float(g+c)*100/(a+c+g+t)))
-                    
+
         seqOut.close()
         statsOut.close()
 
         self.logger.info('    Identified %d (%.2f Mbps) unbinned sequences.' % (unbinnedCount, float(unbinnedBases)/1e6))
-        
+
         self.logger.info('')
         self.logger.info('  Percentage of unbinned sequences: %.2f%%' % (unbinnedCount*100.0/len(allSeqs)))
         self.logger.info('  Percentage of unbinned bases: %.2f%%' % (unbinnedBases*100.0/totalBases))
-                
