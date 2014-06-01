@@ -97,9 +97,6 @@ def printHelp():
     ssu_finder   -> Identify SSU (16S/18S) rRNAs in sequences
     bin_compare  -> Compare two sets of bins (e.g., from alternative binning methods)
 
-  Testing:
-    test         -> Process E.coli K12-W3310 and verify operation of CheckM
-
   Use: checkm <command> -h for command specific help
     '''
 
@@ -598,15 +595,6 @@ if __name__ == '__main__':
                                             epilog='Example: checkm unique ./bins')
     unique_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     unique_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (all other files in bin folder are ignored)")
-
-    # Test operation of CheckM using E.Coli K12-W3110
-    test_parser = subparsers.add_parser('test',
-                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                            description='Process E.coli K12-W3310 and verify operation of CheckM.',
-                                            epilog='Example: checkm test ./test')
-    test_parser.add_argument('out_folder', help="folder to write output files")
-    test_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
-    test_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_false", default=True, help=argparse.SUPPRESS)
 
     # debug and development
     if False:
