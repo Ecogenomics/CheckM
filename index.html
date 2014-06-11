@@ -25,11 +25,14 @@
 This website is a place holder. CheckM is in active development and currently not suitable for general use. We expect to make a public release in early May.
 </p>
 <h1>Overview</h1>
-<p>CheckM provides a set of tools for assessing the quality of genome recovered from isolates, single cells, or metagenomic data. It provides robust estimates of genome completeness and contamination
-using lineage-specific sets of single-copy, ubiquitous genes and explicitly accounts for gene co-location. Assessment of genome quality can also be examined
-using plots depicting key genomic characteristics (e.g., GC, coding density) which highlight sequences outside the expected distributions of a typical genome.
-CheckM also provides tools for identifying genome bins that are likely candidates for merging based on marker set compatibility, similarity in genomic characteristics,
-and proximity within a reference genome tree.</p>
+<p>CheckM provides a set of tools for assessing the quality of genomes recovered from
+isolates, single cells, or metagenomes. It provides robust estimates of genome completeness
+and contamination by using collocated sets of genes that are ubiquitous and single-copy within
+a phylogenetic lineage. Assessment of genome quality can also be examined using plots depicting
+key genomic characteristics (e.g., GC, coding density) which highlight sequences outside the
+expected distributions of a typical genome. CheckM also provides tools for identifying genome
+bins that are likely candidates for merging based on marker set compatibility, similarity in
+genomic characteristics, and proximity within a reference genome tree.</p>
 <hr>
 <h1>Get CheckM</h1>
 <p>CheckM has been developed to work on a Linux system. It may
@@ -67,34 +70,25 @@ and placed on the system path. Clone the repo from github:</p>
 <div class="span4">
 <hr>
 <h1>Use CheckM</h1>
-<p>You can checkout our new and&nbsp;expanding <a href="manual/checkm_manual.pdf">manual</a> (currently
-under construction), or read on if you're in a rush.</p>
+<p>You can checkout the <a href="manual/checkm_manual.pdf">manual</a>, or read on if you're in a rush.</p>
+<p>
 Before using CheckM you need a set of putative genomes. These may come from isolates, single cells, or metagenomic data.
-Our companion tool <a href="http://minillinim.github.io/GroopM/">GroopM</a>
-can be used for recovering genomes from metagenomic data. CheckM assumes genome
-bins are contained in a single folder with a common file
-extension.<br>
+Our companion tool <a href="http://minillinim.github.io/GroopM/">GroopM</a> can be used to recover genomes from metagenomic
+data. CheckM assumes genomes are contained in a single folder with a common file
+extension.</p>
+<br>
 <h3>Standard workflow</h3>
 <p>CheckM was developed to be highly flexible in the marker set
-used for
-assessing genome bin completeness and contamination. Functionality is provided
-for inferring lineage- and taxonomic-specific sets of
-marker, or you
-can supply your own HMM file specifying a custom set of
-markers. The standard workflow for using lineage-specific
-markers is as follows:</p>
+used for assessing genome completeness and contamination. Functionality is provided
+for inferring lineage- and taxonomic-specific sets of marker, or you
+can supply your own HMM file specifying a custom set of markers. The standard workflow for
+using lineage-specific markers is as follows:</p>
 <ul>
-<li><strong>tree</strong> - infer the position of
-each bin within a reference genome tree</li>
-<li><strong>tree_qa </strong>- examine the
-placementof bins within the genome tree and their taxonomic
-affliations</li>
-<li><strong>lineage_set </strong>- infer a
-lineage-specific marker set for each bin</li>
-<li><strong>analyze</strong> - identify markers in
-each bin</li>
-<li><strong>qa </strong>- assess bin completeness
-and contamination</li>
+<li><strong>tree</strong> - infer the position of each genome bin within a reference genome tree</li>
+<li><strong>tree_qa</strong> - examine the placement of bins within the genome tree and their taxonomic affliations</li>
+<li><strong>lineage_set</strong> - infer a lineage-specific marker set for each genome bin</li>
+<li><strong>analyze</strong> - identify markers in each genome bin</li>
+<li><strong>qa</strong> - assess genome bin completeness and contamination</li>
 </ul>
 <p>For more information on these commands type:</p>
 <p>$ checkm OPTION -h</p>
@@ -112,16 +106,13 @@ tetranucleotide signature distributions relative to expected
 distributions as determined from a set of reference genomes</li>
 </ul>
 <h3>Bin mergers</h3>
-<p>Automated methods for binning contigs tend to be
-conservative
+<p>Automated methods for binning contigs tend to be conservative
 which can result in a genome being split across multiple bins. To help
 identify bins that are likely candidates for merging, CheckM
 provides functionality for identifying bins with complementary sets of
 markers:</p>
 <ul>
-<li><strong>merge </strong>- identify bins with
-complementary
-markers</li>
+<li><strong>merge </strong>- identify bins with complementary markers</li>
 </ul>
 The merge command requires bins to be assessed using a common
 set of marker genes. Typically, this will be done with both a
@@ -134,10 +125,9 @@ producing community profiles. See the manual for more details.</div>
 <div class="span4">
 <hr>
 <h1>Cite CheckM</h1>
-<p>If you use this software then we'd love for you to cite us.
-Unfortunately CheckM is as yet unpublished, but we are working on our
-paper right now! If you'd like to cite our software then please contact
-us and we'll tell you how to make us happy scientists.&nbsp;</p>
+<p>If you find this software usefule, we'd love for you to cite us:</p>
+<li>Parks DH, Imelfort M, Skennerton CT, Hugenholtz P, Tyson GW. 2014. Assessing the quality of microbial genomes recovered
+from isolates, single cells, and metagenomes. In preparation.</li>
 <hr>
 <h1>Talk to us</h1>
 <p>All CheckM related suggestions, criticisms or abuse should be
