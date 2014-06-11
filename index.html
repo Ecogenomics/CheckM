@@ -26,9 +26,9 @@ This website is a place holder. CheckM is in active development and currently no
 </p>
 <h1>Overview</h1>
 <p>CheckM provides a set of tools for assessing the quality of putative genome bins. It provides robust estimates of genome completeness and contamination
-using lineage-specific sets of single-copy, ubiquitous genes and explicitly accounts for gene co-location. Assessment of bin quality can also be examined
+using lineage-specific sets of single-copy, ubiquitous genes and explicitly accounts for gene co-location. Assessment of genome quality can also be examined
 using plots depicting key genomic characteristics (e.g., GC, coding density) which highlight sequences outside the expected distributions of a typical genome.
-CheckM also provides tools for identifying bins that are likely candidates for merging based on marker set compatibility, similarity in genomic characteristics,
+CheckM also provides tools for identifying genome bins that are likely candidates for merging based on marker set compatibility, similarity in genomic characteristics,
 and proximity within a reference genome tree.</p>
 <hr>
 <h1>Get CheckM</h1>
@@ -69,15 +69,15 @@ and placed on the system path. Clone the repo from github:</p>
 <h1>Use CheckM</h1>
 <p>You can checkout our new and&nbsp;expanding <a href="manual/checkm_manual.pdf">manual</a> (currently
 under construction), or read on if you're in a rush.</p>
-Before using CheckM you need to generate putative genome bins from your
-metagenomic dataset(s). Our companion tool <a href="http://minillinim.github.io/GroopM/">GroopM</a>
-can be used for this task. CheckM assumes genome
+Before using CheckM you need a set of putative genomes. These may come from isolates, single cells, or metagenomic data.
+Our companion tool <a href="http://minillinim.github.io/GroopM/">GroopM</a>
+can be used for recovering genomes from metagenomic data. CheckM assumes genome
 bins are contained in a single folder with a common file
 extension.<br>
 <h3>Standard workflow</h3>
 <p>CheckM was developed to be highly flexible in the marker set
 used for
-assessing bin completeness and contamination. Functionality is provided
+assessing genome bin completeness and contamination. Functionality is provided
 for inferring lineage- and taxonomic-specific sets of
 marker, or you
 can supply your own HMM file specifying a custom set of
