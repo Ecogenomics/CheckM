@@ -47,7 +47,6 @@ from checkm.profile import Profile
 from checkm.binTools import BinTools
 from checkm.ssuFinder import SSU_Finder
 from checkm.PCA import PCA
-from checkm.testing import Testing
 from checkm.common import makeSurePathExists, checkFileExists, binIdFromFilename, reassignStdOut, restoreStdOut, getBinIdsFromOutDir, checkDirExists
 
 from checkm.plot.gcPlots import GcPlots
