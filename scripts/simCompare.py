@@ -158,7 +158,7 @@ class SimCompare(object):
 
     def run(self):
         print '\n  Reading reference genome tree.'
-        treeFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
+        treeFile = os.path.join('/srv/whitlam/bio/db/checkm/genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
         
         # read simulation results        
@@ -221,6 +221,9 @@ class SimCompare(object):
         msBetter = 0
         rmsBetter = 0
         
+        imDomBetter = 0
+        msDomBetter = 0
+        
         briefSummaryOut = open('./simulations/briefSummaryOut.tsv', 'w')
         for simId in summaryResults:
             itemsProcessed += 1
@@ -249,15 +252,22 @@ class SimCompare(object):
             for a, b, c, d, e, f in zip(dCompDomFullMS.split(','), dCompSimFullMS.split(','), dCompSimFullRMS.split(','), dContDomFullMS.split(','), dContSimFullMS.split(','), dContSimFullRMS.split(',')):
                 briefSummaryOut.write('%f\t%f\t%f\t%f\t%f\t%f\n' % (float(a), float(b), float(c), float(d), float(e), float(f)))
 
+            for a, b in zip(dCompDomFull.split(','), dCompDomFullMS.split(',')):
+                if abs(abs(float(a)) - abs(float(b))) > 0.1:             
+                    if abs(float(a)) < abs(float(b)):
+                        imDomBetter += 1
+                    else:
+                        msDomBetter += 1
+            
             for a, b in zip(dCompDomFullMS.split(','), dCompSimFullMS.split(',')):
-                if abs(abs(float(a)) - abs(float(b))) > 8:             
+                if abs(abs(float(a)) - abs(float(b))) > 0.1:             
                     if abs(float(a)) < abs(float(b)):
                         domBetter += 1
                     else:
                         simBetter += 1
               
             for a, b in zip(dCompSimFullMS.split(','), dCompSimFullRMS.split(',')):
-                if abs(abs(float(a)) - abs(float(b))) > 8:    
+                if abs(abs(float(a)) - abs(float(b))) > 0.1:    
                     if abs(float(a)) < abs(float(b)):
                         rmsBetter += 1
                     else:
@@ -362,6 +372,11 @@ class SimCompare(object):
         print msBetter, rmsBetter
         print 'MS better: %.2f' % (float(msBetter)*100/(msBetter+rmsBetter))
         print 'RMS better: %.2f' % (float(rmsBetter)*100/(msBetter+rmsBetter))
+        
+        print ''
+        print imDomBetter, msDomBetter
+        print 'IM Domain better: %.2f' % (float(imDomBetter)*100/(imDomBetter+msDomBetter))
+        print 'MS Domain better: %.2f' % (float(msDomBetter)*100/(imDomBetter+msDomBetter))
         
         briefSummaryOut.close()
                 

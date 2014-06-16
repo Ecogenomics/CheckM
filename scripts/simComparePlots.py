@@ -36,8 +36,8 @@ import argparse
 from collections import defaultdict, Counter
 
 from lib.plots.boxplot import BoxPlot
-from checkm.lib.img import IMG
-from checkm.lib.taxonomyUtils import rankPrefixes
+from checkm.util.img import IMG
+from checkm.util.taxonomyUtils import rankPrefixes
 
 from numpy import mean, abs, array, std
 
@@ -55,7 +55,7 @@ class SimComparePlots(object):
         self.simCompareTaxonomyTableOut = './simulations/simCompare.scaffolds.draft.taxonomy_table.tsv'
         self.simCompareRefinementTableOut = './simulations/simCompare.scaffolds.draft.refinment_table.tsv'
         
-        self.img = IMG()
+        self.img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
   
     def __readResults(self, filename):
         results = defaultdict(dict)
@@ -372,11 +372,9 @@ class SimComparePlots(object):
                 
                 compDataDict[taxon]['IM'] += results[simId][4]
                 compDataDict[taxon]['MS'] += results[simId][6]
-                compDataDict[taxon]['RMS'] += results[simId][8]
                 
                 contDataDict[taxon]['IM'] += results[simId][5]
                 contDataDict[taxon]['MS'] += results[simId][7]
-                contDataDict[taxon]['RMS'] += results[simId][9]
                 
                 genomeInTaxon[taxon].add(genomeId)
             
@@ -397,7 +395,7 @@ class SimComparePlots(object):
                 continue
                 
             refinmentTableOut.write(taxon + '\t' + str(numGenomes))
-            for refineStr in ['IM', 'MS', 'RMS']:               
+            for refineStr in ['IM', 'MS']:               
                 meanTaxonComp = mean(abs(array(compDataDict[taxon][refineStr])))
                 stdTaxonComp = std(abs(array(compDataDict[taxon][refineStr])))
                 meanTaxonCont = mean(abs(array(contDataDict[taxon][refineStr])))
@@ -413,7 +411,7 @@ class SimComparePlots(object):
         contData = []
         rowLabels = []
         for taxon in orderedTaxa:
-            for refineStr in ['RMS', 'MS', 'IM']:
+            for refineStr in ['MS', 'IM']:
                 numGenomes = len(genomeInTaxon[taxon])
                 if numGenomes < 10: # skip groups with only a few genomes
                     continue
@@ -430,7 +428,7 @@ class SimComparePlots(object):
         boxPlot.plot(plotFilename, compData, contData, rowLabels, 
                         r'$\Delta$' + ' % Completion', None, 
                         r'$\Delta$' + ' % Contamination', None,
-                        rowsPerCategory = 3, dpi = 600)
+                        rowsPerCategory = 2, dpi = 600)
         
     def run(self):
         # read simulation results
@@ -441,7 +439,7 @@ class SimComparePlots(object):
         #self.conditionsPlot(results)
         
         print '\n'
-        self.taxonomicPlots(results)
+        #self.taxonomicPlots(results)
         
         print '\n'
         self.refinementPlots(results)

@@ -92,12 +92,13 @@ class BinStatistics():
             binStats['GC std'] = stdGC
             
             # calculate statistics related to scaffold lengths
-            maxScaffoldLen, maxContigLen, genomeSize, scaffold_N50, contig_N50, numContigs = self.calculateScaffoldLengthStats(scaffolds, scaffoldStats)  
+            maxScaffoldLen, maxContigLen, genomeSize, scaffold_N50, contig_N50, numContigs, numAmbiguousBases = self.calculateSeqStats(scaffolds, scaffoldStats)  
+            binStats['Genome size'] = genomeSize
+            binStats['# ambiguous bases'] = numAmbiguousBases
             binStats['# scaffolds'] = len(scaffolds)
             binStats['# contigs'] = numContigs
             binStats['Longest scaffold'] = maxScaffoldLen
             binStats['Longest contig'] = maxContigLen
-            binStats['Genome size'] = genomeSize
             binStats['N50 (scaffolds)'] = scaffold_N50
             binStats['N50 (contigs)'] = contig_N50
             
@@ -105,7 +106,7 @@ class BinStatistics():
             codingDensity, translationTable, numORFs = self.calculateCodingDensity(binDir, genomeSize, scaffoldStats)
             binStats['Coding density'] = codingDensity
             binStats['Translation table'] = translationTable
-            binStats['# predicted ORFs'] = numORFs
+            binStats['# predicted genes'] = numORFs
             
             queueOut.put((binId, binStats, scaffoldStats))
             
@@ -182,10 +183,11 @@ class BinStatistics():
 
         return GC, math.sqrt(varGC)
     
-    def calculateScaffoldLengthStats(self, scaffolds, scaffoldsStats):
+    def calculateSeqStats(self, scaffolds, scaffoldsStats):
         """Calculate scaffold length statistics (min length, max length, total length, N50, # contigs)."""
         scaffoldLens = []
         contigLens = []
+        numAmbiguousBases = 0
         for scaffoldId, scaffold in scaffolds.iteritems():
             scaffoldLen = len(scaffold)
             scaffoldLens.append(scaffoldLen)
@@ -203,10 +205,12 @@ class BinStatistics():
             scaffoldsStats[scaffoldId]['Total contig length'] = sum(lenContigsInScaffold)
             scaffoldsStats[scaffoldId]['# contigs'] = len(lenContigsInScaffold)
             
+            numAmbiguousBases += scaffold.count('N') + scaffold.count('n')
+            
         scaffold_N50 = calculateN50(scaffoldLens)
         contig_N50 = calculateN50(contigLens)
             
-        return max(scaffoldLens), max(contigLens), sum(scaffoldLens), scaffold_N50, contig_N50, len(contigLens)
+        return max(scaffoldLens), max(contigLens), sum(scaffoldLens), scaffold_N50, contig_N50, len(contigLens), numAmbiguousBases
         
     def calculateCodingDensity(self, outDir, genomeSize, seqStats):
         """Calculate coding density of putative genome bin."""

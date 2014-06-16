@@ -34,8 +34,8 @@ import sys
 import argparse
 import multiprocessing as mp
 
-from checkm.lib.img import IMG
-from checkm.lib.taxonomyUtils import rankPrefixes, ranksByLevel
+from checkm.util.img import IMG
+from checkm.util.taxonomyUtils import rankPrefixes, ranksByLevel
 from lib.markerSetBuilder import MarkerSetBuilder
 
 class TaxonomicMarkerSets(object):
@@ -49,7 +49,7 @@ class TaxonomicMarkerSets(object):
                        queueIn, queueOut):
         """Process each data item in parallel."""
         
-        img = IMG()
+        img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         markerSetBuilder = MarkerSetBuilder()
 
         while True:
@@ -76,7 +76,8 @@ class TaxonomicMarkerSets(object):
                        outputDir, numDataItems, writerQueue):
         """Store or write results of worker threads in a single thread."""
         
-        taxonSetOut = open(os.path.join('..', 'data', 'taxon_marker_sets.tsv'), 'w')
+        #taxonSetOut = open(os.path.join('..', 'data', 'taxon_marker_sets.tsv'), 'w')
+        taxonSetOut = open(os.path.join('.', 'data', 'taxon_marker_sets.tsv'), 'w')
         
         processedItems = 0
         while True:
@@ -106,6 +107,7 @@ class TaxonomicMarkerSets(object):
                 # change model names to accession numbers, and make
                 # sure there is an HMM model for each PFAM
                 mungedColocatedSets = []
+                setSizes = []
                 for geneSet in colocatedSets:
                     s = set()
                     for geneId in geneSet:
@@ -115,6 +117,8 @@ class TaxonomicMarkerSets(object):
                                 s.add(pfamIdToPfamAcc[pfamId])
                         else:
                             s.add(geneId)
+                            
+                    setSizes.append(len(s))
                     mungedColocatedSets.append(s)
                             
                 fout.write(str(mungedColocatedSets))
@@ -129,14 +133,16 @@ class TaxonomicMarkerSets(object):
                 if len(taxonomy) == 7:
                     taxon = taxonomy[5] + ' ' + taxonomy[6]
                     
-                taxonSetOut.write(ranksByLevel[len(taxonomy)-1] + '\t' + taxon + '\t' + lineage + '\t' + str(numGenomes) + '\t' + str(numMarkerGenes) + '\t' + str(len(mungedColocatedSets)) + '\t' + str(mungedColocatedSets) + '\n')
+                maxSetSize = max(setSizes)
+                avgSetSize = float(sum(setSizes))/len(setSizes)
+                taxonSetOut.write(ranksByLevel[len(taxonomy)-1] + '\t' + taxon + '\t' + lineage + '\t' + str(numGenomes) + '\t' + str(numMarkerGenes) + '\t' + str(len(mungedColocatedSets)) + '\t' + str(maxSetSize) + '\t' + str(avgSetSize) + '\t' + str(mungedColocatedSets) + '\n')
 
         sys.stdout.write('\n')
         taxonSetOut.close()
         
     def __pfamIdToPfamAcc(self, img):
         pfamIdToPfamAcc = {}
-        for line in open(img.pfamHMMs):
+        for line in open('/srv/whitlam/bio/db/pfam/27/Pfam-A.hmm'):
             if 'ACC' in line:
                 acc = line.split()[1].strip()
                 pfamId = acc.split('.')[0]
@@ -150,7 +156,7 @@ class TaxonomicMarkerSets(object):
             os.makedirs(outputDir)
             
         # determine lineages to process
-        img = IMG()
+        img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         metadata = img.genomeMetadata()
         lineages = img.lineagesSorted(metadata)
         lineages.append('Universal')

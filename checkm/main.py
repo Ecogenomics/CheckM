@@ -190,7 +190,7 @@ class OptionsParser():
         treeParser = TreeParser()
         treeParser.getBinMarkerSets(options.tree_folder, options.marker_file,
                                     options.num_genomes_markers, options.num_genomes_refine,
-                                    options.bootstrap, options.bNoLineageSpecificRefinement,
+                                    options.bootstrap, options.bLineageSpecificRefinement,
                                     options.bForceDomain, options.bRequireTaxonomy)
 
         self.logger.info('')
@@ -296,7 +296,6 @@ class OptionsParser():
 
         self.timeKeeper.printTimeStamp()
 
-
         # align top hit to each marker if requested
         if options.bAlignTopHit:
             alignmentOutputFolder = os.path.join(options.out_folder, 'storage', 'alignments')
@@ -326,7 +325,7 @@ class OptionsParser():
             self.logger.info('')
             self.logger.info('  Alignments to top hits stored in: ' + alignmentOutputFolder)
 
-        self.timeKeeper.printTimeStamp()
+            self.timeKeeper.printTimeStamp()
 
     def qa(self, options):
         """QA command"""
@@ -1108,6 +1107,8 @@ class OptionsParser():
             options.analyze_folder = options.out_folder
             options.out_format = 1
             options.file = ''
+            options.bAlignTopHit = False
+            options
 
             self.tree(options)
             self.lineageSet(options)
@@ -1118,7 +1119,8 @@ class OptionsParser():
             options.analyze_folder = options.out_folder
             options.out_format = 1
             options.file = ''
-
+            options.bAlignTopHit = False
+            
             self.taxonSet(options)
             self.analyze(options)
             self.qa(options)

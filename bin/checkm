@@ -83,11 +83,11 @@ def printHelp():
     tetra_pca    -> PCA plot of tetranucleotide signatures
 
   Bin exploration and modification:
-    merge        -> Identify bins with complementary sets of marker genes
-    outliers     -> Identify outlier in bins relative to reference distributions
-    modify       -> Modify sequences in a bin
     unique       -> Ensure no sequences are assigned to multiple bins
-
+    merge        -> Identify bins with complementary sets of marker genes
+    outliers     -> [Experimental] Identify outlier in bins relative to reference distributions
+    modify       -> [Experimental] Modify sequences in a bin
+    
   Utility functions:
     unbinned     -> Identify unbinned sequences
     coverage     -> Calculate coverage of sequences
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     lineage_set_parser.add_argument('tree_folder', help="folder specified during tree command")
     lineage_set_parser.add_argument('marker_file', help="output file describing marker set for each bin")
     lineage_set_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum reference genomes required to refine marker set", default=2)
-    lineage_set_parser.add_argument('--no_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform marker set refinement")
+    lineage_set_parser.add_argument('--refinement', dest='bLineageSpecificRefinement', action="store_true", default=False, help="[Experimental] perform lineage-specific marker set refinement")
     lineage_set_parser.add_argument('--force_domain', dest='bForceDomain', action="store_true", default=False, help="use domain-level sets for all bins")
     lineage_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
@@ -234,11 +234,12 @@ if __name__ == '__main__':
     lineage_wf_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
     lineage_wf_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
     lineage_wf_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum reference genomes required to refine marker set", default=2)
-    lineage_wf_parser.add_argument('--no_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform marker set refinement")
+    lineage_wf_parser.add_argument('--refinement', dest='bLineageSpecificRefinement', action="store_true", default=False, help="[Experimental] perform lineage-specific marker set refinement")
     lineage_wf_parser.add_argument('--force_domain', dest='bForceDomain', action="store_true", default=False, help="use domain-level sets for all bins")
     lineage_wf_parser.add_argument('--individual_markers', dest='bIndividualMarkers', action="store_true", default=False, help="treat marker as independent (i.e., ignore co-located set structure)")
     lineage_wf_parser.add_argument('--skip_orf_correction', dest='bSkipOrfCorrection', action="store_true", default=False, help="skip identification of ORF errors affecting marker genes")
     lineage_wf_parser.add_argument('--aai_strain', type=float, default=0.9, help="AAI threshold used to identify strain heterogeneity")
+    lineage_wf_parser.add_argument('-a', '--alignment_file', default=None, help="produce file showing alignment of multi-copy genes and their AAI identity")
     lineage_wf_parser.add_argument('--ignore_thresholds', dest='bIgnoreThresholds', action="store_true", default=False, help="ignore model-specific score thresholds")
     lineage_wf_parser.add_argument('-e', '--e_value', type=float, default=DefaultValues.E_VAL, help="e-value cut off")
     lineage_wf_parser.add_argument('-l', '--length', type=float, default=DefaultValues.LENGTH, help="percent overlap between target and query")
@@ -263,6 +264,7 @@ if __name__ == '__main__':
     taxonomy_wf_parser.add_argument('--individual_markers', dest='bIndividualMarkers', action="store_true", default=False, help="treat marker as independent (i.e., ignore co-located set structure)")
     taxonomy_wf_parser.add_argument('--skip_orf_correction', dest='bSkipOrfCorrection', action="store_true", default=False, help="skip identification of ORF errors affecting marker genes")
     taxonomy_wf_parser.add_argument('--aai_strain', type=float, default=0.9, help="AAI threshold used to identify strain heterogeneity")
+    taxonomy_wf_parser.add_argument('-a', '--alignment_file', default=None, help="produce file showing alignment of multi-copy genes and their AAI identity")
     taxonomy_wf_parser.add_argument('--ignore_thresholds', dest='bIgnoreThresholds', action="store_true", default=False, help="ignore model-specific score thresholds")
     taxonomy_wf_parser.add_argument('-e', '--e_value', type=float, default=DefaultValues.E_VAL, help="e-value cut off")
     taxonomy_wf_parser.add_argument('-l', '--length', type=float, default=DefaultValues.LENGTH, help="percent overlap between target and query")
@@ -281,7 +283,7 @@ if __name__ == '__main__':
     plot_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
     plot_parser.add_argument('plot_folder', help="folder to hold plots")
     plot_parser.add_argument('--image_type', default = 'png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
-    plot_parser.add_argument('--dpi', type = int, default = 300, help='desired DPI of output image')
+    plot_parser.add_argument('--dpi', type = int, default = 600, help='desired DPI of output image')
     plot_parser.add_argument('--font_size', type = int, default = 8, help='Desired font size')
     plot_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
 

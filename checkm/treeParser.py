@@ -380,7 +380,7 @@ class TreeParser():
 
     def getBinMarkerSets(self, outDir, markerFile,
                                     numGenomesMarkers, numGenomesRefine,
-                                    bootstrap, bNoLineageSpecificRefinement,
+                                    bootstrap, bLineageSpecificRefinement,
                                     bForceDomain, bRequireTaxonomy):
         """Determine marker sets for each bin."""
 
@@ -440,7 +440,7 @@ class TreeParser():
                     curNode, markerSet = self.__getMarkerSet(curNode.parent_node, tree, uniqueIdToLineageStatistics,
                                                                 numGenomesMarkers, numGenomesRefine, bootstrap,
                                                                 bForceDomain, bRequireTaxonomy)
-                    if not bNoLineageSpecificRefinement and bRoot == False:
+                    if bLineageSpecificRefinement and bRoot == False:
                         markerSet = self.__refineMarkerSet(markerSet, node, tree, uniqueIdToLineageStatistics, numGenomesRefine)
 
                     binMarkerSets.addMarkerSet(markerSet)
@@ -633,7 +633,7 @@ class TreeParser():
             row += [binIdToTaxonomy[binId], truncSisterLineage]
             row += [binStats[binId]['GC'] * 100]
             row += [float(binStats[binId]['Genome size']) / 1e6]
-            row += [binStats[binId]['# predicted ORFs']]
+            row += [binStats[binId]['# predicted genes']]
             row += [binStats[binId]['Coding density']]
             row += [binStats[binId]['Translation table']]
             row += [binIdToLineageStatistics[binId]['# genomes']]

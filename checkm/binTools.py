@@ -199,7 +199,7 @@ class BinTools():
         fout = open(outputFile, 'w')
         fout.write('Bin Id\tSequence Id\tSequence length\tOutlying distributions')
         fout.write('\tSequence GC\tMean bin GC\tLower GC bound (%s%%)\tUpper GC bound (%s%%)' % (distribution, distribution))
-        fout.write('\tSequence CD\tMean bin CD\tLower CD bound (%s%%)\tUpper CD bound (%s%%)' % (distribution, distribution))
+        fout.write('\tSequence CD\tMean bin CD\tLower CD bound (%s%%)' % distribution)
         fout.write('\tSequence TD\tMean bin TD\tUpper TD bound (%s%%)\n' % distribution)
 
         self.logger.info('')
@@ -234,7 +234,6 @@ class BinTools():
             sampleSeqLen = cdBounds[closestCD].keys()[0]
             d = cdBounds[closestCD][sampleSeqLen]
             cdLowerBoundKey = findNearest(d.keys(), (100 - distribution)/2.0)
-            cdUpperBoundKey = findNearest(d.keys(), (100 + distribution)/2.0)
 
             tdBoundKey = findNearest(tdBounds[tdBounds.keys()[0]].keys(), distribution)
 
@@ -249,7 +248,6 @@ class BinTools():
 
                 closestSeqLen = findNearest(cdBounds[closestCD].keys(), seqLen)
                 cdLowerBound = cdBounds[closestCD][closestSeqLen][cdLowerBoundKey]
-                cdUpperBound = cdBounds[closestCD][closestSeqLen][cdUpperBoundKey]
 
                 closestSeqLen = findNearest(tdBounds.keys(), seqLen)
                 tdBound = tdBounds[closestSeqLen][tdBoundKey]
@@ -258,7 +256,7 @@ class BinTools():
                 if deltaGCs[index] < gcLowerBound or deltaGCs[index] > gcUpperBound:
                     outlyingDists.append('GC')
 
-                if deltaCDs[index] < cdLowerBound or deltaCDs[index] > cdUpperBound:
+                if deltaCDs[index] < cdLowerBound:
                     outlyingDists.append('CD')
 
                 if deltaTDs[index] > tdBound:
@@ -267,7 +265,7 @@ class BinTools():
                 if (reportType == 'any' and len(outlyingDists) >= 1) or (reportType == 'all' and len(outlyingDists) == 3):
                     fout.write(binId + '\t' + seqId + '\t%d' % len(seq) + '\t' + ','.join(outlyingDists))
                     fout.write('\t%.1f\t%.1f\t%.1f\t%.1f' % (seqGC[index]*100, meanGC*100, (meanGC+gcLowerBound)*100, (meanGC+gcUpperBound)*100))
-                    fout.write('\t%.1f\t%.1f\t%.1f\t%.1f' % (CDs[index]*100, meanCD*100, (meanCD+cdLowerBound)*100, (min(1.0, meanCD+cdUpperBound))*100))
+                    fout.write('\t%.1f\t%.1f\t%.1f' % (CDs[index]*100, meanCD*100, (meanCD+cdLowerBound)*100))
                     fout.write('\t%.3f\t%.3f\t%.3f' % (deltaTDs[index], meanTD, tdBound) + '\n')
 
                 index += 1

@@ -214,9 +214,9 @@ class ResultsParser():
             header = ['Bin Id']
             header += ['Marker lineage', '# genomes', '# markers', '# marker sets']
             header += ['Completeness','Contamination', 'Strain heterogeneity']
-            header += ['Genome size (bp)', '# scaffolds', '# contigs', 'N50 (scaffolds)', 'N50 (contigs)', 'Longest scaffold (bp)', 'Longest contig (bp)']
+            header += ['Genome size (bp)', '# ambiguous bases', '# scaffolds', '# contigs', 'N50 (scaffolds)', 'N50 (contigs)', 'Longest scaffold (bp)', 'Longest contig (bp)']
             header += ['GC', 'GC std (scaffolds > 1kbps)']
-            header += ['Coding density', 'Translation table', '# predicted ORFs']
+            header += ['Coding density', 'Translation table', '# predicted genes']
             header += ['0','1','2','3','4','5+']
 
             if coverageBinProfiles != None:
@@ -632,11 +632,11 @@ class ResultsManager():
                 row = self.binId
                 row += '\t%s\t%d\t%d\t%d' % (selectedMarkerSet.lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets())
                 row += '\t%0.2f\t%0.2f\t%0.2f' % (data[6], data[7], aai.aaiMeanBinHetero.get(self.binId, 0.0))
-                row += '\t%d\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# scaffolds'],
+                row += '\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# ambiguous bases'], self.binStats['# scaffolds'],
                                                  self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'],
                                                  self.binStats['Longest scaffold'], self.binStats['Longest contig'])
                 row += '\t%.1f\t%.2f' % (self.binStats['GC']*100, self.binStats['GC std']*100)
-                row += '\t%.2f\t%d\t%d' % (self.binStats['Coding density']*100, self.binStats['Translation table'], self.binStats['# predicted ORFs'])
+                row += '\t%.2f\t%d\t%d' % (self.binStats['Coding density']*100, self.binStats['Translation table'], self.binStats['# predicted genes'])
                 row += '\t' + '\t'.join([str(data[i]) for i in xrange(6)])
 
                 if coverageBinProfiles:
@@ -647,11 +647,11 @@ class ResultsManager():
             else:
                 row = [self.binId, selectedMarkerSet.lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets()]
                 row.extend([data[6], data[7], aai.aaiMeanBinHetero.get(self.binId, 0.0)])
-                row.extend([self.binStats['Genome size'], self.binStats['# scaffolds'],
+                row.extend([self.binStats['Genome size'], self.binStats['# ambiguous bases'], self.binStats['# scaffolds'],
                                                  self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'],
                                                  self.binStats['Longest scaffold'], self.binStats['Longest contig']])
                 row.extend([self.binStats['GC']*100, self.binStats['GC std']*100])
-                row.extend([self.binStats['Coding density']*100, self.binStats['Translation table'], self.binStats['# predicted ORFs']])
+                row.extend([self.binStats['Coding density']*100, self.binStats['Translation table'], self.binStats['# predicted genes']])
                 row.extend(data[0:6])
 
                 if coverageBinProfiles:
