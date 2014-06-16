@@ -33,40 +33,6 @@ key genomic characteristics (e.g., GC, coding density) which highlight sequences
 expected distributions of a typical genome. CheckM also provides tools for identifying genome
 bins that are likely candidates for merging based on marker set compatibility, similarity in
 genomic characteristics, and proximity within a reference genome tree.</p>
-<hr>
-<h1>Get CheckM</h1>
-<p>CheckM has been developed to work on a Linux system. It may
-work elsewhere, but I haven't tried. If you try it somewhere
-else then please let me know. I'd like to keep this list up-to-date.</p>
-<h3>Use pip</h3>
-<p>This is the recommended method for obtaining CheckM as it will
-automaticaly install a number of dependencies. You'll need to have <a href="http://pypi.python.org/pypi">pip</a> installed
-on your system. After that, open a terminal and it is as easy as
-typing: </p>
-<p>$ sudo pip install checkm-ACE</p>
-<p>CheckM makes use of the following 3rd party programs which
-must be available on the system path:</p>
-<ul>
-<li>hmmer &gt;= 3.0</li>
-<li>prodigal &gt;= 2.6</li>
-<li>pplacer &gt;= v1.1 (alpha15)</li>
-</ul>
-<h3>From source on github</h3>
-<p>If you prefer this type of thing you can always try install
-from source directly. You will need the following dependencies:</p>
-<ul>
-<li>numpy &gt;= 1.8.0</li>
-<li>scipy &gt;= 0.9.0</li>
-<li>matplotlib &gt;= 1.1.0</li>
-<li>dendropy &gt;= 3.12.0</li>
-<li>pysam &gt;= 0.7.4</li>
-</ul>
-<p>The 3rd party dependencies listed above must also be install
-and placed on the system path. Clone the repo from github:</p>
-<p>$ git clone git@github.com:Ecogenomics/CheckM.git</p>
-<p>Then change into the CheckM directory and type:</p>
-<p>$ sudo python setup.py install</p>
-</div>
 <div class="span4">
 <hr>
 <h1>Use CheckM</h1>
@@ -75,12 +41,14 @@ and placed on the system path. Clone the repo from github:</p>
 Before using CheckM you need a set of putative genomes. These may come from isolates, single cells, or metagenomic data.
 Our companion tool <a href="http://minillinim.github.io/GroopM/">GroopM</a> can be used to recover genomes from metagenomic
 data.</p>
+<hr>
 <h1>Cite CheckM</h1>
 <p>If you find this software useful, we'd love for you to cite us:</p>
 <ul>
 <li>Parks DH, Imelfort M, Skennerton CT, Hugenholtz P, Tyson GW. 2014. Assessing the quality of microbial genomes recovered
 from isolates, single cells, and metagenomes. In preparation.</li>
 </ul>
+<div class="span4">
 <hr>
 <h1>Talk to us</h1>
 <p>All CheckM related suggestions, criticisms or abuse should be
