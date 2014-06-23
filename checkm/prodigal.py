@@ -21,6 +21,7 @@
 
 import os
 import sys
+import stat
 import subprocess
 import logging
 import shutil
@@ -30,6 +31,8 @@ import numpy as np
 from checkm.defaultValues import DefaultValues
 from checkm.common import checkFileExists
 from checkm.util.seqUtils import readFasta
+
+import inspect
 
 class ProdigalError(BaseException): pass
 
@@ -61,16 +64,23 @@ class ProdigalRunner():
 
             # check if there is sufficient bases to calculate prodigal parameters
             if totalBases < 100000:
-                procedureStr = 'meta'   # use best precalculated parameters
+                procedureStr = 'meta'       # use best precalculated parameters
             else:
-                procedureStr = 'single'      # estimate parameters from data
+                procedureStr = 'single'     # estimate parameters from data
 
             if bNucORFs:
-                cmd = ('prodigal -p %s -q -c -m -f gff -g %d -a %s -d %s -i %s > %s' % (procedureStr, translationTable, aaGeneFile, ntGeneFile, query, gffFile))
+                cmd = ('prodigal -p %s -q -c -m -f gff -g %d -a %s -d %s -i %s > %s 2> /dev/null' % (procedureStr, translationTable, aaGeneFile, ntGeneFile, query, gffFile))
             else:
-                cmd = ('prodigal -p %s -q -c -m -f gff -g %d -a %s -i %s > %s' % (procedureStr, translationTable, aaGeneFile, query, gffFile))
+                cmd = ('prodigal -p %s -q -c -m -f gff -g %d -a %s -i %s > %s 2> /dev/null' % (procedureStr, translationTable, aaGeneFile, query, gffFile))
+
 
             os.system(cmd)
+                
+            if not self.areORFsCalled() and procedureStr == 'single':
+                # prodigal will fail to learn a model if the input genome has a large number of N's
+                # so try gene prediction with 'meta'
+                cmd = cmd.replace('-p single', '-p meta')
+                os.system(cmd)
 
             # determine coding density
             prodigalParser = ProdigalGeneFeatureParser(gffFile)
@@ -102,7 +112,7 @@ class ProdigalRunner():
         return bestTranslationTable
 
     def areORFsCalled(self):
-        return os.path.exists(self.aaGeneFile)
+        return os.path.exists(self.aaGeneFile) and os.stat(self.aaGeneFile)[stat.ST_SIZE] != 0
 
     def checkForProdigal(self):
         """Check to see if Prodigal is on the system before we try to run it."""

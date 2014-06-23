@@ -25,7 +25,7 @@ import logging
 from operator import itemgetter
 
 import numpy as np
-from matplotlib import mpl
+import matplotlib as mpl
 
 from AbstractPlot import AbstractPlot
 

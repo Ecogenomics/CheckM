@@ -331,14 +331,18 @@ class HmmerAligner:
 
             seq = ''
             for seqId in seqIds:
-                seq += seqs[seqId]
+                tempSeq = seqs[seqId]
+                if tempSeq[-1] == '*':
+                    tempSeq = tempSeq[0:-1] # remove final '*' inserted by prodigal
+                    
+                seq += tempSeq
 
             rtnSeq = seq
         else:
             rtnSeq = seqs[seqId]
 
-        if rtnSeq[-1] == '*':
-            rtnSeq = rtnSeq[0:-1] # remove final '*' inserted by prodigal
+            if rtnSeq[-1] == '*':
+                rtnSeq = rtnSeq[0:-1] # remove final '*' inserted by prodigal
 
         return rtnSeq
 

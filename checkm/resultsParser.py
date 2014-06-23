@@ -408,7 +408,7 @@ class ResultsManager():
                         newHit.env_from = min(hits[i].env_from, hits[j].env_from)
                         newHit.env_to = min(hits[i].env_to, hits[j].env_to)
 
-                        hits.remove(hits[i])
+                        hits.remove(hits[j])
                         hits.remove(hits[i])
 
                         hits.append(newHit)

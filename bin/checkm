@@ -22,13 +22,13 @@
 ###############################################################################
 
 __author__ = "Donovan Parks, Connor Skennerton, Michael Imelfort"
-__copyright__ = "Copyright 2013"
+__copyright__ = "Copyright 2014"
 __credits__ = ["Donovan Parks", "Connor Skennerton", "Michael Imelfort"]
 __license__ = "GPL3"
 __maintainer__ = "Donovan Parks"
 __email__ = "donovan.parks@gmail.com"
 __status__ = "Development"
-__version__ = "0.7.0"
+__version__ = "0.7.2"
 
 import argparse
 import sys
@@ -160,9 +160,9 @@ if __name__ == '__main__':
                                         epilog='Example: checkm lineage_set ./output lineage.ms')
     lineage_set_parser.add_argument('tree_folder', help="folder specified during tree command")
     lineage_set_parser.add_argument('marker_file', help="output file describing marker set for each bin")
-    lineage_set_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum reference genomes required to refine marker set", default=2)
-    lineage_set_parser.add_argument('--refinement', dest='bLineageSpecificRefinement', action="store_true", default=False, help="[Experimental] perform lineage-specific marker set refinement")
     lineage_set_parser.add_argument('--force_domain', dest='bForceDomain', action="store_true", default=False, help="use domain-level sets for all bins")
+    lineage_set_parser.add_argument('--refinement', dest='bLineageSpecificRefinement', action="store_true", default=False, help="[Experimental] perform lineage-specific marker set refinement")
+    lineage_set_parser.add_argument('-r', '--num_genomes_refine', type=int, help="[Experimental] minimum reference genomes required to refine marker set", default=2)
     lineage_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # Note: these selection criteria are currently incompatible with how the selected lineage-specific marker set is defined

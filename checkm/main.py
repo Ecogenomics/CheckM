@@ -784,7 +784,7 @@ class OptionsParser():
         plot = BinQAPlot(options)
         if not options.bIgnoreHetero:
             aai = AminoAcidIdentity()
-            aai.run(options.aai_strain, options.out_folder)
+            aai.run(options.aai_strain, options.out_folder, None)
             plot.plot(binFiles, binStatsExt, options.bIgnoreHetero, aai.aaiHetero)
         else:
             plot.plot(binFiles, binStatsExt, options.bIgnoreHetero, None)

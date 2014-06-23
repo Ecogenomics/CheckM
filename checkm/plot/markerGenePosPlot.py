@@ -34,7 +34,7 @@ from checkm.common import binIdFromFilename
 
 from matplotlib.patches import Rectangle
 
-from matplotlib import mpl
+import matplotlib as mpl
 
 class MarkerGenePosPlot(AbstractPlot):
     def __init__(self, options):
