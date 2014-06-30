@@ -148,7 +148,7 @@ class BinQAPlot(AbstractPlot):
         colourBar.dividers.set_linewidth(0.5)
         axisColourMap.set_title('Contamination')
 
-        self.fig.tight_layout(pad=5)
+        #self.fig.tight_layout(pad=5)
         self.draw()
 
     def skylinePlot(self,
@@ -191,16 +191,19 @@ class BinQAPlot(AbstractPlot):
                    align='center'
                    )
 
-        # ticks
-        ax.set_xticks([])
-        ax.set_yticks([])
-
         # limits
         ax.set_xlim(-0.5, num_bars)
         ax.set_ylim(0, np.max(data_stack))
 
         # labels
-        ax.set_ylabel(binId, rotation = 0)
+        ax.set_yticks(np.arange(0.5, np.max(data_stack)))
+        ax.set_yticklabels([binId])
+        
+        # ticks
+        ax.set_xticks([])
+        for a in ax.yaxis.majorTicks:
+            a.tick1On=False
+            a.tick2On=False
 
         # borders
         ax.spines["top"].set_visible(False)
