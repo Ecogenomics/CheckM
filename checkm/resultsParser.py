@@ -215,7 +215,7 @@ class ResultsParser():
             header += ['Marker lineage', '# genomes', '# markers', '# marker sets']
             header += ['Completeness','Contamination', 'Strain heterogeneity']
             header += ['Genome size (bp)', '# ambiguous bases', '# scaffolds', '# contigs', 'N50 (scaffolds)', 'N50 (contigs)', 'Longest scaffold (bp)', 'Longest contig (bp)']
-            header += ['GC', 'GC std (scaffolds > 1kbps)']
+            header += ['GC', 'GC std (scaffolds > 1kbp)']
             header += ['Coding density', 'Translation table', '# predicted genes']
             header += ['0','1','2','3','4','5+']
 
@@ -224,7 +224,7 @@ class ResultsParser():
                     header += ['Coverage (' + bamId + ')', 'Coverage std (' + bamId + ')']
 
             if DefaultValues.MIN_SEQ_LEN_GC_STD != 1000:
-                self.logger.error('  [Error] Labeling error: GC std (scaffolds > 1kbps)')
+                self.logger.error('  [Error] Labeling error: GC std (scaffolds > 1kbp)')
                 sys.exit()
         elif outputFormat == 3:
             header = ['Bin Id', 'Marker Id', 'Marker lineage', '# genomes', '# markers','# marker sets','0','1','2','3','4','5+','Completeness','Contamination','Strain heterogeneity']
@@ -416,6 +416,18 @@ class ResultsManager():
                         break
 
             self.markerHits[markerId] = hits
+            
+    def countUniqueHits(self):
+        """Determine number of unique and multiple hits."""
+        uniqueHits = 0
+        multiCopyHits = 0
+        for hits in self.markerHits.values():
+            if len(hits) == 1:
+                uniqueHits += 1
+            elif len(hits) > 1:
+                multiCopyHits += 1
+                
+        return uniqueHits, multiCopyHits
 
     def hitsToMarkerGene(self, markerSet):
         """Determine number of times each marker gene is hit."""

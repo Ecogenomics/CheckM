@@ -56,8 +56,8 @@ class MarkerGeneFinder():
             workerQueue.put(None)
 
         binIdToModels = mp.Manager().dict()
-        calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, binIdToModels, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target = self.__reportProgress, args = (len(binFiles), writerQueue))
+        calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        writeProc = mp.Process(target = self.__reportProgress, args = (len(binFiles), binIdToModels, writerQueue))
 
         writeProc.start()
 
@@ -67,7 +67,7 @@ class MarkerGeneFinder():
         for p in calcProc:
             p.join()
 
-        writerQueue.put(None)
+        writerQueue.put((None, None))
         writeProc.join()
 
         # create a standard dictionary from the managed dictionary
@@ -77,7 +77,7 @@ class MarkerGeneFinder():
 
         return d
 
-    def __processBin(self, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, binIdToModels, queueIn, queueOut):
+    def __processBin(self, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, queueIn, queueOut):
         """Thread safe bin processing."""
 
         markerSetParser = MarkerSetParser(self.threadsPerSearch)
@@ -98,11 +98,7 @@ class MarkerGeneFinder():
 
             # extract HMMs into temporary file
             hmmModelFile = markerSetParser.createHmmModelFile(binId, markerFile)
-
-            # parse HMM file
-            modelParser = HmmModelParser(hmmModelFile)
-            binIdToModels[binId] = modelParser.models()
-
+  
             # run HMMER
             hmmer = HMMERRunner()
             tableOutPath = os.path.join(binDir, tableOut)
@@ -115,11 +111,15 @@ class MarkerGeneFinder():
                          '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr,
                          bKeepAlignment)
 
+            # parse HMM file
+            modelParser = HmmModelParser(hmmModelFile)
+            models = modelParser.models()
+            
             os.remove(hmmModelFile)
+          
+            queueOut.put((binId, models))
 
-            queueOut.put(binId)
-
-    def __reportProgress(self, numBins, queueIn):
+    def __reportProgress(self, numBins, binIdToModels, queueIn):
         """Report number of processed bins."""
 
         numProcessedBins = 0
@@ -129,9 +129,11 @@ class MarkerGeneFinder():
             sys.stderr.flush()
 
         while True:
-            binId = queueIn.get(block=True, timeout=None)
+            binId, models = queueIn.get(block=True, timeout=None)
             if binId == None:
                 break
+            
+            binIdToModels[binId] = models
 
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1

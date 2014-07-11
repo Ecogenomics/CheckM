@@ -108,5 +108,5 @@ class PcaPlot(AbstractPlot):
                 else:
                     spine.set_color(self.axesColour)
 
-        self.fig.tight_layout(pad=5, w_pad=15, h_pad=15)
+        self.fig.tight_layout(pad=1, w_pad=2, h_pad=2)
         self.draw()

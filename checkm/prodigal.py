@@ -32,8 +32,6 @@ from checkm.defaultValues import DefaultValues
 from checkm.common import checkFileExists
 from checkm.util.seqUtils import readFasta
 
-import inspect
-
 class ProdigalError(BaseException): pass
 
 class ProdigalRunner():
@@ -69,14 +67,13 @@ class ProdigalRunner():
                 procedureStr = 'single'     # estimate parameters from data
 
             if bNucORFs:
-                cmd = ('prodigal -p %s -q -c -m -f gff -g %d -a %s -d %s -i %s > %s 2> /dev/null' % (procedureStr, translationTable, aaGeneFile, ntGeneFile, query, gffFile))
+                cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -d %s -i %s > %s 2> /dev/null' % (procedureStr, translationTable, aaGeneFile, ntGeneFile, query, gffFile))
             else:
-                cmd = ('prodigal -p %s -q -c -m -f gff -g %d -a %s -i %s > %s 2> /dev/null' % (procedureStr, translationTable, aaGeneFile, query, gffFile))
-
+                cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -i %s > %s 2> /dev/null' % (procedureStr, translationTable, aaGeneFile, query, gffFile))
 
             os.system(cmd)
                 
-            if not self.areORFsCalled() and procedureStr == 'single':
+            if not self.__areORFsCalled(aaGeneFile) and procedureStr == 'single':
                 # prodigal will fail to learn a model if the input genome has a large number of N's
                 # so try gene prediction with 'meta'
                 cmd = cmd.replace('-p single', '-p meta')
@@ -110,6 +107,9 @@ class ProdigalRunner():
                 os.remove(self.ntGeneFile + '.' + str(translationTable))
 
         return bestTranslationTable
+    
+    def __areORFsCalled(self, aaGeneFile):
+        return os.path.exists(aaGeneFile) and os.stat(aaGeneFile)[stat.ST_SIZE] != 0
 
     def areORFsCalled(self):
         return os.path.exists(self.aaGeneFile) and os.stat(self.aaGeneFile)[stat.ST_SIZE] != 0

@@ -39,6 +39,45 @@ class HmmerAligner:
         self.totalThreads = threads
 
         self.outputFormat = 'Pfam'
+        
+    def makeAlignmentTopHit(self,
+                               outDir,
+                               hmmModelFile,
+                               hmmTableFile,
+                               binIdToModels,
+                               bIgnoreThresholds,
+                               evalueThreshold,
+                               lengthThreshold,
+                               bReportHitStats,
+                               alignOutputDir
+                               ):
+        """Align top hits in each bin. Assumes all bins are using the same marker genes."""
+
+        self.logger.info("  Extracting marker genes to align.")
+
+        # parse HMM information
+        resultsParser = ResultsParser(binIdToModels)
+
+        # get HMM hits to each bin
+        resultsParser.parseBinHits(outDir, hmmTableFile, False, bIgnoreThresholds, evalueThreshold, lengthThreshold)
+
+        # extract the ORFs to align
+        markerSeqs, markerStats = self.__extractMarkerSeqsTopHits(outDir, resultsParser)
+
+        # generate individual HMMs required to create multiple sequence alignments
+        binId = binIdToModels.keys()[0]
+        hmmModelFiles = {}
+        self.__makeAlignmentModels(hmmModelFile, binIdToModels[binId], hmmModelFiles)
+
+        # align each of the marker genes
+        makeSurePathExists(alignOutputDir)
+        self.__alignMarkerGenes(markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir)
+
+        # remove the temporary HMM files
+        for fileName in hmmModelFiles:
+            os.remove(hmmModelFiles[fileName])
+
+        return resultsParser
 
     def makeAlignmentToPhyloMarkers(self,
                                        outDir,
@@ -51,7 +90,7 @@ class HmmerAligner:
                                        bReportHitStats,
                                        alignOutputDir
                                        ):
-        """Align hits from a set of common marker genes."""
+        """Align hits to a set of common marker genes."""
 
         self.logger.info("  Extracting marker genes to align.")
 
@@ -62,7 +101,7 @@ class HmmerAligner:
         resultsParser.parseBinHits(outDir, hmmTableFile, False, bIgnoreThresholds, evalueThreshold, lengthThreshold)
 
         # extract the ORFs to align
-        markerSeqs, markerStats = self.__extractMarkerSeqsTopHits(outDir, resultsParser)
+        markerSeqs, markerStats = self.__extractMarkerSeqsUnique(outDir, resultsParser)
 
         # generate individual HMMs required to create multiple sequence alignments
         binId = binIdToModels.keys()[0]
@@ -321,6 +360,29 @@ class HmmerAligner:
                 topHit = hits[0]
                 markerSeqs[markerId][binId][topHit.target_name] = self.__extractSeq(topHit.target_name, binORFs)
                 markerStats[markerId][binId][topHit.target_name] = [topHit.full_e_value, topHit.full_score]
+
+        return markerSeqs, markerStats
+    
+    def __extractMarkerSeqsUnique(self, outDir, resultsParser):
+        """Extract marker sequences with a single unique hit."""
+
+        markerSeqs = defaultdict(dict)
+        markerStats = defaultdict(dict)
+        for binId in resultsParser.results:
+            # read ORFs for bin
+            aaGeneFile = os.path.join(outDir, 'bins', binId, DefaultValues.PRODIGAL_AA)
+            binORFs = readFasta(aaGeneFile)
+
+            # extract ORFs hitting a marker
+            for markerId, hits in resultsParser.results[binId].markerHits.iteritems():
+                markerSeqs[markerId][binId] = {}
+                markerStats[markerId][binId] = {}
+
+                # only record hits which are unique
+                if len(hits) == 1:
+                    hit = hits[0]
+                    markerSeqs[markerId][binId][hit.target_name] = self.__extractSeq(hit.target_name, binORFs)
+                    markerStats[markerId][binId][hit.target_name] = [hit.full_e_value, hit.full_score]
 
         return markerSeqs, markerStats
 

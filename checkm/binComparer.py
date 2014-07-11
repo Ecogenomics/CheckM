@@ -91,19 +91,19 @@ class BinComparer(object):
 
         # report summary results
         self.logger.info('')
-        self.logger.info('  Total seqs = %d (%.2f Mbps)' % (len(seqs), float(totalBases)/1e6))
-        self.logger.info('    # seqs > 1 kbps = %d (%.2f Mbps)' % (numSeq1K, float(totalBases1K)/1e6))
-        self.logger.info('    # seqs > 5 kbps= %d (%.2f Mbps)' % (numSeq5K, float(totalBases5K)/1e6))
+        self.logger.info('  Total seqs = %d (%.2f Mbp)' % (len(seqs), float(totalBases)/1e6))
+        self.logger.info('    # seqs > 1 kbp = %d (%.2f Mbp)' % (numSeq1K, float(totalBases1K)/1e6))
+        self.logger.info('    # seqs > 5 kbp= %d (%.2f Mbp)' % (numSeq5K, float(totalBases5K)/1e6))
         self.logger.info('')
         self.logger.info('  Binned seqs statistics:')
-        self.logger.info('    1) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbps (%.2f%%)' % (len(bins1), totalBinnedSeqs1, float(totalBinnedSeqs1)*100 / len(seqs), float(totalBinnedBases1)/1e6, float(totalBinnedBases1)*100/totalBases))
-        self.logger.info('    2) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbps (%.2f%%)' % (len(bins2), totalBinnedSeqs2, float(totalBinnedSeqs2)*100 / len(seqs), float(totalBinnedBases2)/1e6, float(totalBinnedBases2)*100/totalBases))
+        self.logger.info('    1) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbp (%.2f%%)' % (len(bins1), totalBinnedSeqs1, float(totalBinnedSeqs1)*100 / len(seqs), float(totalBinnedBases1)/1e6, float(totalBinnedBases1)*100/totalBases))
+        self.logger.info('    2) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbp (%.2f%%)' % (len(bins2), totalBinnedSeqs2, float(totalBinnedSeqs2)*100 / len(seqs), float(totalBinnedBases2)/1e6, float(totalBinnedBases2)*100/totalBases))
 
         # output report
         fout = open(outputFile, 'w')
         for data in binStats2:
             fout.write('\t' + data[0])
-        fout.write('\tunbinned\t% bases in common\t% seqs in common\tBest match\t# seqs\t# bases (Mbps)\n')
+        fout.write('\tunbinned\t% bases in common\t% seqs in common\tBest match\t# seqs\t# bases (Mbp)\n')
 
         totalSeqsInCommon2 = defaultdict(int)
         maxBasesInCommon2 = defaultdict(int)
@@ -179,7 +179,7 @@ class BinComparer(object):
             fout.write('\t%d' % data[1][0])
         fout.write('\n')
 
-        fout.write('# bases (Mbps)')
+        fout.write('# bases (Mbp)')
         for data in binStats2:
             fout.write('\t%.2f' % (float(data[1][1])/1e6))
         fout.write('\n')

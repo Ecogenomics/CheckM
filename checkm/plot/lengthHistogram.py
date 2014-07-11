@@ -50,7 +50,7 @@ class LengthHistogram(AbstractPlot):
 
         # create histogram
         axes.bar(left=np.arange(0.1, len(counts)), height=counts, width=0.8, color=(0.5, 0.5, 0.5))
-        axes.set_xlabel('Sequence length (kbps)')
+        axes.set_xlabel('Sequence length (kbp)')
         axes.set_ylabel('Number sequences (out of %d)' % len(seqs))
 
         # ensure y-axis include zero
@@ -58,7 +58,7 @@ class LengthHistogram(AbstractPlot):
         axes.set_ylim([0, end])
         axes.get_yaxis().set_major_locator(MaxNLocator(integer=True))
 
-        # Change sequence lengths from bps to kbps
+        # Change sequence lengths from bp to kbp
         axes.set_xlim([0, len(counts)])
         axes.set_xticks(np.arange(0.5, len(counts)))
         axes.set_xticklabels(['<1', '1-2', '2-5', '5-10', '10-20', '20-50', '50-100', '100-200', '200-500', '>500'])
@@ -84,5 +84,5 @@ class LengthHistogram(AbstractPlot):
             else:
                 spine.set_color(self.axesColour)
 
-        self.fig.tight_layout(pad=5)
+        self.fig.tight_layout(pad=1)
         self.draw()

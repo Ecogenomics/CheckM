@@ -43,7 +43,7 @@ class GcPlots(AbstractPlot):
 
         self.plotOnAxes(fastaFile, distributionsToPlot, axesHist, axesDeltaGC)
 
-        self.fig.tight_layout(pad=5, w_pad=10)
+        self.fig.tight_layout(pad=1, w_pad=1)
         self.draw()
 
     def plotOnAxes(self, fastaFile, distributionsToPlot, axesHist, axesDeltaGC):
@@ -119,7 +119,7 @@ class GcPlots(AbstractPlot):
         # Delta-GC vs Sequence length plot
         axesDeltaGC.scatter(deltaGCs, seqLens, c=abs(deltaGCs), s=10, lw=0.5, cmap=pylab.cm.Greys)
         axesDeltaGC.set_xlabel(r'$\Delta$ GC (mean GC = %.1f%%)' % (meanGC*100))
-        axesDeltaGC.set_ylabel('Sequence length (kbps)')
+        axesDeltaGC.set_ylabel('Sequence length (kbp)')
 
         _, yMaxSeqs = axesDeltaGC.get_ylim()
         xMinSeqs, xMaxSeqs = axesDeltaGC.get_xlim()
@@ -159,7 +159,7 @@ class GcPlots(AbstractPlot):
         # draw vertical line at x=0
         axesDeltaGC.vlines(0, 0, yMaxSeqs, linestyle='dashed', color=self.axesColour, zorder=0)
 
-        # Change sequence lengths from bps to kbps
+        # Change sequence lengths from bp to kbp
         yticks = axesDeltaGC.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
