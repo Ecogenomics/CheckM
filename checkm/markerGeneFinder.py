@@ -40,7 +40,11 @@ class MarkerGeneFinder():
 
     def find(self, binFiles, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs):
         """Identify marker genes in each bin using prodigal and HMMER."""
-
+        
+        # make sure HMMER and prodigal are on system path
+        HMMERRunner()
+        ProdigalRunner('')
+   
         # process each fasta file
         self.threadsPerSearch = max(1, int(self.totalThreads / len(binFiles)))
         self.logger.info("  Identifying marker genes in %d bins with %d threads:" % (len(binFiles), self.totalThreads))

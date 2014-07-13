@@ -1100,7 +1100,7 @@ class OptionsParser():
                 options.file = ''
         except:
             pass
-
+        
         if(options.subparser_name == 'tree'):
             self.tree(options)
         elif(options.subparser_name == 'tree_qa'):
