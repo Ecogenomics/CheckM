@@ -87,7 +87,7 @@ def printHelp():
     merge        -> Identify bins with complementary sets of marker genes
     outliers     -> [Experimental] Identify outlier in bins relative to reference distributions
     modify       -> [Experimental] Modify sequences in a bin
-    
+
   Utility functions:
     unbinned     -> Identify unbinned sequences
     coverage     -> Calculate coverage of sequences
@@ -97,6 +97,8 @@ def printHelp():
     ssu_finder   -> Identify SSU (16S/18S) rRNAs in sequences
     bin_compare  -> Compare two sets of bins (e.g., from alternative binning methods)
 
+  Use check data to find, download and install database updates
+
   Use: checkm <command> -h for command specific help
     '''
 
@@ -104,6 +106,17 @@ if __name__ == '__main__':
     # initialize the options parser
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers(help="--", dest='subparser_name')
+
+    data_parser = subparsers.add_parser('data',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                        description='Check / Update the CheckM database',
+                                        epilog='Example: checkm data update')
+    data_parser.add_argument('action', nargs="+",
+            help='''action is either:
+            diff            -> check the ACE servers and display any changes
+            update          -> check the ACE servers and apply updates (requires permissions)
+            setRoot <PATH>  -> set the data dir to <PATH> (requires permissions)
+            ''')
 
     output_parser = argparse.ArgumentParser(add_help=False)
     output_parser.add_argument('-o', '--out_format', type=int,
