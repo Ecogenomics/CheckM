@@ -44,15 +44,15 @@ from  dendropy.dataobject.taxon import Taxon
 
 class SimCompare(object):
     def __init__(self):
-        self.resultsSummaryFile = './simulations/simulation.draft.summary.tsv'
-        self.resultsFullFile = './simulations/simulation.draft.tsv.gz'
-        self.simCompareSummaryOut = './simulations/simCompare.draft.summary.tsv'
-        self.simCompareFullOut = './simulations/simCompare.draft.full.tsv'
+        #self.resultsSummaryFile = './simulations/simulation.draft.summary.tsv'
+        #self.resultsFullFile = './simulations/simulation.draft.tsv.gz'
+        #self.simCompareSummaryOut = './simulations/simCompare.draft.summary.tsv'
+        #self.simCompareFullOut = './simulations/simCompare.draft.full.tsv'
         
-        #self.resultsSummaryFile = './simulations/simulation.scaffolds.draft.summary.tsv'
-        #self.resultsFullFile = './simulations/simulation.scaffolds.draft.tsv.gz'
-        #self.simCompareSummaryOut = './simulations/simCompare.scaffolds.draft.summary.tsv'
-        #self.simCompareFullOut = './simulations/simCompare.scaffolds.draft.full.tsv'
+        self.resultsSummaryFile = './simulations/simulation.scaffolds.draft.summary.tsv'
+        self.resultsFullFile = './simulations/simulation.scaffolds.draft.tsv.gz'
+        self.simCompareSummaryOut = './simulations/simCompare.scaffolds.draft.summary.tsv'
+        self.simCompareFullOut = './simulations/simCompare.scaffolds.draft.full.tsv'
             
     def __bestMarkerSet(self, simId, simResults):
         """Get stats for best marker set."""
@@ -224,7 +224,7 @@ class SimCompare(object):
         imDomBetter = 0
         msDomBetter = 0
         
-        briefSummaryOut = open('./simulations/briefSummaryOut.tsv', 'w')
+        briefSummaryOut = open('./simulations/briefSummaryOut.scaffolds.tsv', 'w')
         for simId in summaryResults:
             itemsProcessed += 1
             statusStr = '    Finished processing %d of %d (%.2f%%) test cases.' % (itemsProcessed, len(summaryResults), float(itemsProcessed)*100/len(summaryResults))
@@ -250,7 +250,7 @@ class SimCompare(object):
             _, dCompSimFullIM, dContSimFullIM, dCompSimFullMS, dContSimFullMS, dCompSimFullRMS, dContSimFullRMS = fullResults[simId][simUID]
                
             for a, b, c, d, e, f in zip(dCompDomFullMS.split(','), dCompSimFullMS.split(','), dCompSimFullRMS.split(','), dContDomFullMS.split(','), dContSimFullMS.split(','), dContSimFullRMS.split(',')):
-                briefSummaryOut.write('%f\t%f\t%f\t%f\t%f\t%f\n' % (float(a), float(b), float(c), float(d), float(e), float(f)))
+                briefSummaryOut.write('%s\t%f\t%f\t%f\t%f\t%f\t%f\n' % (genomeId, float(a), float(b), float(c), float(d), float(e), float(f)))
 
             for a, b in zip(dCompDomFull.split(','), dCompDomFullMS.split(',')):
                 if abs(abs(float(a)) - abs(float(b))) > 0.1:             

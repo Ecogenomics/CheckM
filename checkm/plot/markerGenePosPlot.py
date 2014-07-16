@@ -157,7 +157,7 @@ class MarkerGenePosPlot(AbstractPlot):
 
         # set plot title
         titleStr = binId + '\n'
-        titleStr += '(%.2f Mbps, %d seqs, %.2f%% complete, %.2f%% contamination)' % (float(binSize)/1e6, len(seqs), binStats['Completeness'], binStats['Contamination'])
+        titleStr += '(%.2f Mbp, %d seqs, %.2f%% complete, %.2f%% contamination)' % (float(binSize)/1e6, len(seqs), binStats['Completeness'], binStats['Contamination'])
         axes.set_title(titleStr)
 
         # Prettify plot

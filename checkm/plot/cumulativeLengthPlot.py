@@ -55,13 +55,13 @@ class CumulativeLengthPlot(AbstractPlot):
         # Create plot
         axes.plot(x, y, 'k-',)
         axes.set_xlabel('Sequence index')
-        axes.set_ylabel('Cumulative sequence length (Mbps)')
+        axes.set_ylabel('Cumulative sequence length (Mbp)')
 
         # ensure y-axis include zero
         _, end = axes.get_ylim()
         axes.set_ylim([0, end])
 
-        # Change sequence lengths from bps to kbps
+        # Change sequence lengths from bp to kbp
         yticks = axes.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
@@ -93,5 +93,5 @@ class CumulativeLengthPlot(AbstractPlot):
             else:
                 spine.set_color(self.axesColour)
 
-        self.fig.tight_layout(pad=5)
+        self.fig.tight_layout(pad=1)
         self.draw()

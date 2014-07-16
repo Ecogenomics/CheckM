@@ -93,7 +93,7 @@ class Profile():
         sortedBinIds = sorted(readsMappedToBin.keys())
         sortedBamIds = sorted(readsMappedToBin[sortedBinIds[0]].keys())
         
-        header = ['Bin Id','Bin size (Mbps)']
+        header = ['Bin Id','Bin size (Mbp)']
         for bamId in sortedBamIds:
             header += [bamId + ': mapped reads']
             header += [bamId + ': % mapped reads']

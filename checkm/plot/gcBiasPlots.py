@@ -44,7 +44,7 @@ class GcBiasPlot(AbstractPlot):
 
         self.plotOnAxes(binFile, coverageProfile, windowAxes, seqAxes)
 
-        self.fig.tight_layout(pad=5)
+        self.fig.tight_layout(pad=1)
         self.draw()
 
     def plotOnAxes(self, binFile, coverageProfile, windowAxes, seqAxes):

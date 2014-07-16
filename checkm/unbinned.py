@@ -43,7 +43,7 @@ class Unbinned():
             for seq in seqs.values():
                 totalBinnedBases += len(seq)
 
-        self.logger.info('    Read %d (%.2f Mbps) binned sequences.' % (len(binnedSeqs), float(totalBinnedBases)/1e6))
+        self.logger.info('    Read %d (%.2f Mbp) binned sequences.' % (len(binnedSeqs), float(totalBinnedBases)/1e6))
 
         # get list of all sequences
         self.logger.info('  Reading all sequences.')
@@ -51,10 +51,10 @@ class Unbinned():
         totalBases = 0
         for seq in allSeqs.values():
             totalBases += len(seq)
-        self.logger.info('    Read %d (%.2f Mbps) sequences.' % (len(allSeqs), float(totalBases)/1e6))
+        self.logger.info('    Read %d (%.2f Mbp) sequences.' % (len(allSeqs), float(totalBases)/1e6))
 
         # write all unbinned sequences
-        self.logger.info('  Identifying unbinned sequences >= %d bps.' % minSeqLen)
+        self.logger.info('  Identifying unbinned sequences >= %d bp.' % minSeqLen)
         seqOut = open(outSeqFile, 'w')
 
         statsOut = open(outStatsFile, 'w')
@@ -78,7 +78,7 @@ class Unbinned():
         seqOut.close()
         statsOut.close()
 
-        self.logger.info('    Identified %d (%.2f Mbps) unbinned sequences.' % (unbinnedCount, float(unbinnedBases)/1e6))
+        self.logger.info('    Identified %d (%.2f Mbp) unbinned sequences.' % (unbinnedCount, float(unbinnedBases)/1e6))
 
         self.logger.info('')
         self.logger.info('  Percentage of unbinned sequences: %.2f%%' % (unbinnedCount*100.0/len(allSeqs)))

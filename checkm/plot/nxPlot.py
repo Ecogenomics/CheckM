@@ -70,9 +70,9 @@ class NxPlot(AbstractPlot):
         # Create plot
         axes.plot(x, nx, 'ko-', ms = 4)
         axes.set_xlabel('Nx')
-        axes.set_ylabel('Sequence length (kbps)')
+        axes.set_ylabel('Sequence length (kbp)')
 
-        # Change sequence lengths from bps to kbps
+        # Change sequence lengths from bp to kbp
         yticks = axes.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
@@ -102,5 +102,5 @@ class NxPlot(AbstractPlot):
             else:
                 spine.set_color(self.axesColour)
 
-        self.fig.tight_layout(pad=5)
+        self.fig.tight_layout(pad=1)
         self.draw()

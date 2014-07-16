@@ -192,9 +192,23 @@ class OptionsParser():
         self.logger.info('')
 
         checkDirExists(options.tree_folder)
+        
+        # set HMM file for each bin
+        markerSetParser = MarkerSetParser()
+        hmmModelInfoFile = os.path.join(options.tree_folder, 'storage', DefaultValues.PHYLO_HMM_MODEL_INFO)
+        binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
 
-        # This options are incompatible with how the lineage-specific marker set is selected, so
+        # calculate marker gene statistics
+        resultsParser = ResultsParser(binIdToModels)
+        resultsParser.analyseResults(options.tree_folder,
+                                          DefaultValues.BIN_STATS_PHYLO_OUT,
+                                          DefaultValues.SEQ_STATS_PHYLO_OUT,
+                                          DefaultValues.HMMER_TABLE_PHYLO_OUT)
+
+
+        # These options are incompatible with how the lineage-specific marker set is selected, so
         # the default values are currently hard-coded
+        self.logger.info('')
         options.num_genomes_markers = 2
         options.bootstrap = 0
         options.bRequireTaxonomy = False
@@ -203,7 +217,8 @@ class OptionsParser():
         treeParser.getBinMarkerSets(options.tree_folder, options.marker_file,
                                     options.num_genomes_markers, options.num_genomes_refine,
                                     options.bootstrap, options.bLineageSpecificRefinement,
-                                    options.bForceDomain, options.bRequireTaxonomy)
+                                    options.bForceDomain, options.bRequireTaxonomy,
+                                    resultsParser, options.unique, options.multi)
 
         self.logger.info('')
         self.logger.info('  Marker set written to: ' + options.marker_file)
@@ -315,7 +330,7 @@ class OptionsParser():
 
             self.logger.info('')
             HA = HmmerAligner(options.threads)
-            resultsParser = HA.makeAlignmentToPhyloMarkers(options.out_folder,
+            resultsParser = HA.makeAlignmentTopHit(options.out_folder,
                                                                 options.marker_file,
                                                                 DefaultValues.HMMER_TABLE_OUT,
                                                                 binIdToModels,
@@ -1098,10 +1113,15 @@ class OptionsParser():
                 options.file = ''
         except:
             pass
+<<<<<<< HEAD
 
         if(options.subparser_name == "data"):
             self.updateCheckM_DB(options)
         elif(options.subparser_name == 'tree'):
+=======
+        
+        if(options.subparser_name == 'tree'):
+>>>>>>> 784bd7330bd2e05cd7baeca54e8a5096306e306b
             self.tree(options)
         elif(options.subparser_name == 'tree_qa'):
             self.treeQA(options)

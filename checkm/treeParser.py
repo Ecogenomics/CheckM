@@ -381,7 +381,8 @@ class TreeParser():
     def getBinMarkerSets(self, outDir, markerFile,
                                     numGenomesMarkers, numGenomesRefine,
                                     bootstrap, bLineageSpecificRefinement,
-                                    bForceDomain, bRequireTaxonomy):
+                                    bForceDomain, bRequireTaxonomy,
+                                    resultsParser, minUnique, maxMulti):
         """Determine marker sets for each bin."""
 
         self.logger.info('  Determining marker sets for each genome bin.')
@@ -407,7 +408,7 @@ class TreeParser():
                 statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, len(binIds), float(numProcessedBins)*100/len(binIds))
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
-
+                
             node = tree.find_node_with_taxon_label(binId)
             binMarkerSets = BinMarkerSets(binId, BinMarkerSets.TREE_MARKER_SET)
             if node == None:
@@ -435,11 +436,15 @@ class TreeParser():
                 else:
                     curNode = node
 
-                # ascend tree to root, recording all marker sets
+                # ascend tree to root, recording all marker sets meeting selection criteria
                 while curNode.parent_node != None:
+                    uniqueHits, multiCopyHits = resultsParser.results[binId].countUniqueHits()
+                    tempForceDomain = bForceDomain or (uniqueHits < minUnique) or (multiCopyHits > maxMulti)
+                    
                     curNode, markerSet = self.__getMarkerSet(curNode.parent_node, tree, uniqueIdToLineageStatistics,
                                                                 numGenomesMarkers, numGenomesRefine, bootstrap,
-                                                                bForceDomain, bRequireTaxonomy)
+                                                                tempForceDomain, bRequireTaxonomy)
+                    
                     if bLineageSpecificRefinement and bRoot == False:
                         markerSet = self.__refineMarkerSet(markerSet, node, tree, uniqueIdToLineageStatistics, numGenomesRefine)
 
@@ -553,14 +558,14 @@ class TreeParser():
 
             binIdToLineageStatistics = self.readLineageMetadata(outDir, binIds)
             self.__printFullTable(binIdToTaxonomy, binIdToSisterTaxonomy, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile)
-
+                
     def __printSimpleSummaryTable(self, binIdToTaxonomy, resultsParser, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
         arbitraryBinId = binIdToTaxonomy.keys()[0]
-        markerCountLabel = '# marker (of %d)' % len(resultsParser.models[arbitraryBinId])
-        header = ['Bin Id', markerCountLabel, 'Taxonomy']
+        markerCountLabel = '# unique markers (of %d)' % len(resultsParser.models[arbitraryBinId])
+        header = ['Bin Id', markerCountLabel, '# multi-copy', 'Taxonomy']
 
         if bTabTable:
             pTable = None
@@ -575,7 +580,9 @@ class TreeParser():
             pTable.vrules = prettytable.NONE
 
         for binId in sorted(binIdToTaxonomy.keys()):
-            row = [binId, len(resultsParser.results[binId].markerHits), binIdToTaxonomy[binId]]
+            uniqueHits, multiCopyHits = resultsParser.results[binId].countUniqueHits()
+         
+            row = [binId, uniqueHits, multiCopyHits, binIdToTaxonomy[binId]]
 
             if bTabTable:
                 print('\t'.join(map(str, row)))
@@ -593,12 +600,12 @@ class TreeParser():
         oldStdOut = reassignStdOut(outFile)
 
         arbitraryBinId = binIdToTaxonomy.keys()[0]
-        markerCountLabel = '# marker (of %d)' % len(resultsParser.models[arbitraryBinId])
-        header = ['Bin Id', markerCountLabel]
+        markerCountLabel = '# unique markers (of %d)' % len(resultsParser.models[arbitraryBinId])
+        header = ['Bin Id', markerCountLabel, "# multi-copy"]
         header += ['Taxonomy (contained)', 'Taxonomy (sister lineage)']
-        header += ['GC', 'Genome size (Mbps)', 'Gene count', 'Coding density', 'Translation table']
+        header += ['GC', 'Genome size (Mbp)', 'Gene count', 'Coding density', 'Translation table']
         header += ['# descendant genomes', 'Lineage: GC mean', 'Lineage: GC std']
-        header += ['Lineage: genome size (Mbps) mean', 'Lineage: genome size (Mbps) std']
+        header += ['Lineage: genome size (Mbp) mean', 'Lineage: genome size (Mbp) std']
         header += ['Lineage: gene count mean', 'Lineage: gene count std']
 
         if bTabTable:
@@ -620,6 +627,8 @@ class TreeParser():
             pTable.vrules = prettytable.NONE
 
         for binId in sorted(binIdToTaxonomy.keys()):
+            uniqueHits, multiCopyHits = resultsParser.results[binId].countUniqueHits()
+            
             truncSisterLineage = binIdToSisterTaxonomy[binId]
             for taxa in binIdToTaxonomy[binId].split(';'):
                 truncSisterLineage = truncSisterLineage.replace(taxa + ';', '')
@@ -629,7 +638,7 @@ class TreeParser():
             elif truncSisterLineage[-1] == ';':
                 truncSisterLineage = truncSisterLineage[0:-1]
 
-            row = [binId, len(resultsParser.results[binId].markerHits)]
+            row = [binId, uniqueHits, multiCopyHits]
             row += [binIdToTaxonomy[binId], truncSisterLineage]
             row += [binStats[binId]['GC'] * 100]
             row += [float(binStats[binId]['Genome size']) / 1e6]

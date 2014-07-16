@@ -46,7 +46,7 @@ class CodingDensityPlots(AbstractPlot):
 
         self.plotOnAxes(fastaFile, distributionsToPlot, axesHist, axesDeltaCD)
 
-        self.fig.tight_layout(pad=5, w_pad=10)
+        self.fig.tight_layout(pad=1, w_pad=1)
         self.draw()
 
     def plotOnAxes(self, fastaFile, distributionsToPlot, axesHist, axesDeltaCD):
@@ -122,7 +122,7 @@ class CodingDensityPlots(AbstractPlot):
         # Delta-CD vs sequence length plot
         axesDeltaCD.scatter(deltaCDs, seqLens, c=abs(deltaCDs), s=10, lw=0.5, cmap=pylab.cm.Greys)
         axesDeltaCD.set_xlabel(r'$\Delta$ CD (mean coding density = %.1f%%)' % (meanCD*100))
-        axesDeltaCD.set_ylabel('Sequence length (kbps)')
+        axesDeltaCD.set_ylabel('Sequence length (kbp)')
 
         _, yMaxSeqs = axesDeltaCD.get_ylim()
         xMinSeqs, xMaxSeqs = axesDeltaCD.get_xlim()
@@ -162,7 +162,7 @@ class CodingDensityPlots(AbstractPlot):
         # draw vertical line at x=0
         axesDeltaCD.vlines(0, 0, yMaxSeqs, linestyle='dashed', color=self.axesColour, zorder=0)
 
-        # Change sequence lengths from bps to kbps
+        # Change sequence lengths from bp to kbp
         yticks = axesDeltaCD.get_yticks()
         kbpLabels = []
         for seqLen in yticks:

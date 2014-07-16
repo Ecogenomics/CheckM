@@ -144,7 +144,7 @@ class ParallelCoordPlot(AbstractPlot):
 		axx.set_xticklabels(xlabels[-2:])
 
 		# Stack the subplots
-		self.fig.tight_layout()
+		self.fig.tight_layout(pad=1)
 		self.fig.subplots_adjust(wspace=0)
 
 		self.draw()

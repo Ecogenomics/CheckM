@@ -51,5 +51,5 @@ class DistributionPlots(AbstractPlot):
         codingDensityPlots = CodingDensityPlots(self.options)
         codingDensityPlots.plotOnAxes(fastaFile, distributionsToPlot, axesHistCD, axesDeltaCD)
 
-        self.fig.tight_layout(pad=5, w_pad=15, h_pad=15)
+        self.fig.tight_layout(pad=1, w_pad=2, h_pad=2)
         self.draw()

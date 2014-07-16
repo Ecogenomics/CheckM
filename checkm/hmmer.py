@@ -21,6 +21,8 @@
 
 import os
 import sys
+import logging
+import subprocess
 from re import split as re_split
 
 class FormatError(BaseException): pass
@@ -30,6 +32,8 @@ class HMMMERModeError(BaseException): pass
 class HMMERRunner():
     """Wrapper for running HMMER3."""
     def __init__(self, mode="dom"):
+        self.logger = logging.getLogger()
+        
         # make sure HMMER is installed
         self.checkForHMMER()
 
@@ -96,13 +100,10 @@ class HMMERRunner():
     def checkForHMMER(self):
         """Check to see if HMMER is on the system path."""
         try:
-            exit_status = os.system('hmmsearch -h > /dev/null')
+            subprocess.call(['hmmsearch', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
         except:
-            print "Unexpected error!", sys.exc_info()[0]
-            raise
-
-        if exit_status != 0:
-            raise HMMERError("Error attempting to run hmmsearch, is it in your path?")
+            self.logger.error("  [Error] Make sure HMMER executables (e.g., hmmsearch, hmmfetch) are on your system path.")
+            sys.exit()
 
 class HMMERParser():
     """Parses tabular output."""

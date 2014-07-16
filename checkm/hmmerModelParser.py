@@ -50,7 +50,6 @@ class HmmModelParser(object):
 
     def simpleParse(self):
         """Parse simplified description of single model from HMM file."""
-        fields = []
         headerKeys = dict()
         for line in self.hmmFile:
             if line.startswith("HMMER"):

@@ -309,7 +309,7 @@ class SimComparePlots(object):
         taxonomyTableOut = open(self.simCompareTaxonomyTableOut, 'w')
         for taxon in orderedTaxa:
             numGenomes = len(genomeInTaxon[taxon])
-            if numGenomes < 10: # skip groups with only a few genomes
+            if numGenomes < 2: # skip groups with only a few genomes
                 continue
                 
             taxonomyTableOut.write(taxon + '\t' + str(numGenomes))
@@ -348,6 +348,12 @@ class SimComparePlots(object):
         ranksToProcess = 3
         taxaByRank = [set() for _ in xrange(0, ranksToProcess)]
         
+        overallCompIM = []
+        overallContIM = [] 
+        
+        overallCompMS = []
+        overallContMS = [] 
+        
         genomeInTaxon = defaultdict(set)
         for simId in results:
             itemsProcessed += 1
@@ -362,6 +368,12 @@ class SimComparePlots(object):
             conts.add(float(cont))
             seqLens.add(int(seqLen))
             
+            overallCompIM.append(results[simId][4])
+            overallContIM.append(results[simId][5])
+            
+            overallCompMS.append(results[simId][6])
+            overallContMS.append(results[simId][7])
+            
             for r in xrange(0, ranksToProcess):
                 taxon = taxonomy[r]
                 
@@ -375,23 +387,27 @@ class SimComparePlots(object):
                 
                 contDataDict[taxon]['IM'] += results[simId][5]
                 contDataDict[taxon]['MS'] += results[simId][7]
-                
+                                
                 genomeInTaxon[taxon].add(genomeId)
             
         sys.stdout.write('\n')
         
         print '    There are %d taxon.' % (len(compDataDict))
+        print ''
+        print 'Percentage change comp: %.4f' % ((mean(abs(array(overallCompIM))) - mean(abs(array(overallCompMS)))) * 100 / mean(abs(array(overallCompIM))))
+        print 'Percentage change cont: %.4f' % ((mean(abs(array(overallContIM))) - mean(abs(array(overallContMS)))) * 100 / mean(abs(array(overallContIM))))
+        print ''
         
         # get list of ordered taxa by rank
         orderedTaxa = []
         for taxa in taxaByRank:
             orderedTaxa += sorted(taxa)
              
-        # print taxonomic table of results organized by class
+        # print table of results organized by class
         refinmentTableOut = open(self.simCompareRefinementTableOut, 'w')
         for taxon in orderedTaxa:
             numGenomes = len(genomeInTaxon[taxon])
-            if numGenomes < 10: # skip groups with only a few genomes
+            if numGenomes < 2: # skip groups with only a few genomes
                 continue
                 
             refinmentTableOut.write(taxon + '\t' + str(numGenomes))
@@ -402,7 +418,10 @@ class SimComparePlots(object):
                 stdTaxonCont = std(abs(array(contDataDict[taxon][refineStr])))
                 
                 refinmentTableOut.write('\t%.1f +/- %.2f\t%.1f +/- %.2f' % (meanTaxonComp, stdTaxonComp, meanTaxonCont, stdTaxonCont))
-            refinmentTableOut.write('\n')
+            
+            perCompChange = (mean(abs(array(compDataDict[taxon]['IM']))) - meanTaxonComp) * 100 / mean(abs(array(compDataDict[taxon]['IM'])))
+            perContChange = (mean(abs(array(contDataDict[taxon]['IM']))) - meanTaxonCont) * 100 / mean(abs(array(contDataDict[taxon]['IM'])))
+            refinmentTableOut.write('\t%.2f\t%.2f\n' % (perCompChange, perContChange))
         refinmentTableOut.close()
        
         # plot data

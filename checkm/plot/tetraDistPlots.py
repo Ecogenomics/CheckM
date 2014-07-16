@@ -44,7 +44,7 @@ class TetraDistPlots(AbstractPlot):
 
         self.plotOnAxes(fastaFile, tetraSigs, distributionsToPlot, axesHist, axesDeltaTD)
 
-        self.fig.tight_layout(pad=5, w_pad=10)
+        self.fig.tight_layout(pad=1, w_pad=1)
         self.draw()
 
     def plotOnAxes(self, fastaFile, tetraSigs, distributionsToPlot, axesHist, axesDeltaTD):
@@ -123,7 +123,7 @@ class TetraDistPlots(AbstractPlot):
         # Delta-TD vs Sequence length plot
         axesDeltaTD.scatter(deltaTDs, seqLens, c=abs(deltaTDs), s=10, lw=0.5, cmap=pylab.cm.Greys)
         axesDeltaTD.set_xlabel(r'$\Delta$ TD (mean TD = %.2f)' % meanTD)
-        axesDeltaTD.set_ylabel('Sequence length (kbps)')
+        axesDeltaTD.set_ylabel('Sequence length (kbp)')
 
         _, yMaxSeqs = axesDeltaTD.get_ylim()
         xMinSeqs, xMaxSeqs = axesDeltaTD.get_xlim()
@@ -167,7 +167,7 @@ class TetraDistPlots(AbstractPlot):
         # draw vertical line at x=0
         axesDeltaTD.vlines(0, 0, yMaxSeqs, linestyle='dashed', color=self.axesColour, zorder=0)
 
-        # Change sequence lengths from bps to kbps
+        # Change sequence lengths from bp to kbp
         yticks = axesDeltaTD.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
