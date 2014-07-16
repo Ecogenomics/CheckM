@@ -95,7 +95,7 @@ def printHelp():
     ssu_finder   -> Identify SSU (16S/18S) rRNAs in sequences
     bin_compare  -> Compare two sets of bins (e.g., from alternative binning methods)
 
-  Use check data to find, download and install database updates
+  Use: 'checkm data' to find, download and install database updates
 
   Use: checkm <command> -h for command specific help
     '''
