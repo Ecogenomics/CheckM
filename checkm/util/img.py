@@ -555,6 +555,25 @@ class IMG(object):
                 mitoChloroGenes.add(geneId)
 
         return mitoChloroGenes
+    
+    def identifyRedundantPFAMs(self, markerGenes):
+        pfamIdToTigrId = defaultdict(list)
+        for line in open(self.redundantTIGRFAMs):
+            lineSplit = line.split('\t')
+            pfamId = lineSplit[0]
+            tigrId = lineSplit[1].rstrip()
+
+            pfamIdToTigrId[pfamId].append(tigrId)
+
+
+        pfamToRemove = set()
+        for markerGene in markerGenes:
+            if markerGene in pfamIdToTigrId:
+                for tigrId in pfamIdToTigrId[markerGene]:
+                    if tigrId in markerGenes:
+                        pfamToRemove.add(markerGene)
+
+        return pfamToRemove
 
     def identifyRedundantTIGRFAMs(self, markerGenes):
         tigrIdToPfamId = {}
@@ -574,3 +593,4 @@ class IMG(object):
                         tigrToRemove.add(markerGene)
 
         return tigrToRemove
+    

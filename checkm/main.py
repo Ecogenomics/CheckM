@@ -106,7 +106,7 @@ class OptionsParser():
                                  options.bKeepAlignment,
                                  options.bNucORFs)
 
-        # write module information to file
+        # write model information to file
         markerSetParser = MarkerSetParser(options.threads)
         hmmModelInfoFile = os.path.join(options.out_folder, 'storage', DefaultValues.PHYLO_HMM_MODEL_INFO)
         markerSetParser.writeBinModels(binIdToModels, hmmModelInfoFile)

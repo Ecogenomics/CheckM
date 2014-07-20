@@ -114,14 +114,8 @@ class MarkerGeneFinder():
             hmmer.search(hmmModelFile, prodigal.aaGeneFile, tableOutPath, hmmerOutPath,
                          '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr,
                          bKeepAlignment)
-
-            # parse HMM file
-            modelParser = HmmModelParser(hmmModelFile)
-            models = modelParser.models()
-            
-            os.remove(hmmModelFile)
           
-            queueOut.put((binId, models))
+            queueOut.put((binId, hmmModelFile))
 
     def __reportProgress(self, numBins, binIdToModels, queueIn):
         """Report number of processed bins."""
@@ -133,11 +127,18 @@ class MarkerGeneFinder():
             sys.stderr.flush()
 
         while True:
-            binId, models = queueIn.get(block=True, timeout=None)
+            binId, hmmModelFile = queueIn.get(block=True, timeout=None)
             if binId == None:
                 break
             
+            # parse HMM file
+            # (This is done here as pushing the models onto the shared queue is too memory intensive)
+            modelParser = HmmModelParser(hmmModelFile)
+            models = modelParser.models()
+            
             binIdToModels[binId] = models
+            
+            os.remove(hmmModelFile)
 
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
