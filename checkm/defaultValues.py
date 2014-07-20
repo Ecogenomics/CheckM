@@ -20,8 +20,13 @@
 ###############################################################################
 
 import os
+from checkm.checkmData import DBManager
+
 
 class DefaultValues():
+
+	__DBM = DBManager()
+
 	"""Default values for filenames and common constants."""
 	E_VAL = 1e-10
 	LENGTH = 0.7
@@ -31,7 +36,7 @@ class DefaultValues():
 
 	SEQ_CONCAT_CHAR = '&&'
 
-	CHECKM_DATA_DIR = '/srv/db/checkm'
+	CHECKM_DATA_DIR = __DBM.config.values["dataRoot"]
 	PHYLO_HMM_MODELS = phyloHMMs = os.path.join(CHECKM_DATA_DIR, 'hmms', 'phylo.hmm')
 	HMM_MODELS = os.path.join(CHECKM_DATA_DIR, 'hmms', 'checkm.hmm')
 	PFAM_CLAN_FILE = os.path.join(CHECKM_DATA_DIR, 'pfam', 'Pfam-A.hmm.dat')

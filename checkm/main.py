@@ -62,10 +62,23 @@ from checkm.plot.binQAPlot import BinQAPlot
 from checkm.plot.pcaPlot import PcaPlot
 from checkm.plot.gcBiasPlots import GcBiasPlot
 
+from checkm.checkmData import DBManager
 class OptionsParser():
     def __init__(self):
         self.logger = logging.getLogger()
         self.timeKeeper = TimeKeeper()
+
+        # make sure data is legit
+        self.DBM = DBManager()
+
+    def updateCheckM_DB(self, options):
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info(' [CheckM - data] Check for database updates. [%s]' % options.action[0])
+        self.logger.info('*******************************************************************************')
+        self.logger.info('')
+
+        self.DBM.runAction(options.action)
 
     def binFiles(self, binFolder, binExtension):
         binFiles = []
@@ -1100,8 +1113,15 @@ class OptionsParser():
                 options.file = ''
         except:
             pass
+<<<<<<< HEAD
+
+        if(options.subparser_name == "data"):
+            self.updateCheckM_DB(options)
+        elif(options.subparser_name == 'tree'):
+=======
         
         if(options.subparser_name == 'tree'):
+>>>>>>> 784bd7330bd2e05cd7baeca54e8a5096306e306b
             self.tree(options)
         elif(options.subparser_name == 'tree_qa'):
             self.treeQA(options)
@@ -1134,7 +1154,7 @@ class OptionsParser():
             options.out_format = 1
             options.file = ''
             options.bAlignTopHit = False
-            
+
             self.taxonSet(options)
             self.analyze(options)
             self.qa(options)
