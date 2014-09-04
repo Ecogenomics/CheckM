@@ -46,18 +46,18 @@ from  dendropy.dataobject.taxon import Taxon
 
 from numpy import mean, std, abs
 
-from checkm.lib.img import IMG
-from checkm.lib.seqUtils import readFasta
+from checkm.util.img import IMG
+from checkm.util.seqUtils import readFasta
 from lib.markerSetBuilder import MarkerSetBuilder
 
 class SimulationScaffolds(object):
     def __init__(self):
         self.markerSetBuilder = MarkerSetBuilder()
-        self.img = IMG()
+        self.img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         
-        self.contigLens = [5000]
-        self.percentComps = [0.5, 0.7, 0.9, 1.0]
-        self.percentConts = [0.0, 0.05, 0.1, 0.2]
+        self.contigLens = [5000, 20000, 50000]
+        self.percentComps = [0.5, 0.7, 0.8, 0.9, 0.95, 1.0]
+        self.percentConts = [0.0, 0.05, 0.1, 0.15, 0.2]
         
     def __seqLens(self, seqs):
         """Calculate lengths of seqs."""
@@ -114,24 +114,31 @@ class SimulationScaffolds(object):
                         deltaCompSetRefined = defaultdict(list)
                         deltaContSetRefined = defaultdict(list)
                         
+                        trueComps = []
+                        trueConts = []
+                        
                         numDescendants = {}
             
                         for i in xrange(0, numReplicates):
                             # generate test genome with a specific level of completeness, by randomly sampling scaffolds to remove 
                             # with a percentage inversely proportional to length
-                            sampledSeqIdsToRemove, perGenomeRemoved = self.markerSetBuilder.sampleGenomeScaffolds(1.0-percentComp, testSeqLens, genomeSize)
+                            sampledSeqIdsToRemove, perGenomeRemoved = self.markerSetBuilder.sampleGenomeScaffoldsInvLength(1.0-percentComp, testSeqLens, genomeSize)
                             
                             trueComp = 100.0 - perGenomeRemoved
+                            trueComps.append(trueComp)
+                            
                             retainedTestSeqs = []
                             for seqId in testSeqs:
                                 if seqId not in sampledSeqIdsToRemove:
                                     retainedTestSeqs.append(seqId)
-    
+                                    
                             # select a random genome to use as a source of contamination
                             contGenomeId = random.sample(genomeIdsToTest - set([testGenomeId]), 1)[0]
                             contSeqs = readFasta(os.path.join(self.img.genomeDir, contGenomeId, contGenomeId + '.fna'))
                             contSeqLens, contGenomeSize = self.__seqLens(contSeqs) 
-                            contSampledSeqIds, trueCont = self.markerSetBuilder.sampleGenomeScaffolds(percentCont, contSeqLens, contGenomeSize) 
+                            contSampledSeqIds, trueCont = self.markerSetBuilder.sampleGenomeScaffoldsInvLength(percentCont, contSeqLens, contGenomeSize) 
+                            
+                            trueConts.append(trueCont)
               
                             for ms in binMarkerSets.markerSetIter():  
                                 numDescendants[ms.lineageStr] = ms.numGenomes
@@ -161,12 +168,12 @@ class SimulationScaffolds(object):
                                 deltaContSetRefined[ms.lineageStr].append(contamination - trueCont)
                                 
                         taxonomy = ';'.join(metadata[testGenomeId]['taxonomy'])
-                        queueOut.put((testGenomeId, contigLen, percentComp, percentCont, taxonomy, numDescendants, unmodifiedComp, unmodifiedCont, deltaComp, deltaCont, deltaCompSet, deltaContSet, deltaCompRefined, deltaContRefined, deltaCompSetRefined, deltaContSetRefined))
+                        queueOut.put((testGenomeId, contigLen, percentComp, percentCont, taxonomy, numDescendants, unmodifiedComp, unmodifiedCont, deltaComp, deltaCont, deltaCompSet, deltaContSet, deltaCompRefined, deltaContRefined, deltaCompSetRefined, deltaContSetRefined, trueComps, trueConts))
             
     def __writerThread(self, numTestGenomes, writerQueue):
         """Store or write results of worker threads in a single thread."""
         
-        summaryOut = open('/tmp/simulation.scaffolds.draft.summary.tsv', 'w')
+        summaryOut = open('/tmp/simulation.scaffolds.draft.summary.w_refinement_50.tsv', 'w')
         summaryOut.write('Genome Id\tContig len\t% comp\t% cont')
         summaryOut.write('\tTaxonomy\tMarker set\t# descendants')
         summaryOut.write('\tUnmodified comp\tUnmodified cont')
@@ -175,20 +182,20 @@ class SimulationScaffolds(object):
         summaryOut.write('\tRIM comp\tRIM comp std\tRIM cont\tRIM cont std')
         summaryOut.write('\tRMS comp\tRMS comp std\tRMS cont\tRMS cont std\n')
         
-        fout = gzip.open('/tmp/simulation.scaffolds.draft.tsv.gz', 'wb')
+        fout = gzip.open('/tmp/simulation.scaffolds.draft.w_refinement_50.tsv.gz', 'wb')
         fout.write('Genome Id\tContig len\t% comp\t% cont')
         fout.write('\tTaxonomy\tMarker set\t# descendants')
         fout.write('\tUnmodified comp\tUnmodified cont')
         fout.write('\tIM comp\tIM cont')
         fout.write('\tMS comp\tMS cont')
         fout.write('\tRIM comp\tRIM cont')
-        fout.write('\tRMS comp\tRMS cont\n')
+        fout.write('\tRMS comp\tRMS cont\tTrue Comp\tTrue Cont\n')
         
         testsPerGenome = len(self.contigLens) * len(self.percentComps) * len(self.percentConts)
 
         itemsProcessed = 0
         while True:
-            testGenomeId, contigLen, percentComp, percentCont, taxonomy, numDescendants, unmodifiedComp, unmodifiedCont, deltaComp, deltaCont, deltaCompSet, deltaContSet, deltaCompRefined, deltaContRefined, deltaCompSetRefined, deltaContSetRefined = writerQueue.get(block=True, timeout=None)
+            testGenomeId, contigLen, percentComp, percentCont, taxonomy, numDescendants, unmodifiedComp, unmodifiedCont, deltaComp, deltaCont, deltaCompSet, deltaContSet, deltaCompRefined, deltaContRefined, deltaCompSetRefined, deltaContSetRefined, trueComps, trueConts = writerQueue.get(block=True, timeout=None)
             if testGenomeId == None:
                 break
 
@@ -222,6 +229,8 @@ class SimulationScaffolds(object):
                 fout.write('\t%s' % ','.join(map(str, deltaContRefined[markerSetId])))
                 fout.write('\t%s' % ','.join(map(str, deltaCompSetRefined[markerSetId])))
                 fout.write('\t%s' % ','.join(map(str, deltaContSetRefined[markerSetId])))
+                fout.write('\t%s' % ','.join(map(str, trueComps)))
+                fout.write('\t%s' % ','.join(map(str, trueConts)))
                 fout.write('\n')
             
         summaryOut.close()
@@ -233,7 +242,7 @@ class SimulationScaffolds(object):
         random.seed(0)
           
         print '\n  Reading reference genome tree.'
-        treeFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
+        treeFile = os.path.join('/srv', 'db', 'checkm', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
         
         print '    Number of taxa in tree: %d' % (len(tree.leaf_nodes()))
@@ -258,6 +267,11 @@ class SimulationScaffolds(object):
 
         print ''
         print '  Pre-computing genome information for calculating marker sets:'
+        start = time.time()
+        self.markerSetBuilder.readLineageSpecificGenesToRemove()
+        end = time.time()
+        print '    readLineageSpecificGenesToRemove: %.2f' % (end - start)
+        
         start = time.time()
         self.markerSetBuilder.precomputeGenomeFamilyScaffolds(metadata.keys())
         end = time.time()
@@ -301,7 +315,7 @@ class SimulationScaffolds(object):
         for p in workerProc:
             p.join()
 
-        writerQueue.put((None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None))
+        writerQueue.put((None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None))
         writeProc.join()
  
 if __name__ == '__main__':

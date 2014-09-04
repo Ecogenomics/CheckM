@@ -122,7 +122,7 @@ class ResultsParser():
     def __writeMarkerGeneStats(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
         markerGenes = {}
         for binId in self.results:
-            markerGenes[binId] = self.results[binId].getSummary(binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=9)
+            markerGenes[binId] = self.results[binId].getSummary(binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=8)
 
         markerGenesFile = os.path.join(directory, 'storage', DefaultValues.MARKER_GENE_STATS)
         fout = open(markerGenesFile, 'w')
@@ -227,22 +227,18 @@ class ResultsParser():
                 self.logger.error('  [Error] Labeling error: GC std (scaffolds > 1kbp)')
                 sys.exit()
         elif outputFormat == 3:
-            header = ['Bin Id', 'Marker Id', 'Marker lineage', '# genomes', '# markers','# marker sets','0','1','2','3','4','5+','Completeness','Contamination','Strain heterogeneity']
+            header = ['Bin Id', 'Node Id', 'Marker lineage', '# genomes', '# markers','# marker sets','0','1','2','3','4','5+','Completeness','Contamination','Strain heterogeneity']
         elif outputFormat == 4:
-            header = []
+            header = None
         elif outputFormat == 5:
-            columns = binMarkerSets.selectedMarkerSet().getMarkerGenes()
-            header = ['']
-            header.extend(columns)
+            header = ['Bin Id','Marker Id','Gene Id']
         elif outputFormat == 6:
-            header = ['Bin Id','Marker Id','Scaffold Id']
+            header = ['Bin Id','Marker Id','Gene Ids']
         elif outputFormat == 7:
-            header = ['Bin Id','Marker Id','Scaffold Ids']
+            header = ['Bin Id','Marker Id','Gene Ids']
         elif outputFormat == 8:
-            header = ['Bin Id','Scaffold Id','Scaffold Ids']
-        elif outputFormat == 9:
             header = ['Bin Id','Gene Id','{Marker Id, Start position, End position}']
-        elif outputFormat == 10:
+        elif outputFormat == 9:
             header = ['Scaffold Id','Bin Id','Length','# contigs','GC','# ORFs','Coding density','Marker Ids']
 
         return header
@@ -262,7 +258,9 @@ class ResultsParser():
         if bTabTable or outputFormat not in prettyTableFormats:
             bTabTable = True
             pTable = None
-            print('\t'.join(header))
+            
+            if header != None:
+                print('\t'.join(header))
         else:
             pTable = prettytable.PrettyTable(header)
             pTable.float_format = '.2'
@@ -375,6 +373,7 @@ class ResultsManager():
                         if scaffoldIdI == scaffoldIdJ:
                             orfNumI = int(orfI[orfI.rfind('_')+1:])
                             orfNumJ = int(orfJ[orfJ.rfind('_')+1:])
+
                             if abs(orfNumI - orfNumJ) == 1:
                                 # check if hits are to different parts of the HMM
                                 sI = hits[i].hmm_from
@@ -382,13 +381,13 @@ class ResultsManager():
 
                                 sJ = hits[j].hmm_from
                                 eJ = hits[j].hmm_to
-
-                                if (sI <= sJ and eI > sJ) or (sJ <= sI and eJ > sI):
+                                
+                                if (sI <= sJ and eI > sJ) or (sJ <= sI and eJ > sI):                                   
                                     # models overlap so treat these as unique hits
                                     # which may represent an assembly error or a true
                                     # gene duplication
                                     pass
-                                else:
+                                else:                                    
                                     # combine the two hits
                                     bCombined = True
                                     break
@@ -396,7 +395,6 @@ class ResultsManager():
                     if bCombined:
                         newHit = hits[i]
                         newHit.target_name = DefaultValues.SEQ_CONCAT_CHAR.join(sorted([orfI, orfJ]))
-
                         newHit.target_length = hits[i].target_length + hits[j].target_length
 
                         newHit.hmm_from = min(hits[i].hmm_from, hits[j].hmm_from)
@@ -537,17 +535,8 @@ class ResultsManager():
             summary['Completeness'] = data[6]
             summary['Contamination'] = data[7]
             summary.update(self.binStats)
-        elif outputFormat == 4:
-            data = self.hitsToMarkerGene(binMarkerSets.selectedMarkerSet())
-            for marker, count in data.iteritems():
-                summary[marker] = count
 
         elif outputFormat == 5:
-            data = self.hitsToMarkerGene(binMarkerSets.selectedMarkerSet())
-            for marker, count in data.iteritems():
-                summary[marker] = count
-
-        elif outputFormat == 6:
             # tabular of bin_id, marker, contig_id
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
@@ -559,7 +548,7 @@ class ResultsManager():
                 for hit in hit_list:
                     summary[marker].append(hit.target_name)
 
-        elif outputFormat == 7:
+        elif outputFormat == 6:
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             for marker, hit_list in self.markerHits.items():
@@ -571,7 +560,7 @@ class ResultsManager():
                     for hit in hit_list:
                         summary[marker].append(hit.target_name)
 
-        elif outputFormat == 8:
+        elif outputFormat == 7:
             # tabular - print only contigs that have more than one copy
             # of the same marker on them
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
@@ -595,7 +584,7 @@ class ResultsManager():
 
                         summary[contig_name][marker_name] = marker_count
 
-        elif outputFormat == 9:
+        elif outputFormat == 8:
             # tabular - print only position of marker genes
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
@@ -612,7 +601,7 @@ class ResultsManager():
                 for hit in hits:
                     summary[geneId][hit.query_accession] = summary[geneId].get(hit.query_accession, []) + [[hit.ali_from, hit.ali_to]]
 
-        elif outputFormat == 10:
+        elif outputFormat == 9:
             pass
         else:
             print("Unknown output format: ", outputFormat)
@@ -689,37 +678,18 @@ class ResultsManager():
         elif outputFormat == 4:
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
             data = self.hitsToMarkerGene(binMarkerSets.selectedMarkerSet())
-            print("--------------------")
-            print(self.binId)
-
-            markerHits = 0
-            for marker, count in data.iteritems():
-                print("%s\t%d" % (marker, count))
-                if count >= 1:
-                    markerHits += 1
-
-            print("Total: %d / %d (%0.2f" % (markerHits,
-                                              selectedMarkerSet.numMarkers(),
-                                              100*float(markerHits)/float(selectedMarkerSet.numMarkers())
-                                              )+"%)")
+            row = "Node Id: %s; Marker lineage: %s" % (selectedMarkerSet.UID, selectedMarkerSet.lineageStr)
+            for marker in data:
+                row += '\t' + marker
+            print(row)
+            
+            row = self.binId
+            for count in data.values():
+                row += '\t' + str(count)
+            print(row)
+            
+            print()
         elif outputFormat == 5:
-            # matrix of bin vs marker counts
-            data = self.hitsToMarkerGene(binMarkerSets.selectedMarkerSet())
-
-            columns = binMarkerSets.selectedMarkerSet().getMarkerGenes()
-
-            rowStr = self.binId
-            for marker in columns:
-                count = 0
-                try:
-                    count = data[marker]
-                except KeyError:
-                    pass
-                else:
-                    rowStr += '\t' + str(count)
-            print(rowStr)
-
-        elif outputFormat == 6:
             # tabular of bin_id, marker, contig_id
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
@@ -730,7 +700,7 @@ class ResultsManager():
                 for hit in hit_list:
                     print(self.binId, marker, hit.target_name, sep='\t', end='\n')
 
-        elif outputFormat == 7:
+        elif outputFormat == 6:
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             for marker, hitList in self.markerHits.items():
@@ -746,7 +716,7 @@ class ResultsManager():
 
                     print(','.join(sorted(scaffoldIds)), end='\n')
 
-        elif outputFormat == 8:
+        elif outputFormat == 7:
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             for marker, hitList in self.markerHits.items():
@@ -766,7 +736,7 @@ class ResultsManager():
                         print(self.binId, marker, sep='\t', end='\t')
                         print(','.join(sorted(list(scaffoldsWithMultipleHits))), end='\n')
 
-        elif outputFormat == 9:
+        elif outputFormat == 8:
             # tabular - print only position of marker genes
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
@@ -784,7 +754,7 @@ class ResultsManager():
                     rowStr += '\t' + hit.query_accession + ',' + str(hit.ali_from) + ',' + str(hit.ali_to)
                 print(rowStr)
 
-        elif outputFormat == 10:
+        elif outputFormat == 9:
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             markersInScaffold = {}

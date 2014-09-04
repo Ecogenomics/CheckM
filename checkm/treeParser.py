@@ -377,6 +377,44 @@ class TreeParser():
         refinedMarkerSet = MarkerSet(markerSet.UID, markerSet.lineageStr, markerSet.numGenomes, finalMarkerSet)
 
         return refinedMarkerSet
+    
+    def __readLineageSpecificGenesToRemove(self):
+        """Get set of genes subject to lineage-specific gene loss and duplication."""       
+    
+        self.lineageSpecificGenesToRemove = {}
+        for line in open('/srv/whitlam/bio/db/checkm/genome_tree/missing_duplicate_genes_50.tsv'):
+            lineSplit = line.split('\t')
+            uid = lineSplit[0]
+            missingGenes = eval(lineSplit[1])
+            duplicateGenes = eval(lineSplit[2])
+            self.lineageSpecificGenesToRemove[uid] = missingGenes.union(duplicateGenes)
+            
+    def __removeInvalidLineageMarkerGenes(self, markerSet, lineageSpecificMarkersToRemove):
+        """Refine marker set to account for lineage-specific gene loss and duplication."""
+                                        
+        # refine marker set by removing marker genes subject to lineage-specific
+        # gene loss and duplication 
+        #
+        # Note: co-localization information is taken from the trusted set
+                
+        finalMarkerSet = []
+        for ms in markerSet.markerSet:
+            s = set()
+            for gene in ms:
+                geneIdToTest = gene
+                if geneIdToTest.startswith('PF'):
+                    geneIdToTest = gene.replace('PF', 'pfam')
+                    geneIdToTest = geneIdToTest[0:geneIdToTest.rfind('.')]
+                    
+                if geneIdToTest not in lineageSpecificMarkersToRemove:
+                    s.add(gene)
+                           
+            if s:
+                finalMarkerSet.append(s)
+
+        refinedMarkerSet = MarkerSet(markerSet.UID, markerSet.lineageStr, markerSet.numGenomes, finalMarkerSet)
+    
+        return refinedMarkerSet
 
     def getBinMarkerSets(self, outDir, markerFile,
                                     numGenomesMarkers, numGenomesRefine,
@@ -435,8 +473,14 @@ class TreeParser():
                     curNode = domainNode.child_nodes()[0]
                 else:
                     curNode = node
+                    
+                # get lineage specific refinement for first node with an id
+                if bLineageSpecificRefinement:
+                    uniqueId = parentNode.label.split('|')[0]
+                    self.__readLineageSpecificGenesToRemove()
+                    lineageSpecificRefinement = self.lineageSpecificGenesToRemove[uniqueId]
 
-                # ascend tree to root, recording all marker sets meeting selection criteria
+                # ascend tree to root, recording all marker sets meeting selection criteria                
                 while curNode.parent_node != None:
                     uniqueHits, multiCopyHits = resultsParser.results[binId].countUniqueHits()
                     tempForceDomain = bForceDomain or (uniqueHits < minUnique) or (multiCopyHits > maxMulti)
@@ -445,9 +489,12 @@ class TreeParser():
                                                                 numGenomesMarkers, numGenomesRefine, bootstrap,
                                                                 tempForceDomain, bRequireTaxonomy)
                     
-                    if bLineageSpecificRefinement and bRoot == False:
-                        markerSet = self.__refineMarkerSet(markerSet, node, tree, uniqueIdToLineageStatistics, numGenomesRefine)
-
+                    #if bLineageSpecificRefinement and bRoot == False:
+                    #    markerSet = self.__refineMarkerSet(markerSet, node, tree, uniqueIdToLineageStatistics, numGenomesRefine)
+                                            
+                    if bLineageSpecificRefinement:
+                        markerSet = self.__removeInvalidLineageMarkerGenes(markerSet, lineageSpecificRefinement)
+                        
                     binMarkerSets.addMarkerSet(markerSet)
 
             binMarkerSets.write(fout)

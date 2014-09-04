@@ -45,15 +45,21 @@ from scipy.stats import scoreatpercentile
 
 class SimComparePlots(object):
     def __init__(self):
+        
+        self.plotPrefix = './simulations/simulation.draft.w_refinement_50'
+        self.simCompareFile = './simulations/simCompare.draft.w_refinement_50.full.tsv'
+        self.simCompareTaxonomyTableOut = './simulations/simCompare.draft.taxonomy_table.w_refinement_50.tsv'
+        self.simCompareRefinementTableOut = './simulations/simCompare.draft.refinment_table.w_refinement_50.tsv'
+        
         #self.plotPrefix = './simulations/simulation.draft'
         #self.simCompareFile = './simulations/simCompare.draft.full.tsv'
         #self.simCompareTaxonomyTableOut = './simulations/simCompare.draft.taxonomy_table.tsv'
         #self.simCompareRefinementTableOut = './simulations/simCompare.draft.refinment_table.tsv'
         
-        self.plotPrefix = './simulations/simulation.scaffolds.draft'
-        self.simCompareFile = './simulations/simCompare.scaffolds.draft.full.tsv'
-        self.simCompareTaxonomyTableOut = './simulations/simCompare.scaffolds.draft.taxonomy_table.tsv'
-        self.simCompareRefinementTableOut = './simulations/simCompare.scaffolds.draft.refinment_table.tsv'
+        #self.plotPrefix = './simulations/simulation.scaffolds.draft'
+        #self.simCompareFile = './simulations/simCompare.scaffolds.draft.full.tsv'
+        #self.simCompareTaxonomyTableOut = './simulations/simCompare.scaffolds.draft.taxonomy_table.tsv'
+        #self.simCompareRefinementTableOut = './simulations/simCompare.scaffolds.draft.refinment_table.tsv'
         
         self.img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
   

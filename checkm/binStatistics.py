@@ -53,19 +53,26 @@ class BinStatistics():
         for _ in range(self.totalThreads):
             workerQueue.put(None)
 
-        calcProc = [mp.Process(target = self.__processBin, args = (outDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target = self.__reportProgress, args = (outDir, binStatsFile, seqStatsFile, len(binFiles), writerQueue))
-
-        writeProc.start()
-        
-        for p in calcProc:
-            p.start()
-
-        for p in calcProc:
-            p.join()
+        try:
+            calcProc = [mp.Process(target = self.__processBin, args = (outDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target = self.__reportProgress, args = (outDir, binStatsFile, seqStatsFile, len(binFiles), writerQueue))
+    
+            writeProc.start()
             
-        writerQueue.put((None, None, None))
-        writeProc.join()
+            for p in calcProc:
+                p.start()
+    
+            for p in calcProc:
+                p.join()
+            
+            writerQueue.put((None, None, None))
+            writeProc.join()
+        except:
+            # make sure all processes are terminated
+            for p in calcProc:
+                p.terminate()
+                
+            writeProc.terminate()
               
     def __processBin(self, outDir, queueIn, queueOut):
         """Thread safe bin processing."""

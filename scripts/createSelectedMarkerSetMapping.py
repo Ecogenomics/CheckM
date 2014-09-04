@@ -63,7 +63,7 @@ class CreateSelectedMarkerSetMapping(object):
         fout = open('./simulations/selected_marker_sets.tsv', 'w')    
         
         # read tree
-        treeFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
+        treeFile = os.path.join('/srv/whitlam/bio/db/checkm', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
         
         # reading marker set inferred via simulation

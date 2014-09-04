@@ -50,7 +50,7 @@ class PplacerRunner():
         concatenatedAlignFile = self.__createConcatenatedAlignment(binFiles, resultsParser, alignOutputDir)
 
         # run pplacer to place bins in reference genome tree
-        self.logger.info('  Placing %d bins in the genome tree with pplacer (be patient).' % len(binFiles))
+        self.logger.info('  Placing %d bins into the genome tree with pplacer (be patient).' % len(binFiles))
         pplacerJsonOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_JSON_OUT)
         pplacerOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_OUT)
         cmd = 'pplacer -j %d -c %s -o %s %s > %s' % (self.numThreads,

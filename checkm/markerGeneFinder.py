@@ -60,19 +60,27 @@ class MarkerGeneFinder():
             workerQueue.put(None)
 
         binIdToModels = mp.Manager().dict()
-        calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target = self.__reportProgress, args = (len(binFiles), binIdToModels, writerQueue))
-
-        writeProc.start()
-
-        for p in calcProc:
-            p.start()
-
-        for p in calcProc:
-            p.join()
-
-        writerQueue.put((None, None))
-        writeProc.join()
+        
+        try:
+            calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target = self.__reportProgress, args = (len(binFiles), binIdToModels, writerQueue))
+    
+            writeProc.start()
+    
+            for p in calcProc:
+                p.start()
+    
+            for p in calcProc:
+                p.join()
+    
+            writerQueue.put((None, None))
+            writeProc.join()
+        except:
+            # make sure all processes are terminated
+            for p in calcProc:
+                p.terminate()
+                
+            writeProc.terminate()
 
         # create a standard dictionary from the managed dictionary
         d = {}
@@ -97,7 +105,7 @@ class MarkerGeneFinder():
 
             # run Prodigal
             prodigal = ProdigalRunner(binDir)
-            if not prodigal.areORFsCalled():
+            if not prodigal.areORFsCalled(bNucORFs):
                 prodigal.run(binFile, bNucORFs)
 
             # extract HMMs into temporary file

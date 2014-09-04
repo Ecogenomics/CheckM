@@ -44,15 +44,15 @@ from  dendropy.dataobject.taxon import Taxon
 
 class SimCompare(object):
     def __init__(self):
-        #self.resultsSummaryFile = './simulations/simulation.draft.summary.tsv'
-        #self.resultsFullFile = './simulations/simulation.draft.tsv.gz'
-        #self.simCompareSummaryOut = './simulations/simCompare.draft.summary.tsv'
-        #self.simCompareFullOut = './simulations/simCompare.draft.full.tsv'
+        self.resultsSummaryFile = './simulations/simulation.draft.summary.w_refinement_50.reduced_param.tsv'
+        self.resultsFullFile = './simulations/simulation.draft.w_refinement_50.reduced_param.tsv.gz'
+        self.simCompareSummaryOut = './simulations/simCompare.draft.w_refinement_50.summary.tsv'
+        self.simCompareFullOut = './simulations/simCompare.draft.w_refinement_50.full.tsv'
         
-        self.resultsSummaryFile = './simulations/simulation.scaffolds.draft.summary.tsv'
-        self.resultsFullFile = './simulations/simulation.scaffolds.draft.tsv.gz'
-        self.simCompareSummaryOut = './simulations/simCompare.scaffolds.draft.summary.tsv'
-        self.simCompareFullOut = './simulations/simCompare.scaffolds.draft.full.tsv'
+        #self.resultsSummaryFile = './simulations/simulation.scaffolds.draft.summary.tsv'
+        #self.resultsFullFile = './simulations/simulation.scaffolds.draft.tsv.gz'
+        #self.simCompareSummaryOut = './simulations/simCompare.scaffolds.draft.summary.tsv'
+        #self.simCompareFullOut = './simulations/simCompare.scaffolds.draft.full.tsv'
             
     def __bestMarkerSet(self, simId, simResults):
         """Get stats for best marker set."""

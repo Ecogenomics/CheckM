@@ -28,7 +28,7 @@ __license__ = "GPL3"
 __maintainer__ = "Donovan Parks"
 __email__ = "donovan.parks@gmail.com"
 __status__ = "Development"
-__version__ = "0.8.0"
+__version__ = "0.9.0"
 
 import argparse
 import sys
@@ -49,7 +49,7 @@ def printHelp():
 
   Taxonomic-specific marker set:
     taxon_list   -> List available taxonomic-specific marker sets
-    taxon_set    -> Infer taxonomic-specific marker set
+    taxon_set    -> Generate taxonomic-specific marker set
 
   Apply marker set to genome bins:
     analyze      -> Identify marker genes in bins
@@ -116,22 +116,6 @@ if __name__ == '__main__':
             setRoot <PATH>  -> set the data dir to <PATH> (requires permissions)
             ''')
 
-    output_parser = argparse.ArgumentParser(add_help=False)
-    output_parser.add_argument('-o', '--out_format', type=int,
-            help='''desired output:
-                1. summary of bin completeness and contamination
-                2. extended summary of bin statistics (includes GC, genome size, ...)
-                3. summary of bin completeness and contamination for ALL marker sets
-                4. list of marker names and their counts
-                5. matrix of marker counts
-                6. list of bin name, marker name, scaffold name
-                7. list of markers present multiple times in a bin
-                8. list of markers present multiple times on the same scaffold
-                9. list indicating marker genes within each bin
-                10. list of scaffold name, bin name, length, GC, coverage, marker name(s)''',
-            default=1, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    output_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
-
     # determine placement of each genome bin in the genome tree
     tree_parser = subparsers.add_parser('tree',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -193,7 +177,7 @@ if __name__ == '__main__':
     # calculate taxonomic-specific marker set
     taxon_set_parser = subparsers.add_parser('taxon_set',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        description='Infer taxonomic-specific marker set.',
+                                        description='Generate taxonomic-specific marker set.',
                                         epilog = 'Example: checkm taxon_set domain Bacteria bacteria.ms')
     taxon_set_parser.add_argument('rank', help="taxonomic rank", choices=taxonomicRanks)
     taxon_set_parser.add_argument('taxon', help="taxon of interest")
@@ -219,11 +203,22 @@ if __name__ == '__main__':
     # do QA on pre-processed contigs
     qa_parser = subparsers.add_parser('qa',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                        parents=[output_parser],
                                         description='Assess bins for contamination and completeness.',
                                         epilog='Example: checkm qa lineage.ms ./output')
     qa_parser.add_argument('marker_file', help="marker file specified during analyze command")
     qa_parser.add_argument('analyze_folder', help="folder specified during analyze command")
+    qa_parser.add_argument('-o', '--out_format', type=int,
+                                help='''desired output:
+                                    1. summary of bin completeness and contamination
+                                    2. extended summary of bin statistics (includes GC, genome size, ...)
+                                    3. summary of bin quality for increasingly basal lineage-specific marker sets
+                                    4. list of marker genes and their counts
+                                    5. list of bin id, marker gene id, gene id
+                                    6. list of marker genes present multiple times in a bin
+                                    7. list of marker genes present multiple times on the same scaffold
+                                    8. list indicating position of each marker genes within a bin
+                                    9. scaffold statistics: scaffold id, bin id, length, GC, ..., marker gene(s)''',
+                                default=1, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     qa_parser.add_argument('--individual_markers', dest='bIndividualMarkers', action="store_true", default=False, help="treat marker as independent (i.e., ignore co-located set structure)")
     qa_parser.add_argument('--skip_orf_correction', dest='bSkipOrfCorrection', action="store_true", default=False, help="skip identification of ORF errors affecting marker genes")
     qa_parser.add_argument('--aai_strain', type=float, default=0.9, help="AAI threshold used to identify strain heterogeneity")
@@ -232,6 +227,7 @@ if __name__ == '__main__':
     qa_parser.add_argument('-e', '--e_value', type=float, default=DefaultValues.E_VAL, help="e-value cut off")
     qa_parser.add_argument('-l', '--length', type=float, default=DefaultValues.LENGTH, help="percent overlap between target and query")
     qa_parser.add_argument('-c', '--coverage_file', default=None, help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
+    qa_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     qa_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     qa_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -571,9 +567,9 @@ if __name__ == '__main__':
     merge_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     merge_parser.add_argument('out_folder', help="folder to write output files")
     merge_parser.add_argument('--delta_comp', help="minimum increase in completeness to report pair", type=float, default = 5.0)
-    merge_parser.add_argument('--delta_cont', help="maximum increase in contamination to report pair", type=float, default = 5.0)
+    merge_parser.add_argument('--delta_cont', help="maximum increase in contamination to report pair", type=float, default = 10.0)
     merge_parser.add_argument('--merged_comp', help="minimum merged completeness to report pair", type=float, default = 70.0)
-    merge_parser.add_argument('--merged_cont', help="maximum merged contamination to report pair", type=float, default = 10.0)
+    merge_parser.add_argument('--merged_cont', help="maximum merged contamination to report pair", type=float, default = 20.0)
     merge_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     merge_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     merge_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")

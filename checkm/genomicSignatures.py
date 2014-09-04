@@ -162,19 +162,26 @@ class GenomicSignatures(object):
         for _ in range(self.totalThreads):
             workerQueue.put((None, None))
 
-        calcProc = [mp.Process(target = self.__calculateResults, args = (workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target = self.__storeResults, args = (seqFile, outputFile, len(seqs), writerQueue))
-
-        writeProc.start()
-
-        for p in calcProc:
-            p.start()
-
-        for p in calcProc:
-            p.join()
-
-        writerQueue.put((None, None))
-        writeProc.join()
+        try:
+            calcProc = [mp.Process(target = self.__calculateResults, args = (workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target = self.__storeResults, args = (seqFile, outputFile, len(seqs), writerQueue))
+    
+            writeProc.start()
+    
+            for p in calcProc:
+                p.start()
+    
+            for p in calcProc:
+                p.join()
+    
+            writerQueue.put((None, None))
+            writeProc.join()
+        except:
+            # make sure all processes are terminated
+            for p in calcProc:
+                p.terminate()
+                
+            writeProc.terminate()
 
     def distance(self, sig1, sig2):
         return np.sum(np.abs(sig1 - sig2))

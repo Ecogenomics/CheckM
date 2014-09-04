@@ -197,19 +197,26 @@ class Coverage():
         for _ in range(self.totalThreads):
             workerQueue.put((None, None))
 
-        workerProc = [mp.Process(target = self.__workerThread, args = (bamFile, bAllReads, minAlignPer, maxEditDistPer, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target = self.__writerThread, args = (coverageInfo, len(refSeqIds), writerQueue))
-
-        writeProc.start()
-
-        for p in workerProc:
-            p.start()
-
-        for p in workerProc:
-            p.join()
-
-        writerQueue.put((None, None, None, None, None, None, None, None, None, None, None))
-        writeProc.join()
+        try:
+            workerProc = [mp.Process(target = self.__workerThread, args = (bamFile, bAllReads, minAlignPer, maxEditDistPer, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target = self.__writerThread, args = (coverageInfo, len(refSeqIds), writerQueue))
+    
+            writeProc.start()
+    
+            for p in workerProc:
+                p.start()
+    
+            for p in workerProc:
+                p.join()
+    
+            writerQueue.put((None, None, None, None, None, None, None, None, None, None, None))
+            writeProc.join()
+        except:
+            # make sure all processes are terminated
+            for p in workerProc:
+                p.terminate()
+                
+            writeProc.terminate()
 
         return coverageInfo
 

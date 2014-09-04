@@ -296,19 +296,27 @@ class MarkerSetParser():
             workerQueue.put(None)
 
         binIdToModels = mp.Manager().dict()
-        calcProc = [mp.Process(target = self.__fetchModelInfo, args = (binIdToModels, markerFile, workerQueue, writerQueue)) for _ in range(self.numThreads)]
-        writeProc = mp.Process(target = self.__reportFetchProgress, args = (len(binIds), writerQueue))
-
-        writeProc.start()
-
-        for p in calcProc:
-            p.start()
-
-        for p in calcProc:
-            p.join()
-
-        writerQueue.put(None)
-        writeProc.join()
+        
+        try:
+            calcProc = [mp.Process(target = self.__fetchModelInfo, args = (binIdToModels, markerFile, workerQueue, writerQueue)) for _ in range(self.numThreads)]
+            writeProc = mp.Process(target = self.__reportFetchProgress, args = (len(binIds), writerQueue))
+    
+            writeProc.start()
+    
+            for p in calcProc:
+                p.start()
+    
+            for p in calcProc:
+                p.join()
+    
+            writerQueue.put(None)
+            writeProc.join()
+        except:
+            # make sure all processes are terminated
+            for p in calcProc:
+                p.terminate()
+                
+            writeProc.terminate()
 
         # create a standard dictionary from the managed dictionary
         d = {}
@@ -383,7 +391,7 @@ class MarkerSetParser():
 
         # extract marker genes along with all genes from the same clan
         allMarkers = markerGenes | genesInSameClan
-
+    
         if bReportProgress:
             self.logger.info("  There are %d genes in the marker set and %d genes from the same PFAM clan." % (len(markerGenes), len(genesInSameClan)))
 

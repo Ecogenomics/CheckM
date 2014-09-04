@@ -152,19 +152,26 @@ class HmmerAligner:
         for _ in range(self.totalThreads):
             workerQueue.put(None)
 
-        calcProc = [mp.Process(target = self.__createMSA, args = (resultsParser, binIdToBinMarkerSets, markerFile, outDir, alignOutputDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target = self.__reportBinProgress, args = (len(binIdToModels), writerQueue))
-
-        writeProc.start()
-
-        for p in calcProc:
-            p.start()
-
-        for p in calcProc:
-            p.join()
-
-        writerQueue.put(None)
-        writeProc.join()
+        try:
+            calcProc = [mp.Process(target = self.__createMSA, args = (resultsParser, binIdToBinMarkerSets, markerFile, outDir, alignOutputDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target = self.__reportBinProgress, args = (len(binIdToModels), writerQueue))
+    
+            writeProc.start()
+    
+            for p in calcProc:
+                p.start()
+    
+            for p in calcProc:
+                p.join()
+    
+            writerQueue.put(None)
+            writeProc.join()
+        except:
+            # make sure all processes are terminated
+            for p in calcProc:
+                p.terminate()
+                
+            writeProc.terminate()
 
     def __createMSA(self, resultsParser, binIdToBinMarkerSets, hmmModelFile, outDir, alignOutputDir, queueIn, queueOut):
         """Create multiple sequence alignment for markers with multiple hits in a bin."""
@@ -231,19 +238,26 @@ class HmmerAligner:
         for _ in range(self.totalThreads):
             workerQueue.put(None)
 
-        calcProc = [mp.Process(target = self.__alignMarkerParallel, args = (markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target = self.__reportAlignmentProgress, args = (len(hmmModelFiles), bReportProgress, writerQueue))
-
-        writeProc.start()
-
-        for p in calcProc:
-            p.start()
-
-        for p in calcProc:
-            p.join()
-
-        writerQueue.put(None)
-        writeProc.join()
+        try:
+            calcProc = [mp.Process(target = self.__alignMarkerParallel, args = (markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target = self.__reportAlignmentProgress, args = (len(hmmModelFiles), bReportProgress, writerQueue))
+    
+            writeProc.start()
+    
+            for p in calcProc:
+                p.start()
+    
+            for p in calcProc:
+                p.join()
+    
+            writerQueue.put(None)
+            writeProc.join()
+        except:
+            # make sure all processes are terminated
+            for p in calcProc:
+                p.terminate()
+                
+            writeProc.terminate()
 
     def __alignMarkerParallel(self, markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, queueIn, queueOut):
         while True:
@@ -450,19 +464,26 @@ class HmmerAligner:
         for _ in range(self.totalThreads):
             workerQueue.put((None, None))
 
-        calcProc = [mp.Process(target = self.__extractModel, args = (hmmModelFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target = self.__reportModelExtractionProgress, args = (len(modelKeys), bReportProgress, writerQueue))
-
-        writeProc.start()
-
-        for p in calcProc:
-            p.start()
-
-        for p in calcProc:
-            p.join()
-
-        writerQueue.put(None)
-        writeProc.join()
+        try:
+            calcProc = [mp.Process(target = self.__extractModel, args = (hmmModelFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target = self.__reportModelExtractionProgress, args = (len(modelKeys), bReportProgress, writerQueue))
+    
+            writeProc.start()
+    
+            for p in calcProc:
+                p.start()
+    
+            for p in calcProc:
+                p.join()
+    
+            writerQueue.put(None)
+            writeProc.join()
+        except:
+            # make sure all processes are terminated
+            for p in calcProc:
+                p.terminate()
+                
+            writeProc.terminate()
 
     def __extractModel(self, hmmModelFile, queueIn, queueOut):
         """Extract HMM."""

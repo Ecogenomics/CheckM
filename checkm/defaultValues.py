@@ -55,10 +55,10 @@ class DefaultValues():
 	CHECKM_HMM_MODEL_INFO = 'checkm_hmm_info.pkl.gz'
 
 	HMMER_TABLE_PHYLO_OUT = 'hmmer.tree.txt'
-	HMMER_PHYLO_OUT = 'hmmer.tree.hmmer3'
+	HMMER_PHYLO_OUT = 'hmmer.tree.ali.txt'
 
 	HMMER_TABLE_OUT = 'hmmer.analyze.txt'
-	HMMER_OUT = 'hmmer.analyze.hmmer3'
+	HMMER_OUT = 'hmmer.analyze.ali.txt'
 
 	PRODIGAL_AA = 'prodigal.faa'
 	PRODIGAL_NT = 'prodigal.fna'

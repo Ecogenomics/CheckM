@@ -72,7 +72,7 @@ class ProdigalRunner():
                 cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -i %s > %s 2> /dev/null' % (procedureStr, translationTable, aaGeneFile, query, gffFile))
 
             os.system(cmd)
-                
+
             if not self.__areORFsCalled(aaGeneFile) and procedureStr == 'single':
                 # prodigal will fail to learn a model if the input genome has a large number of N's
                 # so try gene prediction with 'meta'
@@ -107,11 +107,16 @@ class ProdigalRunner():
                 os.remove(self.ntGeneFile + '.' + str(translationTable))
 
         return bestTranslationTable
-    
+
     def __areORFsCalled(self, aaGeneFile):
         return os.path.exists(aaGeneFile) and os.stat(aaGeneFile)[stat.ST_SIZE] != 0
 
-    def areORFsCalled(self):
+    def areORFsCalled(self, bNucORFs):
+        # if requested, check if nucleotide gene sequences have been generated
+        if bNucORFs:
+            return os.path.exists(self.ntGeneFile) and os.stat(self.ntGeneFile)[stat.ST_SIZE] != 0
+        
+        # otherwise, only the amino acid gene sequences are required
         return os.path.exists(self.aaGeneFile) and os.stat(self.aaGeneFile)[stat.ST_SIZE] != 0
 
     def checkForProdigal(self):

@@ -27,8 +27,6 @@ import logging
 from pkg_resources import resource_filename
 import numpy as np
 import json
-import logging
-import errno
 
 from screamingbackpack.manifestManager import ManifestManager
 
