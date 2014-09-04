@@ -3,7 +3,7 @@ CHANGES.txt
 LICENSE.txt
 setup.py
 bin/checkm
-checkm/DBMANIFEST
+checkm/DATA_CONFIG
 checkm/PCA.py
 checkm/__init__.py
 checkm/aminoAcidIdentity.py

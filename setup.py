@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(
-    name='checkm-ACE',
+    name='checkm-genome',
     version='0.9.0',
     author='Donovan Parks, Michael Imelfort, Connor Skennerton',
     author_email='donovan.parks@gmail.com',
