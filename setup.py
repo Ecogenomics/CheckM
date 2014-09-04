@@ -10,7 +10,7 @@ setup(
     url='http://pypi.python.org/pypi/checkm/',
     license='GPL3',
     description='Assess the quality of putative genome bins.',
-    long_description=open('README.md').read(),
+    long_description=open('README.txt').read(),
     install_requires=[
         "numpy >= 1.8.0",
         "scipy >= 0.9.0",
