@@ -31,6 +31,8 @@ from AbstractPlot import AbstractPlot
 
 from checkm.common import binIdFromFilename
 
+from pylab import subplot2grid
+
 class BinQAPlot(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
@@ -50,12 +52,20 @@ class BinQAPlot(AbstractPlot):
     def plot(self, binFiles, binStatsExt, bIgnoreHetero, aaiHetero):
         self.fig.clear()
 
-        height = self.options.row_height * (len(binFiles) + 3)
+        rowPadding = 1.1
+        height = rowPadding * self.options.row_height * len(binFiles)     # make room for each row with 5% border
+        
+        legendHeight = 0.5 * self.options.row_height + 0.5
+        height += legendHeight                                      # make room for legends
         self.fig.set_size_inches(self.options.width, height)
-
+        
+        fracRowHeight = self.options.row_height / height
+        
         self.logger.info('  Plotting bin completeness, contamination, and strain heterogeneity.')
 
         sortedBinIds = self.__sortBinsByCompleteness(binFiles, binStatsExt)
+        xLabelBounds = self.xLabelExtents(sortedBinIds, self.options.font_size)
+        labelWidth = 1.05*xLabelBounds.width
 
         for i, binId in enumerate(sortedBinIds):
             if self.logger.getEffectiveLevel() <= logging.INFO:
@@ -63,7 +73,8 @@ class BinQAPlot(AbstractPlot):
                 sys.stdout.write('%s\r' % statusStr)
                 sys.stdout.flush()
 
-            axes = self.fig.add_subplot(len(binFiles)+3, 1, i+1)
+            axes = self.fig.add_axes([labelWidth, 1.0 - rowPadding * (i+1)*fracRowHeight, 1.0-labelWidth, fracRowHeight])
+            #axes = self.fig.add_subplot(len(binFiles), 1, i+1)
 
             # create a vector for each column indicating:
             #  0) single-copy
@@ -113,7 +124,7 @@ class BinQAPlot(AbstractPlot):
 
         # legends
         discreteColourMap = mpl.colors.ListedColormap([colors[0]])
-        axisColourMap = self.fig.add_axes([0.5 - 9.5*(self.options.row_height/self.options.width), self.options.row_height/height, 4*(self.options.row_height/self.options.width), self.options.row_height/height])
+        axisColourMap = self.fig.add_axes([0.05, 0.25/height, 0.1875, 0.5*fracRowHeight])
         colourBar = mpl.colorbar.ColorbarBase(axisColourMap, cmap=discreteColourMap, orientation='horizontal', drawedges=True)
         colourBar.set_ticks([0.5])
         colourBar.set_ticklabels(['1'])
@@ -122,7 +133,8 @@ class BinQAPlot(AbstractPlot):
         axisColourMap.set_title('Single-copy')
 
         discreteColourMap = mpl.colors.ListedColormap([colors[-1]])
-        axisColourMap = self.fig.add_axes([0.5 - 4.5*(self.options.row_height/self.options.width), self.options.row_height/height, 4*(self.options.row_height/self.options.width), self.options.row_height/height])
+        #axisColourMap = self.fig.add_axes([0.5 - 4.5*(self.options.row_height/self.options.width), self.options.row_height/height, 4*(self.options.row_height/self.options.width), 0.5*self.options.row_height/height])
+        axisColourMap = self.fig.add_axes([0.2875, 0.25/height, 0.1875, 0.5*fracRowHeight])
         colourBar = mpl.colorbar.ColorbarBase(axisColourMap, cmap=discreteColourMap, orientation='horizontal', drawedges=True)
         colourBar.set_ticks([0.5])
         colourBar.set_ticklabels(['0'])
@@ -131,7 +143,8 @@ class BinQAPlot(AbstractPlot):
         axisColourMap.set_title('Missing')
 
         discreteColourMap = mpl.colors.ListedColormap(blues)
-        axisColourMap = self.fig.add_axes([0.5 + 0.5*(self.options.row_height/self.options.width), self.options.row_height/height, 4*(self.options.row_height/self.options.width), self.options.row_height/height])
+        #axisColourMap = self.fig.add_axes([0.5 + 0.5*(self.options.row_height/self.options.width), self.options.row_height/height, 4*(self.options.row_height/self.options.width), 0.5*self.options.row_height/height])
+        axisColourMap = self.fig.add_axes([0.525, 0.25/height, 0.1875, 0.5*fracRowHeight])
         colourBar = mpl.colorbar.ColorbarBase(axisColourMap, cmap=discreteColourMap, orientation='horizontal', drawedges=True)
         colourBar.set_ticks([0.125, 0.375, 0.625, 0.875])
         colourBar.set_ticklabels(['2', '3', '4', '5+'])
@@ -140,7 +153,8 @@ class BinQAPlot(AbstractPlot):
         axisColourMap.set_title('Heterogeneity')
 
         discreteColourMap = mpl.colors.ListedColormap(reds)
-        axisColourMap = self.fig.add_axes([0.5 + 5.5*(self.options.row_height/self.options.width), self.options.row_height/height, 4*(self.options.row_height/self.options.width), self.options.row_height/height])
+        #axisColourMap = self.fig.add_axes([0.5 + 5.5*(self.options.row_height/self.options.width), self.options.row_height/height, 4*(self.options.row_height/self.options.width), 0.5*self.options.row_height/height])
+        axisColourMap = self.fig.add_axes([0.7625, 0.25/height, 0.1875, 0.5*fracRowHeight])
         colourBar = mpl.colorbar.ColorbarBase(axisColourMap, cmap=discreteColourMap, orientation='horizontal', drawedges=True)
         colourBar.set_ticks([0.125, 0.375, 0.625, 0.875])
         colourBar.set_ticklabels(['2', '3', '4', '5+'])
@@ -148,7 +162,6 @@ class BinQAPlot(AbstractPlot):
         colourBar.dividers.set_linewidth(0.5)
         axisColourMap.set_title('Contamination')
 
-        #self.fig.tight_layout(pad=5)
         self.draw()
 
     def skylinePlot(self,
@@ -210,5 +223,4 @@ class BinQAPlot(AbstractPlot):
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
         ax.spines["bottom"].set_visible(False)
-        #ax.axhline(linewidth=0.5, color="black")
 

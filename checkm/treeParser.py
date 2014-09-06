@@ -382,7 +382,7 @@ class TreeParser():
         """Get set of genes subject to lineage-specific gene loss and duplication."""       
     
         self.lineageSpecificGenesToRemove = {}
-        for line in open('/srv/whitlam/bio/db/checkm/genome_tree/missing_duplicate_genes_50.tsv'):
+        for line in open(os.path.join(DefaultValues.GENOME_TREE_DIR, 'missing_duplicate_genes_50.tsv')):
             lineSplit = line.split('\t')
             uid = lineSplit[0]
             missingGenes = eval(lineSplit[1])
@@ -418,7 +418,7 @@ class TreeParser():
 
     def getBinMarkerSets(self, outDir, markerFile,
                                     numGenomesMarkers, numGenomesRefine,
-                                    bootstrap, bLineageSpecificRefinement,
+                                    bootstrap, bNoLineageSpecificRefinement,
                                     bForceDomain, bRequireTaxonomy,
                                     resultsParser, minUnique, maxMulti):
         """Determine marker sets for each bin."""
@@ -475,7 +475,7 @@ class TreeParser():
                     curNode = node
                     
                 # get lineage specific refinement for first node with an id
-                if bLineageSpecificRefinement:
+                if not bNoLineageSpecificRefinement:
                     uniqueId = parentNode.label.split('|')[0]
                     self.__readLineageSpecificGenesToRemove()
                     lineageSpecificRefinement = self.lineageSpecificGenesToRemove[uniqueId]
@@ -488,11 +488,8 @@ class TreeParser():
                     curNode, markerSet = self.__getMarkerSet(curNode.parent_node, tree, uniqueIdToLineageStatistics,
                                                                 numGenomesMarkers, numGenomesRefine, bootstrap,
                                                                 tempForceDomain, bRequireTaxonomy)
-                    
-                    #if bLineageSpecificRefinement and bRoot == False:
-                    #    markerSet = self.__refineMarkerSet(markerSet, node, tree, uniqueIdToLineageStatistics, numGenomesRefine)
-                                            
-                    if bLineageSpecificRefinement:
+                       
+                    if not bNoLineageSpecificRefinement:
                         markerSet = self.__removeInvalidLineageMarkerGenes(markerSet, lineageSpecificRefinement)
                         
                     binMarkerSets.addMarkerSet(markerSet)

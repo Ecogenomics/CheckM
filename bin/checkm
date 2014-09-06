@@ -28,7 +28,7 @@ __license__ = "GPL3"
 __maintainer__ = "Donovan Parks"
 __email__ = "donovan.parks@gmail.com"
 __status__ = "Development"
-__version__ = "0.9.2"
+__version__ = "0.9.4"
 
 import argparse
 import sys
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     lineage_set_parser.add_argument('-u', '--unique', type=int, default=10, help="minimum number of unique phylogenetic markers required to use lineage-specific marker set")
     lineage_set_parser.add_argument('-m', '--multi', type=int, default=10, help="maximum number of multi-copy phylogenetic markers before defaulting to domain-level marker set")
     lineage_set_parser.add_argument('--force_domain', dest='bForceDomain', action="store_true", default=False, help="use domain-level sets for all bins")
-    lineage_set_parser.add_argument('--refinement', dest='bLineageSpecificRefinement', action="store_true", default=False, help="[Experimental] perform lineage-specific marker set refinement")
+    lineage_set_parser.add_argument('--no_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform lineage-specific marker set refinement")
     lineage_set_parser.add_argument('-r', '--num_genomes_refine', type=int, help="[Experimental] minimum reference genomes required to refine marker set", default=2)
     lineage_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
@@ -245,8 +245,8 @@ if __name__ == '__main__':
     lineage_wf_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum reference genomes required to refine marker set", default=2)
     lineage_wf_parser.add_argument('-u', '--unique', type=int, default=10, help="minimum number of unique phylogenetic markers required to use lineage-specific marker set")
     lineage_wf_parser.add_argument('-m', '--multi', type=int, default=10, help="maximum number of multi-copy phylogenetic markers before defaulting to domain-level marker set")
-    lineage_wf_parser.add_argument('--refinement', dest='bLineageSpecificRefinement', action="store_true", default=False, help="[Experimental] perform lineage-specific marker set refinement")
     lineage_wf_parser.add_argument('--force_domain', dest='bForceDomain', action="store_true", default=False, help="use domain-level sets for all bins")
+    lineage_wf_parser.add_argument('--no_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform lineage-specific marker set refinement")  
     lineage_wf_parser.add_argument('--individual_markers', dest='bIndividualMarkers', action="store_true", default=False, help="treat marker as independent (i.e., ignore co-located set structure)")
     lineage_wf_parser.add_argument('--skip_orf_correction', dest='bSkipOrfCorrection', action="store_true", default=False, help="skip identification of ORF errors affecting marker genes")
     lineage_wf_parser.add_argument('--aai_strain', type=float, default=0.9, help="AAI threshold used to identify strain heterogeneity")

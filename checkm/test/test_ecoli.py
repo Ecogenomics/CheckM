@@ -78,7 +78,7 @@ class VerifyEcoli():
         options.bootstrap = 0
         options.num_genomes_markers = 30
         options.num_genomes_refine = 5
-        options.bLineageSpecificRefinement = True
+        options.bNoLineageSpecificRefinement = False
     
         options.bRequireTaxonomy = False
         options.unique = 10

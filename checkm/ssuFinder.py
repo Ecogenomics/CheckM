@@ -32,9 +32,9 @@ class SSU_Finder(object):
 
         self.totalThreads = threads
 
-        self.bacteriaModelFile = '/srv/db/checkm/hmms_ssu/SSU_bacteria.hmm'
-        self.archaeaModelFile = '/srv/db/checkm/hmms_ssu/SSU_archaea.hmm'
-        self.eukModelFile = '/srv/db/checkm/hmms_ssu/SSU_euk.hmm'
+        self.bacteriaModelFile = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'hmms_ssu', 'SSU_bacteria.hmm')
+        self.archaeaModelFile = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'hmms_ssu', 'SSU_archaea.hmm')
+        self.eukModelFile = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'hmms_ssu', 'SSU_euk.hmm')
 
     def __hmmSearch(self, seqFile, evalue, outputPrefix):
         if seqFile.endswith('gz'):

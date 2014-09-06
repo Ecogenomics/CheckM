@@ -59,7 +59,7 @@ class AbstractPlot(FigureCanvas):
 	def savePlot(self, filename, dpi=300):
 		imgFormat = filename[filename.rfind('.')+1:len(filename)]
 		if imgFormat in ['png', 'pdf', 'ps', 'eps','svg']:
-			self.fig.savefig(filename,format=imgFormat,dpi=dpi,facecolor='white',edgecolor='white')
+			self.fig.savefig(filename,format=imgFormat,dpi=dpi,facecolor='white',edgecolor='white',bbox_inches='tight')
 		else:
 			pass
 
