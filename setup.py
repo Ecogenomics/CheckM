@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='checkm-genome',
-    version='0.9.0',
+    version='0.9.2',
     author='Donovan Parks, Michael Imelfort, Connor Skennerton',
     author_email='donovan.parks@gmail.com',
     packages=['checkm', 'checkm.plot', 'checkm.test', 'checkm.util'],
@@ -16,7 +16,7 @@ setup(
         "scipy >= 0.9.0",
         "matplotlib >= 1.3.1",
         "pysam >= 0.7.4",
-        "dendropy >= 3.13.0",
+        "dendropy >= 3.12.0",
         "ScreamingBackpack >= 0.2.1"],
     package_data={'checkm' : ['DATA_CONFIG']}
 )

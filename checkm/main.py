@@ -63,6 +63,9 @@ from checkm.plot.pcaPlot import PcaPlot
 from checkm.plot.gcBiasPlots import GcBiasPlot
 
 from checkm.checkmData import DBManager
+
+from checkm.test.test_ecoli import VerifyEcoli
+
 class OptionsParser():
     def __init__(self):
         self.logger = logging.getLogger()
@@ -1097,6 +1100,19 @@ class OptionsParser():
         self.logger.info('  Detailed bin comparison written to: ' + options.output_file)
 
         self.timeKeeper.printTimeStamp()
+        
+    def test(self, options):
+        """Quick test of CheckM"""
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info('[CheckM - Test] Processing E.coli K12-W3310 to verify operation of CheckM.')
+        self.logger.info('*******************************************************************************')
+        self.logger.info('')
+        
+        verifyEcoli = VerifyEcoli()
+        verifyEcoli.run(self, options.output_dir)
+
+        self.timeKeeper.printTimeStamp()
 
     def parseOptions(self, options):
         """Parse user options and call the correct pipeline(s)"""
@@ -1201,6 +1217,8 @@ class OptionsParser():
             self.ssuFinder(options)
         elif(options.subparser_name == 'bin_compare'):
             self.binCompare(options)
+        elif(options.subparser_name == 'test'):
+            self.test(options)
         else:
             self.logger.error('  [Error] Unknown CheckM command: ' + options.subparser_name + '\n')
             sys.exit()

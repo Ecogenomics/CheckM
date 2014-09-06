@@ -28,7 +28,7 @@ __license__ = "GPL3"
 __maintainer__ = "Donovan Parks"
 __email__ = "donovan.parks@gmail.com"
 __status__ = "Development"
-__version__ = "0.9.0"
+__version__ = "0.9.2"
 
 import argparse
 import sys
@@ -568,7 +568,7 @@ if __name__ == '__main__':
     merge_parser.add_argument('out_folder', help="folder to write output files")
     merge_parser.add_argument('--delta_comp', help="minimum increase in completeness to report pair", type=float, default = 5.0)
     merge_parser.add_argument('--delta_cont', help="maximum increase in contamination to report pair", type=float, default = 10.0)
-    merge_parser.add_argument('--merged_comp', help="minimum merged completeness to report pair", type=float, default = 70.0)
+    merge_parser.add_argument('--merged_comp', help="minimum merged completeness to report pair", type=float, default = 50.0)
     merge_parser.add_argument('--merged_cont', help="maximum merged contamination to report pair", type=float, default = 20.0)
     merge_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     merge_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
@@ -608,6 +608,13 @@ if __name__ == '__main__':
                                             epilog='Example: checkm unique ./bins')
     unique_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     unique_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (all other files in bin folder are ignored)")
+    
+    # Quick test of CheckM
+    test_parser = subparsers.add_parser('test',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                            description='Test CheckM on E. coli genome.',
+                                            epilog='Example: checkm test ~/checkm_test')
+    test_parser.add_argument('output_dir', help="output folder for test data")
 
     # debug and development
     if False:
