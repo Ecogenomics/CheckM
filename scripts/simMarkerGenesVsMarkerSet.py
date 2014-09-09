@@ -53,7 +53,7 @@ class SimMarkerGenesVsMarkerSets(object):
         markerGenes = img.markerGenes(genomeIds, countTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
         print '  Marker genes: ' + str(len(markerGenes))
 
-        geneDistTable = img.geneDistTable(genomeIds, markerGenes)
+        geneDistTable = img.geneDistTable(genomeIds, markerGenes, spacingBetweenContigs=1e6)
         colocatedGenes = img.colocatedGenes(geneDistTable)
         colocatedSets = img.colocatedSets(colocatedGenes, markerGenes)
         print '  Co-located gene sets: ' + str(len(colocatedSets))

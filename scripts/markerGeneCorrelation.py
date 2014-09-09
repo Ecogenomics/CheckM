@@ -57,7 +57,7 @@ class MarkerGeneCorelation(object):
         print '  Genomes: ' + str(len(genomeIds))
 
         print 'Getting position of each marker gene.'
-        geneDistTable = img.geneDistTable(genomeIds, markerGenes)
+        geneDistTable = img.geneDistTable(genomeIds, markerGenes, spacingBetweenContigs=1e6)
 
         spearmanValues = []
         pearsonValues = []

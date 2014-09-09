@@ -159,7 +159,6 @@ if __name__ == '__main__':
     lineage_set_parser.add_argument('-m', '--multi', type=int, default=10, help="maximum number of multi-copy phylogenetic markers before defaulting to domain-level marker set")
     lineage_set_parser.add_argument('--force_domain', dest='bForceDomain', action="store_true", default=False, help="use domain-level sets for all bins")
     lineage_set_parser.add_argument('--no_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform lineage-specific marker set refinement")
-    lineage_set_parser.add_argument('-r', '--num_genomes_refine', type=int, help="[Experimental] minimum reference genomes required to refine marker set", default=2)
     lineage_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # Note: these selection criteria are currently incompatible with how the selected lineage-specific marker set is defined
@@ -242,7 +241,6 @@ if __name__ == '__main__':
     lineage_wf_parser.add_argument('out_folder', help="folder to write output files")
     lineage_wf_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
     lineage_wf_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
-    lineage_wf_parser.add_argument('-r', '--num_genomes_refine', type=int, help="minimum reference genomes required to refine marker set", default=2)
     lineage_wf_parser.add_argument('-u', '--unique', type=int, default=10, help="minimum number of unique phylogenetic markers required to use lineage-specific marker set")
     lineage_wf_parser.add_argument('-m', '--multi', type=int, default=10, help="maximum number of multi-copy phylogenetic markers before defaulting to domain-level marker set")
     lineage_wf_parser.add_argument('--force_domain', dest='bForceDomain', action="store_true", default=False, help="use domain-level sets for all bins")

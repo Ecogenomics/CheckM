@@ -502,10 +502,10 @@ class IMG(object):
         for genomeId in genomeIds:
             self.cachedGenomeFamilyPositions[genomeId] = self.__genomeFamilyPositions(genomeId, self.cachedGenomeSeqLens[genomeId], spacingBetweenContigs)
 
-    def geneDistTable(self, genomeIds, markerGenes, spacingBetweenContigs=5000):
+    def geneDistTable(self, genomeIds, markerGenes, spacingBetweenContigs=0):
         """Create table indicating position of each marker gene in a genome."""
 
-        # Note: genomes split into multiple contigs are still treated as contiguous,
+        # Note: genomes split into multiple contigs are treated as contiguous,
         # with a spacing between contigs as specified
 
         table = {}
@@ -525,7 +525,7 @@ class IMG(object):
             # create marker gene position table for genome
             clusterIdToGenomePositions = {}
             for markerGene in markerGenes:
-                positions =  genomeFamilyPositions.get(markerGene, None)
+                positions = genomeFamilyPositions.get(markerGene, None)
                 if positions != None:
                     clusterIdToGenomePositions[markerGene] = genomeFamilyPositions[markerGene]
 

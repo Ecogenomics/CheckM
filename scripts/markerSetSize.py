@@ -54,7 +54,7 @@ class MarkerSetTest(object):
         for threshold in arange(maxThreshold, minThreshold, -stepSize):
             markerGenes = img.markerGenes(genomeIds, countTable, threshold*len(genomeIds), threshold*len(genomeIds))
 
-            geneDistTable = img.geneDistTable(genomeIds, markerGenes)
+            geneDistTable = img.geneDistTable(genomeIds, markerGenes, spacingBetweenContigs=1e6)
             colocatedGenes = img.colocatedGenes(geneDistTable)
             colocatedSets = img.colocatedSets(colocatedGenes, markerGenes)
 

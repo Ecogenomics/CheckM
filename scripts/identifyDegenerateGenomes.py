@@ -69,7 +69,7 @@ class IdentifyDegenerateGenomes(object):
             if len(markerGenes) < minMarkers:
                 continue
 
-            geneDistTable = img.geneDistTable(genomeIds, markerGenes)
+            geneDistTable = img.geneDistTable(genomeIds, markerGenes, spacingBetweenContigs=1e6)
             colocatedGenes = markerset.colocatedGenes(geneDistTable)
             colocatedSets = markerset.colocatedSets(colocatedGenes, markerGenes)
 

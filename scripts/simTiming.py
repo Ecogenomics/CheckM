@@ -72,7 +72,7 @@ class Simulation(object):
         print 'precomputeGenomeFamilyPositions: %.2f' % (end - start)
         
         #start = time.time()
-        #test = self.img.geneDistTable(metadata.keys(), self.markerSetBuilder.globalGeneCountTable.keys())
+        #test = self.img.geneDistTable(metadata.keys(), self.markerSetBuilder.globalGeneCountTable.keys(), spacingBetweenContigs=1e6)
         #end = time.time()
         #print 'geneDistTable: %.2f' % (end - start)
         

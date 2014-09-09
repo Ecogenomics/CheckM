@@ -63,7 +63,7 @@ class PlotMarkerSetDistribution(object):
         markerGenes = markerSet.markerGenes(genomeIds, countTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
         tigrToRemove = img.identifyRedundantTIGRFAMs(markerGenes)
         markerGenes = markerGenes - tigrToRemove
-        geneDistTable = img.geneDistTable(genomeIds, markerGenes)
+        geneDistTable = img.geneDistTable(genomeIds, markerGenes, spacingBetweenContigs=1e6)
 
         print 'Number of marker genes: ' + str(len(markerGenes))
 

@@ -75,7 +75,7 @@ class IdentifyCompleteGenomes(object):
             markerGenes = markerset.markerGenes(allLineageGenomeIds, countTable, ubiquityThreshold*len(allLineageGenomeIds), singleCopyThreshold*len(allLineageGenomeIds))
             print '  Marker genes: ' + str(len(markerGenes))
 
-            geneDistTable = img.geneDistTable(allLineageGenomeIds, markerGenes)
+            geneDistTable = img.geneDistTable(allLineageGenomeIds, markerGenes, spacingBetweenContigs=1e6)
             colocatedGenes = markerset.colocatedGenes(geneDistTable, metadata)
             colocatedSets = markerset.colocatedSets(colocatedGenes, markerGenes)
             print '  Marker set size: ' + str(len(colocatedSets))

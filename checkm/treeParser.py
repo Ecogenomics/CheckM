@@ -295,7 +295,7 @@ class TreeParser():
         return 'root'
 
     def __getMarkerSet(self, parentNode, tree, uniqueIdToLineageStatistics,
-                                    numGenomesMarkers, numGenomesRefine, bootstrap,
+                                    numGenomesMarkers, bootstrap,
                                     bForceDomain, bRequireTaxonomy):
         """Get marker set for next parent node meeting selection criteria."""
 
@@ -417,7 +417,7 @@ class TreeParser():
         return refinedMarkerSet
 
     def getBinMarkerSets(self, outDir, markerFile,
-                                    numGenomesMarkers, numGenomesRefine,
+                                    numGenomesMarkers,
                                     bootstrap, bNoLineageSpecificRefinement,
                                     bForceDomain, bRequireTaxonomy,
                                     resultsParser, minUnique, maxMulti):
@@ -452,7 +452,7 @@ class TreeParser():
             if node == None:
                 # bin is not in tree
                 node, markerSet = self.__getMarkerSet(rootNode, tree, uniqueIdToLineageStatistics,
-                                                        numGenomesMarkers, numGenomesRefine, bootstrap,
+                                                        numGenomesMarkers, bootstrap,
                                                         bForceDomain, bRequireTaxonomy)
                 binMarkerSets.addMarkerSet(markerSet)
             else:
@@ -486,7 +486,7 @@ class TreeParser():
                     tempForceDomain = bForceDomain or (uniqueHits < minUnique) or (multiCopyHits > maxMulti)
                     
                     curNode, markerSet = self.__getMarkerSet(curNode.parent_node, tree, uniqueIdToLineageStatistics,
-                                                                numGenomesMarkers, numGenomesRefine, bootstrap,
+                                                                numGenomesMarkers, bootstrap,
                                                                 tempForceDomain, bRequireTaxonomy)
                        
                     if not bNoLineageSpecificRefinement:

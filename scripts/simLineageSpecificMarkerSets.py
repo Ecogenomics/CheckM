@@ -62,7 +62,7 @@ class SimLineageSpecificMarkerSets(object):
             mg = img.markerGenes(genomeIds, countTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
             print '  Marker genes: ' + str(len(mg))
 
-            mdt = img.geneDistTable(genomeIds, mg)
+            mdt = img.geneDistTable(genomeIds, mg, spacingBetweenContigs=1e6)
             colocatedGenes = img.colocatedGenes(mdt)
             cs = img.colocatedSets(colocatedGenes, mg)
             print '  Co-located gene sets: ' + str(len(cs))

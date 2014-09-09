@@ -78,7 +78,7 @@ class MarkerSetTest(object):
                 genomeIdSubset = random.sample(genomeIds, numGenomes)
 
                 markerGenes = markergenes.identify(genomeIdSubset, countTable, ubiquityThreshold*len(genomeIdSubset), singleCopyThreshold*len(genomeIdSubset))
-                geneDistTable = img.geneDistTable(genomeIdSubset, markerGenes)
+                geneDistTable = img.geneDistTable(genomeIdSubset, markerGenes, spacingBetweenContigs=1e6)
                 colocatedGenes = img.colocatedGenes(geneDistTable)
                 colocatedSets = img.colocatedSets(colocatedGenes, markerGenes)
 

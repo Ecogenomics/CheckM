@@ -218,7 +218,7 @@ class OptionsParser():
 
         treeParser = TreeParser()
         treeParser.getBinMarkerSets(options.tree_folder, options.marker_file,
-                                    options.num_genomes_markers, options.num_genomes_refine,
+                                    options.num_genomes_markers, 
                                     options.bootstrap, options.bNoLineageSpecificRefinement,
                                     options.bForceDomain, options.bRequireTaxonomy,
                                     resultsParser, options.unique, options.multi)

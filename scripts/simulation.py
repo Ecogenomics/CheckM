@@ -37,6 +37,7 @@ import multiprocessing as mp
 from collections import defaultdict
 import gzip
 import time
+import random
 
 import dendropy
 from  dendropy.dataobject.taxon import Taxon
@@ -52,9 +53,9 @@ class Simulation(object):
         self.markerSetBuilder = MarkerSetBuilder()
         self.img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         
-        self.contigLens = [5000, 20000, 50000]
-        self.percentComps = [0.5, 0.7, 0.8, 0.9, 0.95, 1.0]
-        self.percentConts = [0.0, 0.05, 0.1, 0.15, 0.2]
+        self.contigLens = [1000, 2000, 5000, 10000, 20000, 50000]
+        self.percentComps = [0.5] #, 0.7, 0.8, 0.9, 0.95, 1.0]
+        self.percentConts = [0.0] #, 0.05, 0.1, 0.15, 0.2]
     
     def __workerThread(self, tree, metadata, ubiquityThreshold, singleCopyThreshold, numReplicates, queueIn, queueOut):
         """Process each data item in parallel."""
@@ -66,8 +67,9 @@ class Simulation(object):
 
             # build marker sets for evaluating test genome
             testNode = tree.find_node_with_taxon_label('IMG_' + testGenomeId)
-            binMarkerSets, refinedBinMarkerSet = self.markerSetBuilder.buildBinMarkerSet(tree, testNode.parent_node, ubiquityThreshold, singleCopyThreshold, bMarkerSet = True, genomeIdsToRemove = [testGenomeId])    
-
+            #!!!binMarkerSets, refinedBinMarkerSet = self.markerSetBuilder.buildBinMarkerSet(tree, testNode.parent_node, ubiquityThreshold, singleCopyThreshold, bMarkerSet = True, genomeIdsToRemove = [testGenomeId])
+            binMarkerSets, refinedBinMarkerSet = self.markerSetBuilder.buildDomainMarkerSet(tree, testNode.parent_node, ubiquityThreshold, singleCopyThreshold, bMarkerSet = False, genomeIdsToRemove = [testGenomeId])
+            
             # determine distribution of all marker genes within the test genome
             geneDistTable = self.img.geneDistTable([testGenomeId], binMarkerSets.getMarkerGenes(), spacingBetweenContigs=0)
                 
@@ -85,6 +87,12 @@ class Simulation(object):
 
             # estimate completion and contamination of genome after subsampling using both the domain and lineage-specific marker sets 
             genomeSize = readFastaBases(os.path.join(self.img.genomeDir, testGenomeId, testGenomeId + '.fna'))
+            
+            for mg in geneDistTable[testGenomeId]:
+                for positions in geneDistTable[testGenomeId][mg]:
+                    for pos in positions:
+                        if pos > genomeSize:
+                            print 'problem!', testGenomeId, mg, pos, genomeSize
             
             for contigLen in self.contigLens: 
                 for percentComp in self.percentComps:
@@ -113,46 +121,46 @@ class Simulation(object):
                             for ms in binMarkerSets.markerSetIter():  
                                 numDescendants[ms.lineageStr] = ms.numGenomes
                                 
-                                containedDomainMarkerGenes = self.markerSetBuilder.containedMarkerGenes(ms.getMarkerGenes(), geneDistTable[testGenomeId], startPartialGenomeContigs, contigLen)
-                                completeness, contamination = ms.genomeCheck(containedDomainMarkerGenes, bIndividualMarkers=True)
+                                containedMarkerGenes = self.markerSetBuilder.containedMarkerGenes(ms.getMarkerGenes(), geneDistTable[testGenomeId], startPartialGenomeContigs, contigLen)
+                                completeness, contamination = ms.genomeCheck(containedMarkerGenes, bIndividualMarkers=True)
                                 deltaComp[ms.lineageStr].append(completeness - trueComp)
                                 deltaCont[ms.lineageStr].append(contamination - trueCont)
 
-                                completeness, contamination = ms.genomeCheck(containedDomainMarkerGenes, bIndividualMarkers=False)
+                                completeness, contamination = ms.genomeCheck(containedMarkerGenes, bIndividualMarkers=False)
                                 deltaCompSet[ms.lineageStr].append(completeness - trueComp)
                                 deltaContSet[ms.lineageStr].append(contamination - trueCont)
                                 
                             for ms in refinedBinMarkerSet.markerSetIter():  
-                                containedDomainMarkerGenes = self.markerSetBuilder.containedMarkerGenes(ms.getMarkerGenes(), geneDistTable[testGenomeId], startPartialGenomeContigs, contigLen)
-                                completeness, contamination = ms.genomeCheck(containedDomainMarkerGenes, bIndividualMarkers=True)
+                                containedMarkerGenes = self.markerSetBuilder.containedMarkerGenes(ms.getMarkerGenes(), geneDistTable[testGenomeId], startPartialGenomeContigs, contigLen)
+                                completeness, contamination = ms.genomeCheck(containedMarkerGenes, bIndividualMarkers=True)
                                 deltaCompRefined[ms.lineageStr].append(completeness - trueComp)
                                 deltaContRefined[ms.lineageStr].append(contamination - trueCont)
                                 
-                                completeness, contamination = ms.genomeCheck(containedDomainMarkerGenes, bIndividualMarkers=False)
+                                completeness, contamination = ms.genomeCheck(containedMarkerGenes, bIndividualMarkers=False)
                                 deltaCompSetRefined[ms.lineageStr].append(completeness - trueComp)
                                 deltaContSetRefined[ms.lineageStr].append(contamination - trueCont)
                                 
                         taxonomy = ';'.join(metadata[testGenomeId]['taxonomy'])
-                        queueOut.put((testGenomeId, contigLen, percentComp, percentCont, taxonomy, numDescendants, unmodifiedComp, unmodifiedCont, deltaComp, deltaCont, deltaCompSet, deltaContSet, deltaCompRefined, deltaContRefined, deltaCompSetRefined, deltaContSetRefined, trueComps, trueConts))
+                        queueOut.put((testGenomeId, contigLen, percentComp, percentCont, taxonomy, numDescendants, unmodifiedComp, unmodifiedCont, trueComps, trueConts, deltaComp, deltaCont, deltaCompSet, deltaContSet, deltaCompRefined, deltaContRefined, deltaCompSetRefined, deltaContSetRefined, trueComps, trueConts))
                       
     def __writerThread(self, numTestGenomes, writerQueue):
         """Store or write results of worker threads in a single thread."""
         
-        summaryOut = open('/tmp/simulation.draft.summary.w_refinement_50.tsv', 'w')
-        #summaryOut = open('/tmp/tmp.summary.tsv', 'w')
+        #summaryOut = open('/tmp/simulation.draft.summary.w_refinement_50.tsv', 'w')
+        summaryOut = open('/tmp/simulation.summary.testing.tsv', 'w')
         summaryOut.write('Genome Id\tContig len\t% comp\t% cont')
         summaryOut.write('\tTaxonomy\tMarker set\t# descendants')
-        summaryOut.write('\tUnmodified comp\tUnmodified cont')
+        summaryOut.write('\tUnmodified comp\tUnmodified cont\tTrue comp\tTrue cont')
         summaryOut.write('\tIM comp\tIM comp std\tIM cont\tIM cont std')
         summaryOut.write('\tMS comp\tMS comp std\tMS cont\tMS cont std')
         summaryOut.write('\tRIM comp\tRIM comp std\tRIM cont\tRIM cont std')
         summaryOut.write('\tRMS comp\tRMS comp std\tRMS cont\tRMS cont std\n')
         
-        fout = gzip.open('/tmp/simulation.draft.w_refinement_50.tsv.gz', 'wb')
-        #fout = gzip.open('/tmp/tmp.tsv.gz', 'wb')
+        #fout = gzip.open('/tmp/simulation.draft.w_refinement_50.tsv.gz', 'wb')
+        fout = gzip.open('/tmp/simulation.testing.tsv.gz', 'wb')
         fout.write('Genome Id\tContig len\t% comp\t% cont')
         fout.write('\tTaxonomy\tMarker set\t# descendants')
-        fout.write('\tUnmodified comp\tUnmodified cont')
+        fout.write('\tUnmodified comp\tUnmodified cont\tTrue comp\tTrue cont')
         fout.write('\tIM comp\tIM cont')
         fout.write('\tMS comp\tMS cont')
         fout.write('\tRIM comp\tRIM cont')
@@ -162,7 +170,7 @@ class Simulation(object):
 
         itemsProcessed = 0
         while True:
-            testGenomeId, contigLen, percentComp, percentCont, taxonomy, numDescendants, unmodifiedComp, unmodifiedCont, deltaComp, deltaCont, deltaCompSet, deltaContSet, deltaCompRefined, deltaContRefined, deltaCompSetRefined, deltaContSetRefined, trueComps, trueConts = writerQueue.get(block=True, timeout=None)
+            testGenomeId, contigLen, percentComp, percentCont, taxonomy, numDescendants, unmodifiedComp, unmodifiedCont, trueComps, trueConts, deltaComp, deltaCont, deltaCompSet, deltaContSet, deltaCompRefined, deltaContRefined, deltaCompSetRefined, deltaContSetRefined, trueComps, trueConts = writerQueue.get(block=True, timeout=None)
             if testGenomeId == None:
                 break
 
@@ -175,6 +183,7 @@ class Simulation(object):
                 summaryOut.write(testGenomeId + '\t%d\t%.2f\t%.2f' % (contigLen, percentComp, percentCont)) 
                 summaryOut.write('\t' + taxonomy + '\t' + markerSetId + '\t' + str(numDescendants[markerSetId]))
                 summaryOut.write('\t%.3f\t%.3f' % (unmodifiedComp[markerSetId], unmodifiedCont[markerSetId]))
+                summaryOut.write('\t%.3f\t%.3f' % (mean(trueComps), std(trueConts)))
                 summaryOut.write('\t%.3f\t%.3f' % (mean(abs(deltaComp[markerSetId])), std(abs(deltaComp[markerSetId]))))
                 summaryOut.write('\t%.3f\t%.3f' % (mean(abs(deltaCont[markerSetId])), std(abs(deltaCont[markerSetId]))))
                 summaryOut.write('\t%.3f\t%.3f' % (mean(abs(deltaCompSet[markerSetId])), std(abs(deltaCompSet[markerSetId]))))
@@ -188,6 +197,8 @@ class Simulation(object):
                 fout.write(testGenomeId + '\t%d\t%.2f\t%.2f' % (contigLen, percentComp, percentCont)) 
                 fout.write('\t' + taxonomy + '\t' + markerSetId + '\t' + str(numDescendants[markerSetId]))
                 fout.write('\t%.3f\t%.3f' % (unmodifiedComp[markerSetId], unmodifiedCont[markerSetId]))
+                fout.write('\t%s' % ','.join(map(str, trueComps)))
+                fout.write('\t%s' % ','.join(map(str, trueConts)))
                 fout.write('\t%s' % ','.join(map(str, deltaComp[markerSetId])))
                 fout.write('\t%s' % ','.join(map(str, deltaCont[markerSetId])))
                 fout.write('\t%s' % ','.join(map(str, deltaCompSet[markerSetId])))
@@ -222,6 +233,7 @@ class Simulation(object):
         print '  Total genomes: %d' % len(metadata)
         
         genomeIdsToTest = genomesInTree - self.img.filterGenomeIds(genomesInTree, metadata, 'status', 'Finished')
+        genomeIdsToTest = random.sample(genomeIdsToTest, 100)
         print '  Number of draft genomes: %d' % len(genomeIdsToTest)
         
         print ''
@@ -233,17 +245,17 @@ class Simulation(object):
   
 
         start = time.time()
-        self.markerSetBuilder.cachedGeneCountTable = self.img.geneCountTable(metadata.keys())
+        #self.markerSetBuilder.cachedGeneCountTable = self.img.geneCountTable(metadata.keys())
         end = time.time()
         print '    globalGeneCountTable: %.2f' % (end - start)
         
         start = time.time()
-        self.markerSetBuilder.precomputeGenomeSeqLens(metadata.keys())
+        #self.markerSetBuilder.precomputeGenomeSeqLens(metadata.keys())
         end = time.time()
         print '    precomputeGenomeSeqLens: %.2f' % (end - start)
         
         start = time.time()
-        self.markerSetBuilder.precomputeGenomeFamilyPositions(metadata.keys(), 0)
+        #self.markerSetBuilder.precomputeGenomeFamilyPositions(metadata.keys(), 0)
         end = time.time()
         print '    precomputeGenomeFamilyPositions: %.2f' % (end - start)
           
@@ -269,7 +281,7 @@ class Simulation(object):
         for p in workerProc:
             p.join()
 
-        writerQueue.put((None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None))
+        writerQueue.put((None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None))
         writeProc.join()
  
 if __name__ == '__main__':

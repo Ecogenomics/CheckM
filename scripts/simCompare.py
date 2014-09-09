@@ -44,8 +44,8 @@ from  dendropy.dataobject.taxon import Taxon
 
 class SimCompare(object):
     def __init__(self):
-        self.resultsSummaryFile = './simulations/simulation.draft.summary.w_refinement_50.reduced_param.tsv'
-        self.resultsFullFile = './simulations/simulation.draft.w_refinement_50.reduced_param.tsv.gz'
+        self.resultsSummaryFile = './simulations/simulation.draft.summary.w_refinement_50.tsv'
+        self.resultsFullFile = './simulations/simulation.draft.w_refinement_50.tsv.gz'
         self.simCompareSummaryOut = './simulations/simCompare.draft.w_refinement_50.summary.tsv'
         self.simCompareFullOut = './simulations/simCompare.draft.w_refinement_50.full.tsv'
         
@@ -164,6 +164,7 @@ class SimCompare(object):
         # read simulation results        
         print '  Reading summary simulation results.'
         summaryResults = self.__readSummaryResults(self.resultsSummaryFile)
+        
         print '  Reading full simulation results.'
         fullResults = self.__readFullResults(self.resultsFullFile)
                 
@@ -182,10 +183,15 @@ class SimCompare(object):
         print '  Comparing best marker set to selected marker set.'
         foutSummary = open(self.simCompareSummaryOut, 'w')
         foutSummary.write('Sim Id\tBest Id\tDescendants\tSelected Id\tDescendants\tDomain Id')
-        foutSummary.write('\tdComp Best\tdContBest\tComp domain\tCont domain\tComp sim\tCont sim\tComp sim [MS]\tCont sim [MS]\tComp sim [RMS]\tCont sim [RMS]\n')
+        foutSummary.write('\tdComp Best [IM]\tdCont Best [IM]')
+        foutSummary.write('\tComp domain [IM]\tCont domain [IM]')
+        foutSummary.write('\tComp sim [IM]\tCont sim [IM]\tComp sim [MS]\tCont sim [MS]\tComp sim [RMS]\tCont sim [RMS]\n')
         
         foutFull = open(self.simCompareFullOut, 'w')
-        foutFull.write('Sim Id\tBest Id\tDescendants\tSelected Id\tDescendants\tDomain Id\tdComp Best [IM]\tdCont Best [IM]\tdComp domain [IM]\tdCont domain [IM]\tdComp sim [IM]\tdCont sim [IM]\tdComp sim [MS]\tdCont sim [MS]\tdComp sim [RMS]\tdCont sim [RMS]\n')
+        foutFull.write('Sim Id\tBest Id\tDescendants\tSelected Id\tDescendants\tDomain Id')
+        foutFull.write('\tdComp Best [IM]\tdCont Best [IM]\tdComp Best [MS]\tdCont Best [MS]')
+        foutFull.write('\tdComp domain [IM]\tdCont domain [IM]\tdComp domain [MS]\tdCont domain [MS]')
+        foutFull.write('\tdComp sim [IM]\tdCont sim [IM]\tdComp sim [MS]\tdCont sim [MS]\tdComp sim [RMS]\tdCont sim [RMS]\n')
         
         itemsProcessed = 0
         dCompSimBestList = defaultdict(lambda : defaultdict(list))
@@ -238,35 +244,35 @@ class SimCompare(object):
 
             # get results for best performing marker set
             bestUID, numDescendantsBest, dCompBestSummary, dContBestSummary = self.__bestMarkerSet(simId, summaryResults)
-            _, dCompBestFull, dContBestFull, _, _, _, _ = fullResults[simId][bestUID]
+            _, dCompBestIM, dContBestIM, dCompBestMS, dContBestMS, _, _ = fullResults[simId][bestUID]
                         
             # get results for domain-level marker set
             domainUID, _, dCompDomSummary, dContDomSummary = self.__domainMarkerSet(simId, summaryResults)
-            _, dCompDomFull, dContDomFull, dCompDomFullMS, dContDomFullMS, _, _ = fullResults[simId][domainUID]
+            _, dCompDomIM, dContDomIM, dCompDomMS, dContDomMS, _, _ = fullResults[simId][domainUID]
             
             # get results for selected marker set
             simUID = self.__inferredMarkerSet(tree, genomeId, inferredMarkerSet)
             numDescendantsSim, dCompSimSummaryIM, dContSimSummaryIM, dCompSimSummaryMS, dContSimSummaryMS, dCompSimSummaryRMS, dContSimSummaryRMS, _, _ = summaryResults[simId][simUID]
-            _, dCompSimFullIM, dContSimFullIM, dCompSimFullMS, dContSimFullMS, dCompSimFullRMS, dContSimFullRMS = fullResults[simId][simUID]
+            _, dCompSimIM, dContSimIM, dCompSimMS, dContSimMS, dCompSimRMS, dContSimRMS = fullResults[simId][simUID]
                
-            for a, b, c, d, e, f in zip(dCompDomFullMS.split(','), dCompSimFullMS.split(','), dCompSimFullRMS.split(','), dContDomFullMS.split(','), dContSimFullMS.split(','), dContSimFullRMS.split(',')):
+            for a, b, c, d, e, f in zip(dCompDomMS.split(','), dCompSimMS.split(','), dCompSimRMS.split(','), dContDomMS.split(','), dContSimMS.split(','), dContSimRMS.split(',')):
                 briefSummaryOut.write('%s\t%f\t%f\t%f\t%f\t%f\t%f\n' % (genomeId, float(a), float(b), float(c), float(d), float(e), float(f)))
 
-            for a, b in zip(dCompDomFull.split(','), dCompDomFullMS.split(',')):
+            for a, b in zip(dCompDomIM.split(','), dCompDomMS.split(',')):
                 if abs(abs(float(a)) - abs(float(b))) > 0.1:             
                     if abs(float(a)) < abs(float(b)):
                         imDomBetter += 1
                     else:
                         msDomBetter += 1
             
-            for a, b in zip(dCompDomFullMS.split(','), dCompSimFullMS.split(',')):
+            for a, b in zip(dCompDomMS.split(','), dCompSimMS.split(',')):
                 if abs(abs(float(a)) - abs(float(b))) > 0.1:             
                     if abs(float(a)) < abs(float(b)):
                         domBetter += 1
                     else:
                         simBetter += 1
               
-            for a, b in zip(dCompSimFullMS.split(','), dCompSimFullRMS.split(',')):
+            for a, b in zip(dCompSimMS.split(','), dCompSimRMS.split(',')):
                 if abs(abs(float(a)) - abs(float(b))) > 0.1:    
                     if abs(float(a)) < abs(float(b)):
                         rmsBetter += 1
@@ -292,16 +298,12 @@ class SimCompare(object):
                 incompleteGenomesBest.add(genomeId)
             if summaryResults[simId][bestUID][8] > 5:
                 contaminatedGenomesBest.add(genomeId)    
-                
-                
-                
+                    
             dCompDomOverall.append(dCompDomSummary)
             dContDomOverall.append(dContDomSummary)
             dCompSelectedOverall.append(dCompSimSummaryIM)
             dContSelectedOverall.append(dContSimSummaryIM)
                 
-                   
-            
             dCompSimBestList[comp][cont].append(dCompSimSummaryIM - dCompBestSummary)
             dContSimBestList[comp][cont].append(dContSimSummaryIM - dContBestSummary)
             dCompDomList[comp][cont].append(dCompDomSummary)
@@ -309,15 +311,21 @@ class SimCompare(object):
             dCompSimList[comp][cont].append(dCompSimSummaryIM)
             dContSimList[comp][cont].append(dContSimSummaryIM)
                 
-            foutSummary.write('%s\t%s\t%d\t%s\t%d\t%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n' % (simId, bestUID, numDescendantsBest, simUID, numDescendantsSim, domainUID, 
-                                                                                                        dCompSimSummaryIM - dCompBestSummary, dContSimSummaryIM - dContBestSummary, 
-                                                                                                        dCompDomSummary, dContDomSummary, 
-                                                                                                        dCompSimSummaryIM, dContSimSummaryIM, dCompSimSummaryMS, dContSimSummaryMS, dCompSimSummaryRMS, dContSimSummaryRMS))
+            foutSummary.write('%s\t%s\t%d\t%s\t%d\t%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n' % (
+                                                                                                simId, bestUID, numDescendantsBest, simUID, numDescendantsSim, domainUID, 
+                                                                                                dCompSimSummaryIM - dCompBestSummary, dContSimSummaryIM - dContBestSummary, 
+                                                                                                dCompDomSummary, dContDomSummary, 
+                                                                                                dCompSimSummaryIM, dContSimSummaryIM, 
+                                                                                                dCompSimSummaryMS, dContSimSummaryMS, 
+                                                                                                dCompSimSummaryRMS, dContSimSummaryRMS
+                                                                                                ))
                                 
-            foutFull.write('%s\t%s\t%d\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (simId, bestUID, numDescendantsBest, simUID, numDescendantsSim, domainUID, 
-                                                                                                 dCompBestFull, dContBestFull, 
-                                                                                                 dCompDomFull, dContDomFull, 
-                                                                                                 dCompSimFullIM, dContSimFullIM, dCompSimFullMS, dContSimFullMS, dCompSimFullRMS, dContSimFullRMS))
+            foutFull.write('%s\t%s\t%d\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (
+                                                                                                simId, bestUID, numDescendantsBest, simUID, numDescendantsSim, domainUID, 
+                                                                                                dCompBestIM, dContBestIM, dCompBestMS, dContBestMS, 
+                                                                                                dCompDomIM, dContDomIM, dCompDomMS, dContDomMS, 
+                                                                                                dCompSimIM, dContSimIM, dCompSimMS, dContSimMS, dCompSimRMS, dContSimRMS
+                                                                                                ))
 
         foutSummary.close()
         foutFull.close()

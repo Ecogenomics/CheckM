@@ -59,7 +59,7 @@ class IdentifyColocatedGenes(object):
             countTable = img.countTable(genomeIds)
             markerGenes = markerset.markerGenes(genomeIds, countTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
 
-            geneDistTable = img.geneDistTable(genomeIds, markerGenes)
+            geneDistTable = img.geneDistTable(genomeIds, markerGenes, spacingBetweenContigs=1e6)
             colocatedGenes = markerset.colocatedGenes(geneDistTable, distThreshold, genomeThreshold)
             colocatedSets = markerset.colocatedSets(colocatedGenes, markerGenes)
             if len(colocatedSets) < minMarkers:

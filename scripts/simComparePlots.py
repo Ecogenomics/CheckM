@@ -18,7 +18,7 @@
 ###############################################################################
 
 """
-Produce plots comparing performance of different marker sets (best vs. selected vs. domain).
+Produce box-and-whisker plots comparing performance of different marker sets (best vs. selected vs. domain).
 """
 
 __author__ = 'Donovan Parks'
@@ -48,6 +48,7 @@ class SimComparePlots(object):
         
         self.plotPrefix = './simulations/simulation.draft.w_refinement_50'
         self.simCompareFile = './simulations/simCompare.draft.w_refinement_50.full.tsv'
+        self.simCompareMarkerSetOut = './simulations/simCompare.draft.marker_set_table.w_refinement_50.tsv'
         self.simCompareTaxonomyTableOut = './simulations/simCompare.draft.taxonomy_table.w_refinement_50.tsv'
         self.simCompareRefinementTableOut = './simulations/simCompare.draft.refinment_table.w_refinement_50.tsv'
         
@@ -62,6 +63,11 @@ class SimComparePlots(object):
         #self.simCompareRefinementTableOut = './simulations/simCompare.scaffolds.draft.refinment_table.tsv'
         
         self.img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
+        
+        self.compsToConsider = [0.5, 0.7, 0.8, 0.9]
+        self.contsToConsider = [0.05, 0.1, 0.15]
+        
+        self.dpi = 600
   
     def __readResults(self, filename):
         results = defaultdict(dict)
@@ -77,28 +83,114 @@ class SimComparePlots(object):
                 
                 bestCompIM = [float(x) for x in lineSplit[6].split(',')]
                 bestContIM = [float(x) for x in lineSplit[7].split(',')]
+                
+                bestCompMS = [float(x) for x in lineSplit[8].split(',')]
+                bestContMS = [float(x) for x in lineSplit[9].split(',')]
                                 
-                domCompIM = [float(x) for x in lineSplit[8].split(',')]
-                domContIM = [float(x) for x in lineSplit[9].split(',')]
+                domCompIM = [float(x) for x in lineSplit[10].split(',')]
+                domContIM = [float(x) for x in lineSplit[11].split(',')]
                 
-                simCompIM = [float(x) for x in lineSplit[10].split(',')]
-                simContIM = [float(x) for x in lineSplit[11].split(',')]
+                domCompMS = [float(x) for x in lineSplit[12].split(',')]
+                domContMS = [float(x) for x in lineSplit[13].split(',')]
                 
-                simCompMS = [float(x) for x in lineSplit[12].split(',')]
-                simContMS = [float(x) for x in lineSplit[13].split(',')]
+                simCompIM = [float(x) for x in lineSplit[14].split(',')]
+                simContIM = [float(x) for x in lineSplit[15].split(',')]
                 
-                simCompRMS = [float(x) for x in lineSplit[14].split(',')]
-                simContRMS = [float(x) for x in lineSplit[15].split(',')]
+                simCompMS = [float(x) for x in lineSplit[16].split(',')]
+                simContMS = [float(x) for x in lineSplit[17].split(',')]
                 
-                results[simId] = [bestCompIM, bestContIM, domCompIM, domContIM, simCompIM, simContIM, simCompMS, simContMS, simCompRMS, simContRMS]
+                simCompRMS = [float(x) for x in lineSplit[18].split(',')]
+                simContRMS = [float(x) for x in lineSplit[19].split(',')]
+                
+                results[simId] = [bestCompIM, bestContIM, bestCompMS, bestContMS, domCompIM, domContIM, domCompMS, domContMS, simCompIM, simContIM, simCompMS, simContMS, simCompRMS, simContRMS]
                 
         print '    Number of test genomes: ' + str(len(genomeIds))
         
         return results
     
+    def markerSets(self, results):
+        # summarize results from IM vs MS
+        print '  Tabulating results for domain-level marker genes vs marker sets.'
+        
+        itemsProcessed = 0      
+        compDataDict = defaultdict(lambda : defaultdict(list))
+        contDataDict = defaultdict(lambda : defaultdict(list))
+
+        genomeIds = set()
+        for simId in results:
+            itemsProcessed += 1
+            statusStr = '    Finished processing %d of %d (%.2f%%) test cases.' % (itemsProcessed, len(results), float(itemsProcessed)*100/len(results))
+            sys.stdout.write('%s\r' % statusStr)
+            sys.stdout.flush()
+            
+            genomeId, seqLen, comp, cont = simId.split('-')
+            genomeIds.add(genomeId)
+            expCondStr = str(float(comp)) + '-' + str(float(cont)) + '-' + str(int(seqLen))
+            
+            compDataDict[expCondStr]['IM'] += results[simId][4]
+            compDataDict[expCondStr]['MS'] += results[simId][6]
+
+            contDataDict[expCondStr]['IM'] += results[simId][5]
+            contDataDict[expCondStr]['MS'] += results[simId][7]
+                
+        print '  There are %d unique genomes.' % len(genomeIds)
+              
+        sys.stdout.write('\n')
+        
+        print '    There are %d experimental conditions.' % (len(compDataDict))
+                
+        # plot data
+        print '  Plotting results.'
+        compData = []
+        contData = []
+        rowLabels = []
+        
+        for comp in self.compsToConsider:
+            for cont in self.contsToConsider:
+                for seqLen in [50000]: 
+                    for msStr in ['MS', 'IM']:
+                        rowLabels.append(msStr +': %d%%, %d%%' % (comp*100, cont*100))
+                        
+                        expCondStr = str(comp) + '-' + str(cont) + '-' + str(seqLen)
+                        compData.append(compDataDict[expCondStr][msStr])
+                        contData.append(contDataDict[expCondStr][msStr])  
+                                       
+        print 'MS:\t%.2f\t%.2f' % (mean(abs(array(compData[0::2]))), mean(abs(array(contData[0::3]))))
+        print 'IM:\t%.2f\t%.2f' % (mean(abs(array(compData[1::2]))), mean(abs(array(contData[1::3]))))   
+            
+        boxPlot = BoxPlot()
+        plotFilename = self.plotPrefix + '.markerSets.png'
+        boxPlot.plot(plotFilename, compData, contData, rowLabels, 
+                        r'$\Delta$' + ' % Completion', 'Simulation Conditions', 
+                        r'$\Delta$' + ' % Contamination', None,
+                        rowsPerCategory = 2, dpi = self.dpi)
+        
+        # print table of results 
+        tableOut = open(self.simCompareMarkerSetOut, 'w')
+        tableOut.write('Comp. (%)\tCont. (%)\tIM (5kb)\t\tMS (5kb)\t\tIM (20kb)\t\tMS (20kb)\t\tIM (50kb)\t\tMS (50kb)\n')
+        for comp in [0.5, 0.7, 0.8, 0.9, 0.95, 1.0]:
+            for cont in [0.0, 0.05, 0.1, 0.15, 0.2]:
+                
+                tableOut.write('%d\t%d' % (comp*100, cont*100))
+                
+                for seqLen in [5000, 20000, 50000]:
+                    expCondStr = str(comp) + '-' + str(cont) + '-' + str(seqLen)
+         
+                    for msStr in ['IM', 'MS']:               
+                        meanComp = mean(abs(array(compDataDict[expCondStr][msStr])))
+                        stdComp = std(abs(array(compDataDict[expCondStr][msStr])))
+                        meanCont = mean(abs(array(contDataDict[expCondStr][msStr])))
+                        stdCont = std(abs(array(contDataDict[expCondStr][msStr])))
+                        
+                        tableOut.write('\t%.1f +/- %.2f\t%.1f +/- %.2f' % (meanComp, stdComp, meanCont, stdCont))
+                tableOut.write('\n')
+                
+        tableOut.close()
+    
     def conditionsPlot(self, results):
         # summarize results for each experimental condition  
-        print '  Tabulating results for each experimental condition.'
+        print '  Tabulating results for each experimental condition using marker sets.'
+        
         itemsProcessed = 0      
         compDataDict = defaultdict(lambda : defaultdict(list))
         contDataDict = defaultdict(lambda : defaultdict(list))
@@ -112,9 +204,9 @@ class SimComparePlots(object):
         genomeIds = set()
         for simId in results:
             itemsProcessed += 1
-            #statusStr = '    Finished processing %d of %d (%.2f%%) test cases.' % (itemsProcessed, len(results), float(itemsProcessed)*100/len(results))
-            #sys.stdout.write('%s\r' % statusStr)
-            #sys.stdout.flush()
+            statusStr = '    Finished processing %d of %d (%.2f%%) test cases.' % (itemsProcessed, len(results), float(itemsProcessed)*100/len(results))
+            sys.stdout.write('%s\r' % statusStr)
+            sys.stdout.flush()
             
             genomeId, seqLen, comp, cont = simId.split('-')
             genomeIds.add(genomeId)
@@ -124,23 +216,23 @@ class SimComparePlots(object):
             conts.add(float(cont))
             seqLens.add(int(seqLen))
             
-            compDataDict[expCondStr]['best'] += results[simId][0]
-            compDataDict[expCondStr]['domain'] += results[simId][2]
-            compDataDict[expCondStr]['selected'] += results[simId][4]
+            compDataDict[expCondStr]['best'] += results[simId][2]
+            compDataDict[expCondStr]['domain'] += results[simId][6]
+            compDataDict[expCondStr]['selected'] += results[simId][10]
             
             for dComp in results[simId][2]:
                 compOutliers[expCondStr] += [[dComp, genomeId]]
             
-            contDataDict[expCondStr]['best'] += results[simId][1]
-            contDataDict[expCondStr]['domain'] += results[simId][3]
-            contDataDict[expCondStr]['selected'] += results[simId][5]
+            contDataDict[expCondStr]['best'] += results[simId][3]
+            contDataDict[expCondStr]['domain'] += results[simId][7]
+            contDataDict[expCondStr]['selected'] += results[simId][11]
             
             for dCont in results[simId][3]:
                 contOutliers[expCondStr] += [[dCont, genomeId]]
                 
         print '  There are %d unique genomes.' % len(genomeIds)
               
-        #sys.stdout.write('\n')
+        sys.stdout.write('\n')
         
         print '    There are %d experimental conditions.' % (len(compDataDict))
                 
@@ -152,10 +244,10 @@ class SimComparePlots(object):
         
         foutComp = open('./simulations/simulation.scaffolds.draft.comp_outliers.domain.tsv', 'w')
         foutCont = open('./simulations/simulation.scaffolds.draft.cont_outliers.domain.tsv', 'w')
-        for comp in [0.5, 0.7, 0.9]: #sorted(comps):
-            for cont in [0.05, 0.1, 0.2]:
+        for comp in self.compsToConsider:
+            for cont in self.contsToConsider:
                 for msStr in ['best', 'selected', 'domain']:
-                    for seqLen in [5000]: #sorted(seqLens):
+                    for seqLen in [5000]: 
                         rowLabels.append(msStr +': %d%%, %d%%' % (comp*100, cont*100))
                         
                         expCondStr = str(comp) + '-' + str(cont) + '-' + str(seqLen)
@@ -217,7 +309,7 @@ class SimComparePlots(object):
         boxPlot.plot(plotFilename, compData, contData, rowLabels, 
                         r'$\Delta$' + ' % Completion', 'Simulation Conditions', 
                         r'$\Delta$' + ' % Contamination', None,
-                        rowsPerCategory = 3, dpi = 600)
+                        rowsPerCategory = 3, dpi = self.dpi)
         
     def taxonomicPlots(self, results):
         # summarize results for different taxonomic groups  
@@ -246,14 +338,21 @@ class SimComparePlots(object):
             sys.stdout.flush()
             
             genomeId, seqLen, comp, cont = simId.split('-')
+            
+            if comp not in [str(x) for x in self.compsToConsider]:
+                continue
+            
+            if cont not in [str(x) for x in self.contsToConsider]:
+                continue
+            
             taxonomy = metadata[genomeId]['taxonomy']
             
             comps.add(float(comp))
             conts.add(float(cont))
             seqLens.add(int(seqLen))
             
-            overallComp += results[simId][2]
-            overallCont += results[simId][3]
+            overallComp += results[simId][10]
+            overallCont += results[simId][11]
             
             for r in xrange(0, ranksToProcess):
                 taxon = taxonomy[r]
@@ -268,20 +367,25 @@ class SimComparePlots(object):
                 taxon = rankPrefixes[r] + taxon
                 
                 taxaByRank[r].add(taxon)
-                                
-                compDataDict[taxon]['best'] += results[simId][0]
-                compDataDict[taxon]['domain'] += results[simId][2]
-                compDataDict[taxon]['selected'] += results[simId][4]
+                                                
+                compDataDict[taxon]['best'] += results[simId][2]
+                compDataDict[taxon]['domain'] += results[simId][6]
+                compDataDict[taxon]['selected'] += results[simId][10]
                 
-                contDataDict[taxon]['best'] += results[simId][1]
-                contDataDict[taxon]['domain'] += results[simId][3]
-                contDataDict[taxon]['selected'] += results[simId][5]
+                contDataDict[taxon]['best'] += results[simId][3]
+                contDataDict[taxon]['domain'] += results[simId][7]
+                contDataDict[taxon]['selected'] += results[simId][11]
                 
                 genomeInTaxon[taxon].add(genomeId)
             
         sys.stdout.write('\n')
         
-        print '    There are %d taxon.' % (len(compDataDict))
+        print 'Creating plots for:'
+        print '  comps = ', comps
+        print '  conts = ', conts
+        
+        print ''
+        print '    There are %d taxa.' % (len(compDataDict))
         
         print ''
         print '  Overall bias:'
@@ -335,7 +439,7 @@ class SimComparePlots(object):
         boxPlot.plot(plotFilename, compData, contData, rowLabels, 
                         r'$\Delta$' + ' % Completion', None, 
                         r'$\Delta$' + ' % Contamination', None,
-                        rowsPerCategory = 3, dpi = 600)
+                        rowsPerCategory = 3, dpi = self.dpi)
     
     
     def refinementPlots(self, results):
@@ -360,6 +464,9 @@ class SimComparePlots(object):
         overallCompMS = []
         overallContMS = [] 
         
+        overallCompRMS = []
+        overallContRMS = [] 
+        
         genomeInTaxon = defaultdict(set)
         for simId in results:
             itemsProcessed += 1
@@ -370,15 +477,24 @@ class SimComparePlots(object):
             genomeId, seqLen, comp, cont = simId.split('-')
             taxonomy = metadata[genomeId]['taxonomy']
             
+            if comp not in [str(x) for x in self.compsToConsider]:
+                continue
+            
+            if cont not in [str(x) for x in self.contsToConsider]:
+                continue
+            
             comps.add(float(comp))
             conts.add(float(cont))
             seqLens.add(int(seqLen))
             
-            overallCompIM.append(results[simId][4])
-            overallContIM.append(results[simId][5])
+            overallCompIM.append(results[simId][8])
+            overallContIM.append(results[simId][9])
             
-            overallCompMS.append(results[simId][6])
-            overallContMS.append(results[simId][7])
+            overallCompMS.append(results[simId][10])
+            overallContMS.append(results[simId][11])
+            
+            overallCompRMS.append(results[simId][12])
+            overallContRMS.append(results[simId][13])
             
             for r in xrange(0, ranksToProcess):
                 taxon = taxonomy[r]
@@ -388,20 +504,31 @@ class SimComparePlots(object):
                 
                 taxaByRank[r].add(taxon)
                 
-                compDataDict[taxon]['IM'] += results[simId][4]
-                compDataDict[taxon]['MS'] += results[simId][6]
+                compDataDict[taxon]['IM'] += results[simId][8]
+                compDataDict[taxon]['MS'] += results[simId][10]
+                compDataDict[taxon]['RMS'] += results[simId][12]
                 
-                contDataDict[taxon]['IM'] += results[simId][5]
-                contDataDict[taxon]['MS'] += results[simId][7]
+                contDataDict[taxon]['IM'] += results[simId][9]
+                contDataDict[taxon]['MS'] += results[simId][11]
+                contDataDict[taxon]['RMS'] += results[simId][13]
                                 
                 genomeInTaxon[taxon].add(genomeId)
             
         sys.stdout.write('\n')
         
+        print 'Creating plots for:'
+        print '  comps = ', comps
+        print '  conts = ', conts
+        
+        print ''
         print '    There are %d taxon.' % (len(compDataDict))
         print ''
-        print 'Percentage change comp: %.4f' % ((mean(abs(array(overallCompIM))) - mean(abs(array(overallCompMS)))) * 100 / mean(abs(array(overallCompIM))))
-        print 'Percentage change cont: %.4f' % ((mean(abs(array(overallContIM))) - mean(abs(array(overallContMS)))) * 100 / mean(abs(array(overallContIM))))
+        print 'Percentage change MS-IM comp: %.4f' % ((mean(abs(array(overallCompMS))) - mean(abs(array(overallCompIM)))) * 100 / mean(abs(array(overallCompIM))))
+        print 'Percentage change MS-IM cont: %.4f' % ((mean(abs(array(overallContMS))) - mean(abs(array(overallContIM)))) * 100 / mean(abs(array(overallContIM))))
+        print ''
+        print 'Percentage change RMS-MS comp: %.4f' % ((mean(abs(array(overallCompRMS))) - mean(abs(array(overallCompMS)))) * 100 / mean(abs(array(overallCompIM))))
+        print 'Percentage change RMS-MS cont: %.4f' % ((mean(abs(array(overallContRMS))) - mean(abs(array(overallContMS)))) * 100 / mean(abs(array(overallContIM))))
+        
         print ''
         
         # get list of ordered taxa by rank
@@ -436,7 +563,7 @@ class SimComparePlots(object):
         contData = []
         rowLabels = []
         for taxon in orderedTaxa:
-            for refineStr in ['MS', 'IM']:
+            for refineStr in ['RMS', 'MS', 'IM']:
                 numGenomes = len(genomeInTaxon[taxon])
                 if numGenomes < 10: # skip groups with only a few genomes
                     continue
@@ -453,21 +580,24 @@ class SimComparePlots(object):
         boxPlot.plot(plotFilename, compData, contData, rowLabels, 
                         r'$\Delta$' + ' % Completion', None, 
                         r'$\Delta$' + ' % Contamination', None,
-                        rowsPerCategory = 2, dpi = 600)
+                        rowsPerCategory = 3, dpi = self.dpi)
         
     def run(self):
         # read simulation results
         print '  Reading simulation results.'
         results = self.__readResults(self.simCompareFile)
+        
+        print '\n'         
+        self.markerSets(results)
                    
-        #print '\n'         
+        print '\n'         
         #self.conditionsPlot(results)
         
         print '\n'
         #self.taxonomicPlots(results)
         
         print '\n'
-        self.refinementPlots(results)
+        #self.refinementPlots(results)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
