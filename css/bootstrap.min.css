@@ -10,11 +10,11 @@
 
 @font-face {
     font-family: 'DejaVuSans';
-    src: url('https://github.com/minillinim/GroopM/tree/gh-pages/fonts/DejaVuSans.eot') /* EOT file for IE */
+    src: url('../fonts/DejaVuSans.eot') /* EOT file for IE */
 }
 @font-face {
     font-family: 'DejaVuSans';
-    src: url('https://github.com/minillinim/GroopM/tree/gh-pages/fonts/DejaVuSans.ttf') /* TTF file for CSS3 browsers */
+    src: url('../fonts/DejaVuSans.ttf') /* TTF file for CSS3 browsers */
 }
 
 article,
