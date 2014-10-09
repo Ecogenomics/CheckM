@@ -49,25 +49,30 @@ class SimComparePlots(object):
         self.plotPrefix = './simulations/simulation.draft.w_refinement_50'
         self.simCompareFile = './simulations/simCompare.draft.w_refinement_50.full.tsv'
         self.simCompareMarkerSetOut = './simulations/simCompare.draft.marker_set_table.w_refinement_50.tsv'
+        self.simCompareConditionOut = './simulations/simCompare.draft.condition_table.w_refinement_50.tsv'
         self.simCompareTaxonomyTableOut = './simulations/simCompare.draft.taxonomy_table.w_refinement_50.tsv'
         self.simCompareRefinementTableOut = './simulations/simCompare.draft.refinment_table.w_refinement_50.tsv'
+               
+        #self.plotPrefix = './simulations/simulation.scaffolds.draft.w_refinement_50'
+        #self.simCompareFile = './simulations/simCompare.scaffolds.draft.w_refinement_50.full.tsv'
+        #self.simCompareMarkerSetOut = './simulations/simCompare.scaffolds.draft.marker_set_table.w_refinement_50.tsv'
+        #self.simCompareConditionOut = './simulations/simCompare.scaffolds.draft.condition_table.w_refinement_50.tsv'
+        #self.simCompareTaxonomyTableOut = './simulations/simCompare.scaffolds.draft.taxonomy_table.w_refinement_50.tsv'
+        #self.simCompareRefinementTableOut = './simulations/simCompare.scaffolds.draft.refinment_table.w_refinement_50.tsv'
         
-        #self.plotPrefix = './simulations/simulation.draft'
-        #self.simCompareFile = './simulations/simCompare.draft.full.tsv'
-        #self.simCompareTaxonomyTableOut = './simulations/simCompare.draft.taxonomy_table.tsv'
-        #self.simCompareRefinementTableOut = './simulations/simCompare.draft.refinment_table.tsv'
-        
-        #self.plotPrefix = './simulations/simulation.scaffolds.draft'
-        #self.simCompareFile = './simulations/simCompare.scaffolds.draft.full.tsv'
-        #self.simCompareTaxonomyTableOut = './simulations/simCompare.scaffolds.draft.taxonomy_table.tsv'
-        #self.simCompareRefinementTableOut = './simulations/simCompare.scaffolds.draft.refinment_table.tsv'
+        #self.plotPrefix = './simulations/simulation.random_scaffolds.w_refinement_50'
+        #self.simCompareFile = './simulations/simCompare.random_scaffolds.w_refinement_50.full.tsv'
+        #self.simCompareMarkerSetOut = './simulations/simCompare.random_scaffolds.marker_set_table.w_refinement_50.tsv'
+        #self.simCompareConditionOut = './simulations/simCompare.random_scaffolds.condition_table.w_refinement_50.tsv'
+        #self.simCompareTaxonomyTableOut = './simulations/simCompare.random_scaffolds.taxonomy_table.w_refinement_50.tsv'
+        #self.simCompareRefinementTableOut = './simulations/simCompare.random_scaffolds.refinment_table.w_refinement_50.tsv'
         
         self.img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         
-        self.compsToConsider = [0.5, 0.7, 0.8, 0.9]
-        self.contsToConsider = [0.05, 0.1, 0.15]
+        self.compsToConsider = [0.5, 0.7, 0.8, 0.9] #[0.5, 0.7, 0.8, 0.9]
+        self.contsToConsider = [0.05, 0.1, 0.15] #[0.05, 0.1, 0.15]
         
-        self.dpi = 600
+        self.dpi = 1200
   
     def __readResults(self, filename):
         results = defaultdict(dict)
@@ -147,7 +152,7 @@ class SimComparePlots(object):
         
         for comp in self.compsToConsider:
             for cont in self.contsToConsider:
-                for seqLen in [50000]: 
+                for seqLen in [20000]: 
                     for msStr in ['MS', 'IM']:
                         rowLabels.append(msStr +': %d%%, %d%%' % (comp*100, cont*100))
                         
@@ -155,8 +160,8 @@ class SimComparePlots(object):
                         compData.append(compDataDict[expCondStr][msStr])
                         contData.append(contDataDict[expCondStr][msStr])  
                                        
-        print 'MS:\t%.2f\t%.2f' % (mean(abs(array(compData[0::2]))), mean(abs(array(contData[0::3]))))
-        print 'IM:\t%.2f\t%.2f' % (mean(abs(array(compData[1::2]))), mean(abs(array(contData[1::3]))))   
+        print 'MS:\t%.2f\t%.2f' % (mean(abs(array(compData[0::2]))), mean(abs(array(contData[0::2]))))
+        print 'IM:\t%.2f\t%.2f' % (mean(abs(array(compData[1::2]))), mean(abs(array(contData[1::2]))))   
             
         boxPlot = BoxPlot()
         plotFilename = self.plotPrefix + '.markerSets.png'
@@ -168,6 +173,9 @@ class SimComparePlots(object):
         # print table of results 
         tableOut = open(self.simCompareMarkerSetOut, 'w')
         tableOut.write('Comp. (%)\tCont. (%)\tIM (5kb)\t\tMS (5kb)\t\tIM (20kb)\t\tMS (20kb)\t\tIM (50kb)\t\tMS (50kb)\n')
+        
+        avgComp = defaultdict(lambda : defaultdict(list))
+        avgCont = defaultdict(lambda : defaultdict(list))
         for comp in [0.5, 0.7, 0.8, 0.9, 0.95, 1.0]:
             for cont in [0.0, 0.05, 0.1, 0.15, 0.2]:
                 
@@ -175,15 +183,41 @@ class SimComparePlots(object):
                 
                 for seqLen in [5000, 20000, 50000]:
                     expCondStr = str(comp) + '-' + str(cont) + '-' + str(seqLen)
-         
-                    for msStr in ['IM', 'MS']:               
-                        meanComp = mean(abs(array(compDataDict[expCondStr][msStr])))
-                        stdComp = std(abs(array(compDataDict[expCondStr][msStr])))
-                        meanCont = mean(abs(array(contDataDict[expCondStr][msStr])))
-                        stdCont = std(abs(array(contDataDict[expCondStr][msStr])))
-                        
-                        tableOut.write('\t%.1f +/- %.2f\t%.1f +/- %.2f' % (meanComp, stdComp, meanCont, stdCont))
+                     
+                    meanCompIM = mean(abs(array(compDataDict[expCondStr]['IM'])))
+                    stdCompIM = std(abs(array(compDataDict[expCondStr]['IM'])))
+                    meanContIM = mean(abs(array(contDataDict[expCondStr]['IM'])))
+                    stdContIM = std(abs(array(contDataDict[expCondStr]['IM'])))
+                    
+                    avgComp[seqLen]['IM'] += compDataDict[expCondStr]['IM']
+                    avgCont[seqLen]['IM'] += contDataDict[expCondStr]['IM']
+                    
+                    meanCompMS = mean(abs(array(compDataDict[expCondStr]['MS'])))
+                    stdCompMS = std(abs(array(compDataDict[expCondStr]['MS'])))
+                    meanContMS = mean(abs(array(contDataDict[expCondStr]['MS'])))
+                    stdContMS = std(abs(array(contDataDict[expCondStr]['MS'])))
+                    
+                    avgComp[seqLen]['MS'] += compDataDict[expCondStr]['MS']
+                    avgCont[seqLen]['MS'] += contDataDict[expCondStr]['MS']
+                    
+                    tableOut.write('\t%.1f+/-%.2f\t%.1f+/-%.2f\t%.1f+/-%.2f\t%.1f+/-%.2f' % (meanCompIM, stdCompIM, meanCompMS, stdCompMS, meanContIM, stdContIM, meanContMS, stdContMS))
                 tableOut.write('\n')
+                
+        tableOut.write('\tAverage:')
+        for seqLen in [5000, 20000, 50000]: 
+            meanCompIM = mean(abs(array(avgComp[seqLen]['IM'])))
+            stdCompIM = std(abs(array(avgComp[seqLen]['IM'])))
+            meanContIM = mean(abs(array(avgCont[seqLen]['IM'])))
+            stdContIM = std(abs(array(avgCont[seqLen]['IM'])))
+            
+            meanCompMS = mean(abs(array(avgComp[seqLen]['MS'])))
+            stdCompMS = std(abs(array(avgComp[seqLen]['MS'])))
+            meanContMS = mean(abs(array(avgCont[seqLen]['MS'])))
+            stdContMS = std(abs(array(avgCont[seqLen]['MS'])))
+            
+            tableOut.write('\t%.1f+/-%.2f\t%.1f+/-%.2f\t%.1f+/-%.2f\t%.1f+/-%.2f' % (meanCompIM, stdCompIM, meanCompMS, stdCompMS, meanContIM, stdContIM, meanContMS, stdContMS))
+                        
+        tableOut.write('\n')     
                 
         tableOut.close()
     
@@ -247,7 +281,7 @@ class SimComparePlots(object):
         for comp in self.compsToConsider:
             for cont in self.contsToConsider:
                 for msStr in ['best', 'selected', 'domain']:
-                    for seqLen in [5000]: 
+                    for seqLen in [20000]: 
                         rowLabels.append(msStr +': %d%%, %d%%' % (comp*100, cont*100))
                         
                         expCondStr = str(comp) + '-' + str(cont) + '-' + str(seqLen)
@@ -303,13 +337,78 @@ class SimComparePlots(object):
         print 'best:\t%.2f\t%.2f' % (mean(abs(array(compData[0::3]))), mean(abs(array(contData[0::3]))))
         print 'selected:\t%.2f\t%.2f' % (mean(abs(array(compData[1::3]))), mean(abs(array(contData[1::3]))))   
         print 'domain:\t%.2f\t%.2f' % (mean(abs(array(compData[2::3]))), mean(abs(array(contData[2::3]))))   
-            
+
         boxPlot = BoxPlot()
         plotFilename = self.plotPrefix + '.conditions.png'
         boxPlot.plot(plotFilename, compData, contData, rowLabels, 
                         r'$\Delta$' + ' % Completion', 'Simulation Conditions', 
                         r'$\Delta$' + ' % Contamination', None,
                         rowsPerCategory = 3, dpi = self.dpi)
+        
+        
+        # print table of results 
+        tableOut = open(self.simCompareConditionOut, 'w')
+        tableOut.write('Comp. (%)\tCont. (%)\tbest (5kb)\t\tselected (5kb)\t\tdomain (5kb)\t\tbest (20kb)\t\tselected (20kb)\t\tdomain (20kb)\t\tbest (50kb)\t\tselected (50kb)\t\tdomain (50kb)\n')
+        
+        avgComp = defaultdict(lambda : defaultdict(list))
+        avgCont = defaultdict(lambda : defaultdict(list))
+        for comp in [0.5, 0.7, 0.8, 0.9, 0.95, 1.0]:
+            for cont in [0.0, 0.05, 0.1, 0.15, 0.2]:
+                
+                tableOut.write('%d\t%d' % (comp*100, cont*100))
+                
+                for seqLen in [5000, 20000, 50000]:
+                    expCondStr = str(comp) + '-' + str(cont) + '-' + str(seqLen)
+                   
+                    meanCompD = mean(abs(array(compDataDict[expCondStr]['domain'])))
+                    stdCompD = std(abs(array(compDataDict[expCondStr]['domain'])))
+                    meanContD = mean(abs(array(contDataDict[expCondStr]['domain'])))
+                    stdContD = std(abs(array(contDataDict[expCondStr]['domain'])))
+                    
+                    avgComp[seqLen]['domain'] += compDataDict[expCondStr]['domain']
+                    avgCont[seqLen]['domain'] += contDataDict[expCondStr]['domain']
+                    
+                    meanCompS = mean(abs(array(compDataDict[expCondStr]['selected'])))
+                    stdCompS = std(abs(array(compDataDict[expCondStr]['selected'])))
+                    meanContS = mean(abs(array(contDataDict[expCondStr]['selected'])))
+                    stdContS = std(abs(array(contDataDict[expCondStr]['selected'])))
+                    
+                    avgComp[seqLen]['selected'] += compDataDict[expCondStr]['selected']
+                    avgCont[seqLen]['selected'] += contDataDict[expCondStr]['selected']
+                    
+                    meanCompB = mean(abs(array(compDataDict[expCondStr]['best'])))
+                    stdCompB = std(abs(array(compDataDict[expCondStr]['best'])))
+                    meanContB = mean(abs(array(contDataDict[expCondStr]['best'])))
+                    stdContB = std(abs(array(contDataDict[expCondStr]['best'])))
+                    
+                    avgComp[seqLen]['best'] += compDataDict[expCondStr]['best']
+                    avgCont[seqLen]['best'] += contDataDict[expCondStr]['best']
+                    
+                    tableOut.write('\t%.1f\t%.1f\t%.1f\t%.1f\t%.1f\t%.1f' % (meanCompD, meanCompS, meanCompB, meanContD, meanContS, meanContB))
+                tableOut.write('\n')
+                
+        tableOut.write('\tAverage:')
+        for seqLen in [5000, 20000, 50000]: 
+            meanCompD = mean(abs(array(avgComp[seqLen]['domain'])))
+            stdCompD = std(abs(array(avgComp[seqLen]['domain'])))
+            meanContD = mean(abs(array(avgCont[seqLen]['domain'])))
+            stdContD = std(abs(array(avgCont[seqLen]['domain'])))
+            
+            meanCompS = mean(abs(array(avgComp[seqLen]['selected'])))
+            stdCompS = std(abs(array(avgComp[seqLen]['selected'])))
+            meanContS = mean(abs(array(avgCont[seqLen]['selected'])))
+            stdContS = std(abs(array(avgCont[seqLen]['selected'])))
+            
+            meanCompB = mean(abs(array(avgComp[seqLen]['best'])))
+            stdCompB = std(abs(array(avgComp[seqLen]['best'])))
+            meanContB = mean(abs(array(avgCont[seqLen]['best'])))
+            stdContB = std(abs(array(avgCont[seqLen]['best'])))
+            
+            tableOut.write('\t%.1f\t%.1f\t%.1f\t%.1f\t%.1f\t%.1f' % (meanCompD, meanCompS, meanCompB, meanContD, meanContS, meanContB))
+                        
+        tableOut.write('\n')     
+                
+        tableOut.close()
         
     def taxonomicPlots(self, results):
         # summarize results for different taxonomic groups  
@@ -331,6 +430,7 @@ class SimComparePlots(object):
         overallCont = []
                 
         genomeInTaxon = defaultdict(set)
+        testCases = 0
         for simId in results:
             itemsProcessed += 1
             statusStr = '    Finished processing %d of %d (%.2f%%) test cases.' % (itemsProcessed, len(results), float(itemsProcessed)*100/len(results))
@@ -339,47 +439,51 @@ class SimComparePlots(object):
             
             genomeId, seqLen, comp, cont = simId.split('-')
             
-            if comp not in [str(x) for x in self.compsToConsider]:
+            if seqLen != '20000':
                 continue
             
-            if cont not in [str(x) for x in self.contsToConsider]:
-                continue
-            
-            taxonomy = metadata[genomeId]['taxonomy']
-            
-            comps.add(float(comp))
-            conts.add(float(cont))
-            seqLens.add(int(seqLen))
-            
-            overallComp += results[simId][10]
-            overallCont += results[simId][11]
-            
-            for r in xrange(0, ranksToProcess):
-                taxon = taxonomy[r]
+            if str(float(comp)) in ['0.5', '0.7', '0.8', '0.9'] and str(float(cont)) in ['0.05', '0.10', '0.1', '0.15']:
+                print comp, cont
+                taxonomy = metadata[genomeId]['taxonomy']
                 
-                if r == 0 and taxon == 'unclassified':
-                    print '*****************************Unclassified at domain-level*****************'
-                    continue
+                testCases += 1
                 
-                if taxon == 'unclassified':
-                    continue
+                comps.add(float(comp))
+                conts.add(float(cont))
+                seqLens.add(int(seqLen))
                 
-                taxon = rankPrefixes[r] + taxon
+                overallComp += results[simId][10]
+                overallCont += results[simId][11]
                 
-                taxaByRank[r].add(taxon)
-                                                
-                compDataDict[taxon]['best'] += results[simId][2]
-                compDataDict[taxon]['domain'] += results[simId][6]
-                compDataDict[taxon]['selected'] += results[simId][10]
-                
-                contDataDict[taxon]['best'] += results[simId][3]
-                contDataDict[taxon]['domain'] += results[simId][7]
-                contDataDict[taxon]['selected'] += results[simId][11]
-                
-                genomeInTaxon[taxon].add(genomeId)
+                for r in xrange(0, ranksToProcess):
+                    taxon = taxonomy[r]
+                    
+                    if r == 0 and taxon == 'unclassified':
+                        print '*****************************Unclassified at domain-level*****************'
+                        continue
+                    
+                    if taxon == 'unclassified':
+                        continue
+                    
+                    taxon = rankPrefixes[r] + taxon
+                    
+                    taxaByRank[r].add(taxon)
+                                                    
+                    compDataDict[taxon]['best'] += results[simId][2]
+                    compDataDict[taxon]['domain'] += results[simId][6]
+                    compDataDict[taxon]['selected'] += results[simId][10]
+                    
+                    contDataDict[taxon]['best'] += results[simId][3]
+                    contDataDict[taxon]['domain'] += results[simId][7]
+                    contDataDict[taxon]['selected'] += results[simId][11]
+                    
+                    genomeInTaxon[taxon].add(genomeId)
             
         sys.stdout.write('\n')
         
+        print 'Test cases', testCases
+        
+        print ''        
         print 'Creating plots for:'
         print '  comps = ', comps
         print '  conts = ', conts
@@ -468,6 +572,8 @@ class SimComparePlots(object):
         overallContRMS = [] 
         
         genomeInTaxon = defaultdict(set)
+        
+        testCases = 0
         for simId in results:
             itemsProcessed += 1
             statusStr = '    Finished processing %d of %d (%.2f%%) test cases.' % (itemsProcessed, len(results), float(itemsProcessed)*100/len(results))
@@ -477,10 +583,7 @@ class SimComparePlots(object):
             genomeId, seqLen, comp, cont = simId.split('-')
             taxonomy = metadata[genomeId]['taxonomy']
             
-            if comp not in [str(x) for x in self.compsToConsider]:
-                continue
-            
-            if cont not in [str(x) for x in self.contsToConsider]:
+            if float(comp) < 0.7 or float(cont) > 0.1:
                 continue
             
             comps.add(float(comp))
@@ -588,13 +691,13 @@ class SimComparePlots(object):
         results = self.__readResults(self.simCompareFile)
         
         print '\n'         
-        self.markerSets(results)
+        #self.markerSets(results)
                    
         print '\n'         
         #self.conditionsPlot(results)
         
-        print '\n'
-        #self.taxonomicPlots(results)
+        #print '\n'
+        self.taxonomicPlots(results)
         
         print '\n'
         #self.refinementPlots(results)

@@ -54,8 +54,8 @@ class Simulation(object):
         self.img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         
         self.contigLens = [1000, 2000, 5000, 10000, 20000, 50000]
-        self.percentComps = [0.5] #, 0.7, 0.8, 0.9, 0.95, 1.0]
-        self.percentConts = [0.0] #, 0.05, 0.1, 0.15, 0.2]
+        self.percentComps = [0.5, 0.7, 0.8, 0.9, 0.95, 1.0]
+        self.percentConts = [0.0, 0.05, 0.1, 0.15, 0.2]
     
     def __workerThread(self, tree, metadata, ubiquityThreshold, singleCopyThreshold, numReplicates, queueIn, queueOut):
         """Process each data item in parallel."""
@@ -67,11 +67,14 @@ class Simulation(object):
 
             # build marker sets for evaluating test genome
             testNode = tree.find_node_with_taxon_label('IMG_' + testGenomeId)
-            #!!!binMarkerSets, refinedBinMarkerSet = self.markerSetBuilder.buildBinMarkerSet(tree, testNode.parent_node, ubiquityThreshold, singleCopyThreshold, bMarkerSet = True, genomeIdsToRemove = [testGenomeId])
-            binMarkerSets, refinedBinMarkerSet = self.markerSetBuilder.buildDomainMarkerSet(tree, testNode.parent_node, ubiquityThreshold, singleCopyThreshold, bMarkerSet = False, genomeIdsToRemove = [testGenomeId])
+            binMarkerSets, refinedBinMarkerSet = self.markerSetBuilder.buildBinMarkerSet(tree, testNode.parent_node, ubiquityThreshold, singleCopyThreshold, bMarkerSet = True, genomeIdsToRemove = [testGenomeId])
+            #!!!binMarkerSets, refinedBinMarkerSet = self.markerSetBuilder.buildDomainMarkerSet(tree, testNode.parent_node, ubiquityThreshold, singleCopyThreshold, bMarkerSet = False, genomeIdsToRemove = [testGenomeId])
             
             # determine distribution of all marker genes within the test genome
             geneDistTable = self.img.geneDistTable([testGenomeId], binMarkerSets.getMarkerGenes(), spacingBetweenContigs=0)
+            
+            print '# marker genes: ', len(binMarkerSets.getMarkerGenes())
+            print '# genes in table: ', len(geneDistTable[testGenomeId])
                 
             # estimate completeness of unmodified genome
             unmodifiedComp = {}
@@ -84,16 +87,13 @@ class Simulation(object):
                 completeness, contamination = ms.genomeCheck(hits, bIndividualMarkers=True) 
                 unmodifiedComp[ms.lineageStr] = completeness
                 unmodifiedCont[ms.lineageStr] = contamination
+                
+            print completeness, contamination
 
             # estimate completion and contamination of genome after subsampling using both the domain and lineage-specific marker sets 
             genomeSize = readFastaBases(os.path.join(self.img.genomeDir, testGenomeId, testGenomeId + '.fna'))
-            
-            for mg in geneDistTable[testGenomeId]:
-                for positions in geneDistTable[testGenomeId][mg]:
-                    for pos in positions:
-                        if pos > genomeSize:
-                            print 'problem!', testGenomeId, mg, pos, genomeSize
-            
+            print 'genomeSize', genomeSize
+
             for contigLen in self.contigLens: 
                 for percentComp in self.percentComps:
                     for percentCont in self.percentConts:
@@ -114,7 +114,8 @@ class Simulation(object):
             
                         for _ in xrange(0, numReplicates):
                             trueComp, trueCont, startPartialGenomeContigs = self.markerSetBuilder.sampleGenome(genomeSize, percentComp, percentCont, contigLen)
-                            
+                            print contigLen, trueComp, trueCont, len(startPartialGenomeContigs)
+
                             trueComps.append(trueComp)
                             trueConts.append(trueCont)
 
@@ -233,7 +234,7 @@ class Simulation(object):
         print '  Total genomes: %d' % len(metadata)
         
         genomeIdsToTest = genomesInTree - self.img.filterGenomeIds(genomesInTree, metadata, 'status', 'Finished')
-        genomeIdsToTest = random.sample(genomeIdsToTest, 100)
+        genomeIdsToTest = [list(genomeIdsToTest)[0]] #random.sample(genomeIdsToTest, 1)
         print '  Number of draft genomes: %d' % len(genomeIdsToTest)
         
         print ''

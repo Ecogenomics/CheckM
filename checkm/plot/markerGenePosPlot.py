@@ -127,7 +127,7 @@ class MarkerGenePosPlot(AbstractPlot):
         colours = [(1.0, 1.0, 1.0), (127/255.0, 201/255.0, 127/255.0), (255/255.0, 192/255.0, 134/255.0), (190/255.0, 174/255.0, 212/255.0), (0.0, 0.0, 0.0)]
         discreteColourMap = mpl.colors.ListedColormap(colours)
         axisColourMap = self.fig.add_axes([self.options.fig_padding/self.options.width, self.options.fig_padding/height, 0.15, 0.03*(self.options.width/height)])
-        colourBar = mpl.colorbar.ColorbarBase(axisColourMap, cmap=discreteColourMap, orientation='horizontal', drawedges=True)
+        colourBar = mpl.colorbar.ColorbarBase(axisColourMap, cmap=discreteColourMap, norm=mpl.colors.Normalize(vmin=0, vmax=1), orientation='horizontal', drawedges=True)
         colourBar.set_ticks([0.1, 0.3, 0.5, 0.7, 0.9])
         colourBar.set_ticklabels(['0', '1', '2', '3', '4+'])
         #colourBar.outline.set_color(self.axesColour)
