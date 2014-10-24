@@ -38,7 +38,7 @@ def readFasta(fastaFile):
                 continue
 
             if line[0] == '>':
-                seqId = line[1:].partition(' ')[0].rstrip()
+                seqId = line[1:].split(None, 1)[0]
                 seqs[seqId] = []
             else:
                 seqs[seqId].append(line[0:-1])
@@ -62,7 +62,7 @@ def readFastaSeqIds(fastaFile):
     seqIds = []
     for line in openFile(fastaFile):
         if line[0] == '>':
-            seqId = line[1:].partition(' ')[0].rstrip()
+            seqId = line[1:].split(None, 1)[0]
             seqIds.append(seqId)
 
     return seqIds
@@ -90,7 +90,7 @@ def readGenomicSeqsFromFasta(fastaFile, seqToIgnore=None):
             if 'plasmid' in line.lower():
                 bRead = False
             else:
-                seqId = line[1:].partition(' ')[0]
+                seqId = line[1:].split(None, 1)[0]
                 seqs[seqId] = []
                 bRead = True
         elif bRead:

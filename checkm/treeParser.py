@@ -154,12 +154,13 @@ class TreeParser():
         alignOutputDir = os.path.join(outDir, 'storage', 'tree')
         checkDirExists(alignOutputDir)
 
-        # read genome tree
-        treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
+        # read genome tree (if it exists)
+        binIdToTaxonomy = {}
+        treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)       
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
 
         # find first parent of each bin with a taxonomic label
-        binIdToTaxonomy = {}
+        
         for binId in binIds:
             node = tree.find_node_with_taxon_label(binId)
             if node == None:

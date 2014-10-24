@@ -49,15 +49,15 @@ class SimCompare(object):
         #self.simCompareSummaryOut = './simulations/simCompare.draft.w_refinement_50.summary.tsv'
         #self.simCompareFullOut = './simulations/simCompare.draft.w_refinement_50.full.tsv'
 
-        #self.resultsSummaryFile = './simulations/simulation.scaffolds.draft.summary.w_refinement_50.tsv'
-        #self.resultsFullFile = './simulations/simulation.scaffolds.draft.w_refinement_50.tsv.gz'
-        #self.simCompareSummaryOut = './simulations/simCompare.scaffolds.draft.w_refinement_50.summary.tsv'
-        #self.simCompareFullOut = './simulations/simCompare.scaffolds.draft.w_refinement_50.full.tsv'
+        self.resultsSummaryFile = './simulations/simulation.scaffolds.draft.summary.w_refinement_50.tsv'
+        self.resultsFullFile = './simulations/simulation.scaffolds.draft.w_refinement_50.tsv.gz'
+        self.simCompareSummaryOut = './simulations/simCompare.scaffolds.draft.w_refinement_50.summary.tsv'
+        self.simCompareFullOut = './simulations/simCompare.scaffolds.draft.w_refinement_50.full.tsv'
 
-        self.resultsSummaryFile = './simulations/simulation.random_scaffolds.w_refinement_50.draft.summary.tsv'
-        self.resultsFullFile = './simulations/simulation.random_scaffolds.w_refinement_50.draft.tsv.gz'
-        self.simCompareSummaryOut = './simulations/simCompare.random_scaffolds.w_refinement_50.summary.tsv'
-        self.simCompareFullOut = './simulations/simCompare.random_scaffolds.w_refinement_50.full.tsv'
+        #self.resultsSummaryFile = './simulations/simulation.random_scaffolds.w_refinement_50.draft.summary.tsv'
+        #self.resultsFullFile = './simulations/simulation.random_scaffolds.w_refinement_50.draft.tsv.gz'
+        #self.simCompareSummaryOut = './simulations/simCompare.random_scaffolds.w_refinement_50.summary.tsv'
+        #self.simCompareFullOut = './simulations/simCompare.random_scaffolds.w_refinement_50.full.tsv'
 
     def __bestMarkerSet(self, simId, simResults):
         """Get stats for best marker set."""
@@ -234,6 +234,11 @@ class SimCompare(object):
 
         imDomBetter = 0
         msDomBetter = 0
+        
+        msComp = []
+        msCont = []
+        rmsComp = []
+        rmsCont = []
 
         briefSummaryOut = open('./simulations/briefSummaryOut.scaffolds.tsv', 'w')
         for simId in summaryResults:
@@ -259,6 +264,11 @@ class SimCompare(object):
             simUID = self.__inferredMarkerSet(tree, genomeId, inferredMarkerSet)
             numDescendantsSim, dCompSimSummaryIM, dContSimSummaryIM, dCompSimSummaryMS, dContSimSummaryMS, dCompSimSummaryRMS, dContSimSummaryRMS, _, _ = summaryResults[simId][simUID]
             _, dCompSimIM, dContSimIM, dCompSimMS, dContSimMS, dCompSimRMS, dContSimRMS = fullResults[simId][simUID]
+            
+            msComp.append(dCompSimSummaryMS)
+            msCont.append(dContSimSummaryMS)
+            rmsComp.append(dCompSimSummaryRMS)
+            rmsCont.append(dContSimSummaryRMS)
 
             for a, b, c, d, e, f in zip(dCompDomMS.split(','), dCompSimMS.split(','), dCompSimRMS.split(','), dContDomMS.split(','), dContSimMS.split(','), dContSimRMS.split(',')):
                 briefSummaryOut.write('%s\t%f\t%f\t%f\t%f\t%f\t%f\n' % (genomeId, float(a), float(b), float(c), float(d), float(e), float(f)))
@@ -392,6 +402,22 @@ class SimCompare(object):
         print 'MS Domain better: %.2f' % (float(msDomBetter)*100/(imDomBetter+msDomBetter))
 
         briefSummaryOut.close()
+        
+        print 'MS comp, cont: %.2f, %.2f' % (mean(msComp), mean(msCont))
+        print 'RMS comp, cont: %.2f, %.2f' % (mean(rmsComp), mean(rmsCont))
+        
+        diff = []
+        for a, b in zip(msComp, rmsComp):
+            diff.append(abs(a-b))
+            
+        print 'Abs diff comp: %.2f' % mean(diff)
+        
+        diff = []
+        for a, b in zip(msCont, rmsCont):
+            diff.append(abs(a-b))
+            
+        print 'Abs diff cont: %.2f' % mean(diff)
+        
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)

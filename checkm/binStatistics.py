@@ -92,7 +92,7 @@ class BinStatistics():
             scaffolds = readFasta(binFile) 
             for seqId in scaffolds:
                 scaffoldStats[seqId] = {}
-                
+  
             # calculate GC statistics
             GC, stdGC = self.calculateGC(scaffolds, scaffoldStats) 
             binStats['GC'] = GC
@@ -235,12 +235,9 @@ class BinStatistics():
         codingBasePairs = 0
         for geneId, gene in aaGenes.iteritems():
             codingBasePairs += len(gene)*3
-            
+
             scaffoldId = geneId[0:geneId.rfind('_')]
             seqStats[scaffoldId]['# ORFs'] = seqStats[scaffoldId].get('# ORFs', 0) + 1
             seqStats[scaffoldId]['Coding bases'] = seqStats[scaffoldId].get('Coding bases', 0) + len(gene)*3
             
         return codingBasePairs
-        
-        
-            

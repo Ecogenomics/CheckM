@@ -49,6 +49,7 @@ class DefaultValues():
 
 	GENOME_TREE_DIR = os.path.join(CHECKM_DATA_DIR, 'genome_tree')
 	PPLACER_REF_PACKAGE = os.path.join(GENOME_TREE_DIR, 'genome_tree_prok.refpkg')
+	GENOME_TREE_FINAL = 'genome_tree.final.tre'
 	DISTRIBUTION_DIR = os.path.join(CHECKM_DATA_DIR, 'distributions')
 
 	PHYLO_HMM_MODEL_INFO = 'phylo_hmm_info.pkl.gz'

@@ -21,6 +21,8 @@
 
 import os
 import sys
+import stat
+import shutil
 import subprocess
 import logging
 from collections import defaultdict
@@ -45,14 +47,23 @@ class PplacerRunner():
         checkDirExists(outDir)
         alignOutputDir = os.path.join(outDir, 'storage', 'tree')
         checkDirExists(alignOutputDir)
+        
+        treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
+        pplacerJsonOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_JSON_OUT)
+        pplacerOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_OUT)
 
         # create concatenated alignment file for each bin
         concatenatedAlignFile = self.__createConcatenatedAlignment(binFiles, resultsParser, alignOutputDir)
+        
+        # check if concatenated alignment file is empty
+        # (this can occur when all genomes have no phylogenetically informative marker genes)
+        if os.stat(concatenatedAlignFile)[stat.ST_SIZE] == 0:
+            self.logger.info('  No genomes were identified that could be placed in the reference genome tree.')
+            shutil.copyfile(os.path.join( DefaultValues.PPLACER_REF_PACKAGE, DefaultValues.GENOME_TREE_FINAL), treeFile)
+            return
 
         # run pplacer to place bins in reference genome tree
         self.logger.info('  Placing %d bins into the genome tree with pplacer (be patient).' % len(binFiles))
-        pplacerJsonOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_JSON_OUT)
-        pplacerOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_OUT)
         cmd = 'pplacer -j %d -c %s -o %s %s > %s' % (self.numThreads,
                                                      DefaultValues.PPLACER_REF_PACKAGE,
                                                      pplacerJsonOut,
@@ -61,7 +72,6 @@ class PplacerRunner():
         os.system(cmd)
 
         # extract tree
-        treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
         cmd = 'guppy tog -o %s %s' % (treeFile, pplacerJsonOut)
         os.system(cmd)
 

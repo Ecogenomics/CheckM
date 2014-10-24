@@ -413,6 +413,10 @@ class MarkerSetParser():
 
         # remove key file
         os.remove(keyFile)
+        
+    def readTaxonomicMarkerSetFile(self, markerSetFile):
+        """Read taxonomic marker set file."""
+        return self.__parseTaxonomicMarkerSetFile(markerSetFile)
 
     def __parseTaxonomicMarkerSetFile(self, markerSetFile):
         """Parse marker set from a taxonomic-specific marker set file."""
