@@ -21,10 +21,12 @@
 
 import os
 import sys
+import shutil
 import multiprocessing as mp
 import logging
 
 from checkm.common import binIdFromFilename, makeSurePathExists
+from checkm.defaultValues import DefaultValues
 
 from checkm.hmmer import HMMERRunner
 from checkm.prodigal import ProdigalRunner
@@ -38,12 +40,14 @@ class MarkerGeneFinder():
         self.logger = logging.getLogger()
         self.totalThreads = threads
 
-    def find(self, binFiles, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs):
+    def find(self, binFiles, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, bCalledGenes):
         """Identify marker genes in each bin using prodigal and HMMER."""
         
         # make sure HMMER and prodigal are on system path
         HMMERRunner()
-        ProdigalRunner('')
+        
+        if not bCalledGenes:
+            ProdigalRunner('')
    
         # process each fasta file
         self.threadsPerSearch = max(1, int(self.totalThreads / len(binFiles)))
@@ -62,7 +66,7 @@ class MarkerGeneFinder():
         binIdToModels = mp.Manager().dict()
         
         try:
-            calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            calcProc = [mp.Process(target = self.__processBin, args = (outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, bCalledGenes, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
             writeProc = mp.Process(target = self.__reportProgress, args = (len(binFiles), binIdToModels, writerQueue))
     
             writeProc.start()
@@ -89,7 +93,7 @@ class MarkerGeneFinder():
 
         return d
 
-    def __processBin(self, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, queueIn, queueOut):
+    def __processBin(self, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, bCalledGenes, queueIn, queueOut):
         """Thread safe bin processing."""
 
         markerSetParser = MarkerSetParser(self.threadsPerSearch)
@@ -104,9 +108,14 @@ class MarkerGeneFinder():
             makeSurePathExists(binDir)
 
             # run Prodigal
-            prodigal = ProdigalRunner(binDir)
-            if not prodigal.areORFsCalled(bNucORFs):
-                prodigal.run(binFile, bNucORFs)
+            if not bCalledGenes:
+                prodigal = ProdigalRunner(binDir)
+                if not prodigal.areORFsCalled(bNucORFs):
+                    prodigal.run(binFile, bNucORFs)
+                aaGeneFile = prodigal.aaGeneFile
+            else:
+                aaGeneFile = binFile
+                shutil.copyfile(aaGeneFile, os.path.join(binDir, DefaultValues.PRODIGAL_AA))
 
             # extract HMMs into temporary file
             hmmModelFile = markerSetParser.createHmmModelFile(binId, markerFile)
@@ -119,7 +128,7 @@ class MarkerGeneFinder():
             keepAlignStr = ''
             if not bKeepAlignment:
                 keepAlignStr = '--noali'
-            hmmer.search(hmmModelFile, prodigal.aaGeneFile, tableOutPath, hmmerOutPath,
+            hmmer.search(hmmModelFile, aaGeneFile, tableOutPath, hmmerOutPath,
                          '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr,
                          bKeepAlignment)
           

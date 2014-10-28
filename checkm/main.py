@@ -120,7 +120,8 @@ class OptionsParser():
                                  DefaultValues.HMMER_PHYLO_OUT,
                                  DefaultValues.PHYLO_HMM_MODELS,
                                  options.bKeepAlignment,
-                                 options.bNucORFs)
+                                 options.bNucORFs,
+                                 options.bCalledGenes)
 
         # write model information to file
         markerSetParser = MarkerSetParser(options.threads)
@@ -285,7 +286,8 @@ class OptionsParser():
                                  DefaultValues.HMMER_OUT,
                                  options.marker_file,
                                  options.bKeepAlignment,
-                                 options.bNucORFs)
+                                 options.bNucORFs,
+                                 options.bCalledGenes)
 
         markerSetParser = MarkerSetParser(options.threads)
         binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.out_folder,
@@ -937,7 +939,8 @@ class OptionsParser():
                          "merger.hmmer3",
                          options.marker_file,
                          False,
-                         False)
+                         False,
+                         options.bCalledGenes)
 
         # get HMM file for each bin
         markerSetParser = MarkerSetParser()

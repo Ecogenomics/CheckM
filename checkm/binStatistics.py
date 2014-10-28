@@ -109,7 +109,7 @@ class BinStatistics():
             binStats['N50 (scaffolds)'] = scaffold_N50
             binStats['N50 (contigs)'] = contig_N50
             
-            # calculate coding density statistics            
+            # calculate coding density statistics        
             codingDensity, translationTable, numORFs = self.calculateCodingDensity(binDir, genomeSize, scaffoldStats)
             binStats['Coding density'] = codingDensity
             binStats['Translation table'] = translationTable
@@ -221,14 +221,20 @@ class BinStatistics():
         
     def calculateCodingDensity(self, outDir, genomeSize, seqStats):
         """Calculate coding density of putative genome bin."""
-        prodigalParserGFF = ProdigalGeneFeatureParser(os.path.join(outDir, DefaultValues.PRODIGAL_GFF))
-
-        aaFile = os.path.join(outDir, DefaultValues.PRODIGAL_AA) # use AA file as nucleotide file is optional
-        aaGenes = readFasta(aaFile)
-        
-        codingBasePairs = self.__calculateCodingBases(aaGenes, seqStats)
+        gffFile = os.path.join(outDir, DefaultValues.PRODIGAL_GFF)
+        if os.path.exists(gffFile):
+            prodigalParserGFF = ProdigalGeneFeatureParser(gffFile)
+    
+            aaFile = os.path.join(outDir, DefaultValues.PRODIGAL_AA) # use AA file as nucleotide file is optional
+            aaGenes = readFasta(aaFile)
             
-        return float(codingBasePairs) / genomeSize, prodigalParserGFF.translationTable, len(aaGenes)
+            codingBasePairs = self.__calculateCodingBases(aaGenes, seqStats)
+                
+            return float(codingBasePairs) / genomeSize, prodigalParserGFF.translationTable, len(aaGenes)
+        else:
+            # there is not gene feature file (perhaps the user specified precalculated genes)
+            # so calculting the coding density is not possible
+            return -1, -1, -1
     
     def __calculateCodingBases(self, aaGenes, seqStats):
         """Calculate number of coding bases in a set of genes."""    

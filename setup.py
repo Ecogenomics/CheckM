@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='checkm-genome',
-    version='0.9.4',
+    version='0.9.5',
     author='Donovan Parks, Michael Imelfort, Connor Skennerton',
     author_email='donovan.parks@gmail.com',
     packages=['checkm', 'checkm.plot', 'checkm.test', 'checkm.util'],

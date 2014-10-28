@@ -61,9 +61,9 @@ class DefaultValues():
 	HMMER_TABLE_OUT = 'hmmer.analyze.txt'
 	HMMER_OUT = 'hmmer.analyze.ali.txt'
 
-	PRODIGAL_AA = 'prodigal.faa'
-	PRODIGAL_NT = 'prodigal.fna'
-	PRODIGAL_GFF = 'prodigal.gff'
+	PRODIGAL_AA = 'genes.faa'
+	PRODIGAL_NT = 'genes.fna'
+	PRODIGAL_GFF = 'genes.gff'
 
 	PPLACER_CONCAT_SEQ_OUT = 'concatenated.fasta'
 	PPLACER_JSON_OUT = 'concatenated.pplacer.json'
