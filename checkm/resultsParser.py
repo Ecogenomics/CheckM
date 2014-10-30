@@ -371,8 +371,14 @@ class ResultsManager():
 
                         # check if hits are on adjacent ORFs
                         if scaffoldIdI == scaffoldIdJ:
-                            orfNumI = int(orfI[orfI.rfind('_')+1:])
-                            orfNumJ = int(orfJ[orfJ.rfind('_')+1:])
+                            try:
+                                orfNumI = int(orfI[orfI.rfind('_')+1:])
+                                orfNumJ = int(orfJ[orfJ.rfind('_')+1:])
+                            except:
+                                # it appears called genes are not labeled
+                                # according to the prodigal format, so
+                                # it is not possible to perform this correction
+                                break
 
                             if abs(orfNumI - orfNumJ) == 1:
                                 # check if hits are to different parts of the HMM
