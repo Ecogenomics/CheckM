@@ -1,4 +1,4 @@
-#!/srv/sw/python/2.7.4/bin/python
+#!/usr/bin/env python
 
 ###############################################################################
 #
@@ -32,10 +32,19 @@ __version__ = "0.9.5"
 
 import argparse
 import sys
+import os
 
 from checkm import main
 from checkm.defaultValues import DefaultValues
 from checkm.util.taxonomyUtils import taxonomicRanks
+import tempfile
+
+class ChangeTempAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if os.path.isdir(values):
+            tempfile.tempdir = values
+        else:
+            raise argparse.ArgumentTypeError('The value of %s must be a valid directory' % option_string)
 
 def printHelp():
     print ''
@@ -129,6 +138,7 @@ if __name__ == '__main__':
     tree_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     tree_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     tree_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    tree_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
     # do QA on phylogenetic marker genes
     tree_qa_parser = subparsers.add_parser('tree_qa',
@@ -147,6 +157,7 @@ if __name__ == '__main__':
     tree_qa_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     tree_qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     tree_qa_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    tree_qa_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
 
     # calculate lineage-specific marker set for genome bins
@@ -161,6 +172,7 @@ if __name__ == '__main__':
     lineage_set_parser.add_argument('--force_domain', dest='bForceDomain', action="store_true", default=False, help="use domain-level sets for all bins")
     lineage_set_parser.add_argument('--no_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform lineage-specific marker set refinement")
     lineage_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    lineage_set_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
     # Note: these selection criteria are currently incompatible with how the selected lineage-specific marker set is defined
     #lineage_set_parser.add_argument('-b', '--bootstrap', type=float, help="required bootstrap support for calculating marker set; percentage between 0 and 1", default=0)
@@ -173,6 +185,7 @@ if __name__ == '__main__':
                                         description='List available taxonomic-specific marker sets.',
                                         epilog='Example: checkm taxon_list --rank phylum')
     taxon_list_parser.add_argument('--rank', help="restrict list to specified taxonomic rank", choices=['ALL'] + taxonomicRanks, default='ALL')
+    taxon_list_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
     # calculate taxonomic-specific marker set
     taxon_set_parser = subparsers.add_parser('taxon_set',
@@ -183,6 +196,7 @@ if __name__ == '__main__':
     taxon_set_parser.add_argument('taxon', help="taxon of interest")
     taxon_set_parser.add_argument('marker_file', help="output file describing taxonomic-specific marker set")
     taxon_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    taxon_set_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
     # identify marker genes within binned contigs and calculate genome statistics
     analyze_parser = subparsers.add_parser('analyze',
@@ -200,6 +214,7 @@ if __name__ == '__main__':
     analyze_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     analyze_parser.add_argument('--ali_top_hits', dest='bAlignTopHit', action="store_true", default=False, help=argparse.SUPPRESS) # [hidden argument] align top marker hits (used by genome tree database)
+    analyze_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
     # do QA on pre-processed contigs
     qa_parser = subparsers.add_parser('qa',
@@ -232,6 +247,7 @@ if __name__ == '__main__':
     qa_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     qa_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     qa_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    qa_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
 
     # run lineage-specific workflow
@@ -260,6 +276,7 @@ if __name__ == '__main__':
     lineage_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     lineage_wf_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     lineage_wf_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    lineage_wf_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
     # run taxonomic-specific workflow
     taxonomy_wf_parser = subparsers.add_parser('taxonomy_wf',
@@ -286,6 +303,7 @@ if __name__ == '__main__':
     taxonomy_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     taxonomy_wf_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     taxonomy_wf_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    taxonomy_wf_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
 
     # generic arguments for plots
@@ -618,6 +636,7 @@ if __name__ == '__main__':
                                             description='Test CheckM on E. coli genome.',
                                             epilog='Example: checkm test ~/checkm_test')
     test_parser.add_argument('output_dir', help="output folder for test data")
+    test_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
     # debug and development
     if False:
@@ -654,4 +673,3 @@ if __name__ == '__main__':
     except:
         print "\nUnexpected error:", sys.exc_info()[0]
         raise
-
