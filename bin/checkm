@@ -1,4 +1,4 @@
-#!/srv/sw/python/2.7.4/bin/python
+#!usr/bin/env python
 
 ###############################################################################
 #
@@ -673,4 +673,3 @@ if __name__ == '__main__':
     except:
         print "\nUnexpected error:", sys.exc_info()[0]
         raise
-
