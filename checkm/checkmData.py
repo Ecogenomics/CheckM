@@ -200,7 +200,7 @@ class DBManager(ManifestManager):
                 # user has given up
                 return None
             else:
-                path = os.path.abspath(path)
+                path = os.path.abspath(os.path.expanduser(path))
 
             if os.path.exists(path):
                 # path exists
