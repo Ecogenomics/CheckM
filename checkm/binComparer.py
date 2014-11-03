@@ -57,6 +57,7 @@ class BinComparer(object):
 
     def report(self, binFiles1, binFiles2, seqFile, outputFile):
         # determine total number of sequences
+        self.logger.info('  Reading sequences.')
         seqs = readFasta(seqFile)
 
         seqLens = {}
@@ -90,10 +91,9 @@ class BinComparer(object):
         binStats2 = sorted(binStats2.iteritems(), key = lambda x: x[1][1], reverse = True)
 
         # report summary results
-        self.logger.info('')
-        self.logger.info('  Total seqs = %d (%.2f Mbp)' % (len(seqs), float(totalBases)/1e6))
-        self.logger.info('    # seqs > 1 kbp = %d (%.2f Mbp)' % (numSeq1K, float(totalBases1K)/1e6))
-        self.logger.info('    # seqs > 5 kbp= %d (%.2f Mbp)' % (numSeq5K, float(totalBases5K)/1e6))
+        self.logger.info('    Total seqs = %d (%.2f Mbp)' % (len(seqs), float(totalBases)/1e6))
+        self.logger.info('      # seqs > 1 kbp = %d (%.2f Mbp)' % (numSeq1K, float(totalBases1K)/1e6))
+        self.logger.info('      # seqs > 5 kbp = %d (%.2f Mbp)' % (numSeq5K, float(totalBases5K)/1e6))
         self.logger.info('')
         self.logger.info('  Binned seqs statistics:')
         self.logger.info('    1) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbp (%.2f%%)' % (len(bins1), totalBinnedSeqs1, float(totalBinnedSeqs1)*100 / len(seqs), float(totalBinnedBases1)/1e6, float(totalBinnedBases1)*100/totalBases))
