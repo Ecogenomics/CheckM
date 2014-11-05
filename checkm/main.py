@@ -197,7 +197,7 @@ class OptionsParser():
         self.logger.info('')
 
         checkDirExists(options.tree_folder)
-        
+
         # set HMM file for each bin
         markerSetParser = MarkerSetParser()
         hmmModelInfoFile = os.path.join(options.tree_folder, 'storage', DefaultValues.PHYLO_HMM_MODEL_INFO)
@@ -220,7 +220,7 @@ class OptionsParser():
 
         treeParser = TreeParser()
         treeParser.getBinMarkerSets(options.tree_folder, options.marker_file,
-                                    options.num_genomes_markers, 
+                                    options.num_genomes_markers,
                                     options.bootstrap, options.bNoLineageSpecificRefinement,
                                     options.bForceDomain, options.bRequireTaxonomy,
                                     resultsParser, options.unique, options.multi)
@@ -1091,8 +1091,8 @@ class OptionsParser():
         self.logger.info('*******************************************************************************')
         self.logger.info('')
 
-        makeSurePathExists(options.bin_folder1)
-        makeSurePathExists(options.bin_folder2)
+        checkDirExists(options.bin_folder1)
+        checkDirExists(options.bin_folder2)
 
         binFiles1 = self.binFiles(options.bin_folder1, options.extension1)
         binFiles2 = self.binFiles(options.bin_folder2, options.extension2)
@@ -1146,8 +1146,6 @@ class OptionsParser():
             
         self.logger.info('')
              
-        
-        
     def test(self, options):
         """Quick test of CheckM"""
         self.logger.info('')
@@ -1155,7 +1153,7 @@ class OptionsParser():
         self.logger.info('[CheckM - Test] Processing E.coli K12-W3310 to verify operation of CheckM.')
         self.logger.info('*******************************************************************************')
         self.logger.info('')
-        
+
         verifyEcoli = VerifyEcoli()
         verifyEcoli.run(self, options.output_dir)
 
