@@ -94,6 +94,7 @@ def printHelp():
     merge        -> Identify bins with complementary sets of marker genes
     outliers     -> [Experimental] Identify outlier in bins relative to reference distributions
     modify       -> [Experimental] Modify sequences in a bin
+    bin_union    -> [Experimental] Merge multiple binning efforts into a single bin set   
 
   Utility functions:
     unbinned     -> Identify unbinned sequences
