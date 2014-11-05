@@ -577,6 +577,19 @@ if __name__ == '__main__':
     bin_compare_parser.add_argument('-x', '--extension1', default='fna', help="extension of bins in folder 1")
     bin_compare_parser.add_argument('-y', '--extension2', default='fna', help="extension of bins in folder 2")
     bin_compare_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
+    
+    # Remove redundant bins from several binning attempts
+    bin_union_parser = subparsers.add_parser('bin_union',
+                                               formatter_class=argparse.RawDescriptionHelpFormatter,
+                                               description='Create a non-redundant set of bins from multiple sets of bins',
+                                               epilog='Example: checkm bin_union_output bins1/ check_qa_tab_table1.tsv bins2/ check_qa_tab_table2.tsv')
+    bin_union_parser.add_argument('output_dir', help="folder for outputting")
+    bin_union_parser.add_argument('bin_or_checkm_qa_table', nargs='+', help="bin folders and checkm_qa_table_tables (must have at least one of each)")
+    
+    bin_union_parser.add_argument('-x', '--extension', default='fna', help="extension of bins in bin folders")
+    bin_union_parser.add_argument('--min_completeness', help="ignore bins with less completeness than this, as a percentage e.g. '70'", type=float, default = 70)
+    bin_union_parser.add_argument('--max_contamination', help="ignore bins with more contamination than this, as a percentage e.g. '10'", type=float, default = 10)
+    bin_union_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # Identify bins with complementary marker sets
     merge_parser = subparsers.add_parser('merge',

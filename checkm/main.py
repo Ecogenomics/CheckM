@@ -37,6 +37,7 @@ from checkm.treeParser import TreeParser
 from checkm.taxonParser import TaxonParser
 from checkm.aminoAcidIdentity import AminoAcidIdentity
 from checkm.binComparer import BinComparer
+from checkm.binUnion import BinUnion
 from checkm.binStatistics import BinStatistics
 from checkm.coverage import Coverage
 from checkm.coverageWindows import CoverageWindows
@@ -72,7 +73,7 @@ class OptionsParser():
         self.timeKeeper = TimeKeeper()
 
         # make sure data is legit
-        self.DBM = DBManager()
+        #self.DBM = DBManager()
 
     def updateCheckM_DB(self, options):
         self.logger.info('')
@@ -1104,6 +1105,49 @@ class OptionsParser():
 
         self.timeKeeper.printTimeStamp()
         
+    def binUnion(self, options):
+        """Bin union command"""
+        self.logger.info('')
+        self.logger.info('*******************************************************************************')
+        self.logger.info('[CheckM - bin_union] Redundancy reduce multiple sets of bins into a single set.')
+        self.logger.info('*******************************************************************************')
+        self.logger.info('')
+        
+        output_dir = options.output_dir
+        makeSurePathExists(output_dir)
+        
+        bin_folders = []
+        checkmQaTsvs = []
+        for i, arg in enumerate(options.bin_or_checkm_qa_table):
+            if i % 2 == 0:
+                checkDirExists(arg)
+                bin_folders.append(arg)
+            else:
+                checkFileExists(arg)
+                checkmQaTsvs.append(arg)
+                
+        if len(bin_folders) < 2:
+            self.logger.error("   [Error] Need to specify at least two bin folders, found %i: " % len(bin_folders))
+            sys.exit()
+        if len(bin_folders) != len(checkmQaTsvs):
+            self.logger.error("   [Error] Need to specify the same number of bin folders as checkm_qa_tsv files, found %i and %i, respectively: " % (len(bin_folders), len(checkmQaTsvs)))
+            sys.exit()
+            
+        binFileSets = []
+        for bin_folder in bin_folders:
+            self.logger.info("   Reading fasta files with extension %s from bin folder %s" %(options.extension, bin_folder))
+            binFileSets.append(self.binFiles(bin_folder, options.extension))
+                
+        binUnion = BinUnion()
+        
+        contigConflictsOutputFile = os.path.join(output_dir, 'contigConflicts.csv')
+        unionBinOutputFile = os.path.join(output_dir, 'union.txt')
+        binUnion.report(bin_folders, binFileSets, checkmQaTsvs, unionBinOutputFile, contigConflictsOutputFile, options.min_completeness, options.max_contamination)
+            
+        self.logger.info('')
+             
+        
+        
     def test(self, options):
         """Quick test of CheckM"""
         self.logger.info('')
@@ -1220,6 +1264,8 @@ class OptionsParser():
             self.ssuFinder(options)
         elif(options.subparser_name == 'bin_compare'):
             self.binCompare(options)
+        elif(options.subparser_name == 'bin_union'):
+            self.binUnion(options)
         elif(options.subparser_name == 'test'):
             self.test(options)
         else:
