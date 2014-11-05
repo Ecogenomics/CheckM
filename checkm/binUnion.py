@@ -76,7 +76,6 @@ class BinUnion(object):
         qas = [UnionCheckmQaTsv(f) for f in checkmQaTsvs]
         
         bestCandidates = self.getBestCandidates(binFileSets, qas, minCompleteness, maxContamination)
-        
             
         numBinsBinningWise = [0]*len(binFolders)
         for candidate in bestCandidates:
@@ -116,10 +115,10 @@ class BinUnion(object):
                                        ))
         
         # For each bin in the second or after set,
-        currentRoundCandidatesToAdd = []
         for binningIndex, binFileSet in enumerate(binFileSets):
             if binningIndex==0: continue
             
+            currentRoundCandidatesToAdd = []
             for binFile in binFileSet:
                 # Is it >50% (by sequence) aligned with any of the bins in the best set?
                 binId = binIdFromFilename(binFile)
@@ -136,12 +135,15 @@ class BinUnion(object):
                     for i, bestBin in enumerate(bestCandidates):
                         overlap = current.numBasesOverlapping(bestBin)
                         fiftyPercentBest = 0.5 * bestBin.numBases()
-                        self.logger.debug("Comparing bin %s and %s, overlap is %i" % (bestBin.binId, current.binId, overlap))
+                        
+                        if overlap > fiftyPercent or overlap > fiftyPercentBest:
+                            self.logger.debug("Comparing best bin %s and current bin %s, overlap is %i" % (bestBin.binId, current.binId, overlap))
                         
                         if overlap > fiftyPercent and overlap > fiftyPercentBest:
                             accountedFor = True
                             # Choose the best one
                             if current.compContSquaredScored() > bestBin.compContSquaredScored():
+                                self.logger.debug("The newly found bin is better, going with that")
                                 # Found a better one, replace the best bin with that
                                 bestCandidates[i] = current
                                 # There's a bug here, but is sufficiently rare and hard to fix that meh. If a multiple bins have
@@ -164,7 +166,9 @@ class BinUnion(object):
                     
             # Add all the bins that hit no other bins to the bestCandidates list
             # Do this after so that bins are not compared to themselves (saves some time?)
-            [bestCandidates.append(b) for b in currentRoundCandidatesToAdd]
+            for b in currentRoundCandidatesToAdd:
+                self.logger.debug("Adding unmatched bin %s from %s" % (b.binId, b.binningIndex))
+                bestCandidates.append(b)
         
         return bestCandidates
     
