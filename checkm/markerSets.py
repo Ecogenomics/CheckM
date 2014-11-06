@@ -215,12 +215,12 @@ class MarkerSetParser():
         binIdToBinMarkerSets = {}
 
         if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
-            binMarkerSets = self.__parseTaxonomicMarkerSetFile(markerFile)
+            binMarkerSets = self.parseTaxonomicMarkerSetFile(markerFile)
 
             for binId in binIds:
                 binIdToBinMarkerSets[binId] = binMarkerSets
         elif markerFileType == BinMarkerSets.TREE_MARKER_SET:
-            binIdToBinMarkerSets = self.__parseLineageMarkerSetFile(markerFile)
+            binIdToBinMarkerSets = self.parseLineageMarkerSetFile(markerFile)
         else:
             markers = [set()]
             modelParser = HmmModelParser(markerFile)
@@ -271,10 +271,10 @@ class MarkerSetParser():
         # create HMM file
         hmmModelFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
-            binMarkerSets = self.__parseTaxonomicMarkerSetFile(markerFile)
+            binMarkerSets = self.parseTaxonomicMarkerSetFile(markerFile)
             self.__createMarkerHMMs(binMarkerSets, hmmModelFile, bReportProgress=False)
         elif markerFileType == BinMarkerSets.TREE_MARKER_SET:
-            binIdToBinMarkerSets = self.__parseLineageMarkerSetFile(markerFile)
+            binIdToBinMarkerSets = self.parseLineageMarkerSetFile(markerFile)
             self.__createMarkerHMMs(binIdToBinMarkerSets[binId], hmmModelFile, bReportProgress=False)
         else:
             shutil.copyfile(markerFile, hmmModelFile)
@@ -414,11 +414,7 @@ class MarkerSetParser():
         # remove key file
         os.remove(keyFile)
         
-    def readTaxonomicMarkerSetFile(self, markerSetFile):
-        """Read taxonomic marker set file."""
-        return self.__parseTaxonomicMarkerSetFile(markerSetFile)
-
-    def __parseTaxonomicMarkerSetFile(self, markerSetFile):
+    def parseTaxonomicMarkerSetFile(self, markerSetFile):
         """Parse marker set from a taxonomic-specific marker set file."""
         with open(markerSetFile) as f:
             f.readline() # skip header
@@ -430,7 +426,7 @@ class MarkerSetParser():
 
         return binMarkerSets
 
-    def __parseLineageMarkerSetFile(self, markerSetFile):
+    def parseLineageMarkerSetFile(self, markerSetFile):
         """Parse marker sets from a lineage-specific marker set file."""
 
         # read all marker sets
@@ -446,14 +442,14 @@ class MarkerSetParser():
                 binMarkerSets.read(line)
 
                 # determine selected marker set
-                selectedMarkerSetMap = self.__parseSelectedMarkerSetMap()
+                selectedMarkerSetMap = self.parseSelectedMarkerSetMap()
                 binMarkerSets.setLineageSpecificSelectedMarkerSet(selectedMarkerSetMap)
 
                 binIdToBinMarkerSets[binId] = binMarkerSets
 
         return binIdToBinMarkerSets
 
-    def __parseSelectedMarkerSetMap(self):
+    def parseSelectedMarkerSetMap(self):
         selectedMarkerSetMap = {}
         for line in open(DefaultValues.SELECTED_MARKER_SETS):
             lineSplit = line.split('\t')

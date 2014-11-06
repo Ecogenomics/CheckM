@@ -29,6 +29,7 @@ from common import binIdFromFilename, checkFileExists, readDistribution, findNea
 from checkm.util.seqUtils import readFasta, readFastaSeqIds, writeFasta, baseCount
 from checkm.genomicSignatures import GenomicSignatures
 from checkm.prodigal import ProdigalGeneFeatureParser
+from checkm.defaultValues import DefaultValues
 
 class BinTools():
     """Functions for exploring and modifying bins."""
@@ -219,7 +220,11 @@ class BinTools():
             binSig = self.binTetraSig(seqs, tetraSigs)
             meanTD, deltaTDs = self.tetraDiffDist(seqs, genomicSig, tetraSigs, binSig)
 
-            gffFile = os.path.join(outDir, 'bins', binId, 'prodigal.gff')
+            gffFile = os.path.join(outDir, 'bins', binId, DefaultValues.PRODIGAL_GFF)
+            if not os.path.exists(gffFile):
+                self.logger.error('  [Error] Missing gene feature file (%s). This plot if not compatible with the --genes option.\n' % DefaultValues.PRODIGAL_GFF)
+                sys.exit()
+            
             prodigalParser = ProdigalGeneFeatureParser(gffFile)
             meanCD, deltaCDs, CDs = self.codingDensityDist(seqs, prodigalParser)
 

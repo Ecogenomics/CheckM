@@ -20,6 +20,7 @@
 ###############################################################################
 
 import os
+import sys
 
 import matplotlib.pyplot as pylab
 
@@ -31,6 +32,7 @@ from checkm.prodigal import ProdigalGeneFeatureParser
 from checkm.common import readDistribution, findNearest, binIdFromFilename
 from checkm.binTools import BinTools
 from checkm.util.seqUtils import readFasta, baseCount
+from checkm.defaultValues import DefaultValues
 
 class CodingDensityPlots(AbstractPlot):
     def __init__(self, options):
@@ -50,12 +52,17 @@ class CodingDensityPlots(AbstractPlot):
         self.draw()
 
     def plotOnAxes(self, fastaFile, distributionsToPlot, axesHist, axesDeltaCD):
+        # parse Prodigal output
+        gffFile = os.path.join(self.options.out_folder, 'bins', binIdFromFilename(fastaFile), DefaultValues.PRODIGAL_GFF)
+        if not os.path.exists(gffFile):
+            print 'Missing gene feature file (%s). This plot if not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF
+            sys.exit()
+            
+        prodigalParser = ProdigalGeneFeatureParser(gffFile)
+               
+        
         # Read reference distributions from file
         dist = readDistribution('cd_dist')
-
-        # parse Prodigal output
-        gffFile = os.path.join(self.options.out_folder, 'bins', binIdFromFilename(fastaFile), 'prodigal.gff')
-        prodigalParser = ProdigalGeneFeatureParser(gffFile)
 
         # get coding density for windows
         seqs = readFasta(fastaFile)
