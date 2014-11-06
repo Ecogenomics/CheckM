@@ -181,7 +181,7 @@ class TreeParser():
                             taxaStr = tokens[1]
 
                 parentNode = parentNode.parent_node
-
+                
             if not taxaStr:
                 domainNode = self.__findDomainNode(node)
                 taxaStr = domainNode.label.split('|')[1] + ' (root)'
@@ -189,27 +189,37 @@ class TreeParser():
             binIdToTaxonomy[node.taxon.label] = taxaStr
 
         return binIdToTaxonomy
-
+        
     def __findDomainNode(self, binNode):
         """Find node defining the domain. Assumes 'binNode' is the leaf node of a bin on either the archaeal or bacterial branch."""
 
         # bin is either on the bacterial or archaeal branch descendant from the root,
         # so descend tree to first internal node with a label. Note that there may
-        # be multiple bins inserted in the tree creating unlabelled internal nodes
-        for child in binNode.parent_node.child_nodes():
-            if child.is_internal():
-                curChild = child
-
-        while True:
-            if curChild.label:
+        # be multiple bins inserted in the tree creating unlabeled internal nodes.
+        # Identical population bins can also cause internal bifurcations.
+        
+        # find first parent node which contains at least one IMG genome
+        curNode = binNode.parent_node
+        for leaf in curNode.leaf_nodes():
+            if leaf.taxon.label.startswith('IMG_'):
                 break
-            else:
-                # descend to next child that is an internal node
-                for child in curChild.child_nodes():
-                    if child.is_internal():
-                        curChild = child
+            
+            curNode = curNode.parent_node
+        
+        # perform depth first search to find a labeled internal node
+        queue = [curNode]
+        while queue:
+            curNode = queue.pop(0)
+            
+            if curNode.label:
+                return curNode
+            
+            for child in curNode.child_nodes():
+                if child.is_internal():
+                    queue.append(child)
 
-        return curChild
+        self.logger.error('  [Error] Failed to associate bin with a domain. Please report this bug.')
+        sys.exit()
 
     def getBinSisterTaxonomy(self, outDir, binIds):
         # make sure output and tree directories exist
@@ -444,7 +454,7 @@ class TreeParser():
         for binId in binIds:
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
-                statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, len(binIds), float(numProcessedBins)*100/len(binIds))
+                statusStr = '    Finished processing %d of %d (%.2f%%) bins (current: %s).' % (numProcessedBins, len(binIds), float(numProcessedBins)*100/len(binIds), binId)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
                 

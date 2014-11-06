@@ -19,6 +19,13 @@
 #                                                                             #
 ###############################################################################
 
+__author__ = "Ben Woodcroft"
+__copyright__ = "Copyright 2014"
+__credits__ = ["Ben Woodcroft"]
+__license__ = "GPL3"
+__maintainer__ = "Ben Woodcroft"
+__email__ = ""
+
 import logging
 import math
 import csv
@@ -197,11 +204,7 @@ class BinUnion(object):
                     multiplyBinnedOutput.write("\n")
                     
         if numMultiplyBinnedContigs != 0:
-            self.logger.warn("   [WARN] Found %i contigs totaling %i bp that are shared between multiple bins" % (numMultiplyBinnedContigs,
+            self.logger.warn("   [Warning] Found %i contigs totaling %i bp that are shared between multiple bins" % (numMultiplyBinnedContigs,
                                                                                                           multiplyBinnedContigsLength))
-            self.logger.warn("   [WARN] Wrote summary to %s" % multiplyBinnedOutput.name)
+            self.logger.warn("   [Warning] Wrote summary to %s" % multiplyBinnedOutput.name)
                     
-                
-            
-            
-

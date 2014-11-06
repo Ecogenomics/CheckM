@@ -112,6 +112,7 @@ def printHelp():
   Bin exploration and modification:
     unique       -> Ensure no sequences are assigned to multiple bins
     merge        -> Identify bins with complementary sets of marker genes
+    bin_compare  -> Compare two sets of bins (e.g., from alternative binning methods)
     outliers     -> [Experimental] Identify outlier in bins relative to reference distributions
     modify       -> [Experimental] Modify sequences in a bin
     bin_union    -> [Experimental] Merge multiple binning efforts into a single bin set   
@@ -123,7 +124,6 @@ def printHelp():
     profile      -> Calculate percentage of reads mapped to each bin
     join_tables  -> Join tab-separated value tables containing bin information
     ssu_finder   -> Identify SSU (16S/18S) rRNAs in sequences
-    bin_compare  -> Compare two sets of bins (e.g., from alternative binning methods)
 
   Use: 'checkm data' to find, download and install database updates
 
