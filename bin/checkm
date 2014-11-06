@@ -113,9 +113,9 @@ def printHelp():
     unique       -> Ensure no sequences are assigned to multiple bins
     merge        -> Identify bins with complementary sets of marker genes
     bin_compare  -> Compare two sets of bins (e.g., from alternative binning methods)
-    outliers     -> [Experimental] Identify outlier in bins relative to reference distributions
+    bin_union    -> [Experimental] Merge multiple binning efforts into a single bin set
     modify       -> [Experimental] Modify sequences in a bin
-    bin_union    -> [Experimental] Merge multiple binning efforts into a single bin set   
+    outliers     -> [Experimental] Identify outlier in bins relative to reference distributions
 
   Utility functions:
     unbinned     -> Identify unbinned sequences
