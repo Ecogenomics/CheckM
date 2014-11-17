@@ -38,10 +38,10 @@ import argparse
 from collections import defaultdict
 import multiprocessing as mp
 
-from checkm.lib.img import IMG
-from lib.markerSetBuilder import MarkerSetBuilder
+from checkm.util.img import IMG
+from markerSetBuilder import MarkerSetBuilder
 
-from checkm.lib.seqUtils import readFasta
+from checkm.util.seqUtils import readFasta
 from checkm.hmmer import HMMERRunner
 
 class PhylogeneticInferenceGenes(object):
@@ -49,7 +49,7 @@ class PhylogeneticInferenceGenes(object):
         pass
 
     def __getUniversalMarkerGenes(self, phyloUbiquityThreshold, phyloSingleCopyThreshold, outputGeneDir):
-        img = IMG()
+        img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         markerSetBuilder = MarkerSetBuilder()
 
         metadata = img.genomeMetadata()

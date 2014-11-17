@@ -32,7 +32,7 @@ import os
 import sys
 import argparse
 
-from checkm.lib.img import IMG
+from checkm.util.img import IMG
 import dendropy
 
 class ConsistencyTest(object):
@@ -86,7 +86,7 @@ class ConsistencyTest(object):
             descDict[acc] = [shortDesc, longDesc]
 
         # get IMG taxonomy
-        img = IMG()
+        img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         metadata = img.genomeMetadata()
         genomeIdToTaxonomy = {}
         for genomeId, m in metadata.iteritems():

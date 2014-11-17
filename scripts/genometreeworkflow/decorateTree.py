@@ -36,12 +36,12 @@ import dendropy
 
 from numpy import mean, std
 
-from checkm.lib.img import IMG
-from lib.markerSetBuilder import MarkerSetBuilder
+from checkm.util.img import IMG
+from .markerSetBuilder import MarkerSetBuilder
 
 class DecorateTree(object):
     def __init__(self):
-        self.img = IMG()
+        self.img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         self.markerSetBuilder = MarkerSetBuilder()
     
     def __meanStd(self, metadata, genomeIds, category):

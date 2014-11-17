@@ -30,13 +30,15 @@ __status__ = 'Development'
 
 import os
 import argparse
+import itertools
+import random
 from collections import defaultdict
 
-from checkm.seqUtils import readFasta, writeFasta
+from checkm.util.seqUtils import readFasta, writeFasta
 
-from checkm.lib.img import IMG
+from checkm.util.img import IMG
 
-from checkm.lib.taxonomyUtils import appendTaxonomyRanks
+from checkm.util.taxonomyUtils import appendTaxonomyRanks
 
 class InferGenomeTree(object):
     def __init__(self):
@@ -126,7 +128,7 @@ class InferGenomeTree(object):
                 
         # write out genome tree taxonomy
         print 'Reading trusted genomes.'
-        img = IMG()
+        img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         genomeIds = img.genomeMetadata().keys()
         self.__taxonomy(img, genomeIds, outputTaxonomy)
         
@@ -172,7 +174,7 @@ class InferGenomeTree(object):
                     concatenatedSeqs['IMG_' + genomeId] = concatenatedSeqs.get('IMG_' + genomeId, '') + '-'*alignLen
                     
         print '  Total alignment length: ' + str(totalAlignLen)
-        
+
         # save concatenated alignment
         writeFasta(concatenatedSeqs, outputAlignFile)
 

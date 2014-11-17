@@ -66,7 +66,7 @@ class TreeParser():
         duplicateNodes = self.__readDuplicateSeqs()
 
         # write reference alignments to file
-        seqs = readFasta(os.path.join(DefaultValues.PPLACER_REF_PACKAGE, 'genome_tree.concatenated.derep.fasta'))
+        seqs = readFasta(os.path.join(DefaultValues.PPLACER_REF_PACKAGE_FULL, DefaultValues.GENOME_TREE_FASTA))
         for seqId, seq in seqs.iteritems():
             print('>' + seqId)
             print(seq)
@@ -451,9 +451,11 @@ class TreeParser():
         fout.write(DefaultValues.LINEAGE_MARKER_FILE_HEADER + '\n')
 
         numProcessedBins = 0
+        statusStr = ''
         for binId in binIds:
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
+                sys.stderr.write(' ' * len(statusStr) + '\r') # clear previous line
                 statusStr = '    Finished processing %d of %d (%.2f%%) bins (current: %s).' % (numProcessedBins, len(binIds), float(numProcessedBins)*100/len(binIds), binId)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
@@ -722,7 +724,7 @@ class TreeParser():
     def __readDuplicateSeqs(self):
         """Parse file indicating duplicate sequence alignments."""
         duplicateSeqs = {}
-        for line in open(os.path.join(DefaultValues.GENOME_TREE_DIR, 'genome_tree.derep.txt')):
+        for line in open(os.path.join(DefaultValues.GENOME_TREE_DIR, DefaultValues.GENOME_TREE_DEREP)):
             lineSplit = line.rstrip().split()
             if len(lineSplit) > 1:
                 duplicateSeqs[lineSplit[0]] = lineSplit[1:]

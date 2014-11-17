@@ -48,8 +48,11 @@ class DefaultValues():
 	TAXON_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'taxon_marker_sets.tsv')
 
 	GENOME_TREE_DIR = os.path.join(CHECKM_DATA_DIR, 'genome_tree')
-	PPLACER_REF_PACKAGE = os.path.join(GENOME_TREE_DIR, 'genome_tree_prok.refpkg')
-	GENOME_TREE_FINAL = 'genome_tree.final.tre'
+	PPLACER_REF_PACKAGE_FULL = os.path.join(GENOME_TREE_DIR, 'genome_tree_full.refpkg')
+	PPLACER_REF_PACKAGE_REDUCED = os.path.join(GENOME_TREE_DIR, 'genome_tree_reduced.refpkg')
+	GENOME_TREE = 'genome_tree.tre'
+	GENOME_TREE_FASTA = 'genome_tree.fasta'
+	GENOME_TREE_DEREP = 'genome_tree.derep.txt'
 	DISTRIBUTION_DIR = os.path.join(CHECKM_DATA_DIR, 'distributions')
 
 	PHYLO_HMM_MODEL_INFO = 'phylo_hmm_info.pkl.gz'

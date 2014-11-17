@@ -151,7 +151,7 @@ class OptionsParser():
         # place bins into genome tree
         self.logger.info('')
         pplacer = PplacerRunner(options.threads)
-        pplacer.run(binFiles, resultsParser, options.out_folder)
+        pplacer.run(binFiles, resultsParser, options.out_folder, options.bReducedTree)
 
         self.timeKeeper.printTimeStamp()
 
@@ -1198,7 +1198,6 @@ class OptionsParser():
             options.tree_folder = options.out_folder
             options.analyze_folder = options.out_folder
             options.out_format = 1
-            options.file = ''
             options.bAlignTopHit = False
             options
 
@@ -1210,7 +1209,6 @@ class OptionsParser():
             options.marker_file = os.path.join(options.out_folder, options.taxon + '.ms')
             options.analyze_folder = options.out_folder
             options.out_format = 1
-            options.file = ''
             options.bAlignTopHit = False
 
             self.taxonSet(options)

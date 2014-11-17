@@ -32,7 +32,7 @@ import os
 import argparse
 from collections import defaultdict
 
-from checkm.lib.img import IMG
+from checkm.util.img import IMG
 import dendropy
 
 from rerootTree import RerootTree
@@ -73,7 +73,7 @@ class ParalogTest(object):
         for f in files:
             os.remove(os.path.join(outputDir, f))
 
-        img = IMG()
+        img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         metadata = img.genomeMetadata()
 
         files = os.listdir(geneTreeDir)

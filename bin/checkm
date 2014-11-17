@@ -53,17 +53,18 @@ class CustomHelpFormatter(argparse.HelpFormatter):
     def _get_help_string(self, action):
         h = action.help
         if '%(default)' not in action.help:
-            if action.default is not argparse.SUPPRESS:
-                defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
-        
-                if action.option_strings or action.nargs in defaulting_nargs:
-                    if '\n' in h:
-                        lines = h.splitlines()
-                        lines[0] += ' (default: %(default)s)'
-                        h = '\n'.join(lines)
-                    else:
-                        h += ' (default: %(default)s)'
-        return h
+            if action.default != '' and action.default != [] and action.default != None and action.default != False:
+                if action.default is not argparse.SUPPRESS:
+                    defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+            
+                    if action.option_strings or action.nargs in defaulting_nargs:
+                        if '\n' in h:
+                            lines = h.splitlines()
+                            lines[0] += ' (default: %(default)s)'
+                            h = '\n'.join(lines)
+                        else:
+                            h += ' (default: %(default)s)'
+            return h
 
 
 def printHelp():
@@ -153,6 +154,7 @@ if __name__ == '__main__':
                                         epilog='Example: checkm tree ./bins ./output')
     tree_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     tree_parser.add_argument('out_folder', help="folder to write output files")
+    tree_parser.add_argument('-r', '--reduced_tree', dest='bReducedTree', action="store_true", help="use reduced tree for determining lineage of each bin")
     tree_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
     tree_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
     tree_parser.add_argument('-g', '--genes', dest='bCalledGenes', action="store_true", default=False,  help="bins contain genes as amino acids instead of nucleotide contigs")
@@ -278,6 +280,7 @@ if __name__ == '__main__':
                                         epilog='Example: checkm lineage_wf ./bins ./output')
     lineage_wf_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     lineage_wf_parser.add_argument('out_folder', help="folder to write output files")
+    lineage_wf_parser.add_argument('-r', '--reduced_tree', dest='bReducedTree', action="store_true", help="use reduced tree for determining lineage of each bin")
     lineage_wf_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
     lineage_wf_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
     lineage_wf_parser.add_argument('-g', '--genes', dest='bCalledGenes', action="store_true", default=False,  help="bins contain genes as amino acids instead of nucleotide contigs")
@@ -293,6 +296,7 @@ if __name__ == '__main__':
     lineage_wf_parser.add_argument('-e', '--e_value', type=float, default=DefaultValues.E_VAL, help="e-value cut off")
     lineage_wf_parser.add_argument('-l', '--length', type=float, default=DefaultValues.LENGTH, help="percent overlap between target and query")
     lineage_wf_parser.add_argument('-c', '--coverage_file', default=None, help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
+    lineage_wf_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     lineage_wf_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     lineage_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     lineage_wf_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
@@ -320,6 +324,7 @@ if __name__ == '__main__':
     taxonomy_wf_parser.add_argument('-e', '--e_value', type=float, default=DefaultValues.E_VAL, help="e-value cut off")
     taxonomy_wf_parser.add_argument('-l', '--length', type=float, default=DefaultValues.LENGTH, help="percent overlap between target and query")
     taxonomy_wf_parser.add_argument('-c', '--coverage_file', default=None, help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
+    taxonomy_wf_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     taxonomy_wf_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     taxonomy_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     taxonomy_wf_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")

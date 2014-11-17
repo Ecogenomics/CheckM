@@ -177,12 +177,13 @@ class GenomeTreeWorkflow(object):
             getPhylogeneticHMMs = GetPhylogeneticHMMs()
             getPhylogeneticHMMs.run(self.hmmDir, self.finalGeneTreeDir, self.phyloHMMsOut)
 
-            # infer genome tree
-            print ''
-            print '--- Inferring full genome tree ---'
-            inferGenomeTree = InferGenomeTree()
-            inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.treeOut, self.taxonomyOut)
+        # infer genome tree
+        print ''
+        print '--- Inferring full genome tree ---'
+        inferGenomeTree = InferGenomeTree()
+        inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.treeOut, self.taxonomyOut)
 
+        if False:
             # root genome tree between archaea and bacteria
             print ''
             print '--- Rooting full genome tree ---'
@@ -221,14 +222,14 @@ class GenomeTreeWorkflow(object):
 
             #os.system('cp ' + self.treeDerepBootstrapOut + ' ' + self.treeDerepFinalOut)
 
-        # just use FastTree support values
-        os.system('cp ' + self.treeDerepRootedOut + ' ' + self.treeDerepFinalOut)
-
-        # decorate dereplicated tree with unique IDs and a complementary file indicating properties of each internal node
-        print ''
-        print '--- Decorating final tree with lineage-specific statistics and marker set information ---'
-        decorateTree = DecorateTree()
-        decorateTree.decorate(self.treeTaxonomyOut, self.derepSeqFile, self.treeDerepFinalOut, self.treeMetadata, numThreads)
+            # just use FastTree support values
+            os.system('cp ' + self.treeDerepRootedOut + ' ' + self.treeDerepFinalOut)
+    
+            # decorate dereplicated tree with unique IDs and a complementary file indicating properties of each internal node
+            print ''
+            print '--- Decorating final tree with lineage-specific statistics and marker set information ---'
+            decorateTree = DecorateTree()
+            decorateTree.decorate(self.treeTaxonomyOut, self.derepSeqFile, self.treeDerepFinalOut, self.treeMetadata, numThreads)
 
 if __name__ == '__main__':
     print 'GenomeTreeWorkflow v' + __version__ + ': ' + __prog_desc__

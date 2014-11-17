@@ -31,12 +31,12 @@ __status__ = 'Development'
 import sys
 import argparse
 
-from checkm.lib.img import IMG
+from checkm.util.img import IMG
 import dendropy
 
 class RerootTree(object):
     def __init__(self):
-        img = IMG()
+        img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         self.metadata = img.genomeMetadata()
 
     def __genomeId(self, taxaLabel):

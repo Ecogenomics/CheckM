@@ -42,7 +42,7 @@ class PplacerRunner():
         self.__checkForPplacer()
         self.__checkForGuppy()
 
-    def run(self, binFiles, resultsParser, outDir):
+    def run(self, binFiles, resultsParser, outDir, bReducedTree):
         # make sure output and tree directories exist
         checkDirExists(outDir)
         alignOutputDir = os.path.join(outDir, 'storage', 'tree')
@@ -55,17 +55,21 @@ class PplacerRunner():
         # create concatenated alignment file for each bin
         concatenatedAlignFile = self.__createConcatenatedAlignment(binFiles, resultsParser, alignOutputDir)
         
+        pplacerRefPkg = DefaultValues.PPLACER_REF_PACKAGE_FULL
+        if bReducedTree:
+            pplacerRefPkg = DefaultValues.PPLACER_REF_PACKAGE_REDUCED
+        
         # check if concatenated alignment file is empty
         # (this can occur when all genomes have no phylogenetically informative marker genes)
         if os.stat(concatenatedAlignFile)[stat.ST_SIZE] == 0:
             self.logger.info('  No genomes were identified that could be placed in the reference genome tree.')
-            shutil.copyfile(os.path.join( DefaultValues.PPLACER_REF_PACKAGE, DefaultValues.GENOME_TREE_FINAL), treeFile)
+            shutil.copyfile(os.path.join(pplacerRefPkg, DefaultValues.GENOME_TREE), treeFile)
             return
 
         # run pplacer to place bins in reference genome tree
         self.logger.info('  Placing %d bins into the genome tree with pplacer (be patient).' % len(binFiles))
         cmd = 'pplacer -j %d -c %s -o %s %s > %s' % (self.numThreads,
-                                                     DefaultValues.PPLACER_REF_PACKAGE,
+                                                     pplacerRefPkg,
                                                      pplacerJsonOut,
                                                      concatenatedAlignFile,
                                                      pplacerOut)
