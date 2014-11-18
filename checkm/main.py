@@ -72,9 +72,6 @@ class OptionsParser():
         self.logger = logging.getLogger()
         self.timeKeeper = TimeKeeper()
 
-        # make sure data is legit
-        #self.DBM = DBManager()
-
     def updateCheckM_DB(self, options):
         self.logger.info('')
         self.logger.info('*******************************************************************************')
@@ -82,7 +79,8 @@ class OptionsParser():
         self.logger.info('*******************************************************************************')
         self.logger.info('')
 
-        self.DBM.runAction(options.action)
+        DBM = DBManager()
+        DBM.runAction(options.action)
 
     def binFiles(self, binFolder, binExtension):
         binFiles = []

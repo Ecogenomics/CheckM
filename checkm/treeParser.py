@@ -133,7 +133,7 @@ class TreeParser():
         if leafLabels == 'taxonomy':
             # read taxonomy string for each IMG genome
             taxonomy = {}
-            for line in open(os.path.join(DefaultValues.GENOME_TREE_DIR, 'genome_tree.taxonomy.tsv')):
+            for line in open(os.path.join(DefaultValues.GENOME_TREE_DIR, DefaultValues.GENOME_TREE_TAXONOMY)):
                 lineSplit = line.split('\t')
                 taxonomy[lineSplit[0]] = lineSplit[1].rstrip()
 
@@ -233,7 +233,7 @@ class TreeParser():
 
         # read taxonomy string for each IMG genome
         leafIdToTaxonomy = {}
-        for line in open(os.path.join(DefaultValues.GENOME_TREE_DIR, 'genome_tree.taxonomy.tsv')):
+        for line in open(os.path.join(DefaultValues.GENOME_TREE_DIR, DefaultValues.GENOME_TREE_TAXONOMY)):
             lineSplit = line.split('\t')
             leafIdToTaxonomy[lineSplit[0]] = lineSplit[1].rstrip()
 
@@ -393,7 +393,7 @@ class TreeParser():
         """Get set of genes subject to lineage-specific gene loss and duplication."""       
     
         self.lineageSpecificGenesToRemove = {}
-        for line in open(os.path.join(DefaultValues.GENOME_TREE_DIR, 'missing_duplicate_genes_50.tsv')):
+        for line in open(os.path.join(DefaultValues.GENOME_TREE_DIR, DefaultValues.GENOME_TREE_MISSING_DUPLICATE)):
             lineSplit = line.split('\t')
             uid = lineSplit[0]
             missingGenes = eval(lineSplit[1])
@@ -518,7 +518,7 @@ class TreeParser():
         """Read metadata for internal nodes."""
 
         uniqueIdToLineageStatistics = {}
-        metadataFile = os.path.join(DefaultValues.GENOME_TREE_DIR, 'genome_tree.metadata.tsv')
+        metadataFile = os.path.join(DefaultValues.GENOME_TREE_DIR, DefaultValues.GENOME_TREE_METADATA)
         with open(metadataFile) as f:
             f.readline()
             for line in f:
@@ -601,10 +601,6 @@ class TreeParser():
 
         # get taxonomy for each bin
         binIdToTaxonomy = self.getBinTaxonomy(outDir, binIds)
-
-        # get weighted ML likelihood
-        #pplacerJsonFile = os.path.join(outDir, 'storage', 'tree', 'concatenated.pplacer.json')
-        #binIdToWeightedML = self.readPlacementFile(pplacerJsonFile)
 
         # write table
         if not bLineageStatistics:

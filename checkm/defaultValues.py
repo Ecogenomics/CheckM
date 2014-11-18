@@ -53,6 +53,9 @@ class DefaultValues():
 	GENOME_TREE = 'genome_tree.tre'
 	GENOME_TREE_FASTA = 'genome_tree.fasta'
 	GENOME_TREE_DEREP = 'genome_tree.derep.txt'
+	GENOME_TREE_TAXONOMY = 'genome_tree.taxonomy.tsv'
+	GENOME_TREE_METADATA = 'genome_tree.metadata.tsv'
+	GENOME_TREE_MISSING_DUPLICATE = 'missing_duplicate_genes_50.tsv'
 	DISTRIBUTION_DIR = os.path.join(CHECKM_DATA_DIR, 'distributions')
 
 	PHYLO_HMM_MODEL_INFO = 'phylo_hmm_info.pkl.gz'

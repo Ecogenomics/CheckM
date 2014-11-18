@@ -142,9 +142,9 @@ if __name__ == '__main__':
                                         epilog='Example: checkm data update')
     data_parser.add_argument('action', nargs="+",
             help='''action is either:
-            diff            -> check the ACE servers and display any changes
-            update          -> check the ACE servers and apply updates (requires permissions)
-            setRoot <PATH>  -> set the data dir to <PATH> (requires permissions)
+  setRoot <PATH>  -> set the data directory to <PATH> (requires permissions)
+  update          -> check the ACE servers and apply updates (requires permissions)
+  diff            -> check the ACE servers and display any changes
             ''')
 
     # determine placement of each genome bin in the genome tree

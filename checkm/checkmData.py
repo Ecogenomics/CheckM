@@ -38,7 +38,7 @@ from screamingbackpack.manifestManager import ManifestManager
 ###############################################################################
 
 class DBConfig(object):
-    """CheckM uses packageutils to ditribute a file called "DATA_CONFIG" which is placed with
+    """CheckM uses packageutils to distribute a file called "DATA_CONFIG" which is placed with
     the other files during installation. This file stores information about where data is
     stored locally and where to look for remote updates. This class essentially exposes
     the DATA_CONFIG file as an object.
@@ -109,9 +109,9 @@ class DBConfig(object):
 
 class DBManager(ManifestManager):
 
-    """Manage all aspects of data location and versioning"""
+    """Manage all aspects of data location and version control."""
     def __init__(self):
-        ManifestManager.__init__(self)
+        ManifestManager.__init__(self, timeout=15)
         self.logger = logging.getLogger()
         self.config = DBConfig()            # load inbuilt configuration
         self.type = self.config.values["manifestType"]
@@ -119,9 +119,9 @@ class DBManager(ManifestManager):
         # check that the data root is legit
         if self.config.values["dataRoot"] == "":
             # no data folder set.
-            print "It seems that the CheckM data folder has not been set yet. Running: 'checkm data setRoot'"
+            print "It seems that the CheckM data folder has not been set yet. Running: 'checkm data setRoot'."
             if not self.setRoot():
-                print "Sorry, CheckM cannot run without a valid data folder"
+                print "Sorry, CheckM cannot run without a valid data folder."
 
     def runAction(self, action):
         """Main entry point for the updating code"""
@@ -139,6 +139,7 @@ class DBManager(ManifestManager):
                 path = self.setRoot(path=action[1])
             else:
                 path = self.setRoot()
+                
             if path is None:
                 self.logger.info("Data location not changed")
             else:
@@ -156,12 +157,24 @@ class DBManager(ManifestManager):
 
         if not self.config.checkPermissions():
             return
+        
+        print "Connecting to ACE server.\n"
 
-        self.updateManifest(self.config.values["dataRoot"],
+        rtn = self.updateManifest(self.config.values["dataRoot"],
                             self.config.values["remoteManifestURL"],
                             self.config.values["localManifestName"],
                             self.config.values["remoteManifestName"],
                             prompt=True)
+        
+        if not rtn:
+            print ""
+            print "You can download the required data files manually form:"
+            print "  " + self.config.values["remoteManifestURL"]
+            print ""
+            print "Uncompress the data files to a directory of your choice,"
+            print "then run 'checkm data setRoot' to specify the location"
+            print "of the data files."
+            print ""
 
     def setRoot(self, path=None):
         """Set the data folder"""
@@ -177,11 +190,9 @@ class DBManager(ManifestManager):
 
         # path should be set, exist and be writable
         self.config.values["dataRoot"] = path
+        
         # save the new path
         self.config.setConfig()
-
-        # run an update to make sure everything is up to date
-        self.update()
 
         return path
 
@@ -202,28 +213,32 @@ class DBManager(ManifestManager):
             else:
                 path = os.path.abspath(os.path.expanduser(path))
 
+            print ""
             if os.path.exists(path):
                 # path exists
                 if os.access(path, os.W_OK):
                     # path is writable
                     path_set = True
-                    print "Path [%s] exists and you have permission to write to this folder" % path
+                    print "Path [%s] exists and you have permission to write to this folder." % path
                 else:
-                    print "Path [%s] exists but you do not have permission to write to this folder" % path
+                    print "Path [%s] exists but you do not have permission to write to this folder." % path
             else:
                 # path does not exist, try to make it
                 "Path [%s] does not exist so I will attempt to create it" % path
                 try:
                     self.makeSurePathExists(path)
-                    print "Path [%s] has been created and you have permission to write to this folder" % path
+                    print "Path [%s] has been created and you have permission to write to this folder." % path
                     path_set = True
                 except Exception:
                     print "Unable to make the folder, Error was: %s" % sys.exc_info()[0]
                 minimal = True
 
         # (re)make the manifest file
-        print "(re) creating manifest file (please be patient)"
+        print "(re) creating manifest file (please be patient)."
         self.createManifest(path, self.config.values["localManifestName"])
+        
+        print ""
+        print "You can run 'checkm data update' to ensure you have the latest data files.\n"
 
         return path
 
@@ -233,6 +248,7 @@ class DBManager(ManifestManager):
             print "You do not seem to have permission to edit the CheckM data folder"
             print "located at %s" % self.config.values["dataRoot"]
             return False
+        
         return True
 
 
