@@ -17,6 +17,6 @@ setup(
         "matplotlib >= 1.3.1",
         "pysam >= 0.7.4",
         "dendropy >= 3.12.0",
-        "ScreamingBackpack >= 0.2.1"],
+        "ScreamingBackpack >= 0.2.333"],
     package_data={'checkm' : ['DATA_CONFIG']}
 )
