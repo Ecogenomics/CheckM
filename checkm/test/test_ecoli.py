@@ -37,13 +37,13 @@ class Options():
 class VerifyEcoli():
     def __init__(self):
         pass
-    
+
     def run(self, parser, outputDir):
         """Run standard E. coli genome to verify operation of CheckM."""
-        
+
         ecoliFile = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'test_data', '637000110.fna')
         checkFileExists(ecoliFile)
-    
+
         options = Options()
         options.threads = 1
         options.extension = 'fna'
@@ -52,7 +52,7 @@ class VerifyEcoli():
         if os.path.exists(options.out_folder):
             shutil.rmtree(options.out_folder)
         makeSurePathExists(options.out_folder)
-    
+
         print '[Step 1]: Verifying tree command.'
         options.bKeepAlignment = False
         options.bNucORFs = False
@@ -62,7 +62,7 @@ class VerifyEcoli():
         parser.tree(options)
         self.verifyTree(options.out_folder)
         print '\n  [Passed]'
-    
+
         print '\n'
         print '[Step 2]: Verifying tree_qa command.'
         options.tree_folder = options.out_folder
@@ -72,7 +72,7 @@ class VerifyEcoli():
         parser.treeQA(options)
         self.verifyTreeQA(options.file)
         print '\n  [Passed]'
-    
+
         print '\n'
         print '[Step 3]: Verifying lineage_set command.'
         options.marker_file = os.path.join(options.out_folder, 'lineage_set_test.tsv')
@@ -81,25 +81,25 @@ class VerifyEcoli():
         options.num_genomes_markers = 30
         options.num_genomes_refine = 5
         options.bNoLineageSpecificRefinement = False
-    
+
         options.bRequireTaxonomy = False
         options.unique = 10
         options.multi = 10
         parser.lineageSet(options)
         self.verifyLineageSet(options.marker_file, options.bRequireTaxonomy)
-    
+
         options.bRequireTaxonomy = True
         parser.lineageSet(options)
         self.verifyLineageSet(options.marker_file, options.bRequireTaxonomy)
         print '\n  [Passed]'
-    
+
         print '\n'
         print '[Step 4]: Verifying analyze command.'
-        options.bAlignTopHit = False    
+        options.bAlignTopHit = False
         parser.analyze(options)
         self.verifyAnalyze(options.out_folder)
         print '\n  [Passed]'
-    
+
         print '\n'
         print '[Step 5]: Verifying qa command.'
         options.alignment_file = None
@@ -117,8 +117,8 @@ class VerifyEcoli():
         parser.qa(options)
         self.verifyQA(options.file)
         print '\n  [Passed]'
-  
-        
+
+
     def verifyTree(self, outdir):
         """Verify output of tree command."""
 
@@ -129,12 +129,12 @@ class VerifyEcoli():
 
         np.testing.assert_almost_equal(binStats['637000110']['GC'], 0.508, decimal=3, err_msg="Failed GC test")
         np.testing.assert_almost_equal(binStats['637000110']['GC std'], 0.0, err_msg="Failed GC std test")
-        #np.testing.assert_almost_equal(binStats['637000110']['Coding density'], 0.8775, decimal=3, err_msg="Failed coding density test") # depends on exact version of prodigal
+        # np.testing.assert_almost_equal(binStats['637000110']['Coding density'], 0.8775, decimal=3, err_msg="Failed coding density test") # depends on exact version of prodigal
         np.testing.assert_almost_equal(binStats['637000110']['# contigs'], 1, err_msg="Failed # contigs test")
         np.testing.assert_almost_equal(binStats['637000110']['# scaffolds'], 1, err_msg="Failed # scaffolds test")
         np.testing.assert_equal(binStats['637000110']['Longest contig'], 4646332, err_msg="Failed longest contig test")
         np.testing.assert_equal(binStats['637000110']['Longest scaffold'], 4646332, err_msg="Failed longest scaffold test")
-        #np.testing.assert_equal(binStats['637000110']['# predicted genes'], 4327, err_msg="Failed # predicted genes test") # depends on exact version of prodigal
+        # np.testing.assert_equal(binStats['637000110']['# predicted genes'], 4327, err_msg="Failed # predicted genes test") # depends on exact version of prodigal
         np.testing.assert_equal(binStats['637000110']['N50 (contigs)'], 4646332, err_msg="Failed N50 (contigs) test")
         np.testing.assert_equal(binStats['637000110']['N50 (scaffolds)'], 4646332, err_msg="Failed N50 (scaffolds) test")
         np.testing.assert_equal(binStats['637000110']['Genome size'], 4646332, err_msg="Failed genome size test")
@@ -146,8 +146,8 @@ class VerifyEcoli():
 
         np.testing.assert_almost_equal(seqStats['637000110']['AC_000091']['GC'], 0.508, decimal=3, err_msg="Failed GC test")
         np.testing.assert_equal(seqStats['637000110']['AC_000091']['Total contig length'], 4646332, err_msg="Failed total contig length test")
-        #np.testing.assert_equal(seqStats['637000110']['AC_000091']['Coding bases'], 4077069, err_msg="Failed coding bases test") # depends on exact version of prodigal
-        #np.testing.assert_equal(seqStats['637000110']['AC_000091']['# ORFs'], 4326, err_msg="Failed # genes test") # depends on exact version of prodigal
+        # np.testing.assert_equal(seqStats['637000110']['AC_000091']['Coding bases'], 4077069, err_msg="Failed coding bases test") # depends on exact version of prodigal
+        # np.testing.assert_equal(seqStats['637000110']['AC_000091']['# ORFs'], 4326, err_msg="Failed # genes test") # depends on exact version of prodigal
         np.testing.assert_equal(seqStats['637000110']['AC_000091']['Length'], 4646332, err_msg="Failed length test")
         np.testing.assert_equal(seqStats['637000110']['AC_000091']['# contigs'], 1, err_msg="Failed # contigs test")
 
@@ -155,7 +155,7 @@ class VerifyEcoli():
         """Verify output of tree QA command."""
 
         with open(qaTableFile) as f:
-            f.readline() # skip header
+            f.readline()  # skip header
 
             for line in f:
                 if line.strip() != '':
@@ -175,7 +175,7 @@ class VerifyEcoli():
         """Verify output of lineage set command."""
 
         with open(markerSetFile) as f:
-            f.readline() # skip header
+            f.readline()  # skip header
 
             for line in f:
                 if line.strip() != '':
@@ -191,13 +191,11 @@ class VerifyEcoli():
         if not bRequireTaxonomy:
             # this might be a little unstable as it depends on HMMER and prodigal, but
             # we will see how it goes
-            np.testing.assert_equal(markerSet.numSets(), 266, err_msg="Failed # marker set test")
-            np.testing.assert_equal(markerSet.numMarkers(), 2134, err_msg="Failed # markers test")
-            assert(uid == 'UID5199')
+            np.testing.assert_equal(markerSet.numSets(), 336, err_msg="Failed # marker set test")
+            np.testing.assert_equal(markerSet.numMarkers(), 1173, err_msg="Failed # markers test")
         else:
             np.testing.assert_equal(markerSet.numSets(), 282, err_msg="Failed # marker set test")
             np.testing.assert_equal(markerSet.numMarkers(), 1254, err_msg="Failed # markers test")
-            assert(lineage == 'f__Enterobacteriaceae')
 
     def verifyAnalyze(self, outdir):
         """Verify output of analyze command."""
@@ -209,12 +207,12 @@ class VerifyEcoli():
 
         np.testing.assert_almost_equal(binStats['637000110']['GC'], 0.508, decimal=3, err_msg="Failed GC test")
         np.testing.assert_almost_equal(binStats['637000110']['GC std'], 0.0, err_msg="Failed GC std test")
-        #np.testing.assert_almost_equal(binStats['637000110']['Coding density'], 0.877, decimal=3, err_msg="Failed coding density test") # depends on exact version of prodigal
+        # np.testing.assert_almost_equal(binStats['637000110']['Coding density'], 0.877, decimal=3, err_msg="Failed coding density test") # depends on exact version of prodigal
         np.testing.assert_equal(binStats['637000110']['# contigs'], 1, err_msg="Failed # contigs test")
         np.testing.assert_equal(binStats['637000110']['# scaffolds'], 1, err_msg="Failed # scaffolds test")
         np.testing.assert_equal(binStats['637000110']['Longest contig'], 4646332, err_msg="Failed longest contig test")
         np.testing.assert_equal(binStats['637000110']['Longest scaffold'], 4646332, err_msg="Failed longest scaffold test")
-        #np.testing.assert_equal(binStats['637000110']['# predicted genes'], 4326, err_msg="Failed # predicted genes test") # depends on exact version of prodigal
+        # np.testing.assert_equal(binStats['637000110']['# predicted genes'], 4326, err_msg="Failed # predicted genes test") # depends on exact version of prodigal
         np.testing.assert_equal(binStats['637000110']['N50 (contigs)'], 4646332, err_msg="Failed N50 (contigs) test")
         np.testing.assert_equal(binStats['637000110']['N50 (scaffolds)'], 4646332, err_msg="Failed N50 (scaffolds) test")
         np.testing.assert_equal(binStats['637000110']['Genome size'], 4646332, err_msg="Failed genome size test")
@@ -226,8 +224,8 @@ class VerifyEcoli():
 
         np.testing.assert_almost_equal(seqStats['637000110']['AC_000091']['GC'], 0.508, decimal=3, err_msg="Failed GC test")
         np.testing.assert_equal(seqStats['637000110']['AC_000091']['Total contig length'], 4646332, err_msg="Failed total contig length test")
-        #np.testing.assert_equal(seqStats['637000110']['AC_000091']['Coding bases'], 4077069, err_msg="Failed coding bases test") # depends on exact version of prodigal
-        #np.testing.assert_equal(seqStats['637000110']['AC_000091']['# ORFs'], 4326, err_msg="Failed # genes test") # depends on exact version of prodigal
+        # np.testing.assert_equal(seqStats['637000110']['AC_000091']['Coding bases'], 4077069, err_msg="Failed coding bases test") # depends on exact version of prodigal
+        # np.testing.assert_equal(seqStats['637000110']['AC_000091']['# ORFs'], 4326, err_msg="Failed # genes test") # depends on exact version of prodigal
         np.testing.assert_equal(seqStats['637000110']['AC_000091']['Length'], 4646332, err_msg="Failed length test")
         np.testing.assert_equal(seqStats['637000110']['AC_000091']['# contigs'], 1, err_msg="Failed # contigs test")
 
@@ -235,7 +233,7 @@ class VerifyEcoli():
         """Verify output of qa command."""
 
         with open(qaTableFile) as f:
-            f.readline() # skip header
+            f.readline()  # skip header
 
             for line in f:
                 if line.strip() != '':
@@ -243,9 +241,9 @@ class VerifyEcoli():
 
         np.testing.assert_equal(int(lineSplit[0]), 637000110, err_msg="Failed genome ID test")
         np.testing.assert_equal(lineSplit[1], 'f__Enterobacteriaceae', err_msg="Failed lineage test")
-        #np.testing.assert_equal(int(lineSplit[2]), 134, err_msg="Failed # genomes")                                # depends on exact version of prodigal
-        #np.testing.assert_equal(int(lineSplit[3]), 1173, err_msg="Failed # markers test")
-        #np.testing.assert_almost_equal(int(lineSplit[4]), 336, err_msg="Failed # marker sets test")
-        #np.testing.assert_almost_equal(float(lineSplit[11]), 99.98, decimal=2, err_msg="Failed completeness test")
-        #np.testing.assert_almost_equal(float(lineSplit[12]), 0.04, decimal=2, err_msg="Failed contamination test")
-        
+        # np.testing.assert_equal(int(lineSplit[2]), 134, err_msg="Failed # genomes")                                # depends on exact version of prodigal
+        # np.testing.assert_equal(int(lineSplit[3]), 1173, err_msg="Failed # markers test")
+        # np.testing.assert_almost_equal(int(lineSplit[4]), 336, err_msg="Failed # marker sets test")
+        # np.testing.assert_almost_equal(float(lineSplit[11]), 99.98, decimal=2, err_msg="Failed completeness test")
+        # np.testing.assert_almost_equal(float(lineSplit[12]), 0.04, decimal=2, err_msg="Failed contamination test")
+
