@@ -20,22 +20,13 @@
 ###############################################################################
 
 import os
-import errno
 import sys
-import ast
 import logging
 from pkg_resources import resource_filename
-import numpy as np
 import json
 
 from screamingbackpack.manifestManager import ManifestManager
 
-#from checkm.defaultValues import DefaultValues
-
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
 
 class DBConfig(object):
     """CheckM uses packageutils to distribute a file called "DATA_CONFIG" which is placed with
@@ -102,10 +93,6 @@ class DBConfig(object):
             return False
         return True
 
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
 
 class DBManager(ManifestManager):
 
@@ -113,7 +100,7 @@ class DBManager(ManifestManager):
     def __init__(self):
         ManifestManager.__init__(self, timeout=15)
         self.logger = logging.getLogger()
-        self.config = DBConfig()            # load inbuilt configuration
+        self.config = DBConfig()  # load inbuilt configuration
         self.type = self.config.values["manifestType"]
 
         # check that the data root is legit
@@ -139,7 +126,7 @@ class DBManager(ManifestManager):
                 path = self.setRoot(path=action[1])
             else:
                 path = self.setRoot()
-                
+
             if path is None:
                 self.logger.info("Data location not changed")
             else:
@@ -157,7 +144,7 @@ class DBManager(ManifestManager):
 
         if not self.config.checkPermissions():
             return
-        
+
         print "Connecting to ACE server.\n"
 
         rtn = self.updateManifest(self.config.values["dataRoot"],
@@ -165,7 +152,7 @@ class DBManager(ManifestManager):
                             self.config.values["localManifestName"],
                             self.config.values["remoteManifestName"],
                             prompt=True)
-        
+
         if not rtn:
             print ""
             print "You can download the required data files manually form:"
@@ -190,7 +177,7 @@ class DBManager(ManifestManager):
 
         # path should be set, exist and be writable
         self.config.values["dataRoot"] = path
-        
+
         # save the new path
         self.config.setConfig()
 
@@ -199,7 +186,7 @@ class DBManager(ManifestManager):
     def confirmPath(self, path=None):
         """Ask the user to supply a path"""
         path_set = False
-        minimal=False
+        minimal = False
         while not path_set:
             if(minimal):
                 path = raw_input("Please specify a location or type 'abort' to stop trying: \n")
@@ -236,7 +223,7 @@ class DBManager(ManifestManager):
         # (re)make the manifest file
         print "(re) creating manifest file (please be patient)."
         self.createManifest(path, self.config.values["localManifestName"])
-        
+
         print ""
         print "You can run 'checkm data update' to ensure you have the latest data files.\n"
 
@@ -248,7 +235,7 @@ class DBManager(ManifestManager):
             print "You do not seem to have permission to edit the CheckM data folder"
             print "located at %s" % self.config.values["dataRoot"]
             return False
-        
+
         return True
 
 

@@ -18,9 +18,8 @@
 
 import unittest
 
-from collections import defaultdict
-
 from checkm.util.seqUtils import baseCount, calculateN50
+
 
 class VerifySeqUtils(unittest.TestCase):
     def testBaseCount(self):
@@ -30,11 +29,11 @@ class VerifySeqUtils(unittest.TestCase):
         self.assertEqual(c, 2)
         self.assertEqual(g, 2)
         self.assertEqual(t, 4)
-        
+
     def testScaffoldLengthStats(self):
         """Verify computation of N50."""
-        n50 = calculateN50([1,1,2,2,2,2,10])
+        n50 = calculateN50([1, 1, 2, 2, 2, 2, 10])
         self.assertEqual(n50, 10)
-        
+
 if __name__ == "__main__":
     unittest.main()

@@ -26,17 +26,18 @@ import prettytable
 from checkm.defaultValues import DefaultValues
 from common import checkFileExists, reassignStdOut, restoreStdOut
 
+
 class Profile():
     def __init__(self):
         self.logger = logging.getLogger()
-    
+
     def run(self, coverageFile, outFile, bTabTable):
         checkFileExists(coverageFile)
-        
+
         # get number of reads mapped to each bin
         self.logger.info('  Determining number of reads mapped to each bin.')
         self.logger.info('')
-            
+
         readsMappedToBin = {}
         binSize = {}
         totalMappedReads = {}
@@ -45,62 +46,62 @@ class Profile():
             if bHeader:
                 bHeader = False
                 continue
-            
+
             lineSplit = line.split('\t')
-            
-            #seqId = lineSplit[0]
+
+            # seqId = lineSplit[0]
             binId = lineSplit[1]
-            
+
             seqLen = int(lineSplit[2])
             binSize[binId] = binSize.get(binId, 0) + seqLen
-            
+
             if binId not in readsMappedToBin:
                 readsMappedToBin[binId] = {}
 
             for i in xrange(3, len(lineSplit), 3):
                 bamId = lineSplit[i]
-                mappedReads = int(lineSplit[i+2])        
-                
-                totalMappedReads[bamId] = totalMappedReads.get(bamId, 0) + mappedReads       
+                mappedReads = int(lineSplit[i + 2])
+
+                totalMappedReads[bamId] = totalMappedReads.get(bamId, 0) + mappedReads
                 readsMappedToBin[binId][bamId] = readsMappedToBin[binId].get(bamId, 0) + mappedReads
-                
+
         # calculate percentage of mapped reads to binned populations
         perMappedReads = {}
         normBinCoverage = {}
         sumNormBinCoverage = {}
-        for binId, bamIds in readsMappedToBin.iteritems():       
+        for binId, bamIds in readsMappedToBin.iteritems():
             perMappedReads[binId] = {}
             normBinCoverage[binId] = {}
-            
+
             for bamId in bamIds:
                 perMR = float(readsMappedToBin[binId][bamId]) / totalMappedReads[bamId]
                 perMappedReads[binId][bamId] = perMR
-                
+
                 if binId == DefaultValues.UNBINNED:
                     continue
-                                
+
                 normCoverage = perMR / binSize[binId]
-                normBinCoverage[binId][bamId] = normCoverage 
+                normBinCoverage[binId][bamId] = normCoverage
                 sumNormBinCoverage[bamId] = sumNormBinCoverage.get(bamId, 0) + normCoverage
-                
+
         for binId, bamIds in normBinCoverage.iteritems():
             for bamId in bamIds:
                 normBinCoverage[binId][bamId] /= sumNormBinCoverage[bamId]
 
         # write community profile
         oldStdOut = reassignStdOut(outFile)
-        
+
         sortedBinIds = sorted(readsMappedToBin.keys())
         sortedBamIds = sorted(readsMappedToBin[sortedBinIds[0]].keys())
-        
-        header = ['Bin Id','Bin size (Mbp)']
+
+        header = ['Bin Id', 'Bin size (Mbp)']
         for bamId in sortedBamIds:
             header += [bamId + ': mapped reads']
             header += [bamId + ': % mapped reads']
             header += [bamId + ': % binned populations']
             header += [bamId + ': % community']
-            
-        if bTabTable: 
+
+        if bTabTable:
             print('\t'.join(header))
         else:
             pTable = prettytable.PrettyTable(header)
@@ -109,33 +110,33 @@ class Profile():
             pTable.align[header[0]] = 'l'
             pTable.hrules = prettytable.FRAME
             pTable.vrules = prettytable.NONE
-        
+
         for binId in sortedBinIds:
             row = [binId]
-            row += [float(binSize[binId])/1e6]
-            
+            row += [float(binSize[binId]) / 1e6]
+
             for bamId in sortedBamIds:
                 row += [readsMappedToBin[binId][bamId]]
-                row += [perMappedReads[binId][bamId]*100.0]
-                 
+                row += [perMappedReads[binId][bamId] * 100.0]
+
                 if DefaultValues.UNBINNED in perMappedReads:
                     unbinnedPercentage = perMappedReads[DefaultValues.UNBINNED][bamId]
                 else:
                     unbinnedPercentage = 0
-                    
+
                 if binId == DefaultValues.UNBINNED:
-                    row += ['NA'] 
-                    row += [unbinnedPercentage*100.0]
+                    row += ['NA']
+                    row += [unbinnedPercentage * 100.0]
                 else:
-                    row += [normBinCoverage[binId][bamId]*100.0]
-                    row += [normBinCoverage[binId][bamId]*100.0 * (1.0 - unbinnedPercentage)]
-                      
-            if bTabTable:  
+                    row += [normBinCoverage[binId][bamId] * 100.0]
+                    row += [normBinCoverage[binId][bamId] * 100.0 * (1.0 - unbinnedPercentage)]
+
+            if bTabTable:
                 print('\t'.join(map(str, row)))
             else:
                 pTable.add_row(row)
-                
+
         if not bTabTable:
             print(pTable.get_string())
-            
+
         restoreStdOut(outFile, oldStdOut)

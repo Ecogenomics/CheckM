@@ -31,8 +31,10 @@ from checkm.common import makeSurePathExists, checkFileExists
 
 import numpy as np
 
+
 class Options():
     pass
+
 
 class VerifyEcoli():
     def __init__(self):
@@ -118,7 +120,6 @@ class VerifyEcoli():
         self.verifyQA(options.file)
         print '\n  [Passed]'
 
-
     def verifyTree(self, outdir):
         """Verify output of tree command."""
 
@@ -181,7 +182,7 @@ class VerifyEcoli():
                 if line.strip() != '':
                     lineSplit = line.split('\t')
                     binId = lineSplit[0]
-                    numMarkers = int(lineSplit[1])
+                    _numMarkers = int(lineSplit[1])
                     uid = lineSplit[2]
                     lineage = lineSplit[3]
                     numGenomes = int(lineSplit[4])
@@ -246,4 +247,3 @@ class VerifyEcoli():
         # np.testing.assert_almost_equal(int(lineSplit[4]), 336, err_msg="Failed # marker sets test")
         # np.testing.assert_almost_equal(float(lineSplit[11]), 99.98, decimal=2, err_msg="Failed completeness test")
         # np.testing.assert_almost_equal(float(lineSplit[12]), 0.04, decimal=2, err_msg="Failed contamination test")
-

@@ -20,17 +20,18 @@ import unittest
 
 from checkm.util.taxonomyUtils import appendTaxonomyRanks, LCA
 
+
 class VerifyTaxonomyUtils(unittest.TestCase):
     def testAppendTaxonomyRanks(self):
         """Verify computation of base count on mixed-case sequence."""
-        r = appendTaxonomyRanks(['k','p','c'], ranks=3)
-        
+        r = appendTaxonomyRanks(['k', 'p', 'c'], ranks=3)
+
         self.assertEqual(r, ['k__k', 'p__p', 'c__c'])
-        
+
     def testLCA(self):
         """Verify computation of lowest-common ancestor."""
-        lca = LCA(['a','b','c','d','e','f'], ['a','b','c','x','y','z'])
+        lca = LCA(['a', 'b', 'c', 'd', 'e', 'f'], ['a', 'b', 'c', 'x', 'y', 'z'])
         self.assertEqual(lca, ['a', 'b', 'c', 'o__unclassified', 'f__unclassified', 'g__unclassified'])
-        
+
 if __name__ == "__main__":
     unittest.main()

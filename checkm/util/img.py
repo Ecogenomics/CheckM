@@ -27,6 +27,7 @@ from collections import defaultdict
 from checkm.util.seqUtils import readFasta
 from checkm.util.taxonomyUtils import ranksByLabel
 
+
 class IMG(object):
     genomeDir = '/srv/whitlam/bio/db/img//07042014/genomes/'
     pfamExtension = '.pfam.tab.txt'
@@ -61,7 +62,7 @@ class IMG(object):
 
             scaffoldId = lineSplit[0]
             geneId = lineSplit[8]
-            geneId = geneId[geneId.find('=')+1:geneId.find(';')]
+            geneId = geneId[geneId.find('=') + 1:geneId.find(';')]
 
             d[geneId] = scaffoldId
 
@@ -177,7 +178,7 @@ class IMG(object):
             if not os.path.exists(IMG.genomeDir + genomeId + '/' + genomeId + self.pfamExtension):
                 missing.add(genomeId)
 
-                #if os.path.exists(IMG.genomeDir + genomeId + '/' + genomeId + '.genes.fna'):
+                # if os.path.exists(IMG.genomeDir + genomeId + '/' + genomeId + '.genes.fna'):
                 #  print '[Warning] ' + genomeId + ' contains ORF data, but not PFAM annotations.'
 
         return missing
@@ -188,7 +189,7 @@ class IMG(object):
             if not os.path.exists(IMG.genomeDir + genomeId + '/' + genomeId + self.tigrExtension):
                 missing.add(genomeId)
 
-                #if os.path.exists(IMG.genomeDir + genomeId + '/' + genomeId + '.genes.fna'):
+                # if os.path.exists(IMG.genomeDir + genomeId + '/' + genomeId + '.genes.fna'):
                 #  print '[Warning] ' + genomeId + ' contains ORF data, but not TIGRFAM annotations.'
 
         return missing
@@ -225,20 +226,20 @@ class IMG(object):
 
     def lineageStats(self, metadata, mostSpecificRank):
         stats = {}
-        for r in xrange(0, mostSpecificRank+1):
+        for r in xrange(0, mostSpecificRank + 1):
             for _, data in metadata.iteritems():
-                taxaStr = ';'.join(data['taxonomy'][0:r+1])
+                taxaStr = ';'.join(data['taxonomy'][0:r + 1])
                 stats[taxaStr] = stats.get(taxaStr, 0) + 1
 
         return stats
 
     def lineagesSorted(self, metadata, mostSpecificRank=6):
         lineages = []
-        for r in xrange(0, mostSpecificRank+1):
+        for r in xrange(0, mostSpecificRank + 1):
             taxa = set()
             for _, data in metadata.iteritems():
-                if 'unclassified' not in data['taxonomy'][0:r+1]:
-                    taxa.add(';'.join(data['taxonomy'][0:r+1]))
+                if 'unclassified' not in data['taxonomy'][0:r + 1]:
+                    taxa.add(';'.join(data['taxonomy'][0:r + 1]))
 
             lineages += sorted(list(taxa))
 
@@ -289,7 +290,7 @@ class IMG(object):
 
         return table
 
-    def filterGeneCountTable(self, genomeIds, table, ubiquityThreshold = 0.9, singleCopyThreshold = 0.9):
+    def filterGeneCountTable(self, genomeIds, table, ubiquityThreshold=0.9, singleCopyThreshold=0.9):
         idsToFilter = []
         for pfamId, genomeCounts in table.iteritems():
             ubiquity = 0
@@ -303,7 +304,7 @@ class IMG(object):
                 if count == 1:
                     singleCopy += 1
 
-            if (float(ubiquity)/len(genomeIds) < ubiquityThreshold) or (float(singleCopy)/len(genomeIds) < singleCopyThreshold):
+            if (float(ubiquity) / len(genomeIds) < ubiquityThreshold) or (float(singleCopy) / len(genomeIds) < singleCopyThreshold):
                 idsToFilter.append(pfamId)
 
         for clusterId in idsToFilter:
@@ -329,12 +330,12 @@ class IMG(object):
 
             lineSplit = line.split('\t')
             if len(lineSplit) != 9:
-                continue # line likely annotates a CRISPR
+                continue  # line likely annotates a CRISPR
 
             seqId = lineSplit[0]
 
             geneId = lineSplit[8].split(';')[0]
-            geneId = geneId[geneId.find('=')+1:]
+            geneId = geneId[geneId.find('=') + 1:]
 
             genePosition[geneId] = seqId
 
@@ -440,7 +441,7 @@ class IMG(object):
 
             lineSplit = line.split('\t')
             if len(lineSplit) != 9:
-                continue # line likely annotates a CRISPR
+                continue  # line likely annotates a CRISPR
 
             # check if we've moved to the next contig
             if curSeqId == None:
@@ -450,9 +451,8 @@ class IMG(object):
                 contigStart += spacingBetweenContigs + seqLens[curSeqId]
                 curSeqId = lineSplit[0]
 
-
             geneId = lineSplit[8].split(';')[0]
-            geneId = geneId[geneId.find('=')+1:]
+            geneId = geneId[geneId.find('=') + 1:]
 
             start = int(lineSplit[3])
             end = int(lineSplit[4])
@@ -555,7 +555,7 @@ class IMG(object):
                 mitoChloroGenes.add(geneId)
 
         return mitoChloroGenes
-    
+
     def identifyRedundantPFAMs(self, markerGenes):
         pfamIdToTigrId = defaultdict(list)
         for line in open(self.redundantTIGRFAMs):
@@ -564,7 +564,6 @@ class IMG(object):
             tigrId = lineSplit[1].rstrip()
 
             pfamIdToTigrId[pfamId].append(tigrId)
-
 
         pfamToRemove = set()
         for markerGene in markerGenes:
@@ -584,7 +583,6 @@ class IMG(object):
 
             tigrIdToPfamId[tigrId] = tigrIdToPfamId.get(tigrId, []) + [pfamId]
 
-
         tigrToRemove = set()
         for markerGene in markerGenes:
             if markerGene in tigrIdToPfamId:
@@ -593,4 +591,3 @@ class IMG(object):
                         tigrToRemove.add(markerGene)
 
         return tigrToRemove
-    

@@ -19,8 +19,10 @@
 #                                                                             #
 ###############################################################################
 
+
 class HmmModelError(Exception):
     pass
+
 
 class HmmModel(object):
     """Store HMM parameters."""
@@ -34,6 +36,7 @@ class HmmModel(object):
 
         for key, value in keys.items():
             setattr(self, key, value)
+
 
 class HmmModelParser(object):
     """Parse HMM file."""
@@ -75,7 +78,7 @@ class HmmModelParser(object):
                         params = fields[1].split()
                         if len(params) != 2:
                             raise HmmModelError
-                        headerKeys[fields[0].lower()] = (float(params[0].replace(';','')), float(params[1].replace(';','')))
+                        headerKeys[fields[0].lower()] = (float(params[0].replace(';', '')), float(params[1].replace(';', '')))
                     else:
                         pass
 
@@ -112,15 +115,15 @@ class HmmModelParser(object):
                         params = fields[1].split()
                         if len(params) != 2:
                             raise HmmModelError
-                        headerKeys[fields[0].lower()] = (float(params[0].replace(';','')), float(params[1].replace(';','')))
+                        headerKeys[fields[0].lower()] = (float(params[0].replace(';', '')), float(params[1].replace(';', '')))
                     elif fields[0] == "STATS":
                         params = fields[1].split()
                         if params[0] != "LOCAL":
                             raise HmmModelError
                         if params[1] == "MSV" or params[1] == "VITERBI" or params[1] == "FORWARD":
-                            headerKeys[(fields[0]+"_"+params[0]+"_"+params[1]).lower()] = (float(params[2]), float(params[3]))
+                            headerKeys[(fields[0] + "_" + params[0] + "_" + params[1]).lower()] = (float(params[2]), float(params[3]))
                         else:
-                            print("'"+params[1]+"'")
+                            print("'" + params[1] + "'")
                             raise HmmModelError
                     else:
                         headerKeys[fields[0].lower()] = fields[1]

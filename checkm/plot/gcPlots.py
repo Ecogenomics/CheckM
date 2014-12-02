@@ -29,6 +29,7 @@ from checkm.binTools import BinTools
 from checkm.util.seqUtils import readFasta, baseCount
 from checkm.common import findNearest, readDistribution
 
+
 class GcPlots(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
@@ -87,18 +88,18 @@ class GcPlots(AbstractPlot):
             bins.append(binEnd)
             binEnd += binWidth
 
-        axesHist.hist(data, bins=bins, normed=True, color=(0.5,0.5,0.5))
+        axesHist.hist(data, bins=bins, normed=True, color=(0.5, 0.5, 0.5))
         axesHist.set_xlabel('% GC')
         axesHist.set_ylabel('% windows (' + str(self.options.gc_window_size) + ' bp)')
 
         # Prettify plot
         for a in axesHist.yaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for a in axesHist.xaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for line in axesHist.yaxis.get_ticklines():
             line.set_color(self.axesColour)
@@ -107,7 +108,7 @@ class GcPlots(AbstractPlot):
             line.set_color(self.axesColour)
 
         for loc, spine in axesHist.spines.iteritems():
-            if loc in ['right','top']:
+            if loc in ['right', 'top']:
                 spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)
@@ -118,7 +119,7 @@ class GcPlots(AbstractPlot):
 
         # Delta-GC vs Sequence length plot
         axesDeltaGC.scatter(deltaGCs, seqLens, c=abs(deltaGCs), s=10, lw=0.5, cmap=pylab.cm.Greys)
-        axesDeltaGC.set_xlabel(r'$\Delta$ GC (mean GC = %.1f%%)' % (meanGC*100))
+        axesDeltaGC.set_xlabel(r'$\Delta$ GC (mean GC = %.1f%%)' % (meanGC * 100))
         axesDeltaGC.set_ylabel('Sequence length (kbp)')
 
         _, yMaxSeqs = axesDeltaGC.get_ylim()
@@ -131,8 +132,8 @@ class GcPlots(AbstractPlot):
             # find closest distribution values
             sampleSeqLen = dist[closestGC].keys()[0]
             d = dist[closestGC][sampleSeqLen]
-            gcLowerBoundKey = findNearest(d.keys(), (100 - distToPlot)/2.0)
-            gcUpperBoundKey = findNearest(d.keys(), (100 + distToPlot)/2.0)
+            gcLowerBoundKey = findNearest(d.keys(), (100 - distToPlot) / 2.0)
+            gcUpperBoundKey = findNearest(d.keys(), (100 + distToPlot) / 2.0)
 
             xL = []
             xU = []
@@ -163,19 +164,19 @@ class GcPlots(AbstractPlot):
         yticks = axesDeltaGC.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
-            label = '%.1f' % (float(seqLen)/1000)
-            label = label.replace('.0', '') # remove trailing zero
+            label = '%.1f' % (float(seqLen) / 1000)
+            label = label.replace('.0', '')  # remove trailing zero
             kbpLabels.append(label)
         axesDeltaGC.set_yticklabels(kbpLabels)
 
         # Prettify plot
         for a in axesDeltaGC.yaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for a in axesDeltaGC.xaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for line in axesDeltaGC.yaxis.get_ticklines():
             line.set_color(self.axesColour)
@@ -184,7 +185,7 @@ class GcPlots(AbstractPlot):
             line.set_color(self.axesColour)
 
         for loc, spine in axesDeltaGC.spines.iteritems():
-            if loc in ['right','top']:
+            if loc in ['right', 'top']:
                 spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)

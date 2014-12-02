@@ -25,6 +25,7 @@ from AbstractPlot import AbstractPlot
 
 from checkm.util.seqUtils import readFasta
 
+
 class NxPlot(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
@@ -41,7 +42,7 @@ class NxPlot(AbstractPlot):
 
         testSum = 0
         xIndex = 0
-        nxThreshold = x[xIndex]*sumSeqLens
+        nxThreshold = x[xIndex] * sumSeqLens
         nx = []
         for seqLen in seqLens:
             testSum += seqLen
@@ -52,7 +53,7 @@ class NxPlot(AbstractPlot):
                     break
 
                 xIndex += 1
-                nxThreshold = x[xIndex]*sumSeqLens
+                nxThreshold = x[xIndex] * sumSeqLens
 
         return nx
 
@@ -64,11 +65,11 @@ class NxPlot(AbstractPlot):
 
         # calculate Nx
         seqs = readFasta(fastaFile)
-        x = np.arange(0, 1.0 + 0.5*self.options.step_size, self.options.step_size)
+        x = np.arange(0, 1.0 + 0.5 * self.options.step_size, self.options.step_size)
         nx = self.calculateNx(x, seqs)
 
         # Create plot
-        axes.plot(x, nx, 'ko-', ms = 4)
+        axes.plot(x, nx, 'ko-', ms=4)
         axes.set_xlabel('Nx')
         axes.set_ylabel('Sequence length (kbp)')
 
@@ -76,19 +77,19 @@ class NxPlot(AbstractPlot):
         yticks = axes.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
-            label = '%.1f' % (float(seqLen)/1000)
-            label = label.replace('.0', '') # remove trailing zero
+            label = '%.1f' % (float(seqLen) / 1000)
+            label = label.replace('.0', '')  # remove trailing zero
             kbpLabels.append(label)
         axes.set_yticklabels(kbpLabels)
 
         # Prettify plot
         for a in axes.yaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for a in axes.xaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for line in axes.yaxis.get_ticklines():
             line.set_color(self.axesColour)
@@ -97,7 +98,7 @@ class NxPlot(AbstractPlot):
             line.set_color(self.axesColour)
 
         for loc, spine in axes.spines.iteritems():
-            if loc in ['right','top']:
+            if loc in ['right', 'top']:
                 spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)

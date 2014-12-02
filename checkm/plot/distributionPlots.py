@@ -25,6 +25,7 @@ from checkm.plot.gcPlots import GcPlots
 from checkm.plot.codingDensityPlots import CodingDensityPlots
 from checkm.plot.tetraDistPlots import TetraDistPlots
 
+
 class DistributionPlots(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)

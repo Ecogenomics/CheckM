@@ -25,15 +25,24 @@ import logging
 import subprocess
 from re import split as re_split
 
-class FormatError(BaseException): pass
-class HMMERError(BaseException): pass
-class HMMMERModeError(BaseException): pass
+
+class FormatError(BaseException):
+    pass
+
+
+class HMMERError(BaseException):
+    pass
+
+
+class HMMMERModeError(BaseException):
+    pass
+
 
 class HMMERRunner():
     """Wrapper for running HMMER3."""
     def __init__(self, mode="dom"):
         self.logger = logging.getLogger()
-        
+
         # make sure HMMER is installed
         self.checkForHMMER()
 
@@ -66,8 +75,8 @@ class HMMERRunner():
         if self.mode != 'align':
             raise HMMMERModeError("Mode %s not compatible with align" % self.mode)
 
-        #build up the option string
-        opts=''
+        # build up the option string
+        opts = ''
         if trim:
             opts += ' --trim '
 
@@ -76,7 +85,7 @@ class HMMERRunner():
         rtn = os.system(cmd)
         if rtn == 256:
             # assume user has a newer version of HMMER (>= 3.1b1) and the allcol parameter is no longer valid
-            cmd = cmd.replace('--allcol','')
+            cmd = cmd.replace('--allcol', '')
             os.system(cmd)
 
     def fetch(self, db, key, fetchFileName, bKeyFile=False):
@@ -104,6 +113,7 @@ class HMMERRunner():
         except:
             self.logger.error("  [Error] Make sure HMMER executables (e.g., hmmsearch, hmmfetch) are on your system path.")
             sys.exit()
+
 
 class HMMERParser():
     """Parses tabular output."""
@@ -141,9 +151,9 @@ NODE_110054_length_1926_cov_24.692627_41_3 -          Ribosomal_S9         PF003
             line = self.handle.readline().rstrip()
             try:
                 if line[0] != '#' and len(line) != 0:
-                    dMatch = re_split( r'\s+', line.rstrip() )
+                    dMatch = re_split(r'\s+', line.rstrip())
                     if len(dMatch) < 19:
-                        raise FormatError( "Error processing line:\n%s" % (line) )
+                        raise FormatError("Error processing line:\n%s" % (line))
                     refined_match = dMatch[0:18] + [" ".join([str(i) for i in dMatch[18:]])]
                     return HmmerHitTBL(refined_match)
             except IndexError:
@@ -159,13 +169,14 @@ NODE_925902_length_6780_cov_18.428171_754_2 -            399 PGK                
             line = self.handle.readline().rstrip()
             try:
                 if line[0] != '#' and len(line) != 0:
-                    dMatch = re_split( r'\s+', line.rstrip() )
+                    dMatch = re_split(r'\s+', line.rstrip())
                     if len(dMatch) < 23:
-                        raise FormatError( "Error processing line:\n%s" % (line) )
+                        raise FormatError("Error processing line:\n%s" % (line))
                     refined_match = dMatch[0:22] + [" ".join([str(i) for i in dMatch[22:]])]
                     return HmmerHitDOM(refined_match)
             except IndexError:
                 return {}
+
 
 class HmmerHitTBL():
     """Encapsulate a HMMER hit given in tblout format."""
@@ -217,6 +228,7 @@ class HmmerHitTBL():
                           self.target_description
                           ]
                          )
+
 
 class HmmerHitDOM():
     """Encapsulate a HMMER hit given in domtblout format."""

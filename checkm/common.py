@@ -29,6 +29,7 @@ import numpy as np
 
 from checkm.defaultValues import DefaultValues
 
+
 def getBinIdsFromOutDir(outDir):
     """Get bin ids."""
     binIds = []
@@ -41,9 +42,10 @@ def getBinIdsFromOutDir(outDir):
 
     return binIds
 
+
 def readDistribution(prefix):
     """Read distribution file."""
-    distFile = os.path.join(DefaultValues.DISTRIBUTION_DIR,  prefix + '.txt')
+    distFile = os.path.join(DefaultValues.DISTRIBUTION_DIR, prefix + '.txt')
     checkFileExists(distFile)
 
     with open(distFile, 'r') as f:
@@ -52,10 +54,12 @@ def readDistribution(prefix):
 
     return d
 
+
 def findNearest(array, value):
     '''Find nearest array element to a given value.'''
-    idx = (np.abs(np.array(array)-value)).argmin()
+    idx = (np.abs(np.array(array) - value)).argmin()
     return array[idx]
+
 
 def checkFileExists(inputFile):
     """Check if file exists."""
@@ -64,12 +68,14 @@ def checkFileExists(inputFile):
         logger.error('  [Error] Input file does not exists: ' + inputFile + '\n')
         sys.exit()
 
+
 def checkDirExists(inputDir):
     """Check if directory exists."""
     if not os.path.exists(inputDir):
         logger = logging.getLogger()
         logger.error('  [Error] Input directory does not exists: ' + inputDir + '\n')
         sys.exit()
+
 
 def makeSurePathExists(path):
     """Create directory if it does not exist."""
@@ -81,12 +87,14 @@ def makeSurePathExists(path):
             logger.error('  [Error] Specified path does not exist: ' + path + '\n')
             sys.exit()
 
+
 def binIdFromFilename(filename):
     """Extract bin id from bin filename."""
     binId = os.path.basename(filename)
     binId = os.path.splitext(binId)[0]
 
     return binId
+
 
 def reassignStdOut(outFile):
     """Redirect standard out to a file."""
@@ -101,6 +109,7 @@ def reassignStdOut(outFile):
             sys.exit()
 
     return oldStdOut
+
 
 def restoreStdOut(outFile, oldStdOut):
     """Redirect standard out back to system standard out."""

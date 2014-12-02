@@ -33,13 +33,14 @@ from checkm.util.seqUtils import readFasta
 from checkm.hmmer import HMMERRunner
 from checkm.resultsParser import ResultsParser
 
+
 class HmmerAligner:
     def __init__(self, threads):
         self.logger = logging.getLogger()
         self.totalThreads = threads
 
         self.outputFormat = 'Pfam'
-        
+
     def makeAlignmentTopHit(self,
                                outDir,
                                hmmModelFile,
@@ -153,24 +154,24 @@ class HmmerAligner:
             workerQueue.put(None)
 
         try:
-            calcProc = [mp.Process(target = self.__createMSA, args = (resultsParser, binIdToBinMarkerSets, markerFile, outDir, alignOutputDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target = self.__reportBinProgress, args = (len(binIdToModels), writerQueue))
-    
+            calcProc = [mp.Process(target=self.__createMSA, args=(resultsParser, binIdToBinMarkerSets, markerFile, outDir, alignOutputDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target=self.__reportBinProgress, args=(len(binIdToModels), writerQueue))
+
             writeProc.start()
-    
+
             for p in calcProc:
                 p.start()
-    
+
             for p in calcProc:
                 p.join()
-    
+
             writerQueue.put(None)
             writeProc.join()
         except:
             # make sure all processes are terminated
             for p in calcProc:
                 p.terminate()
-                
+
             writeProc.terminate()
 
     def __createMSA(self, resultsParser, binIdToBinMarkerSets, hmmModelFile, outDir, alignOutputDir, queueIn, queueOut):
@@ -204,7 +205,7 @@ class HmmerAligner:
 
         numProcessedBins = 0
         if self.logger.getEffectiveLevel() <= logging.INFO:
-            statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
+            statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
             sys.stderr.write('%s\r' % statusStr)
             sys.stderr.flush()
 
@@ -215,14 +216,14 @@ class HmmerAligner:
 
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
-                statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
+                statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
 
-    def __alignMarkerGenes(self, markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bReportProgress = True):
+    def __alignMarkerGenes(self, markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bReportProgress=True):
         """Align marker genes with HMMs in parallel."""
 
         if bReportProgress:
@@ -239,24 +240,24 @@ class HmmerAligner:
             workerQueue.put(None)
 
         try:
-            calcProc = [mp.Process(target = self.__alignMarkerParallel, args = (markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target = self.__reportAlignmentProgress, args = (len(hmmModelFiles), bReportProgress, writerQueue))
-    
+            calcProc = [mp.Process(target=self.__alignMarkerParallel, args=(markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target=self.__reportAlignmentProgress, args=(len(hmmModelFiles), bReportProgress, writerQueue))
+
             writeProc.start()
-    
+
             for p in calcProc:
                 p.start()
-    
+
             for p in calcProc:
                 p.join()
-    
+
             writerQueue.put(None)
             writeProc.join()
         except:
             # make sure all processes are terminated
             for p in calcProc:
                 p.terminate()
-                
+
             writeProc.terminate()
 
     def __alignMarkerParallel(self, markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, queueIn, queueOut):
@@ -275,7 +276,7 @@ class HmmerAligner:
         numSeqs = 0
         for binId, seqs in binSeqs.iteritems():
             for seqId, seq in seqs.iteritems():
-                header =    '>' + binId + DefaultValues.SEQ_CONCAT_CHAR + seqId
+                header = '>' + binId + DefaultValues.SEQ_CONCAT_CHAR + seqId
                 if bReportHitStats:
                     header += ' [e-value=%.4g,score=%.1f]' % (binStats[binId][seqId][0], binStats[binId][seqId][1])
 
@@ -283,7 +284,6 @@ class HmmerAligner:
                 fout.write(seq + '\n')
                 numSeqs += 1
         fout.close()
-
 
         if numSeqs > 0:
             alignSeqFile = os.path.join(alignOutputDir, markerId + '.aligned.faa')
@@ -302,7 +302,7 @@ class HmmerAligner:
 
         numProcessedGenes = 0
         if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
-            statusStr = '    Finished aligning %d of %d (%.2f%%) marker genes.' % (numProcessedGenes, numMarkers, float(numProcessedGenes)*100/numMarkers)
+            statusStr = '    Finished aligning %d of %d (%.2f%%) marker genes.' % (numProcessedGenes, numMarkers, float(numProcessedGenes) * 100 / numMarkers)
             sys.stderr.write('%s\r' % statusStr)
             sys.stderr.flush()
 
@@ -313,7 +313,7 @@ class HmmerAligner:
 
             if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedGenes += 1
-                statusStr = '    Finished aligning %d of %d (%.2f%%) marker genes.' % (numProcessedGenes, numMarkers, float(numProcessedGenes)*100/numMarkers)
+                statusStr = '    Finished aligning %d of %d (%.2f%%) marker genes.' % (numProcessedGenes, numMarkers, float(numProcessedGenes) * 100 / numMarkers)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 
@@ -335,7 +335,7 @@ class HmmerAligner:
                     lineSplit = line.split()
                     seqId = lineSplit[1]
                     stats = lineSplit[3].strip()
-                    seqStats[seqId]= stats
+                    seqStats[seqId] = stats
                 continue
             else:
                 lineSplit = line.split()
@@ -370,13 +370,13 @@ class HmmerAligner:
 
                 # sort hits from highest to lowest e-value in order to ensure only the best hit
                 # to a given target is retained
-                hits.sort(key = lambda x: x.full_e_value, reverse=True)
+                hits.sort(key=lambda x: x.full_e_value, reverse=True)
                 topHit = hits[0]
                 markerSeqs[markerId][binId][topHit.target_name] = self.__extractSeq(topHit.target_name, binORFs)
                 markerStats[markerId][binId][topHit.target_name] = [topHit.full_e_value, topHit.full_score]
 
         return markerSeqs, markerStats
-    
+
     def __extractMarkerSeqsUnique(self, outDir, resultsParser):
         """Extract marker sequences with a single unique hit."""
 
@@ -409,8 +409,8 @@ class HmmerAligner:
             for seqId in seqIds:
                 tempSeq = seqs[seqId]
                 if tempSeq[-1] == '*':
-                    tempSeq = tempSeq[0:-1] # remove final '*' inserted by prodigal
-                    
+                    tempSeq = tempSeq[0:-1]  # remove final '*' inserted by prodigal
+
                 seq += tempSeq
 
             rtnSeq = seq
@@ -418,7 +418,7 @@ class HmmerAligner:
             rtnSeq = seqs[seqId]
 
             if rtnSeq[-1] == '*':
-                rtnSeq = rtnSeq[0:-1] # remove final '*' inserted by prodigal
+                rtnSeq = rtnSeq[0:-1]  # remove final '*' inserted by prodigal
 
         return rtnSeq
 
@@ -437,7 +437,7 @@ class HmmerAligner:
 
             # sort hits from highest to lowest e-value in order to ensure only the best hit
             # to a given target is retained
-            hits.sort(key = lambda x: x.full_e_value, reverse=True)
+            hits.sort(key=lambda x: x.full_e_value, reverse=True)
 
             # Note: this data structure is used to mimic that used by __extractMarkerSeqsTopHits()
             markersWithMultipleHits[markerId][binId] = {}
@@ -446,7 +446,7 @@ class HmmerAligner:
 
         return markersWithMultipleHits
 
-    def __makeAlignmentModels(self, hmmModelFile, modelKeys, hmmModelFiles, bReportProgress = True):
+    def __makeAlignmentModels(self, hmmModelFile, modelKeys, hmmModelFiles, bReportProgress=True):
         """Make temporary HMM files used to create HMM alignments."""
 
         if bReportProgress:
@@ -465,24 +465,24 @@ class HmmerAligner:
             workerQueue.put((None, None))
 
         try:
-            calcProc = [mp.Process(target = self.__extractModel, args = (hmmModelFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target = self.__reportModelExtractionProgress, args = (len(modelKeys), bReportProgress, writerQueue))
-    
+            calcProc = [mp.Process(target=self.__extractModel, args=(hmmModelFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target=self.__reportModelExtractionProgress, args=(len(modelKeys), bReportProgress, writerQueue))
+
             writeProc.start()
-    
+
             for p in calcProc:
                 p.start()
-    
+
             for p in calcProc:
                 p.join()
-    
+
             writerQueue.put(None)
             writeProc.join()
         except:
             # make sure all processes are terminated
             for p in calcProc:
                 p.terminate()
-                
+
             writeProc.terminate()
 
     def __extractModel(self, hmmModelFile, queueIn, queueOut):
@@ -503,7 +503,7 @@ class HmmerAligner:
 
         numModelsExtracted = 0
         if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
-            statusStr = '    Finished extracting %d of %d (%.2f%%) HMMs.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
+            statusStr = '    Finished extracting %d of %d (%.2f%%) HMMs.' % (numModelsExtracted, numMarkers, float(numModelsExtracted) * 100 / numMarkers)
             sys.stderr.write('%s\r' % statusStr)
             sys.stderr.flush()
 
@@ -514,7 +514,7 @@ class HmmerAligner:
 
             if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
                 numModelsExtracted += 1
-                statusStr = '    Finished extracting %d of %d (%.2f%%) HMMs.' % (numModelsExtracted, numMarkers, float(numModelsExtracted)*100/numMarkers)
+                statusStr = '    Finished extracting %d of %d (%.2f%%) HMMs.' % (numModelsExtracted, numMarkers, float(numModelsExtracted) * 100 / numMarkers)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 

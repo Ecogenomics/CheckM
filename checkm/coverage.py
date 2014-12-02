@@ -34,6 +34,7 @@ from checkm.util.seqUtils import readFasta
 
 from numpy import mean, sqrt
 
+
 class ReadLoader:
     """Callback for counting aligned reads with pysam.fetch"""
 
@@ -64,9 +65,9 @@ class ReadLoader:
             self.numSecondary += 1
         elif read.is_qcfail:
             self.numFailedQC += 1
-        elif read.alen < self.minAlignPer*read.rlen:
+        elif read.alen < self.minAlignPer * read.rlen:
             self.numFailedAlignLen += 1
-        elif read.opt('NM') > self.maxEditDistPer*read.rlen:
+        elif read.opt('NM') > self.maxEditDistPer * read.rlen:
             self.numFailedEditDist += 1
         elif not self.bAllReads and not read.is_proper_pair:
             self.numFailedProperPair += 1
@@ -79,11 +80,13 @@ class ReadLoader:
             # alignment length and edit distance thresholds are zero).
             self.coverage += read.alen
 
+
 class CoverageStruct():
     def __init__(self, seqLen, mappedReads, coverage):
         self.seqLen = seqLen
         self.mappedReads = mappedReads
         self.coverage = coverage
+
 
 class Coverage():
     """Calculate coverage of all sequences."""
@@ -198,24 +201,24 @@ class Coverage():
             workerQueue.put((None, None))
 
         try:
-            workerProc = [mp.Process(target = self.__workerThread, args = (bamFile, bAllReads, minAlignPer, maxEditDistPer, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target = self.__writerThread, args = (coverageInfo, len(refSeqIds), writerQueue))
-    
+            workerProc = [mp.Process(target=self.__workerThread, args=(bamFile, bAllReads, minAlignPer, maxEditDistPer, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target=self.__writerThread, args=(coverageInfo, len(refSeqIds), writerQueue))
+
             writeProc.start()
-    
+
             for p in workerProc:
                 p.start()
-    
+
             for p in workerProc:
                 p.join()
-    
+
             writerQueue.put((None, None, None, None, None, None, None, None, None, None, None))
             writeProc.join()
         except:
             # make sure all processes are terminated
             for p in workerProc:
                 p.terminate()
-                
+
             writeProc.terminate()
 
         return coverageInfo
@@ -231,7 +234,7 @@ class Coverage():
 
             for seqId, seqLen in zip(seqIds, seqLens):
                 readLoader = ReadLoader(seqLen, bAllReads, minAlignPer, maxEditDistPer)
-                bamfile.fetch(seqId, 0, seqLen, callback = readLoader)
+                bamfile.fetch(seqId, 0, seqLen, callback=readLoader)
 
                 coverage = float(readLoader.coverage) / seqLen
 
@@ -261,7 +264,7 @@ class Coverage():
 
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 processedRefSeqs += 1
-                statusStr = '    Finished processing %d of %d (%.2f%%) reference sequences.' % (processedRefSeqs, numRefSeqs, float(processedRefSeqs)*100/numRefSeqs)
+                statusStr = '    Finished processing %d of %d (%.2f%%) reference sequences.' % (processedRefSeqs, numRefSeqs, float(processedRefSeqs) * 100 / numRefSeqs)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 
@@ -274,20 +277,20 @@ class Coverage():
                 totalFailedProperPair += numFailedProperPair
                 totalMappedReads += numMappedReads
 
-            coverageInfo[seqId] = CoverageStruct(seqLen = seqLen, mappedReads = numMappedReads, coverage = coverage)
+            coverageInfo[seqId] = CoverageStruct(seqLen=seqLen, mappedReads=numMappedReads, coverage=coverage)
 
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
 
             print ''
             print '    # total reads: %d' % totalReads
-            print '      # properly mapped reads: %d (%.1f%%)' % (totalMappedReads, float(totalMappedReads)*100/totalReads)
-            print '      # duplicate reads: %d (%.1f%%)' % (totalDuplicates, float(totalDuplicates)*100/totalReads)
-            print '      # secondary reads: %d (%.1f%%)' % (totalSecondary, float(totalSecondary)*100/totalReads)
-            print '      # reads failing QC: %d (%.1f%%)' % (totalFailedQC, float(totalFailedQC)*100/totalReads)
-            print '      # reads failing alignment length: %d (%.1f%%)' % (totalFailedAlignLen, float(totalFailedAlignLen)*100/totalReads)
-            print '      # reads failing edit distance: %d (%.1f%%)' % (totalFailedEditDist, float(totalFailedEditDist)*100/totalReads)
-            print '      # reads not properly paired: %d (%.1f%%)' % (totalFailedProperPair, float(totalFailedProperPair)*100/totalReads)
+            print '      # properly mapped reads: %d (%.1f%%)' % (totalMappedReads, float(totalMappedReads) * 100 / totalReads)
+            print '      # duplicate reads: %d (%.1f%%)' % (totalDuplicates, float(totalDuplicates) * 100 / totalReads)
+            print '      # secondary reads: %d (%.1f%%)' % (totalSecondary, float(totalSecondary) * 100 / totalReads)
+            print '      # reads failing QC: %d (%.1f%%)' % (totalFailedQC, float(totalFailedQC) * 100 / totalReads)
+            print '      # reads failing alignment length: %d (%.1f%%)' % (totalFailedAlignLen, float(totalFailedAlignLen) * 100 / totalReads)
+            print '      # reads failing edit distance: %d (%.1f%%)' % (totalFailedEditDist, float(totalFailedEditDist) * 100 / totalReads)
+            print '      # reads not properly paired: %d (%.1f%%)' % (totalFailedProperPair, float(totalFailedProperPair) * 100 / totalReads)
             print ''
 
     def parseCoverage(self, coverageFile):
@@ -311,14 +314,14 @@ class Coverage():
 
             for i in xrange(3, len(lineSplit), 3):
                 bamId = lineSplit[i]
-                coverage = float(lineSplit[i+1])
+                coverage = float(lineSplit[i + 1])
                 coverageStats[binId][seqId][bamId] = coverage
 
         return coverageStats
 
     def binProfiles(self, coverageFile):
         """Read coverage information for each bin."""
-        binCoverages = defaultdict(lambda : defaultdict(list))
+        binCoverages = defaultdict(lambda: defaultdict(list))
         binStats = defaultdict(dict)
 
         bHeader = True
@@ -335,7 +338,7 @@ class Coverage():
             # for each bin under each BAM file
             for i in xrange(3, len(lineSplit), 3):
                 bamId = lineSplit[i]
-                coverage = float(lineSplit[i+1])
+                coverage = float(lineSplit[i + 1])
                 binCoverages[binId][bamId].append(coverage)
 
                 if bamId not in binStats[binId]:
@@ -343,7 +346,7 @@ class Coverage():
 
                 binLength = binStats[binId][bamId][0] + seqLen
                 weight = float(seqLen) / binLength
-                meanBinCoverage = coverage*weight + binStats[binId][bamId][1]*(1-weight)
+                meanBinCoverage = coverage * weight + binStats[binId][bamId][1] * (1 - weight)
 
                 binStats[binId][bamId] = [binLength, meanBinCoverage]
 
@@ -355,7 +358,7 @@ class Coverage():
 
                 varCoverage = 0
                 if len(coverages) > 1:
-                    varCoverage = mean(map(lambda x: (x - meanBinCoverage)**2, coverages))
+                    varCoverage = mean(map(lambda x: (x - meanBinCoverage) ** 2, coverages))
 
                 profiles[binId][bamId] = [meanBinCoverage, sqrt(varCoverage)]
 

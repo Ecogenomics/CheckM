@@ -25,6 +25,7 @@ from AbstractPlot import AbstractPlot
 
 from checkm.util.seqUtils import readFasta
 
+
 class CumulativeLengthPlot(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
@@ -45,7 +46,6 @@ class CumulativeLengthPlot(AbstractPlot):
         seqLens.sort(reverse=True)
         x = np.arange(0, len(seqLens))
 
-
         y = []
         cumLen = 0
         for seqLen in seqLens:
@@ -65,8 +65,8 @@ class CumulativeLengthPlot(AbstractPlot):
         yticks = axes.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
-            label = '%.2f' % (float(seqLen)/1e6)
-            label = label.replace('.00', '') # remove trailing zeros
+            label = '%.2f' % (float(seqLen) / 1e6)
+            label = label.replace('.00', '')  # remove trailing zeros
             if label[-1] == '0':
                 label = label[0:-1]
             kbpLabels.append(label)
@@ -74,12 +74,12 @@ class CumulativeLengthPlot(AbstractPlot):
 
         # Prettify plot
         for a in axes.yaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for a in axes.xaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for line in axes.yaxis.get_ticklines():
             line.set_color(self.axesColour)
@@ -88,7 +88,7 @@ class CumulativeLengthPlot(AbstractPlot):
             line.set_color(self.axesColour)
 
         for loc, spine in axes.spines.iteritems():
-            if loc in ['right','top']:
+            if loc in ['right', 'top']:
                 spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)

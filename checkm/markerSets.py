@@ -35,6 +35,7 @@ from checkm.hmmerModelParser import HmmModelParser
 
 from checkm.util.pfam import PFAM
 
+
 class BinMarkerSets():
     """A collection of one or more marker sets associated with a bin."""
 
@@ -120,21 +121,22 @@ class BinMarkerSets():
         lineSplit = line.split('\t')
         numMarkerSets = int(lineSplit[1])
         for i in xrange(0, numMarkerSets):
-            uid = lineSplit[i*4+2]
-            lineageStr = lineSplit[i*4+3]
-            numGenomes = int(lineSplit[i*4+4])
-            markerSet = eval(lineSplit[i*4+5])
+            uid = lineSplit[i * 4 + 2]
+            lineageStr = lineSplit[i * 4 + 3]
+            numGenomes = int(lineSplit[i * 4 + 4])
+            markerSet = eval(lineSplit[i * 4 + 5])
             self.markerSets.append(MarkerSet(uid, lineageStr, numGenomes, markerSet))
+
 
 class MarkerSet():
     """A collection of marker genes organized into co-located sets."""
-    def __init__(self,  UID, lineageStr, numGenomes, markerSet):
+    def __init__(self, UID, lineageStr, numGenomes, markerSet):
         self.logger = logging.getLogger()
 
-        self.UID = UID                  # unique ID of marker set
-        self.lineageStr = lineageStr    # taxonomic string associated with marker set
-        self.numGenomes = numGenomes    # number of genomes used to calculate marker set
-        self.markerSet = markerSet      # marker genes organized into co-located sets
+        self.UID = UID  # unique ID of marker set
+        self.lineageStr = lineageStr  # taxonomic string associated with marker set
+        self.numGenomes = numGenomes  # number of genomes used to calculate marker set
+        self.markerSet = markerSet  # marker genes organized into co-located sets
 
     def __repr__(self):
         return str(self.UID) + '\t' + self.lineageStr + '\t' + str(self.numGenomes) + '\t' + str(self.markerSet)
@@ -188,7 +190,7 @@ class MarkerSet():
                         present += 1
                     elif count > 1:
                         present += 1
-                        multiCopy += (count-1)
+                        multiCopy += (count - 1)
 
                 comp += float(present) / len(ms)
                 cont += float(multiCopy) / len(ms)
@@ -197,6 +199,7 @@ class MarkerSet():
             percCont = 100 * cont / len(self.markerSet)
 
         return percComp, percCont
+
 
 class MarkerSetParser():
     """Parse marker set file."""
@@ -296,26 +299,26 @@ class MarkerSetParser():
             workerQueue.put(None)
 
         binIdToModels = mp.Manager().dict()
-        
+
         try:
-            calcProc = [mp.Process(target = self.__fetchModelInfo, args = (binIdToModels, markerFile, workerQueue, writerQueue)) for _ in range(self.numThreads)]
-            writeProc = mp.Process(target = self.__reportFetchProgress, args = (len(binIds), writerQueue))
-    
+            calcProc = [mp.Process(target=self.__fetchModelInfo, args=(binIdToModels, markerFile, workerQueue, writerQueue)) for _ in range(self.numThreads)]
+            writeProc = mp.Process(target=self.__reportFetchProgress, args=(len(binIds), writerQueue))
+
             writeProc.start()
-    
+
             for p in calcProc:
                 p.start()
-    
+
             for p in calcProc:
                 p.join()
-    
+
             writerQueue.put(None)
             writeProc.join()
         except:
             # make sure all processes are terminated
             for p in calcProc:
                 p.terminate()
-                
+
             writeProc.terminate()
 
         # create a standard dictionary from the managed dictionary
@@ -346,7 +349,7 @@ class MarkerSetParser():
 
         numProcessedBins = 0
         if self.logger.getEffectiveLevel() <= logging.INFO:
-                statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
+                statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 
@@ -357,7 +360,7 @@ class MarkerSetParser():
 
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
-                statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins)*100/numBins)
+                statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 
@@ -379,7 +382,7 @@ class MarkerSetParser():
             self.logger.error('Unrecognized file type: ' + markerFile)
             sys.exit()
 
-    def __createMarkerHMMs(self, binMarkerSet, outputFile, bReportProgress = True):
+    def __createMarkerHMMs(self, binMarkerSet, outputFile, bReportProgress=True):
         """Create HMM file for taxonomic markers."""
 
         # get list of marker genes
@@ -391,7 +394,7 @@ class MarkerSetParser():
 
         # extract marker genes along with all genes from the same clan
         allMarkers = markerGenes | genesInSameClan
-    
+
         if bReportProgress:
             self.logger.info("  There are %d genes in the marker set and %d genes from the same PFAM clan." % (len(markerGenes), len(genesInSameClan)))
 
@@ -413,11 +416,11 @@ class MarkerSetParser():
 
         # remove key file
         os.remove(keyFile)
-        
+
     def parseTaxonomicMarkerSetFile(self, markerSetFile):
         """Parse marker set from a taxonomic-specific marker set file."""
         with open(markerSetFile) as f:
-            f.readline() # skip header
+            f.readline()  # skip header
 
             binLine = f.readline()
             taxonId = binLine.split('\t')[0]
@@ -432,7 +435,7 @@ class MarkerSetParser():
         # read all marker sets
         binIdToBinMarkerSets = {}
         with open(markerSetFile) as f:
-            f.readline() # skip header
+            f.readline()  # skip header
 
             for line in f:
                 lineSplit = line.split('\t')

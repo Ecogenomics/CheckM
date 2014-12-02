@@ -36,6 +36,7 @@ from matplotlib.patches import Rectangle
 
 import matplotlib as mpl
 
+
 class MarkerGenePosPlot(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
@@ -62,7 +63,7 @@ class MarkerGenePosPlot(AbstractPlot):
     def plot(self, binFile, markerGeneStats, binStats):
         binId = binIdFromFilename(binFile)
 
-        markerGenesPerSeq, markerGeneNum = self.getMarkerGenesPerSeq(markerGeneStats)
+        markerGenesPerSeq, _markerGeneNum = self.getMarkerGenesPerSeq(markerGeneStats)
 
         if len(markerGenesPerSeq) == 0:
             return False
@@ -99,75 +100,75 @@ class MarkerGenePosPlot(AbstractPlot):
         self.fig.set_size_inches(self.options.width, self.options.height)
         yLabelBounds = self.yLabelExtents(yLabels, self.options.font_size)
 
-        heightBottomLabels = 0.4 + self.options.fig_padding                                # inches
-        widthSideLabel = yLabelBounds.width*self.options.width + self.options.fig_padding  # inches
+        heightBottomLabels = 0.4 + self.options.fig_padding  # inches
+        widthSideLabel = yLabelBounds.width * self.options.width + self.options.fig_padding  # inches
 
         widthPerBin = (self.options.width - widthSideLabel - self.options.fig_padding) / MAX_BINS
 
         titleHeight = 0.2
         HEIGHT_PER_ROW = 0.2
-        height = HEIGHT_PER_ROW*len(sortedSeqLens) + heightBottomLabels + self.options.fig_padding + titleHeight
-        rowBinHeight = widthPerBin/HEIGHT_PER_ROW
+        height = HEIGHT_PER_ROW * len(sortedSeqLens) + heightBottomLabels + self.options.fig_padding + titleHeight
+        rowBinHeight = widthPerBin / HEIGHT_PER_ROW
 
         self.fig.set_size_inches(self.options.width, height)
-        axes = self.fig.add_axes([widthSideLabel/self.options.width, heightBottomLabels/height,\
-                                                                        1.0-(widthSideLabel+self.options.fig_padding)/self.options.width,\
-                                                                        1.0-(heightBottomLabels+self.options.fig_padding+titleHeight)/height])
+        axes = self.fig.add_axes([widthSideLabel / self.options.width, heightBottomLabels / height, \
+                                                                        1.0 - (widthSideLabel + self.options.fig_padding) / self.options.width, \
+                                                                        1.0 - (heightBottomLabels + self.options.fig_padding + titleHeight) / height])
 
         # set plot axis
-        axes.set_xlim([0, MAX_BINS+0.1])
+        axes.set_xlim([0, MAX_BINS + 0.1])
         axes.set_xlabel('Position (' + str(plotBinSize) + ' bp/bin)')
 
         axes.set_ylim([0, len(sortedSeqLens)])
-        axes.set_yticks(np.arange(0.5, len(sortedSeqLens)+0.5, 1.0))
+        axes.set_yticks(np.arange(0.5, len(sortedSeqLens) + 0.5, 1.0))
 
         axes.set_yticklabels(yLabels)
 
         # legend
-        colours = [(1.0, 1.0, 1.0), (127/255.0, 201/255.0, 127/255.0), (255/255.0, 192/255.0, 134/255.0), (190/255.0, 174/255.0, 212/255.0), (0.0, 0.0, 0.0)]
+        colours = [(1.0, 1.0, 1.0), (127 / 255.0, 201 / 255.0, 127 / 255.0), (255 / 255.0, 192 / 255.0, 134 / 255.0), (190 / 255.0, 174 / 255.0, 212 / 255.0), (0.0, 0.0, 0.0)]
         discreteColourMap = mpl.colors.ListedColormap(colours)
-        axisColourMap = self.fig.add_axes([self.options.fig_padding/self.options.width, self.options.fig_padding/height, 0.15, 0.03*(self.options.width/height)])
+        axisColourMap = self.fig.add_axes([self.options.fig_padding / self.options.width, self.options.fig_padding / height, 0.15, 0.03 * (self.options.width / height)])
         colourBar = mpl.colorbar.ColorbarBase(axisColourMap, cmap=discreteColourMap, norm=mpl.colors.Normalize(vmin=0, vmax=1), orientation='horizontal', drawedges=True)
         colourBar.set_ticks([0.1, 0.3, 0.5, 0.7, 0.9])
         colourBar.set_ticklabels(['0', '1', '2', '3', '4+'])
-        #colourBar.outline.set_color(self.axesColour)
+        # colourBar.outline.set_color(self.axesColour)
         colourBar.outline.set_linewidth(0.5)
-        #colourBar.dividers.set_color(self.axesColour)
+        # colourBar.dividers.set_color(self.axesColour)
         colourBar.dividers.set_linewidth(0.5)
 
         for a in axisColourMap.xaxis.majorTicks:
-            a.tick1On=False
-            a.tick2On=False
+            a.tick1On = False
+            a.tick2On = False
 
         # plot each bin
         binPosX = 0.5
         for seqId, seqLen in sortedSeqLens:
             markerCount = [0] * int(math.ceil(float(seqLen) / plotBinSize))
-            for geneId, markerGeneId, geneStartPos, geneEndPos in markerGenesPerSeq[seqId]:
+            for geneId, _markerGeneId, geneStartPos, _geneEndPos in markerGenesPerSeq[seqId]:
                 binPos = int(float(genePos[geneId][0] + geneStartPos) / plotBinSize)
                 markerCount[binPos] += 1
 
             for i in xrange(0, len(markerCount)):
                 if markerCount[i] < len(colours):
-                    axes.add_patch(Rectangle((i+0.1, binPosX - 0.4*rowBinHeight), 0.8, 0.8*rowBinHeight, facecolor=colours[markerCount[i]], lw=0.2))
+                    axes.add_patch(Rectangle((i + 0.1, binPosX - 0.4 * rowBinHeight), 0.8, 0.8 * rowBinHeight, facecolor=colours[markerCount[i]], lw=0.2))
                 else:
-                    axes.add_patch(Rectangle((i+0.1, binPosX - 0.4*rowBinHeight), 0.8, 0.8*rowBinHeight, facecolor=colours[-1], lw=0.2))
+                    axes.add_patch(Rectangle((i + 0.1, binPosX - 0.4 * rowBinHeight), 0.8, 0.8 * rowBinHeight, facecolor=colours[-1], lw=0.2))
 
             binPosX += 1.0
 
         # set plot title
         titleStr = binId + '\n'
-        titleStr += '(%.2f Mbp, %d seqs, %.2f%% complete, %.2f%% contamination)' % (float(binSize)/1e6, len(seqs), binStats['Completeness'], binStats['Contamination'])
+        titleStr += '(%.2f Mbp, %d seqs, %.2f%% complete, %.2f%% contamination)' % (float(binSize) / 1e6, len(seqs), binStats['Completeness'], binStats['Contamination'])
         axes.set_title(titleStr)
 
         # Prettify plot
         for a in axes.yaxis.majorTicks:
-            a.tick1On=False
-            a.tick2On=False
+            a.tick1On = False
+            a.tick2On = False
 
         for a in axes.xaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for line in axes.yaxis.get_ticklines():
             line.set_color(self.axesColour)
@@ -177,7 +178,7 @@ class MarkerGenePosPlot(AbstractPlot):
             line.set_ms(2)
 
         for loc, spine in axes.spines.iteritems():
-            if loc in ['left', 'right','top']:
+            if loc in ['left', 'right', 'top']:
                 spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)

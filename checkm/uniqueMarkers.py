@@ -24,9 +24,11 @@ import sqlite3
 import re
 from collections import defaultdict
 
+
 def parseTaxonomy(taxonomy):
     tax = re.compile('[;,:]?\s?[kpcofgs]__|[;,:]')
     return tax.split(taxonomy)[1:]
+
 
 def getTaxonId(cursor, *args):
     ranks = ['Domain', 'Phylum', 'Class', '"Order"', 'Family', 'Genus', 'Species']
@@ -38,6 +40,7 @@ def getTaxonId(cursor, *args):
     result = cursor.execute('SELECT Id, "Count" FROM taxons WHERE %s' % query_string)
     return result.fetchall()
 
+
 def getOppositeRankSpecificTaxonId(cursor, *args):
     ''' Get all other taxon lineages at the same level as the requested taxon
     '''
@@ -45,12 +48,13 @@ def getOppositeRankSpecificTaxonId(cursor, *args):
     query = []
     for rank, value in zip(ranks, args[:-1]):
         query.append(' %s = \'%s\' ' % (rank, value))
-    query.append(' %s != \'%s\' ' % (ranks[len(args)-1], args[-1]))
+    query.append(' %s != \'%s\' ' % (ranks[len(args) - 1], args[-1]))
     query.append(' %s IS NULL' % ranks[len(args)])
     query_string = 'AND'.join(query)
     print query_string
     result = cursor.execute('SELECT Id, "Count" FROM taxons WHERE %s' % query_string)
     return result.fetchall()
+
 
 def getOppositeRankInspecificTaxonId(cursor, *args):
     ''' Get all other taxon lineages at the same level as the requested taxon
@@ -59,26 +63,31 @@ def getOppositeRankInspecificTaxonId(cursor, *args):
     query = []
     for rank, value in zip(ranks, args):
         query.append(' %s != \'%s\' ' % (rank, value))
-    #query.append(' %s IS NULL' % ranks[len(args)])
+    # query.append(' %s IS NULL' % ranks[len(args)])
     query_string = query[-1]
     result = cursor.execute('SELECT Id, "Count" FROM taxons WHERE %s' % query_string)
     return result.fetchall()
+
 
 def getMarkersFromTaxon(cursor, taxid):
     result = cursor.execute('''SELECT Marker, "Count" FROM marker_mapping WHERE Taxon = ?''', (taxid,))
     return result.fetchall()
 
+
 def getMarkersNotInTaxon(cursor, taxid):
     result = cursor.execute('''SELECT Marker, "Count" FROM marker_mapping WHERE Taxon != ?''', (taxid,))
     return result.fetchall()
+
 
 def countAllGenomes(cursor):
     result = cursor.execute('''SELECT Id, "Count" FROM taxons''')
     return result.fetchall()
 
+
 def countGenomesInTaxon(cursor, taxId):
     result = cursor.execute('''SELECT "Count" FROM taxons WHERE Id = ?''', (taxId,))
     return result.fetchone()[0]
+
 
 def getDescriptiveMarkers(cursor, markers):
     result = cursor.execute('''SELECT Acc, Name FROM markers WHERE Id = ?''', markers)
@@ -99,8 +108,8 @@ def doWork(args):
         all_markers = getMarkersFromTaxon(cur, tax_id)
         marker_in_taxon_mapping = {}
         for (Id, count) in all_markers:
-            if float(count)/float(tax_count) >= args.include:
-                marker_in_taxon_mapping[Id] = float(count)/float(tax_count)
+            if float(count) / float(tax_count) >= args.include:
+                marker_in_taxon_mapping[Id] = float(count) / float(tax_count)
 
         opposite_taxons = getOppositeRankInspecificTaxonId(cur, *taxon_ranks)
         markers_from_others = defaultdict(int)
@@ -149,5 +158,3 @@ if __name__ == '__main__':
 
     # do what we came here to do
     doWork(args)
-
-

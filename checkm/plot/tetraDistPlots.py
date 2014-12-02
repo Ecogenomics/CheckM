@@ -30,6 +30,7 @@ from checkm.common import readDistribution, findNearest
 from checkm.genomicSignatures import GenomicSignatures
 from checkm.binTools import BinTools
 
+
 class TetraDistPlots(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
@@ -92,18 +93,18 @@ class TetraDistPlots(AbstractPlot):
             bins.append(binEnd)
             binEnd += binWidth
 
-        axesHist.hist(data, bins=bins, normed=True, color=(0.5,0.5,0.5))
+        axesHist.hist(data, bins=bins, normed=True, color=(0.5, 0.5, 0.5))
         axesHist.set_xlabel(r'$\Delta$ TD')
         axesHist.set_ylabel('% windows (' + str(self.options.td_window_size) + ' bp)')
 
         # Prettify plot
         for a in axesHist.yaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for a in axesHist.xaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for line in axesHist.yaxis.get_ticklines():
             line.set_color(self.axesColour)
@@ -112,7 +113,7 @@ class TetraDistPlots(AbstractPlot):
             line.set_color(self.axesColour)
 
         for loc, spine in axesHist.spines.iteritems():
-            if loc in ['right','top']:
+            if loc in ['right', 'top']:
                 spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)
@@ -145,13 +146,13 @@ class TetraDistPlots(AbstractPlot):
 
             # make sure x-values are strictly decreasing as y increases
             # as this is conservative and visually satisfying
-            for i in xrange(0, len(x)-1):
-                for j in xrange(i+1, len(x)):
+            for i in xrange(0, len(x) - 1):
+                for j in xrange(i + 1, len(x)):
                     if x[j] > x[i]:
                         if j == len(x) - 1:
                             x[j] = x[i]
                         else:
-                            x[j] = (x[j-1]+x[j+1])/2 # interpolate values from neighbours
+                            x[j] = (x[j - 1] + x[j + 1]) / 2  # interpolate values from neighbours
 
                         if x[j] > x[i]:
                             x[j] = x[i]
@@ -171,19 +172,19 @@ class TetraDistPlots(AbstractPlot):
         yticks = axesDeltaTD.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
-            label = '%.1f' % (float(seqLen)/1000)
-            label = label.replace('.0', '') # remove trailing zero
+            label = '%.1f' % (float(seqLen) / 1000)
+            label = label.replace('.0', '')  # remove trailing zero
             kbpLabels.append(label)
         axesDeltaTD.set_yticklabels(kbpLabels)
 
         # Prettify plot
         for a in axesDeltaTD.yaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for a in axesDeltaTD.xaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for line in axesDeltaTD.yaxis.get_ticklines():
             line.set_color(self.axesColour)
@@ -192,7 +193,7 @@ class TetraDistPlots(AbstractPlot):
             line.set_color(self.axesColour)
 
         for loc, spine in axesDeltaTD.spines.iteritems():
-            if loc in ['right','top']:
+            if loc in ['right', 'top']:
                 spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)

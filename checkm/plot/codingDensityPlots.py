@@ -34,6 +34,7 @@ from checkm.binTools import BinTools
 from checkm.util.seqUtils import readFasta, baseCount
 from checkm.defaultValues import DefaultValues
 
+
 class CodingDensityPlots(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
@@ -57,10 +58,9 @@ class CodingDensityPlots(AbstractPlot):
         if not os.path.exists(gffFile):
             print 'Missing gene feature file (%s). This plot if not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF
             sys.exit()
-            
+
         prodigalParser = ProdigalGeneFeatureParser(gffFile)
-               
-        
+
         # Read reference distributions from file
         dist = readDistribution('cd_dist')
 
@@ -97,18 +97,18 @@ class CodingDensityPlots(AbstractPlot):
             bins.append(binEnd)
             binEnd += binWidth
 
-        axesHist.hist(data, bins=bins, normed=True, color=(0.5,0.5,0.5))
+        axesHist.hist(data, bins=bins, normed=True, color=(0.5, 0.5, 0.5))
         axesHist.set_xlabel('% coding density')
         axesHist.set_ylabel('% windows (' + str(self.options.cd_window_size) + ' bp)')
 
         # Prettify plot
         for a in axesHist.yaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for a in axesHist.xaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for line in axesHist.yaxis.get_ticklines():
             line.set_color(self.axesColour)
@@ -117,7 +117,7 @@ class CodingDensityPlots(AbstractPlot):
             line.set_color(self.axesColour)
 
         for loc, spine in axesHist.spines.iteritems():
-            if loc in ['right','top']:
+            if loc in ['right', 'top']:
                 spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)
@@ -128,7 +128,7 @@ class CodingDensityPlots(AbstractPlot):
 
         # Delta-CD vs sequence length plot
         axesDeltaCD.scatter(deltaCDs, seqLens, c=abs(deltaCDs), s=10, lw=0.5, cmap=pylab.cm.Greys)
-        axesDeltaCD.set_xlabel(r'$\Delta$ CD (mean coding density = %.1f%%)' % (meanCD*100))
+        axesDeltaCD.set_xlabel(r'$\Delta$ CD (mean coding density = %.1f%%)' % (meanCD * 100))
         axesDeltaCD.set_ylabel('Sequence length (kbp)')
 
         _, yMaxSeqs = axesDeltaCD.get_ylim()
@@ -141,8 +141,8 @@ class CodingDensityPlots(AbstractPlot):
             # find closest distribution values
             sampleSeqLen = dist[closestCD].keys()[0]
             d = dist[closestCD][sampleSeqLen]
-            cdLowerBoundKey = findNearest(d.keys(), (100 - distToPlot)/2.0)
-            cdUpperBoundKey = findNearest(d.keys(), (100 + distToPlot)/2.0)
+            cdLowerBoundKey = findNearest(d.keys(), (100 - distToPlot) / 2.0)
+            cdUpperBoundKey = findNearest(d.keys(), (100 + distToPlot) / 2.0)
 
             xL = []
             xU = []
@@ -173,19 +173,19 @@ class CodingDensityPlots(AbstractPlot):
         yticks = axesDeltaCD.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
-            label = '%.1f' % (float(seqLen)/1000)
-            label = label.replace('.0', '') # remove trailing zero
+            label = '%.1f' % (float(seqLen) / 1000)
+            label = label.replace('.0', '')  # remove trailing zero
             kbpLabels.append(label)
         axesDeltaCD.set_yticklabels(kbpLabels)
 
         # Prettify plot
         for a in axesDeltaCD.yaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for a in axesDeltaCD.xaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for line in axesDeltaCD.yaxis.get_ticklines():
             line.set_color(self.axesColour)
@@ -194,7 +194,7 @@ class CodingDensityPlots(AbstractPlot):
             line.set_color(self.axesColour)
 
         for loc, spine in axesDeltaCD.spines.iteritems():
-            if loc in ['right','top']:
+            if loc in ['right', 'top']:
                 spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)

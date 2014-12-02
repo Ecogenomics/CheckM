@@ -20,43 +20,44 @@ import unittest
 
 from checkm.genomicSignatures import GenomicSignatures
 
+
 class VerifyGenomicSignatures(unittest.TestCase):
     def testGenomicSignature(self):
         """Verify computation of genomic signature."""
-        gs = GenomicSignatures(K = 2, threads = 1)
-        
+        gs = GenomicSignatures(K=2, threads=1)
+
         sig = gs.seqSignature('AACC')
         kmerOrder = gs.canonicalKmerOrder()
         aaIndex = kmerOrder.index('AA')
         acIndex = kmerOrder.index('AC')
         ccIndex = kmerOrder.index('AC')
         atIndex = kmerOrder.index('AT')
-        
-        self.assertEqual(sig[aaIndex], 1.0/3.0)
-        self.assertEqual(sig[acIndex], 1.0/3.0)
-        self.assertEqual(sig[ccIndex], 1.0/3.0)
+
+        self.assertEqual(sig[aaIndex], 1.0 / 3.0)
+        self.assertEqual(sig[acIndex], 1.0 / 3.0)
+        self.assertEqual(sig[ccIndex], 1.0 / 3.0)
         self.assertEqual(sig[atIndex], 0)
-        
+
     def testDistanceZero(self):
         """Verify computation of distances between genomic signatures."""
-        gs = GenomicSignatures(K = 2, threads = 1)
-        
+        gs = GenomicSignatures(K=2, threads=1)
+
         sig1 = gs.seqSignature('AACC')
         sig2 = gs.seqSignature('AACC')
-        
+
         dist = gs.distance(sig1, sig2)
-        
+
         self.assertEqual(dist, 0)
-        
+
     def testDistanceMax(self):
         """Verify computation of distances between genomic signatures."""
-        gs = GenomicSignatures(K = 2, threads = 1)
-        
+        gs = GenomicSignatures(K=2, threads=1)
+
         sig1 = gs.seqSignature('AAAA')
         sig2 = gs.seqSignature('GGGG')
-        
+
         dist = gs.distance(sig1, sig2)
-        
+
         self.assertAlmostEqual(dist, 2.0)
 
 if __name__ == "__main__":

@@ -68,6 +68,9 @@ class CustomHelpFormatter(argparse.HelpFormatter):
                             h += ' (default: %(default)s)'
             return h
 
+    def _fill_text(self, text, width, indent):
+        return ''.join([indent + line for line in text.splitlines(True)])
+
 
 def printHelp():
     print ''
@@ -244,7 +247,13 @@ if __name__ == '__main__':
     qa_parser = subparsers.add_parser('qa',
                                         formatter_class=CustomHelpFormatter,
                                         description='Assess bins for contamination and completeness.',
-                                        epilog='Example: checkm qa lineage.ms ./output')
+                                        epilog='''
+Note: lineage_wf and taxonomy_wf produce a marker file in the specified output directory. The
+        lineage workflow produced a marker file called lineage.ms, while the taxonomy workflow
+        produces a marker file called <taxon>.ms (e.g. Bacteria.ms).
+
+Example: checkm qa ./output/lineage.ms ./output
+                                        ''')
     qa_parser.add_argument('marker_file', help="marker file specified during analyze command")
     qa_parser.add_argument('analyze_folder', help="folder specified during analyze command")
     qa_parser.add_argument('-o', '--out_format', type=int,

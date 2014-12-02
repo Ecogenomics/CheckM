@@ -26,6 +26,7 @@ from checkm.defaultValues import DefaultValues
 from checkm.common import binIdFromFilename
 from checkm.util.seqUtils import readFasta, readFastaSeqIds
 
+
 class SSU_Finder(object):
     def __init__(self, threads):
         self.logger = logging.getLogger()
@@ -133,13 +134,13 @@ class SSU_Finder(object):
             newSeqId = baseSeqId + '-#' + str(index)
             if bConcatenate:
                 if newSeqId in hits:
-                    seqId = newSeqId # see if other sequences concatenate
+                    seqId = newSeqId  # see if other sequences concatenate
                 else:
                     break
             else:
                 # hits are not close enough to concatenate
                 if newSeqId in hits:
-                    seqId = newSeqId # see if the new hit overlaps with this
+                    seqId = newSeqId  # see if the new hit overlaps with this
                     concateSeqId = newSeqId
                 else:
                     hits[newSeqId] = info
@@ -180,7 +181,7 @@ class SSU_Finder(object):
             index += 1
             newSeqId = baseSeqId + '-#' + str(index)
             if newSeqId in hits:
-                seqId = newSeqId # see if the new hit overlaps with this
+                seqId = newSeqId  # see if the new hit overlaps with this
                 if not bOverlap:
                     overlapSeqId = seqId
             else:
@@ -195,6 +196,7 @@ class SSU_Finder(object):
             os.makedirs(outputDir)
 
         # get bin id of binned contigs
+        self.logger.info('  Determining bin assignment of sequences.')
         seqIdToBinId = {}
         for f in binFiles:
             binId = binIdFromFilename(f)

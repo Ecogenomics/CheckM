@@ -35,6 +35,7 @@ from checkm.common import checkDirExists, reassignStdOut, restoreStdOut, getBinI
 from checkm.util.seqUtils import readFasta
 from checkm.util.taxonomyUtils import taxonomicPrefixes
 
+
 class TreeParser():
     """Parse genome tree and associated tree metadata."""
     def __init__(self):
@@ -42,9 +43,9 @@ class TreeParser():
 
     def printSummary(self, outputFormat, outDir, resultsParser, bTabTable, outFile, binStats):
         if outputFormat == 1:
-            self.reportBinTaxonomy(outDir, resultsParser, bTabTable, outFile, binStats, bLineageStatistics = False)
+            self.reportBinTaxonomy(outDir, resultsParser, bTabTable, outFile, binStats, bLineageStatistics=False)
         elif outputFormat == 2:
-            self.reportBinTaxonomy(outDir, resultsParser, bTabTable, outFile, binStats, bLineageStatistics = True)
+            self.reportBinTaxonomy(outDir, resultsParser, bTabTable, outFile, binStats, bLineageStatistics=True)
         elif outputFormat == 3:
             self.reportNewickTree(outDir, outFile, None)
         elif outputFormat == 4:
@@ -123,11 +124,11 @@ class TreeParser():
         for leaf in tree.leaf_nodes():
             duplicates = duplicateSeqs.get(leaf.taxon.label, None)
             if duplicates != None:
-                newParent = leaf.parent_node.new_child(edge_length = leaf.edge_length)
+                newParent = leaf.parent_node.new_child(edge_length=leaf.edge_length)
                 curLeaf = leaf.parent_node.remove_child(leaf)
-                newParent.new_child(taxon = curLeaf.taxon, edge_length = 0)
+                newParent.new_child(taxon=curLeaf.taxon, edge_length=0)
                 for d in duplicates:
-                    newParent.new_child(taxon = Taxon(label = d), edge_length = 0)
+                    newParent.new_child(taxon=Taxon(label=d), edge_length=0)
 
         # append taxonomy to leaf nodes
         if leafLabels == 'taxonomy':
@@ -156,11 +157,11 @@ class TreeParser():
 
         # read genome tree (if it exists)
         binIdToTaxonomy = {}
-        treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)       
+        treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
 
         # find first parent of each bin with a taxonomic label
-        
+
         for binId in binIds:
             node = tree.find_node_with_taxon_label(binId)
             if node == None:
@@ -181,7 +182,7 @@ class TreeParser():
                             taxaStr = tokens[1]
 
                 parentNode = parentNode.parent_node
-                
+
             if not taxaStr:
                 domainNode = self.__findDomainNode(node)
                 taxaStr = domainNode.label.split('|')[1] + ' (root)'
@@ -189,7 +190,7 @@ class TreeParser():
             binIdToTaxonomy[node.taxon.label] = taxaStr
 
         return binIdToTaxonomy
-        
+
     def __findDomainNode(self, binNode):
         """Find node defining the domain. Assumes 'binNode' is the leaf node of a bin on either the archaeal or bacterial branch."""
 
@@ -197,23 +198,23 @@ class TreeParser():
         # so descend tree to first internal node with a label. Note that there may
         # be multiple bins inserted in the tree creating unlabeled internal nodes.
         # Identical population bins can also cause internal bifurcations.
-        
+
         # find first parent node which contains at least one IMG genome
         curNode = binNode.parent_node
         for leaf in curNode.leaf_nodes():
             if leaf.taxon.label.startswith('IMG_'):
                 break
-            
+
             curNode = curNode.parent_node
-        
+
         # perform depth first search to find a labeled internal node
         queue = [curNode]
         while queue:
             curNode = queue.pop(0)
-            
+
             if curNode.label:
                 return curNode
-            
+
             for child in curNode.child_nodes():
                 if child.is_internal():
                     queue.append(child)
@@ -253,7 +254,7 @@ class TreeParser():
                         if curNode.is_leaf():
                             if curNode.taxon.label:
                                 taxonomy = leafIdToTaxonomy.get(curNode.taxon.label, None)
-                                if taxonomy != None: # inserted bins will not have an assigned taxonomy
+                                if taxonomy != None:  # inserted bins will not have an assigned taxonomy
                                     for taxa in taxonomy.split(';'):
                                         leafTaxonomyLabels.add(taxa.strip())
                         else:
@@ -293,7 +294,7 @@ class TreeParser():
         parentNode = node.parent_node
         while True:
             if parentNode == None:
-                break # reached the root node so terminate
+                break  # reached the root node so terminate
 
             if parentNode.label:
                 trustedUniqueId = parentNode.label.split('|')[0]
@@ -314,7 +315,7 @@ class TreeParser():
         selectedParentNode = parentNode
         taxonomyStr = 'root'
         while True:
-            if selectedParentNode.label: # nodes inserted by PPLACER will not have a label
+            if selectedParentNode.label:  # nodes inserted by PPLACER will not have a label
                 trustedUniqueId = selectedParentNode.label.split('|')[0]
                 nodeTaxonomy = selectedParentNode.label.split('|')[1]
 
@@ -331,12 +332,12 @@ class TreeParser():
                             break
 
             if selectedParentNode.parent_node == None:
-                break # reached the root node so terminate
+                break  # reached the root node so terminate
 
             selectedParentNode = selectedParentNode.parent_node
 
         # get marker set meeting all criteria required for a trusted marker set
-        taxonomyStr = taxonomyStr.split(';')[-1] # extract most specific taxonomy identifier
+        taxonomyStr = taxonomyStr.split(';')[-1]  # extract most specific taxonomy identifier
         markerSet = MarkerSet(trustedUniqueId, taxonomyStr, int(stats['# genomes']), eval(stats['marker set']))
 
         return selectedParentNode, markerSet
@@ -349,7 +350,7 @@ class TreeParser():
         # get lineage-specific marker set which will be used to refine the above marker set
         curNode = binNode.sister_nodes()[0]
         while True:
-            if curNode.label: # nodes inserted by PPLACER will not have a label
+            if curNode.label:  # nodes inserted by PPLACER will not have a label
                 uniqueId = curNode.label.split('|')[0]
                 stats = uniqueIdToLineageStatistics[uniqueId]
 
@@ -358,7 +359,7 @@ class TreeParser():
 
             curNode = curNode.parent_node
             if curNode == None:
-                break # reached the root node so terminate
+                break  # reached the root node so terminate
 
         # get lineage-specific marker set
         lineageMarkerSet = eval(stats['marker set'])
@@ -388,10 +389,10 @@ class TreeParser():
         refinedMarkerSet = MarkerSet(markerSet.UID, markerSet.lineageStr, markerSet.numGenomes, finalMarkerSet)
 
         return refinedMarkerSet
-    
+
     def __readLineageSpecificGenesToRemove(self):
-        """Get set of genes subject to lineage-specific gene loss and duplication."""       
-    
+        """Get set of genes subject to lineage-specific gene loss and duplication."""
+
         self.lineageSpecificGenesToRemove = {}
         for line in open(os.path.join(DefaultValues.GENOME_TREE_DIR, DefaultValues.GENOME_TREE_MISSING_DUPLICATE)):
             lineSplit = line.split('\t')
@@ -399,15 +400,15 @@ class TreeParser():
             missingGenes = eval(lineSplit[1])
             duplicateGenes = eval(lineSplit[2])
             self.lineageSpecificGenesToRemove[uid] = missingGenes.union(duplicateGenes)
-            
+
     def __removeInvalidLineageMarkerGenes(self, markerSet, lineageSpecificMarkersToRemove):
         """Refine marker set to account for lineage-specific gene loss and duplication."""
-                                        
+
         # refine marker set by removing marker genes subject to lineage-specific
-        # gene loss and duplication 
+        # gene loss and duplication
         #
         # Note: co-localization information is taken from the trusted set
-                
+
         finalMarkerSet = []
         for ms in markerSet.markerSet:
             s = set()
@@ -416,15 +417,15 @@ class TreeParser():
                 if geneIdToTest.startswith('PF'):
                     geneIdToTest = gene.replace('PF', 'pfam')
                     geneIdToTest = geneIdToTest[0:geneIdToTest.rfind('.')]
-                    
+
                 if geneIdToTest not in lineageSpecificMarkersToRemove:
                     s.add(gene)
-                           
+
             if s:
                 finalMarkerSet.append(s)
 
         refinedMarkerSet = MarkerSet(markerSet.UID, markerSet.lineageStr, markerSet.numGenomes, finalMarkerSet)
-    
+
         return refinedMarkerSet
 
     def getBinMarkerSets(self, outDir, markerFile,
@@ -445,7 +446,7 @@ class TreeParser():
         # determine marker set for each bin
         treeFile = os.path.join(outDir, 'storage', 'tree', DefaultValues.PPLACER_TREE_OUT)
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
-        rootNode = tree.find_node(filter_fn = lambda n: n.parent_node == None)
+        rootNode = tree.find_node(filter_fn=lambda n: n.parent_node == None)
 
         fout = open(markerFile, 'w')
         fout.write(DefaultValues.LINEAGE_MARKER_FILE_HEADER + '\n')
@@ -455,11 +456,11 @@ class TreeParser():
         for binId in binIds:
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
-                sys.stderr.write(' ' * len(statusStr) + '\r') # clear previous line
-                statusStr = '    Finished processing %d of %d (%.2f%%) bins (current: %s).' % (numProcessedBins, len(binIds), float(numProcessedBins)*100/len(binIds), binId)
+                sys.stderr.write(' ' * len(statusStr) + '\r')  # clear previous line
+                statusStr = '    Finished processing %d of %d (%.2f%%) bins (current: %s).' % (numProcessedBins, len(binIds), float(numProcessedBins) * 100 / len(binIds), binId)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
-                
+
             node = tree.find_node_with_taxon_label(binId)
             binMarkerSets = BinMarkerSets(binId, BinMarkerSets.TREE_MARKER_SET)
             if node == None:
@@ -486,25 +487,25 @@ class TreeParser():
                     curNode = domainNode.child_nodes()[0]
                 else:
                     curNode = node
-                    
+
                 # get lineage specific refinement for first node with an id
                 if not bNoLineageSpecificRefinement:
                     uniqueId = parentNode.label.split('|')[0]
                     self.__readLineageSpecificGenesToRemove()
                     lineageSpecificRefinement = self.lineageSpecificGenesToRemove[uniqueId]
 
-                # ascend tree to root, recording all marker sets meeting selection criteria                
+                # ascend tree to root, recording all marker sets meeting selection criteria
                 while curNode.parent_node != None:
                     uniqueHits, multiCopyHits = resultsParser.results[binId].countUniqueHits()
                     tempForceDomain = bForceDomain or (uniqueHits < minUnique) or (multiCopyHits > maxMulti)
-                    
+
                     curNode, markerSet = self.__getMarkerSet(curNode.parent_node, tree, uniqueIdToLineageStatistics,
                                                                 numGenomesMarkers, bootstrap,
                                                                 tempForceDomain, bRequireTaxonomy)
-                       
+
                     if not bNoLineageSpecificRefinement:
                         markerSet = self.__removeInvalidLineageMarkerGenes(markerSet, lineageSpecificRefinement)
-                        
+
                     binMarkerSets.addMarkerSet(markerSet)
 
             binMarkerSets.write(fout)
@@ -535,8 +536,8 @@ class TreeParser():
                     d['bootstrap'] = 'NA'
                 d['gc mean'] = float(lineSplit[4])
                 d['gc std'] = float(lineSplit[5])
-                d['genome size mean'] = float(lineSplit[6])/1e6
-                d['genome size std'] = float(lineSplit[7])/1e6
+                d['genome size mean'] = float(lineSplit[6]) / 1e6
+                d['genome size std'] = float(lineSplit[7]) / 1e6
                 d['gene count mean'] = float(lineSplit[8])
                 d['gene count std'] = float(lineSplit[9])
                 d['marker set'] = lineSplit[10].rstrip()
@@ -611,7 +612,7 @@ class TreeParser():
 
             binIdToLineageStatistics = self.readLineageMetadata(outDir, binIds)
             self.__printFullTable(binIdToTaxonomy, binIdToSisterTaxonomy, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile)
-                
+
     def __printSimpleSummaryTable(self, binIdToTaxonomy, resultsParser, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
@@ -634,7 +635,7 @@ class TreeParser():
 
         for binId in sorted(binIdToTaxonomy.keys()):
             uniqueHits, multiCopyHits = resultsParser.results[binId].countUniqueHits()
-         
+
             row = [binId, uniqueHits, multiCopyHits, binIdToTaxonomy[binId]]
 
             if bTabTable:
@@ -642,7 +643,7 @@ class TreeParser():
             else:
                 pTable.add_row(row)
 
-        if not bTabTable :
+        if not bTabTable:
             print(pTable.get_string(sortby=markerCountLabel, reversesort=True))
 
         # restore stdout
@@ -681,7 +682,7 @@ class TreeParser():
 
         for binId in sorted(binIdToTaxonomy.keys()):
             uniqueHits, multiCopyHits = resultsParser.results[binId].countUniqueHits()
-            
+
             truncSisterLineage = binIdToSisterTaxonomy[binId]
             for taxa in binIdToTaxonomy[binId].split(';'):
                 truncSisterLineage = truncSisterLineage.replace(taxa + ';', '')
@@ -711,7 +712,7 @@ class TreeParser():
             else:
                 pTable.add_row(row)
 
-        if not bTabTable :
+        if not bTabTable:
             print(pTable.get_string(sortby=markerCountLabel, reversesort=True))
 
         # restore stdout

@@ -23,15 +23,11 @@ import sys
 import os
 import multiprocessing as mp
 import logging
-import ntpath
-from collections import defaultdict
 
 import pysam
 
-from checkm.common import reassignStdOut, restoreStdOut, binIdFromFilename
-from checkm.util.seqUtils import readFasta
+from numpy import zeros
 
-from numpy import mean, std, zeros
 
 class ReadLoader:
     """Callback for counting aligned reads with pysam.fetch"""
@@ -63,9 +59,9 @@ class ReadLoader:
             self.numSecondary += 1
         elif read.is_qcfail:
             self.numFailedQC += 1
-        elif read.alen < self.minAlignPer*read.rlen:
+        elif read.alen < self.minAlignPer * read.rlen:
             self.numFailedAlignLen += 1
-        elif read.opt('NM') > self.maxEditDistPer*read.rlen:
+        elif read.opt('NM') > self.maxEditDistPer * read.rlen:
             self.numFailedEditDist += 1
         elif not self.bAllReads and not read.is_proper_pair:
             self.numFailedProperPair += 1
@@ -76,7 +72,8 @@ class ReadLoader:
             # read length (rlen) as this bring the calculated coverage
             # in line with 'samtools depth' (at least when the min
             # alignment length and edit distance thresholds are zero).
-            self.coverage[read.pos:read.pos+read.alen] += 1.0
+            self.coverage[read.pos:read.pos + read.alen] += 1.0
+
 
 class CoverageStruct():
     def __init__(self, seqLen, mappedReads, coverage):
@@ -84,12 +81,13 @@ class CoverageStruct():
         self.mappedReads = mappedReads
         self.coverage = coverage
 
+
 class CoverageWindows():
     """Calculate coverage of all sequences."""
     def __init__(self, threads):
         self.logger = logging.getLogger()
-        
-        self.totalThreads = threads 
+
+        self.totalThreads = threads
 
     def run(self, binFiles, bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize):
         """Calculate coverage of full sequences and windows."""
@@ -98,12 +96,12 @@ class CoverageWindows():
         if not os.path.exists(bamFile + '.bai'):
             self.logger.error('  [Error] BAM file is not sorted: ' + bamFile + '\n')
             sys.exit()
- 
+
         # calculate coverage of each BAM file
         self.logger.info('  Calculating coverage of windows.')
         coverageInfo = mp.Manager().dict()
-        coverageInfo = self.__processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, coverageInfo) 
-            
+        coverageInfo = self.__processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, coverageInfo)
+
         return coverageInfo
 
     def __processBam(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, coverageInfo):
@@ -145,28 +143,28 @@ class CoverageWindows():
             workerQueue.put((None, None))
 
         try:
-            workerProc = [mp.Process(target = self.__workerThread, args = (bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target = self.__writerThread, args = (coverageInfo, len(refSeqIds), writerQueue))
-    
+            workerProc = [mp.Process(target=self.__workerThread, args=(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target=self.__writerThread, args=(coverageInfo, len(refSeqIds), writerQueue))
+
             writeProc.start()
-    
+
             for p in workerProc:
                 p.start()
-    
+
             for p in workerProc:
                 p.join()
-    
+
             writerQueue.put((None, None, None, None, None, None, None, None, None, None, None, None))
             writeProc.join()
         except:
             # make sure all processes are terminated
             for p in workerProc:
                 p.terminate()
-                
+
             writeProc.terminate()
-   
+
         return coverageInfo
-                   
+
     def __workerThread(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, queueIn, queueOut):
         """Process each data item in parallel."""
         while True:
@@ -178,14 +176,14 @@ class CoverageWindows():
 
             for seqId, seqLen in zip(seqIds, seqLens):
                 readLoader = ReadLoader(seqLen, bAllReads, minAlignPer, maxEditDistPer)
-                bamfile.fetch(seqId, 0, seqLen, callback = readLoader)
-                
+                bamfile.fetch(seqId, 0, seqLen, callback=readLoader)
+
                 start = 0
                 end = windowSize
                 windowCoverages = []
                 while(end < seqLen):
                     windowCoverages.append(sum(readLoader.coverage[start:end]) / windowSize)
-                    
+
                     start = end
                     try:
                         end += windowSize
@@ -194,12 +192,12 @@ class CoverageWindows():
                         print end
                         print windowSize
                         print '******************'
-                    
+
                 coverage = float(sum(readLoader.coverage)) / seqLen
 
-                queueOut.put((seqId, seqLen, coverage, windowCoverages, readLoader.numReads, 
-                                readLoader.numDuplicates, readLoader.numSecondary, readLoader.numFailedQC, 
-                                readLoader.numFailedAlignLen, readLoader.numFailedEditDist, 
+                queueOut.put((seqId, seqLen, coverage, windowCoverages, readLoader.numReads,
+                                readLoader.numDuplicates, readLoader.numSecondary, readLoader.numFailedQC,
+                                readLoader.numFailedAlignLen, readLoader.numFailedEditDist,
                                 readLoader.numFailedProperPair, readLoader.numMappedReads))
 
             bamfile.close()
@@ -223,7 +221,7 @@ class CoverageWindows():
 
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 processedRefSeqs += 1
-                statusStr = '    Finished processing %d of %d (%.2f%%) reference sequences.' % (processedRefSeqs, numRefSeqs, float(processedRefSeqs)*100/numRefSeqs)
+                statusStr = '    Finished processing %d of %d (%.2f%%) reference sequences.' % (processedRefSeqs, numRefSeqs, float(processedRefSeqs) * 100 / numRefSeqs)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 
@@ -235,20 +233,19 @@ class CoverageWindows():
                 totalFailedEditDist += numFailedEditDist
                 totalFailedProperPair += numFailedProperPair
                 totalMappedReads += numMappedReads
-                
+
             coverageInfo[seqId] = [coverage, windowCoverages]
 
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
-            
+
             print ''
             print '    # total reads: %d' % totalReads
-            print '      # properly mapped reads: %d (%.1f%%)' % (totalMappedReads, float(totalMappedReads)*100/totalReads)
-            print '      # duplicate reads: %d (%.1f%%)' % (totalDuplicates, float(totalDuplicates)*100/totalReads)
-            print '      # secondary reads: %d (%.1f%%)' % (totalSecondary, float(totalSecondary)*100/totalReads)
-            print '      # reads failing QC: %d (%.1f%%)' % (totalFailedQC, float(totalFailedQC)*100/totalReads)
-            print '      # reads failing alignment length: %d (%.1f%%)' % (totalFailedAlignLen, float(totalFailedAlignLen)*100/totalReads)
-            print '      # reads failing edit distance: %d (%.1f%%)' % (totalFailedEditDist, float(totalFailedEditDist)*100/totalReads)
-            print '      # reads not properly paired: %d (%.1f%%)' % (totalFailedProperPair, float(totalFailedProperPair)*100/totalReads)
+            print '      # properly mapped reads: %d (%.1f%%)' % (totalMappedReads, float(totalMappedReads) * 100 / totalReads)
+            print '      # duplicate reads: %d (%.1f%%)' % (totalDuplicates, float(totalDuplicates) * 100 / totalReads)
+            print '      # secondary reads: %d (%.1f%%)' % (totalSecondary, float(totalSecondary) * 100 / totalReads)
+            print '      # reads failing QC: %d (%.1f%%)' % (totalFailedQC, float(totalFailedQC) * 100 / totalReads)
+            print '      # reads failing alignment length: %d (%.1f%%)' % (totalFailedAlignLen, float(totalFailedAlignLen) * 100 / totalReads)
+            print '      # reads failing edit distance: %d (%.1f%%)' % (totalFailedEditDist, float(totalFailedEditDist) * 100 / totalReads)
+            print '      # reads not properly paired: %d (%.1f%%)' % (totalFailedProperPair, float(totalFailedProperPair) * 100 / totalReads)
             print ''
-                    

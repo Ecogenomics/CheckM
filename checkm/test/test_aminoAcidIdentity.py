@@ -22,123 +22,126 @@ from collections import defaultdict
 
 from checkm.aminoAcidIdentity import AminoAcidIdentity
 
+
 class VerifyAminoAcidIdentity(unittest.TestCase):
     def testIdentiticalSeqs(self):
         """Verify computation of AAI on identical sequences."""
         aai = AminoAcidIdentity()
-        
-        score = aai.aai('ACGT', 'ACGT')   
+
+        score = aai.aai('ACGT', 'ACGT')
         self.assertAlmostEqual(score, 1.0)
-        
+
     def testDiffSeqs(self):
         """Verify computation of AAI on two completely different sequences."""
         aai = AminoAcidIdentity()
-        
-        score = aai.aai('ACGT', 'TGCA')   
+
+        score = aai.aai('ACGT', 'TGCA')
         self.assertAlmostEqual(score, 0.0)
-        
+
     def testNonOverlappingSeqs(self):
         """Verify computation of AAI on two non-overlapping sequences."""
         aai = AminoAcidIdentity()
-        
-        score = aai.aai('ACGT----', '----TGCA')   
+
+        score = aai.aai('ACGT----', '----TGCA')
         self.assertAlmostEqual(score, 0.0)
-        
+
     def testPartialOverlappingSeqs(self):
         """Verify computation of AAI on two partially overlapping sequences."""
         aai = AminoAcidIdentity()
-        
-        score = aai.aai('ACGT--', '--GTAC')   
+
+        score = aai.aai('ACGT--', '--GTAC')
         self.assertAlmostEqual(score, 1.0)
-        
+
     def testIncompleteSeqs(self):
         """Verify computation of AAI on incomplete sequence."""
         aai = AminoAcidIdentity()
-        
-        score = aai.aai('AAAACGTTTT', '---ACGG---')   
-        self.assertAlmostEqual(score, 3.0/4.0)
-        
+
+        score = aai.aai('AAAACGTTTT', '---ACGG---')
+        self.assertAlmostEqual(score, 3.0 / 4.0)
+
     def testSimilarSeqs(self):
         """Verify computation of AAI on two similar sequences."""
         aai = AminoAcidIdentity()
-        
-        score = aai.aai('ACGT', 'ACGG')   
-        self.assertAlmostEqual(score, 3.0/4.0)
-        
+
+        score = aai.aai('ACGT', 'ACGG')
+        self.assertAlmostEqual(score, 3.0 / 4.0)
+
     def testIdenticalInsertionSeqs(self):
         """Verify computation of AAI on two identical sequences with multiple insertions."""
         aai = AminoAcidIdentity()
-        
-        score = aai.aai('A-C-G-T', 'A-C-G-T')   
+
+        score = aai.aai('A-C-G-T', 'A-C-G-T')
         self.assertAlmostEqual(score, 1.0)
-        
+
     def testDiffInsertionSeqs(self):
         """Verify computation of AAI on two different sequences with multiple insertions."""
         aai = AminoAcidIdentity()
-        
-        score = aai.aai('A-C-G-T', 'AACCGGT')   
-        self.assertAlmostEqual(score, 4.0/7.0)
-        
+
+        score = aai.aai('A-C-G-T', 'AACCGGT')
+        self.assertAlmostEqual(score, 4.0 / 7.0)
+
+
 class VerifyStrainHeterogeneity(unittest.TestCase):
     def testNoStrainHetero(self):
         """Verify computation of strain heterogeneity score on divergent sequences."""
         aai = AminoAcidIdentity()
-        
+
         aaiScores = defaultdict(dict)
         aaiScores['b1'] = {'g1': [0.1], 'g2': [0.1], 'g3': [0.1]}
-        
-        aaiHetero, aaiMeanBinHetero = aai.strainHetero(aaiScores, 0.9)   
-        
+
+        aaiHetero, aaiMeanBinHetero = aai.strainHetero(aaiScores, 0.9)
+
         self.assertAlmostEqual(aaiHetero['b1']['g1'], 0.0)
         self.assertAlmostEqual(aaiHetero['b1']['g2'], 0.0)
         self.assertAlmostEqual(aaiHetero['b1']['g3'], 0.0)
-        
+
         self.assertAlmostEqual(aaiMeanBinHetero['b1'], 0.0)
-        
+
     def testAllStrainHetero(self):
         """Verify computation of strain heterogeneity score on highly similar sequences."""
         aai = AminoAcidIdentity()
-        
+
         aaiScores = defaultdict(dict)
         aaiScores['b1'] = {'g1': [0.95], 'g2': [0.95], 'g3': [0.95]}
-        
-        aaiHetero, aaiMeanBinHetero = aai.strainHetero(aaiScores, 0.9)   
-        
+
+        aaiHetero, aaiMeanBinHetero = aai.strainHetero(aaiScores, 0.9)
+
         self.assertAlmostEqual(aaiHetero['b1']['g1'], 1.0)
         self.assertAlmostEqual(aaiHetero['b1']['g2'], 1.0)
         self.assertAlmostEqual(aaiHetero['b1']['g3'], 1.0)
-        
+
         self.assertAlmostEqual(aaiMeanBinHetero['b1'], 100.0)
-        
+
     def testMixedStrainHetero(self):
         """Verify computation of strain heterogeneity score on sequences with variable similarity."""
         aai = AminoAcidIdentity()
-        
+
         aaiScores = defaultdict(dict)
         aaiScores['b1'] = {'g1': [0.95], 'g2': [0.1], 'g3': [0.1]}
-        
-        aaiHetero, aaiMeanBinHetero = aai.strainHetero(aaiScores, 0.9)   
-        
+
+        aaiHetero, aaiMeanBinHetero = aai.strainHetero(aaiScores, 0.9)
+
         self.assertAlmostEqual(aaiHetero['b1']['g1'], 1.0)
         self.assertAlmostEqual(aaiHetero['b1']['g2'], 0.0)
         self.assertAlmostEqual(aaiHetero['b1']['g3'], 0.0)
-        
-        self.assertAlmostEqual(aaiMeanBinHetero['b1'], 1.0*100/3.0)
-        
+
+        self.assertAlmostEqual(aaiMeanBinHetero['b1'], 1.0 * 100 / 3.0)
+
     def testMultiCopyStrainHetero(self):
         """Verify computation of strain heterogeneity score when there are multiple copies of a sequence."""
         aai = AminoAcidIdentity()
-        
+
         aaiScores = defaultdict(dict)
         aaiScores['b1'] = {'g1': [0.95, 0.95, 0.95], 'g2': [0.1, 0.1, 0.1], 'g3': [0.95, 0.1, 0.1]}
-        
-        aaiHetero, aaiMeanBinHetero = aai.strainHetero(aaiScores, 0.9)   
-        
+
+        aaiHetero, aaiMeanBinHetero = aai.strainHetero(aaiScores, 0.9)
+
         self.assertAlmostEqual(aaiHetero['b1']['g1'], 1.0)
         self.assertAlmostEqual(aaiHetero['b1']['g2'], 0.0)
-        self.assertAlmostEqual(aaiHetero['b1']['g3'], 1.0/3.0)
-        
-        self.assertAlmostEqual(aaiMeanBinHetero['b1'], 4.0*100/9.0)
-        
+        self.assertAlmostEqual(aaiHetero['b1']['g3'], 1.0 / 3.0)
+
+        self.assertAlmostEqual(aaiMeanBinHetero['b1'], 4.0 * 100 / 9.0)
+
+
 if __name__ == "__main__":
     unittest.main()

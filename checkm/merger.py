@@ -26,6 +26,7 @@ import logging
 from checkm.common import checkDirExists
 from checkm.resultsParser import ResultsParser
 
+
 class Merger():
     def __init__(self):
         self.logger = logging.getLogger()
@@ -68,7 +69,7 @@ class Merger():
             geneCountsI = binMarkerHits[binIdI].geneCounts(binIdToBinMarkerSets[binIdI].mostSpecificMarkerSet(), binMarkerHits[binIdI].markerHits, True)
             completenessI, contaminationI = geneCountsI[6:8]
 
-            for j in xrange(i+1, len(binMarkerHits)):
+            for j in xrange(i + 1, len(binMarkerHits)):
                 binIdJ = binIds[j]
 
                 geneCountsJ = binMarkerHits[binIdJ].geneCounts(binIdToBinMarkerSets[binIdJ].mostSpecificMarkerSet(), binMarkerHits[binIdJ].markerHits, True)

@@ -25,6 +25,7 @@ from collections import defaultdict
 from common import binIdFromFilename
 from checkm.util.seqUtils import readFasta, readFastaSeqIds
 
+
 class BinComparer(object):
     def __init__(self):
         self.logger = logging.getLogger()
@@ -87,31 +88,31 @@ class BinComparer(object):
 
         # determine bin stats
         binStats1, totalUniqueBinnedSeqs1, totalUniqueBinnedBases1, numRepeats1 = self.__binningStats(bins1, seqLens)
-        binStats2, totalUniqueBinnedSeqs2, totalUniqueBinnedBases2, numRepeats2  = self.__binningStats(bins2, seqLens)
+        binStats2, totalUniqueBinnedSeqs2, totalUniqueBinnedBases2, numRepeats2 = self.__binningStats(bins2, seqLens)
 
         # sort bins by size
-        binStats1 = sorted(binStats1.iteritems(), key = lambda x: x[1][1], reverse = True)
-        binStats2 = sorted(binStats2.iteritems(), key = lambda x: x[1][1], reverse = True)
+        binStats1 = sorted(binStats1.iteritems(), key=lambda x: x[1][1], reverse=True)
+        binStats2 = sorted(binStats2.iteritems(), key=lambda x: x[1][1], reverse=True)
 
         # report summary results
-        self.logger.info('    Total seqs = %d (%.2f Mbp)' % (len(seqs), float(totalBases)/1e6))
-        self.logger.info('      # seqs > 1 kbp = %d (%.2f Mbp)' % (numSeq1K, float(totalBases1K)/1e6))
-        self.logger.info('      # seqs > 5 kbp = %d (%.2f Mbp)' % (numSeq5K, float(totalBases5K)/1e6))
+        self.logger.info('    Total seqs = %d (%.2f Mbp)' % (len(seqs), float(totalBases) / 1e6))
+        self.logger.info('      # seqs > 1 kbp = %d (%.2f Mbp)' % (numSeq1K, float(totalBases1K) / 1e6))
+        self.logger.info('      # seqs > 5 kbp = %d (%.2f Mbp)' % (numSeq5K, float(totalBases5K) / 1e6))
         self.logger.info('')
         self.logger.info('  Binned seqs statistics:')
-        self.logger.info('    1) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbp (%.2f%%), # seqs in multiple bins: %d' 
-                                % (len(bins1), 
-                                   totalUniqueBinnedSeqs1, 
-                                   float(totalUniqueBinnedSeqs1)*100 / len(seqs), 
-                                   float(totalUniqueBinnedBases1)/1e6, 
-                                   float(totalUniqueBinnedBases1)*100/totalBases,
+        self.logger.info('    1) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbp (%.2f%%), # seqs in multiple bins: %d'
+                                % (len(bins1),
+                                   totalUniqueBinnedSeqs1,
+                                   float(totalUniqueBinnedSeqs1) * 100 / len(seqs),
+                                   float(totalUniqueBinnedBases1) / 1e6,
+                                   float(totalUniqueBinnedBases1) * 100 / totalBases,
                                    numRepeats1))
-        self.logger.info('    2) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbp (%.2f%%), # seqs in multiple bins: %d' 
-                                % (len(bins2), 
-                                   totalUniqueBinnedSeqs2, 
-                                   float(totalUniqueBinnedSeqs2)*100 / len(seqs), 
-                                   float(totalUniqueBinnedBases2)/1e6, 
-                                   float(totalUniqueBinnedBases2)*100/totalBases,
+        self.logger.info('    2) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbp (%.2f%%), # seqs in multiple bins: %d'
+                                % (len(bins2),
+                                   totalUniqueBinnedSeqs2,
+                                   float(totalUniqueBinnedSeqs2) * 100 / len(seqs),
+                                   float(totalUniqueBinnedBases2) / 1e6,
+                                   float(totalUniqueBinnedBases2) * 100 / totalBases,
                                    numRepeats2))
 
         # output report
@@ -161,10 +162,10 @@ class BinComparer(object):
                 binnedSeqs2[binId2].update(seqsInCommon)
             fout.write('\t%d\t%d\t%.2f\t%s\t%.2f\t%.2f\n' % (len(seqs1) - len(binnedSeqs),
                                                              data1[1][0],
-                                                             float(data1[1][1])/1e6,
+                                                             float(data1[1][1]) / 1e6,
                                                              bestMatchingBin,
-                                                             float(maxBasesInCommon)*100 / data1[1][1],
-                                                             float(maxSeqsInCommon)*100 / data1[1][0],
+                                                             float(maxBasesInCommon) * 100 / data1[1][1],
+                                                             float(maxSeqsInCommon) * 100 / data1[1][0],
                                                              ))
 
         fout.write('unbinned')
@@ -172,7 +173,7 @@ class BinComparer(object):
             binId = data[0]
             fout.write('\t%d' % (len(bins2[binId]) - len(binnedSeqs2[binId])))
         fout.write('\n')
-        
+
         fout.write('# seqs')
         for data in binStats2:
             fout.write('\t%d' % data[1][0])
@@ -180,9 +181,9 @@ class BinComparer(object):
 
         fout.write('# bases (Mbp)')
         for data in binStats2:
-            fout.write('\t%.2f' % (float(data[1][1])/1e6))
+            fout.write('\t%.2f' % (float(data[1][1]) / 1e6))
         fout.write('\n')
-        
+
         fout.write('Best match')
         for data in binStats2:
             binId = data[0]
@@ -192,14 +193,13 @@ class BinComparer(object):
         fout.write('% bases in common')
         for data in binStats2:
             binId = data[0]
-            fout.write('\t%.2f' % (float(maxBasesInCommon2[binId])*100 / data[1][1]))
+            fout.write('\t%.2f' % (float(maxBasesInCommon2[binId]) * 100 / data[1][1]))
         fout.write('\n')
 
         fout.write('% seqs in common')
         for data in binStats2:
             binId = data[0]
-            fout.write('\t%.2f' % (float(maxSeqsInCommon2[binId])*100 / data[1][0]))
+            fout.write('\t%.2f' % (float(maxSeqsInCommon2[binId]) * 100 / data[1][0]))
         fout.write('\n')
 
         fout.close()
-

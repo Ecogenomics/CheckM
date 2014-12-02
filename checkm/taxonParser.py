@@ -19,8 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-import os
-import sys
 import logging
 from collections import defaultdict
 
@@ -30,6 +28,7 @@ from checkm.markerSets import BinMarkerSets, MarkerSet
 from checkm.util.taxonomyUtils import taxonomicRanks, ranksByLevel, ranksByLabel
 
 from checkm.defaultValues import DefaultValues
+
 
 class TaxonParser():
     """Parse taxonomic-specific marker sets."""
@@ -79,7 +78,6 @@ class TaxonParser():
 
         taxonMarkerSets = self.readMarkerSets()
 
-
         if rank not in taxonMarkerSets:
             self.logger.error('  Unrecognized taxonomic rank: ' + rank)
             return False
@@ -93,7 +91,7 @@ class TaxonParser():
         binMarkerSets = BinMarkerSets(taxon, BinMarkerSets.TAXONOMIC_MARKER_SET)
         for i, taxon in enumerate(taxonomy):
             if rank != 'life':
-                rank = ranksByLevel[len(taxonomy)-i-1]
+                rank = ranksByLevel[len(taxonomy) - i - 1]
 
             if rank == 'species':
                 taxon = taxonomy[1] + ' ' + taxonomy[0]

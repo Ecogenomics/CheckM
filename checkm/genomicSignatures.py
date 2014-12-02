@@ -30,6 +30,7 @@ import numpy as np
 
 from checkm.util.seqUtils import readFasta
 
+
 class GenomicSignatures(object):
     def __init__(self, K, threads):
         self.logger = logging.getLogger()
@@ -44,13 +45,13 @@ class GenomicSignatures(object):
         """Work out unique kmers."""
 
         # determine all mers of a given length
-        baseWords = ("A","C","G","T")
-        mers = ["A","C","G","T"]
+        baseWords = ("A", "C", "G", "T")
+        mers = ["A", "C", "G", "T"]
         for _ in range(1, self.K):
             workingList = []
             for mer in mers:
                 for char in baseWords:
-                    workingList.append(mer+char)
+                    workingList.append(mer + char)
             mers = workingList
 
         # pare down kmers based on lexicographical ordering
@@ -111,7 +112,7 @@ class GenomicSignatures(object):
 
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedSeq += 1
-                statusStr = '    Finished processing %d of %d (%.2f%%) sequences.' % (numProcessedSeq, totalSeqs, float(numProcessedSeq)*100/totalSeqs)
+                statusStr = '    Finished processing %d of %d (%.2f%%) sequences.' % (numProcessedSeq, totalSeqs, float(numProcessedSeq) * 100 / totalSeqs)
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 
@@ -133,8 +134,8 @@ class GenomicSignatures(object):
         numMers = len(seq) - self.K + 1
         for i in range(0, numMers):
             try:
-                kmerIndex = self.kmerToCanonicalIndex[seq[i:i+self.K]]
-                sig[kmerIndex] += 1 # Note: a numpy array would be slow here due to this single element increment
+                kmerIndex = self.kmerToCanonicalIndex[seq[i:i + self.K]]
+                sig[kmerIndex] += 1  # Note: a numpy array would be slow here due to this single element increment
             except KeyError:
                 # unknown kmer (e.g., contains a N)
                 pass
@@ -163,24 +164,24 @@ class GenomicSignatures(object):
             workerQueue.put((None, None))
 
         try:
-            calcProc = [mp.Process(target = self.__calculateResults, args = (workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target = self.__storeResults, args = (seqFile, outputFile, len(seqs), writerQueue))
-    
+            calcProc = [mp.Process(target=self.__calculateResults, args=(workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target=self.__storeResults, args=(seqFile, outputFile, len(seqs), writerQueue))
+
             writeProc.start()
-    
+
             for p in calcProc:
                 p.start()
-    
+
             for p in calcProc:
                 p.join()
-    
+
             writerQueue.put((None, None))
             writeProc.join()
         except:
             # make sure all processes are terminated
             for p in calcProc:
                 p.terminate()
-                
+
             writeProc.terminate()
 
     def distance(self, sig1, sig2):

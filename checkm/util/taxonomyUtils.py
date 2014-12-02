@@ -33,9 +33,10 @@ __status__ = 'Development'
 taxonomicRanks = ['life', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species']
 taxonomicPrefixes = ['l__', 'k__', 'p__', 'c__', 'o__', 'f__', 'g__', 's__']
 
-ranksByLabel = {'life':-1, 'domain':0, 'phylum':1, 'class':2, 'order':3, 'family':4, 'genus':5, 'species':6, 'gg_id':7}
-ranksByLevel = {-1:'life', 0:'domain', 1:'phylum', 2:'class', 3:'order', 4:'family', 5:'genus', 6:'species', 7:'gg_id'}
-rankPrefixes = {-1:'l__', 0:'k__', 1:'p__', 2:'c__', 3:'o__', 4:'f__', 5:'g__', 6:'s__', 7:'id__'}
+ranksByLabel = {'life':-1, 'domain': 0, 'phylum': 1, 'class': 2, 'order': 3, 'family': 4, 'genus': 5, 'species': 6, 'gg_id': 7}
+ranksByLevel = {-1: 'life', 0: 'domain', 1: 'phylum', 2: 'class', 3: 'order', 4: 'family', 5: 'genus', 6: 'species', 7: 'gg_id'}
+rankPrefixes = {-1: 'l__', 0: 'k__', 1: 'p__', 2: 'c__', 3: 'o__', 4: 'f__', 5: 'g__', 6: 's__', 7: 'id__'}
+
 
 def appendTaxonomyRanks(taxonomy, ranks=7):
     """Append taxonomy prefix to list of taxa."""
@@ -45,6 +46,7 @@ def appendTaxonomyRanks(taxonomy, ranks=7):
 
     return t
 
+
 def readTaxonomy(taxonomyFile):
     """Read tab-seperated taxonomy file."""
     taxonIdToTaxonomy = {}
@@ -53,6 +55,7 @@ def readTaxonomy(taxonomyFile):
         taxonIdToTaxonomy[lineSplit[0]] = lineSplit[1].rstrip()
 
     return taxonIdToTaxonomy
+
 
 def __parseTaxon(taxon):
     if '(' in taxon:
@@ -65,6 +68,7 @@ def __parseTaxon(taxon):
         bootstrapSupport = 0
 
     return taxonId, bootstrapSupport
+
 
 def LCA(taxonomy1, taxonomy2):
     """Find lowest-common ancestor between two taxa lists."""

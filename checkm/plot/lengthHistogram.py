@@ -27,6 +27,7 @@ from matplotlib.ticker import MaxNLocator
 
 from checkm.util.seqUtils import readFasta
 
+
 class LengthHistogram(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
@@ -42,11 +43,11 @@ class LengthHistogram(AbstractPlot):
 
         seqLens = []
         for seq in seqs.values():
-            seqLens.append(float(len(seq))/1e3)
+            seqLens.append(float(len(seq)) / 1e3)
 
         # set unequal bin sizes (in kb)
         bins = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1e12]
-        counts, edges = np.histogram(seqLens, bins=bins)
+        counts, _edges = np.histogram(seqLens, bins=bins)
 
         # create histogram
         axes.bar(left=np.arange(0.1, len(counts)), height=counts, width=0.8, color=(0.5, 0.5, 0.5))
@@ -65,12 +66,12 @@ class LengthHistogram(AbstractPlot):
 
         # Prettify plot
         for a in axes.yaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for a in axes.xaxis.majorTicks:
-            a.tick1On=True
-            a.tick2On=False
+            a.tick1On = True
+            a.tick2On = False
 
         for line in axes.yaxis.get_ticklines():
             line.set_color(self.axesColour)
@@ -79,7 +80,7 @@ class LengthHistogram(AbstractPlot):
             line.set_color(self.axesColour)
 
         for loc, spine in axes.spines.iteritems():
-            if loc in ['right','top']:
+            if loc in ['right', 'top']:
                 spine.set_color('none')
             else:
                 spine.set_color(self.axesColour)

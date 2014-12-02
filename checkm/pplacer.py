@@ -32,6 +32,7 @@ from checkm.defaultValues import DefaultValues
 from checkm.common import checkDirExists
 from checkm.util.seqUtils import readFasta, writeFasta
 
+
 class PplacerRunner():
     """Wrapper for running pplacer."""
     def __init__(self, threads):
@@ -47,18 +48,18 @@ class PplacerRunner():
         checkDirExists(outDir)
         alignOutputDir = os.path.join(outDir, 'storage', 'tree')
         checkDirExists(alignOutputDir)
-        
+
         treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
         pplacerJsonOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_JSON_OUT)
         pplacerOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_OUT)
 
         # create concatenated alignment file for each bin
         concatenatedAlignFile = self.__createConcatenatedAlignment(binFiles, resultsParser, alignOutputDir)
-        
+
         pplacerRefPkg = DefaultValues.PPLACER_REF_PACKAGE_FULL
         if bReducedTree:
             pplacerRefPkg = DefaultValues.PPLACER_REF_PACKAGE_REDUCED
-        
+
         # check if concatenated alignment file is empty
         # (this can occur when all genomes have no phylogenetically informative marker genes)
         if os.stat(concatenatedAlignFile)[stat.ST_SIZE] == 0:
@@ -116,7 +117,7 @@ class PplacerRunner():
                     concatenatedSeqs[binId] = concatenatedSeqs.get(binId, '') + seqs[binId]
                 else:
                     # missing gene
-                    concatenatedSeqs[binId] = concatenatedSeqs.get(binId, '') + '-'*markerIdLens[markerId]
+                    concatenatedSeqs[binId] = concatenatedSeqs.get(binId, '') + '-' * markerIdLens[markerId]
 
         # save concatenated alignment
         concatenatedAlignFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_CONCAT_SEQ_OUT)
@@ -145,10 +146,3 @@ class PplacerRunner():
         except:
             self.logger.error("  [Error] Make sure guppy is on your system path.")
             sys.exit()
-
-class PplacerParser():
-    """Parses pplacer output."""
-    def __init__(self):
-        pass
-
-

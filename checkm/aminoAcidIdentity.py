@@ -28,6 +28,7 @@ from checkm.defaultValues import DefaultValues
 from checkm.common import getBinIdsFromOutDir
 from checkm.util.seqUtils import readFasta
 
+
 class AminoAcidIdentity():
     """Calculate AAI between sequences aligned to an HMM."""
     def __init__(self):
@@ -67,7 +68,7 @@ class AminoAcidIdentity():
 
                     seqI = seqs[seqIdI]
 
-                    for j in xrange(i+1, len(seqs)):
+                    for j in xrange(i + 1, len(seqs)):
                         seqIdJ = seqs.keys()[j]
                         binIdJ = seqIdJ[0:seqIdJ.find(DefaultValues.SEQ_CONCAT_CHAR)]
 
@@ -132,12 +133,12 @@ class AminoAcidIdentity():
         startIndex = 0
         for i in xrange(0, len(seq1)):
             if seq1[i] == '-' or seq2[i] == '-':
-                startIndex = i+1
+                startIndex = i + 1
             else:
                 break
 
         endIndex = len(seq1)
-        for i in xrange(len(seq1)-1, 0, -1):
+        for i in xrange(len(seq1) - 1, 0, -1):
             if seq1[i] == '-' or seq2[i] == '-':
                 endIndex = i
             else:
@@ -158,4 +159,3 @@ class AminoAcidIdentity():
             return 0.0
 
         return 1.0 - (float(mismatches) / seqLen)
-

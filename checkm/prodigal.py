@@ -32,7 +32,10 @@ from checkm.defaultValues import DefaultValues
 from checkm.common import checkFileExists
 from checkm.util.seqUtils import readFasta
 
-class ProdigalError(BaseException): pass
+
+class ProdigalError(BaseException):
+    pass
+
 
 class ProdigalRunner():
     """Wrapper for running prodigal."""
@@ -62,9 +65,9 @@ class ProdigalRunner():
 
             # check if there is sufficient bases to calculate prodigal parameters
             if totalBases < 100000:
-                procedureStr = 'meta'       # use best precalculated parameters
+                procedureStr = 'meta'  # use best precalculated parameters
             else:
-                procedureStr = 'single'     # estimate parameters from data
+                procedureStr = 'single'  # estimate parameters from data
 
             if bNucORFs:
                 cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -d %s -i %s > %s 2> /dev/null' % (procedureStr, translationTable, aaGeneFile, ntGeneFile, query, gffFile))
@@ -115,7 +118,7 @@ class ProdigalRunner():
         # if requested, check if nucleotide gene sequences have been generated
         if bNucORFs:
             return os.path.exists(self.ntGeneFile) and os.stat(self.ntGeneFile)[stat.ST_SIZE] != 0
-        
+
         # otherwise, only the amino acid gene sequences are required
         return os.path.exists(self.aaGeneFile) and os.stat(self.aaGeneFile)[stat.ST_SIZE] != 0
 
@@ -129,6 +132,7 @@ class ProdigalRunner():
         except:
             self.logger.error("  [Error] Make sure prodigal is on your system path.")
             sys.exit()
+
 
 class ProdigalFastaParser():
     """Parses prodigal FASTA output."""
@@ -151,6 +155,7 @@ class ProdigalFastaParser():
 
         return gp
 
+
 class ProdigalGeneFeatureParser():
     """Parses prodigal FASTA output."""
     def __init__(self, filename):
@@ -171,7 +176,7 @@ class ProdigalGeneFeatureParser():
         for line in open(filename):
             if bGetTranslationTable and line.startswith('# Model Data'):
                 self.translationTable = line.split(';')[4]
-                self.translationTable = int(self.translationTable[self.translationTable.find('=')+1:])
+                self.translationTable = int(self.translationTable[self.translationTable.find('=') + 1:])
                 bGetTranslationTable = False
 
             if line[0] == '#':
@@ -200,7 +205,7 @@ class ProdigalGeneFeatureParser():
         # for the potential of overlapping genes
         codingBaseMask = np.zeros(self.lastCodingBase[seqId])
         for pos in self.genes[seqId].values():
-            codingBaseMask[pos[0]:pos[1]+1] = 1
+            codingBaseMask[pos[0]:pos[1] + 1] = 1
 
         return codingBaseMask
 

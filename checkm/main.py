@@ -67,6 +67,7 @@ from checkm.checkmData import DBManager
 
 from checkm.test.test_ecoli import VerifyEcoli
 
+
 class OptionsParser():
     def __init__(self):
         self.logger = logging.getLogger()
@@ -207,7 +208,6 @@ class OptionsParser():
                                           DefaultValues.BIN_STATS_PHYLO_OUT,
                                           DefaultValues.SEQ_STATS_PHYLO_OUT,
                                           DefaultValues.HMMER_TABLE_PHYLO_OUT)
-
 
         # These options are incompatible with how the lineage-specific marker set is selected, so
         # the default values are currently hard-coded
@@ -387,10 +387,10 @@ class OptionsParser():
                           DefaultValues.BIN_STATS_OUT,
                           DefaultValues.SEQ_STATS_OUT,
                           DefaultValues.HMMER_TABLE_OUT,
-                          bIgnoreThresholds = options.bIgnoreThresholds,
-                          evalueThreshold = options.e_value,
-                          lengthThreshold = options.length,
-                          bSkipOrfCorrection = options.bSkipOrfCorrection
+                          bIgnoreThresholds=options.bIgnoreThresholds,
+                          evalueThreshold=options.e_value,
+                          lengthThreshold=options.length,
+                          bSkipOrfCorrection=options.bSkipOrfCorrection
                           )
 
         self.logger.info('')
@@ -772,7 +772,7 @@ class OptionsParser():
         seqStats = resultsParser.parseSeqStats(options.out_folder, DefaultValues.SEQ_STATS_OUT)
 
         # read coverage stats file
-        coverage = Coverage(threads = 1)
+        coverage = Coverage(threads=1)
         coverageStats = coverage.parseCoverage(options.coverage_file)
 
         # create plot for each bin
@@ -805,8 +805,8 @@ class OptionsParser():
         binFiles = self.binFiles(options.bin_folder, options.extension)
 
         # read model info
-        #hmmModelInfoFile = os.path.join(options.analyze_folder, 'storage', DefaultValues.CHECKM_HMM_MODEL_INFO)
-        #binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
+        # hmmModelInfoFile = os.path.join(options.analyze_folder, 'storage', DefaultValues.CHECKM_HMM_MODEL_INFO)
+        # binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
 
         # read sequence stats file
         resultsParser = ResultsParser(None)
@@ -997,7 +997,7 @@ class OptionsParser():
                     binIds.add(binId)
 
                     for i, header in enumerate(headers[f]):
-                        rows[binId][header] = lineSplit[i+1]
+                        rows[binId][header] = lineSplit[i + 1]
 
         # write merge table
         oldStdOut = reassignStdOut(options.file)
@@ -1102,7 +1102,7 @@ class OptionsParser():
         self.logger.info('  Detailed bin comparison written to: ' + options.output_file)
 
         self.timeKeeper.printTimeStamp()
-        
+
     def binUnion(self, options):
         """Bin union command"""
         self.logger.info('')
@@ -1110,10 +1110,10 @@ class OptionsParser():
         self.logger.info('[CheckM - bin_union] Redundancy reduce multiple sets of bins into a single set.')
         self.logger.info('*******************************************************************************')
         self.logger.info('')
-        
+
         output_dir = options.output_dir
         makeSurePathExists(output_dir)
-        
+
         bin_folders = []
         checkmQaTsvs = []
         for i, arg in enumerate(options.bin_or_checkm_qa_table):
@@ -1123,27 +1123,27 @@ class OptionsParser():
             else:
                 checkFileExists(arg)
                 checkmQaTsvs.append(arg)
-                
+
         if len(bin_folders) < 2:
             self.logger.error("   [Error] Need to specify at least two bin folders, found %i: " % len(bin_folders))
             sys.exit()
         if len(bin_folders) != len(checkmQaTsvs):
             self.logger.error("   [Error] Need to specify the same number of bin folders as checkm_qa_tsv files, found %i and %i, respectively: " % (len(bin_folders), len(checkmQaTsvs)))
             sys.exit()
-            
+
         binFileSets = []
         for bin_folder in bin_folders:
-            self.logger.info("   Reading fasta files with extension %s from bin folder %s" %(options.extension, bin_folder))
+            self.logger.info("   Reading fasta files with extension %s from bin folder %s" % (options.extension, bin_folder))
             binFileSets.append(self.binFiles(bin_folder, options.extension))
-                
+
         binUnion = BinUnion()
-        
+
         contigConflictsOutputFile = os.path.join(output_dir, 'contigConflicts.csv')
         unionBinOutputFile = os.path.join(output_dir, 'union.txt')
         binUnion.report(bin_folders, binFileSets, checkmQaTsvs, unionBinOutputFile, contigConflictsOutputFile, options.min_completeness, options.max_contamination)
-            
+
         self.logger.info('')
-             
+
     def test(self, options):
         """Quick test of CheckM"""
         self.logger.info('')
