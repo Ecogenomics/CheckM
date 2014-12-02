@@ -22,14 +22,16 @@
 import os
 import sys
 import logging
+import gzip
 
 import numpy as np
 
 from common import binIdFromFilename, checkFileExists, readDistribution, findNearest
-from checkm.util.seqUtils import readFasta, readFastaSeqIds, writeFasta, baseCount
+from checkm.util.seqUtils import readFasta, writeFasta, baseCount
 from checkm.genomicSignatures import GenomicSignatures
 from checkm.prodigal import ProdigalGeneFeatureParser
 from checkm.defaultValues import DefaultValues
+
 
 class BinTools():
     """Functions for exploring and modifying bins."""
@@ -104,17 +106,33 @@ class BinTools():
     def unique(self, binFiles):
         """Check if sequences are assigned to multiple bins."""
 
-        # read seq ids from all bins
+        # read sequence IDs from all bins,
+        # while checking for duplicate sequences within a bin
         binSeqs = {}
         for f in binFiles:
             binId = binIdFromFilename(f)
-            binSeqs[binId] = readFastaSeqIds(f)
+
+            if f.endswith('.gz'):
+                openFile = gzip.open
+            else:
+                openFile = open
+
+            seqIds = set()
+            for line in openFile(f):
+                if line[0] == '>':
+                    seqId = line[1:].split(None, 1)[0]
+
+                    if seqId in seqIds:
+                        print '  [Warning] Sequence %s found multiple times in bin %s.' % (seqId, binId)
+                    seqIds.add(seqId)
+
+            binSeqs[binId] = seqIds
 
         # check for sequences assigned to multiple bins
         bDuplicates = False
         binIds = binSeqs.keys()
         for i in xrange(0, len(binIds)):
-            for j in xrange(i+1, len(binIds)):
+            for j in xrange(i + 1, len(binIds)):
                 seqInter = set(binSeqs[binIds[i]]).intersection(set(binSeqs[binIds[j]]))
 
                 if len(seqInter) > 0:
@@ -171,11 +189,12 @@ class BinTools():
         for _, seq in seqs.iteritems():
             binSize += len(seq)
 
-        binSig = None
+        bInit = True
         for seqId, seq in seqs.iteritems():
             weightedTetraSig = tetraSigs[seqId] * (float(len(seq)) / binSize)
-            if binSig == None:
+            if bInit:
                 binSig = weightedTetraSig
+                bInit = False
             else:
                 binSig += weightedTetraSig
 
@@ -224,7 +243,7 @@ class BinTools():
             if not os.path.exists(gffFile):
                 self.logger.error('  [Error] Missing gene feature file (%s). This plot if not compatible with the --genes option.\n' % DefaultValues.PRODIGAL_GFF)
                 sys.exit()
-            
+
             prodigalParser = ProdigalGeneFeatureParser(gffFile)
             meanCD, deltaCDs, CDs = self.codingDensityDist(seqs, prodigalParser)
 
@@ -232,13 +251,13 @@ class BinTools():
             closestGC = findNearest(np.array(gcBounds.keys()), meanGC)
             sampleSeqLen = gcBounds[closestGC].keys()[0]
             d = gcBounds[closestGC][sampleSeqLen]
-            gcLowerBoundKey = findNearest(d.keys(), (100 - distribution)/2.0)
-            gcUpperBoundKey = findNearest(d.keys(), (100 + distribution)/2.0)
+            gcLowerBoundKey = findNearest(d.keys(), (100 - distribution) / 2.0)
+            gcUpperBoundKey = findNearest(d.keys(), (100 + distribution) / 2.0)
 
             closestCD = findNearest(np.array(cdBounds.keys()), meanCD)
             sampleSeqLen = cdBounds[closestCD].keys()[0]
             d = cdBounds[closestCD][sampleSeqLen]
-            cdLowerBoundKey = findNearest(d.keys(), (100 - distribution)/2.0)
+            cdLowerBoundKey = findNearest(d.keys(), (100 - distribution) / 2.0)
 
             tdBoundKey = findNearest(tdBounds[tdBounds.keys()[0]].keys(), distribution)
 
@@ -269,8 +288,8 @@ class BinTools():
 
                 if (reportType == 'any' and len(outlyingDists) >= 1) or (reportType == 'all' and len(outlyingDists) == 3):
                     fout.write(binId + '\t' + seqId + '\t%d' % len(seq) + '\t' + ','.join(outlyingDists))
-                    fout.write('\t%.1f\t%.1f\t%.1f\t%.1f' % (seqGC[index]*100, meanGC*100, (meanGC+gcLowerBound)*100, (meanGC+gcUpperBound)*100))
-                    fout.write('\t%.1f\t%.1f\t%.1f' % (CDs[index]*100, meanCD*100, (meanCD+cdLowerBound)*100))
+                    fout.write('\t%.1f\t%.1f\t%.1f\t%.1f' % (seqGC[index] * 100, meanGC * 100, (meanGC + gcLowerBound) * 100, (meanGC + gcUpperBound) * 100))
+                    fout.write('\t%.1f\t%.1f\t%.1f' % (CDs[index] * 100, meanCD * 100, (meanCD + cdLowerBound) * 100))
                     fout.write('\t%.3f\t%.3f\t%.3f' % (deltaTDs[index], meanTD, tdBound) + '\n')
 
                 index += 1

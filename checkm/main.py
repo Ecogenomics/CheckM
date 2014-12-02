@@ -1263,6 +1263,7 @@ class OptionsParser():
         elif(options.subparser_name == 'bin_union'):
             self.binUnion(options)
         elif(options.subparser_name == 'test'):
+            options.bCalledGenes = False
             self.test(options)
         else:
             self.logger.error('  [Error] Unknown CheckM command: ' + options.subparser_name + '\n')

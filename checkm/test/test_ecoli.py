@@ -56,6 +56,8 @@ class VerifyEcoli():
         print '[Step 1]: Verifying tree command.'
         options.bKeepAlignment = False
         options.bNucORFs = False
+        options.bCalledGenes = False
+        options.bReducedTree = True
         options.bin_folder = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'test_data')
         parser.tree(options)
         self.verifyTree(options.out_folder)

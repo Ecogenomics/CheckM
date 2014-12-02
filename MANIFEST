@@ -11,6 +11,7 @@ checkm/aminoAcidIdentity.py
 checkm/binComparer.py
 checkm/binStatistics.py
 checkm/binTools.py
+checkm/binUnion.py
 checkm/checkmData.py
 checkm/common.py
 checkm/coverage.py

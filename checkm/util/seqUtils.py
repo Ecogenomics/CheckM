@@ -23,6 +23,7 @@ import sys
 import gzip
 import logging
 
+
 def readFasta(fastaFile):
     '''Read sequences from FASTA file.'''
     try:
@@ -52,6 +53,7 @@ def readFasta(fastaFile):
 
     return seqs
 
+
 def readFastaSeqIds(fastaFile):
     '''Read sequence ids from FASTA file.'''
     if fastaFile.endswith('.gz'):
@@ -67,6 +69,7 @@ def readFastaSeqIds(fastaFile):
 
     return seqIds
 
+
 def readFastaBases(fastaFile):
     '''Determine number of bases in FASTA file.'''
     if fastaFile.endswith('.gz'):
@@ -80,6 +83,7 @@ def readFastaBases(fastaFile):
             bases += len(line.rstrip())
 
     return bases
+
 
 def readGenomicSeqsFromFasta(fastaFile, seqToIgnore=None):
     '''Read genomic sequences from FASTA file. Explicitly ignores sequences marked as plasmids.'''
@@ -101,6 +105,7 @@ def readGenomicSeqsFromFasta(fastaFile, seqToIgnore=None):
 
     return seqs
 
+
 def writeFasta(seqs, outputFile):
     '''write sequences to FASTA file'''
     if outputFile.endswith('.gz'):
@@ -113,6 +118,7 @@ def writeFasta(seqs, outputFile):
         fout.write(seq + '\n')
     fout.close()
 
+
 def baseCount(seq):
     testSeq = seq.upper()
     a = testSeq.count('A')
@@ -121,6 +127,7 @@ def baseCount(seq):
     t = testSeq.count('T') + testSeq.count('U')
 
     return a, c, g, t
+
 
 def calculateN50(seqLens):
     thresholdN50 = sum(seqLens) / 2.0

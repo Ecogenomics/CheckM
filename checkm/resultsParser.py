@@ -36,6 +36,7 @@ from checkm.hmmer import HMMERParser
 
 from checkm.util.pfam import PFAM
 
+
 class ResultsParser():
     """Parse output of Prodigal+HMMER run and derived statistics."""
     def __init__(self, binIdToModels):
@@ -49,10 +50,10 @@ class ResultsParser():
                        binStatsFile,
                        seqStatsFile,
                        hmmTableFile,
-                       bIgnoreThresholds = False,
-                       evalueThreshold = DefaultValues.E_VAL,
-                       lengthThreshold = DefaultValues.LENGTH,
-                       bSkipOrfCorrection = False,
+                       bIgnoreThresholds=False,
+                       evalueThreshold=DefaultValues.E_VAL,
+                       lengthThreshold=DefaultValues.LENGTH,
+                       bSkipOrfCorrection=False,
                        ):
         """Parse results in the output directory."""
 
@@ -72,12 +73,12 @@ class ResultsParser():
 
     def parseBinHits(self, outDir,
                      hmmTableFile,
-                     bSkipOrfCorrection = False,
-                     bIgnoreThresholds = False,
-                     evalueThreshold = DefaultValues.E_VAL,
-                     lengthThreshold = DefaultValues.LENGTH,
-                     binStats = None,
-                     seqStats = None):
+                     bSkipOrfCorrection=False,
+                     bIgnoreThresholds=False,
+                     evalueThreshold=DefaultValues.E_VAL,
+                     lengthThreshold=DefaultValues.LENGTH,
+                     binStats=None,
+                     seqStats=None):
         """ Parse HMM hits for each bin."""
         if not self.models:
             self.logger.error('  [Error] Models must be parsed before identifying HMM hits.')
@@ -89,7 +90,7 @@ class ResultsParser():
         for binId in self.models:
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numBinsProcessed += 1
-                statusStr = '    Finished parsing hits for %d of %d (%.2f%%) bins.' % (numBinsProcessed, len(self.models), float(numBinsProcessed)*100/len(self.models))
+                statusStr = '    Finished parsing hits for %d of %d (%.2f%%) bins.' % (numBinsProcessed, len(self.models), float(numBinsProcessed) * 100 / len(self.models))
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 
@@ -202,22 +203,22 @@ class ResultsParser():
                 resultsManager.identifyOrfErrors()
 
         except IOError as detail:
-            sys.stderr.write(str(detail)+"\n")
+            sys.stderr.write(str(detail) + "\n")
 
-    def __getHeader(self, outputFormat, binMarkerSets, coverageBinProfiles = None):
+    def __getHeader(self, outputFormat, binMarkerSets, coverageBinProfiles=None):
         """Get header for requested output table."""
 
         # keep count of single, double, triple genes etc...
         if outputFormat == 1:
-            header = ['Bin Id','Marker lineage', '# genomes', '# markers','# marker sets','0','1','2','3','4','5+','Completeness','Contamination','Strain heterogeneity']
+            header = ['Bin Id', 'Marker lineage', '# genomes', '# markers', '# marker sets', '0', '1', '2', '3', '4', '5+', 'Completeness', 'Contamination', 'Strain heterogeneity']
         elif outputFormat == 2:
             header = ['Bin Id']
             header += ['Marker lineage', '# genomes', '# markers', '# marker sets']
-            header += ['Completeness','Contamination', 'Strain heterogeneity']
+            header += ['Completeness', 'Contamination', 'Strain heterogeneity']
             header += ['Genome size (bp)', '# ambiguous bases', '# scaffolds', '# contigs', 'N50 (scaffolds)', 'N50 (contigs)', 'Longest scaffold (bp)', 'Longest contig (bp)']
             header += ['GC', 'GC std (scaffolds > 1kbp)']
             header += ['Coding density', 'Translation table', '# predicted genes']
-            header += ['0','1','2','3','4','5+']
+            header += ['0', '1', '2', '3', '4', '5+']
 
             if coverageBinProfiles != None:
                 for bamId in coverageBinProfiles[coverageBinProfiles.keys()[0]]:
@@ -227,19 +228,19 @@ class ResultsParser():
                 self.logger.error('  [Error] Labeling error: GC std (scaffolds > 1kbp)')
                 sys.exit()
         elif outputFormat == 3:
-            header = ['Bin Id', 'Node Id', 'Marker lineage', '# genomes', '# markers','# marker sets','0','1','2','3','4','5+','Completeness','Contamination','Strain heterogeneity']
+            header = ['Bin Id', 'Node Id', 'Marker lineage', '# genomes', '# markers', '# marker sets', '0', '1', '2', '3', '4', '5+', 'Completeness', 'Contamination', 'Strain heterogeneity']
         elif outputFormat == 4:
             header = None
         elif outputFormat == 5:
-            header = ['Bin Id','Marker Id','Gene Id']
+            header = ['Bin Id', 'Marker Id', 'Gene Id']
         elif outputFormat == 6:
-            header = ['Bin Id','Marker Id','Gene Ids']
+            header = ['Bin Id', 'Marker Id', 'Gene Ids']
         elif outputFormat == 7:
-            header = ['Bin Id','Marker Id','Gene Ids']
+            header = ['Bin Id', 'Marker Id', 'Gene Ids']
         elif outputFormat == 8:
-            header = ['Bin Id','Gene Id','{Marker Id, Start position, End position}']
+            header = ['Bin Id', 'Gene Id', '{Marker Id, Start position, End position}']
         elif outputFormat == 9:
-            header = ['Scaffold Id','Bin Id','Length','# contigs','GC','# ORFs','Coding density','Marker Ids']
+            header = ['Scaffold Id', 'Bin Id', 'Length', '# contigs', 'GC', '# ORFs', 'Coding density', 'Marker Ids']
 
         return header
 
@@ -258,7 +259,7 @@ class ResultsParser():
         if bTabTable or outputFormat not in prettyTableFormats:
             bTabTable = True
             pTable = None
-            
+
             if header != None:
                 print('\t'.join(header))
         else:
@@ -272,8 +273,8 @@ class ResultsParser():
         for binId in sorted(self.results.keys()):
             self.results[binId].printSummary(outputFormat, aai, binIdToBinMarkerSets[binId], bIndividualMarkers, coverageBinProfiles, pTable)
 
-        if not bTabTable :
-            if outputFormat in [1,2]:
+        if not bTabTable:
+            if outputFormat in [1, 2]:
                 print(pTable.get_string(sortby='Completeness', reversesort=True))
             else:
                 print(pTable.get_string())
@@ -281,12 +282,13 @@ class ResultsParser():
         # restore stdout
         restoreStdOut(outFile, oldStdOut)
 
+
 class ResultsManager():
     """Store all the results for a single bin"""
     def __init__(self, binId, models,
-                 bIgnoreThresholds = False,
-                 evalueThreshold = DefaultValues.E_VAL,
-                 lengthThreshold = DefaultValues.LENGTH,
+                 bIgnoreThresholds=False,
+                 evalueThreshold=DefaultValues.E_VAL,
+                 lengthThreshold=DefaultValues.LENGTH,
                  binStats=None,
                  scaffoldStats=None):
         self.binId = binId
@@ -325,7 +327,7 @@ class ResultsManager():
                 return False
 
             alignment_length = float(hit.ali_to - hit.ali_from)
-            length_perc = alignment_length/float(hit.query_length)
+            length_perc = alignment_length / float(hit.query_length)
             if length_perc >= self.lengthThreshold:
                 return True
 
@@ -365,15 +367,15 @@ class ResultsManager():
                     scaffoldIdI = orfI[0:orfI.rfind('_')]
 
                     bCombined = False
-                    for j in xrange(i+1, len(hits)):
+                    for j in xrange(i + 1, len(hits)):
                         orfJ = hits[j].target_name
                         scaffoldIdJ = orfJ[0:orfJ.rfind('_')]
 
                         # check if hits are on adjacent ORFs
                         if scaffoldIdI == scaffoldIdJ:
                             try:
-                                orfNumI = int(orfI[orfI.rfind('_')+1:])
-                                orfNumJ = int(orfJ[orfJ.rfind('_')+1:])
+                                orfNumI = int(orfI[orfI.rfind('_') + 1:])
+                                orfNumJ = int(orfJ[orfJ.rfind('_') + 1:])
                             except:
                                 # it appears called genes are not labeled
                                 # according to the prodigal format, so
@@ -387,13 +389,13 @@ class ResultsManager():
 
                                 sJ = hits[j].hmm_from
                                 eJ = hits[j].hmm_to
-                                
-                                if (sI <= sJ and eI > sJ) or (sJ <= sI and eJ > sI):                                   
+
+                                if (sI <= sJ and eI > sJ) or (sJ <= sI and eJ > sI):
                                     # models overlap so treat these as unique hits
                                     # which may represent an assembly error or a true
                                     # gene duplication
                                     pass
-                                else:                                    
+                                else:
                                     # combine the two hits
                                     bCombined = True
                                     break
@@ -420,7 +422,7 @@ class ResultsManager():
                         break
 
             self.markerHits[markerId] = hits
-            
+
     def countUniqueHits(self):
         """Determine number of unique and multiple hits."""
         uniqueHits = 0
@@ -430,7 +432,7 @@ class ResultsManager():
                 uniqueHits += 1
             elif len(hits) > 1:
                 multiCopyHits += 1
-                
+
         return uniqueHits, multiCopyHits
 
     def hitsToMarkerGene(self, markerSet):
@@ -455,7 +457,7 @@ class ResultsManager():
     def geneCounts(self, markerSet, markerHits, bIndividualMarkers):
         """ Determine number of marker genes with 0-5 hits
             as well as the total completeness and contamination."""
-        geneCounts = [0]*6
+        geneCounts = [0] * 6
         multiCopyCount = 0
         for marker in markerSet.getMarkerGenes():
             if marker in markerHits:
@@ -614,7 +616,7 @@ class ResultsManager():
 
         return summary
 
-    def printSummary(self, outputFormat, aai, binMarkerSets, bIndividualMarkers, coverageBinProfiles = None, table = None):
+    def printSummary(self, outputFormat, aai, binMarkerSets, bIndividualMarkers, coverageBinProfiles=None, table=None):
         """Print out information about bin."""
         if outputFormat == 1:
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
@@ -642,8 +644,8 @@ class ResultsManager():
                 row += '\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# ambiguous bases'], self.binStats['# scaffolds'],
                                                  self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'],
                                                  self.binStats['Longest scaffold'], self.binStats['Longest contig'])
-                row += '\t%.1f\t%.2f' % (self.binStats['GC']*100, self.binStats['GC std']*100)
-                row += '\t%.2f\t%d\t%d' % (self.binStats['Coding density']*100, self.binStats['Translation table'], self.binStats['# predicted genes'])
+                row += '\t%.1f\t%.2f' % (self.binStats['GC'] * 100, self.binStats['GC std'] * 100)
+                row += '\t%.2f\t%d\t%d' % (self.binStats['Coding density'] * 100, self.binStats['Translation table'], self.binStats['# predicted genes'])
                 row += '\t' + '\t'.join([str(data[i]) for i in xrange(6)])
 
                 if coverageBinProfiles:
@@ -657,8 +659,8 @@ class ResultsManager():
                 row.extend([self.binStats['Genome size'], self.binStats['# ambiguous bases'], self.binStats['# scaffolds'],
                                                  self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'],
                                                  self.binStats['Longest scaffold'], self.binStats['Longest contig']])
-                row.extend([self.binStats['GC']*100, self.binStats['GC std']*100])
-                row.extend([self.binStats['Coding density']*100, self.binStats['Translation table'], self.binStats['# predicted genes']])
+                row.extend([self.binStats['GC'] * 100, self.binStats['GC std'] * 100])
+                row.extend([self.binStats['Coding density'] * 100, self.binStats['Translation table'], self.binStats['# predicted genes']])
                 row.extend(data[0:6])
 
                 if coverageBinProfiles:
@@ -688,12 +690,12 @@ class ResultsManager():
             for marker in data:
                 row += '\t' + marker
             print(row)
-            
+
             row = self.binId
             for count in data.values():
                 row += '\t' + str(count)
             print(row)
-            
+
             print()
         elif outputFormat == 5:
             # tabular of bin_id, marker, contig_id
@@ -733,7 +735,7 @@ class ResultsManager():
                     scaffoldsWithMultipleHits = set()
                     for i in xrange(0, len(hitList)):
                         scaffoldId = hitList[i].target_name[0:hitList[i].target_name.rfind('_')]
-                        for j in xrange(i+1, len(hitList)):
+                        for j in xrange(i + 1, len(hitList)):
                             if scaffoldId == hitList[j].target_name[0:hitList[j].target_name.rfind('_')]:
                                 scaffoldsWithMultipleHits.add(hitList[i].target_name)
                                 scaffoldsWithMultipleHits.add(hitList[j].target_name)
