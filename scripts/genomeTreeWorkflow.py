@@ -135,13 +135,13 @@ class GenomeTreeWorkflow(object):
         """Check to see if tax2tree is on the system path."""
 
         try:
-            exit_status = os.system('nlevel -h > /dev/null')
+            exit_status = os.system('t2t -h > /dev/null')
         except:
             print "Unexpected error!", sys.exc_info()[0]
             raise
 
         if exit_status != 0:
-            print "[Error] nlevel is not on the system path"
+            print "[Error] t2t is not on the system path"
             sys.exit()
 
     def run(self, numThreads):
@@ -177,24 +177,24 @@ class GenomeTreeWorkflow(object):
             getPhylogeneticHMMs = GetPhylogeneticHMMs()
             getPhylogeneticHMMs.run(self.hmmDir, self.finalGeneTreeDir, self.phyloHMMsOut)
 
-        # infer genome tree
-        print ''
-        print '--- Inferring full genome tree ---'
-        inferGenomeTree = InferGenomeTree()
-        inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.treeOut, self.taxonomyOut)
+            # infer genome tree
+            print ''
+            print '--- Inferring full genome tree ---'
+            inferGenomeTree = InferGenomeTree()
+            inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.treeOut, self.taxonomyOut)
 
-        if False:
             # root genome tree between archaea and bacteria
             print ''
             print '--- Rooting full genome tree ---'
             rerootTree = RerootTree()
             rerootTree.run(self.treeOut, self.treeRootedOut)
 
-            # decorate genome tree with taxonomy using nlevel from tax2tree
-            print ''
-            print '--- Decorating full genome tree with taxonomic information using tax2tree ---'
-            os.system('nlevel -t %s -m %s -o %s' % (self.treeRootedOut, self.taxonomyOut, self.treeTaxonomyOut))
+        # decorate genome tree with taxonomy using nlevel from tax2tree
+        print ''
+        print '--- Decorating full genome tree with taxonomic information using tax2tree ---'
+        os.system('t2t decorate -t %s -m %s -o %s' % (self.treeRootedOut, self.taxonomyOut, self.treeTaxonomyOut))
 
+        if False:
             # dereplicate identical sequences
             print ''
             print '--- Identifying duplicate sequences ---'
@@ -204,7 +204,7 @@ class GenomeTreeWorkflow(object):
             print ''
             print '--- Inferring dereplicated genome tree ---'
             outputLog = self.treeDerepOut[0:self.treeDerepOut.rfind('.')] + '.log'
-            #cmd = 'FastTreeMP -nosupport -wag -gamma -log ' + outputLog + ' ' + self.derepConcatenatedAlignFile + ' > ' + self.treeDerepOut
+            # cmd = 'FastTreeMP -nosupport -wag -gamma -log ' + outputLog + ' ' + self.derepConcatenatedAlignFile + ' > ' + self.treeDerepOut
             cmd = 'FastTreeMP -wag -gamma -log ' + outputLog + ' ' + self.derepConcatenatedAlignFile + ' > ' + self.treeDerepOut
             os.system(cmd)
 
@@ -217,19 +217,19 @@ class GenomeTreeWorkflow(object):
             # calculate bootstraps for genome tree
             print ''
             print '--- Calculating bootstrap support ---'
-            #bootstrapTree = BootstrapTree()
-            #bootstrapTree.run(self.bootstrapDir, self.treeDerepRootedOut, self.concatenatedAlignFile, 100, numThreads, self.treeDerepBootstrapOut)
+            # bootstrapTree = BootstrapTree()
+            # bootstrapTree.run(self.bootstrapDir, self.treeDerepRootedOut, self.concatenatedAlignFile, 100, numThreads, self.treeDerepBootstrapOut)
 
-            #os.system('cp ' + self.treeDerepBootstrapOut + ' ' + self.treeDerepFinalOut)
+            # os.system('cp ' + self.treeDerepBootstrapOut + ' ' + self.treeDerepFinalOut)
 
-            # just use FastTree support values
-            os.system('cp ' + self.treeDerepRootedOut + ' ' + self.treeDerepFinalOut)
-    
-            # decorate dereplicated tree with unique IDs and a complementary file indicating properties of each internal node
-            print ''
-            print '--- Decorating final tree with lineage-specific statistics and marker set information ---'
-            decorateTree = DecorateTree()
-            decorateTree.decorate(self.treeTaxonomyOut, self.derepSeqFile, self.treeDerepFinalOut, self.treeMetadata, numThreads)
+        # just use FastTree support values
+        os.system('cp ' + self.treeDerepRootedOut + ' ' + self.treeDerepFinalOut)
+
+        # decorate dereplicated tree with unique IDs and a complementary file indicating properties of each internal node
+        print ''
+        print '--- Decorating final tree with lineage-specific statistics and marker set information ---'
+        decorateTree = DecorateTree()
+        decorateTree.decorate(self.treeTaxonomyOut, self.derepSeqFile, self.treeDerepFinalOut, self.treeMetadata, numThreads)
 
 if __name__ == '__main__':
     print 'GenomeTreeWorkflow v' + __version__ + ': ' + __prog_desc__
@@ -237,7 +237,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('output_dir', help='output directory')
-    parser.add_argument('-t', '--threads', help='number of threads', type = int, default = 16)
+    parser.add_argument('-t', '--threads', help='number of threads', type=int, default=16)
 
     args = parser.parse_args()
 

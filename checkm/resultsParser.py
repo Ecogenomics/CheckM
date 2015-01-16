@@ -620,9 +620,10 @@ class ResultsManager():
         """Print out information about bin."""
         if outputFormat == 1:
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
+            lineageStr = selectedMarkerSet.lineageStr + ' (' + str(selectedMarkerSet.UID) + ')'
 
             data = self.geneCountsForSelectedMarkerSet(binMarkerSets, bIndividualMarkers)
-            row = "%s\t%s\t%d\t%d\t%d\t%s\t%0.2f\t%0.2f\t%0.2f" % (self.binId, selectedMarkerSet.lineageStr,
+            row = "%s\t%s\t%d\t%d\t%d\t%s\t%0.2f\t%0.2f\t%0.2f" % (self.binId, lineageStr,
                                                 selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets(),
                                                 "\t".join([str(data[i]) for i in range(6)]),
                                                 data[6],
@@ -632,14 +633,16 @@ class ResultsManager():
             if table == None:
                 print(row)
             else:
-                table.add_row([self.binId, selectedMarkerSet.lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets()] + data + [aai.aaiMeanBinHetero.get(self.binId, 0.0)])
+                table.add_row([self.binId, lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets()] + data + [aai.aaiMeanBinHetero.get(self.binId, 0.0)])
         elif outputFormat == 2:
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
+            lineageStr = selectedMarkerSet.lineageStr + ' (' + str(selectedMarkerSet.UID) + ')'
+
             data = self.geneCountsForSelectedMarkerSet(binMarkerSets, bIndividualMarkers)
 
             if table == None:
                 row = self.binId
-                row += '\t%s\t%d\t%d\t%d' % (selectedMarkerSet.lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets())
+                row += '\t%s\t%d\t%d\t%d' % (lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets())
                 row += '\t%0.2f\t%0.2f\t%0.2f' % (data[6], data[7], aai.aaiMeanBinHetero.get(self.binId, 0.0))
                 row += '\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# ambiguous bases'], self.binStats['# scaffolds'],
                                                  self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'],
@@ -654,7 +657,7 @@ class ResultsManager():
 
                 print(row)
             else:
-                row = [self.binId, selectedMarkerSet.lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets()]
+                row = [self.binId, lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets()]
                 row.extend([data[6], data[7], aai.aaiMeanBinHetero.get(self.binId, 0.0)])
                 row.extend([self.binStats['Genome size'], self.binStats['# ambiguous bases'], self.binStats['# scaffolds'],
                                                  self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'],

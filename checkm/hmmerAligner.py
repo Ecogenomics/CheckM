@@ -50,7 +50,8 @@ class HmmerAligner:
                                evalueThreshold,
                                lengthThreshold,
                                bReportHitStats,
-                               alignOutputDir
+                               alignOutputDir,
+                               bKeepUnmaskedAlign=False
                                ):
         """Align top hits in each bin. Assumes all bins are using the same marker genes."""
 
@@ -72,7 +73,7 @@ class HmmerAligner:
 
         # align each of the marker genes
         makeSurePathExists(alignOutputDir)
-        self.__alignMarkerGenes(markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir)
+        self.__alignMarkerGenes(markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bKeepUnmaskedAlign)
 
         # remove the temporary HMM files
         for fileName in hmmModelFiles:
@@ -89,7 +90,8 @@ class HmmerAligner:
                                        evalueThreshold,
                                        lengthThreshold,
                                        bReportHitStats,
-                                       alignOutputDir
+                                       alignOutputDir,
+                                       bKeepUnmaskedAlign=False
                                        ):
         """Align hits to a set of common marker genes."""
 
@@ -111,7 +113,7 @@ class HmmerAligner:
 
         # align each of the marker genes
         makeSurePathExists(alignOutputDir)
-        self.__alignMarkerGenes(markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir)
+        self.__alignMarkerGenes(markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bKeepUnmaskedAlign)
 
         # remove the temporary HMM files
         for fileName in hmmModelFiles:
@@ -194,7 +196,7 @@ class HmmerAligner:
                     tempModelFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
                     HF.fetch(hmmModelFile, markerId, tempModelFile)
 
-                    self.__alignMarker(markerId, markersWithMultipleHits[markerId], None, False, binAlignOutputDir, tempModelFile)
+                    self.__alignMarker(markerId, markersWithMultipleHits[markerId], None, False, binAlignOutputDir, tempModelFile, bKeepUnmaskedAlign=False)
 
                     os.remove(tempModelFile)
 
@@ -223,7 +225,7 @@ class HmmerAligner:
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
 
-    def __alignMarkerGenes(self, markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bReportProgress=True):
+    def __alignMarkerGenes(self, markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bKeepUnmaskedAlign=False, bReportProgress=True):
         """Align marker genes with HMMs in parallel."""
 
         if bReportProgress:
@@ -240,7 +242,7 @@ class HmmerAligner:
             workerQueue.put(None)
 
         try:
-            calcProc = [mp.Process(target=self.__alignMarkerParallel, args=(markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            calcProc = [mp.Process(target=self.__alignMarkerParallel, args=(markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, bKeepUnmaskedAlign, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
             writeProc = mp.Process(target=self.__reportAlignmentProgress, args=(len(hmmModelFiles), bReportProgress, writerQueue))
 
             writeProc.start()
@@ -260,17 +262,17 @@ class HmmerAligner:
 
             writeProc.terminate()
 
-    def __alignMarkerParallel(self, markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, queueIn, queueOut):
+    def __alignMarkerParallel(self, markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, bKeepUnmaskedAlign, queueIn, queueOut):
         while True:
             markerId = queueIn.get(block=True, timeout=None)
             if markerId == None:
                 break
 
-            self.__alignMarker(markerId, markerSeqs[markerId], markerStats[markerId], bReportHitStats, alignOutputDir, hmmModelFiles[markerId])
+            self.__alignMarker(markerId, markerSeqs[markerId], markerStats[markerId], bReportHitStats, alignOutputDir, hmmModelFiles[markerId], bKeepUnmaskedAlign)
 
             queueOut.put(markerId)
 
-    def __alignMarker(self, markerId, binSeqs, binStats, bReportHitStats, alignOutputDir, hmmModelFile):
+    def __alignMarker(self, markerId, binSeqs, binStats, bReportHitStats, alignOutputDir, hmmModelFile, bKeepUnmaskedAlign):
         unalignSeqFile = os.path.join(alignOutputDir, markerId + '.unaligned.faa')
         fout = open(unalignSeqFile, 'w')
         numSeqs = 0
@@ -293,7 +295,8 @@ class HmmerAligner:
             makedSeqFile = os.path.join(alignOutputDir, markerId + '.masked.faa')
             self.__maskAlignment(alignSeqFile, makedSeqFile)
 
-            os.remove(alignSeqFile)
+            if not bKeepUnmaskedAlign:
+                os.remove(alignSeqFile)
 
         os.remove(unalignSeqFile)
 
