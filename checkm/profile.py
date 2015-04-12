@@ -86,7 +86,10 @@ class Profile():
 
         for binId, bamIds in normBinCoverage.iteritems():
             for bamId in bamIds:
-                normBinCoverage[binId][bamId] /= sumNormBinCoverage[bamId]
+                if sumNormBinCoverage[bamId] != 0:
+                    normBinCoverage[binId][bamId] /= sumNormBinCoverage[bamId]
+                else:
+                    normBinCoverage[binId][bamId] = 0
 
         # write community profile
         oldStdOut = reassignStdOut(outFile)

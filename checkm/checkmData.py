@@ -25,7 +25,7 @@ import logging
 from pkg_resources import resource_filename
 import json
 
-from screamingbackpack.manifestManager import ManifestManager
+import screamingbackpack.manifestManager as mm
 
 
 class DBConfig(object):
@@ -94,19 +94,23 @@ class DBConfig(object):
         return True
 
 
-class DBManager(ManifestManager):
+class DBManager(mm.ManifestManager):
 
     """Manage all aspects of data location and version control."""
     def __init__(self):
-        ManifestManager.__init__(self, timeout=15)
+        mm.ManifestManager.__init__(self, timeout=15)
         self.logger = logging.getLogger()
         self.config = DBConfig()  # load inbuilt configuration
         self.type = self.config.values["manifestType"]
 
         # check that the data root is legit
+        manifestFile = os.path.join(self.config.values["dataRoot"], mm.__MANIFEST__)
+        if not os.path.exists(self.config.values["dataRoot"]) or not os.path.exists(manifestFile):
+            self.config.values["dataRoot"] = ""
+
         if self.config.values["dataRoot"] == "":
             # no data folder set.
-            print "It seems that the CheckM data folder has not been set yet. Running: 'checkm data setRoot'."
+            print "It seems that the CheckM data folder has not been set yet or has been removed. Running: 'checkm data setRoot'."
             if not self.setRoot():
                 print "Sorry, CheckM cannot run without a valid data folder."
 

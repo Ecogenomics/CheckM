@@ -58,6 +58,13 @@ class BinQAPlot(AbstractPlot):
         height += legendHeight  # make room for legends
         self.fig.set_size_inches(self.options.width, height)
 
+        if height * self.options.dpi >= 32768:
+            errorMsg = '[Error] There are too many bins to plot.'
+            errorMsg += '\nThe resulting plot would be %d pixels in height and the maximum allowed size is 32768.' % (height * self.options.dpi)
+            errorMsg += '\nPlease reduce the number of bins to be plotted or decrease the DPI (--dpi).'
+            self.logger.error(errorMsg)
+            return False
+
         fracRowHeight = self.options.row_height / height
 
         self.logger.info('  Plotting bin completeness, contamination, and strain heterogeneity.')
@@ -163,6 +170,8 @@ class BinQAPlot(AbstractPlot):
         axisColourMap.set_title('Contamination')
 
         self.draw()
+
+        return True
 
     def skylinePlot(self,
                        binId,

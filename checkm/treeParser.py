@@ -149,6 +149,37 @@ class TreeParser():
         print(tree.as_string(schema='newick', suppress_rooting=True))
         restoreStdOut(outFile, oldStdOut)
 
+    def getInsertionBranchId(self, outDir, binIds):
+        # make sure output and tree directories exist
+        checkDirExists(outDir)
+        alignOutputDir = os.path.join(outDir, 'storage', 'tree')
+        checkDirExists(alignOutputDir)
+
+        # read genome tree (if it exists)
+        binIdToUID = {}
+        treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
+        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
+
+        # find first parent of each bin with a taxonomic label
+        for binId in binIds:
+            node = tree.find_node_with_taxon_label(binId)
+            if node == None:
+                binIdToUID[binId] = 'NA'
+                continue
+
+            # find first node decorated with a UID string between leaf and root
+            parentNode = node.parent_node
+            while parentNode != None:
+                if parentNode.label:
+                    uid = parentNode.label.split('|')[0]
+                    break
+
+                parentNode = parentNode.parent_node
+
+            binIdToUID[binId] = uid
+
+        return binIdToUID
+
     def getBinTaxonomy(self, outDir, binIds):
         # make sure output and tree directories exist
         checkDirExists(outDir)
@@ -161,7 +192,6 @@ class TreeParser():
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
 
         # find first parent of each bin with a taxonomic label
-
         for binId in binIds:
             node = tree.find_node_with_taxon_label(binId)
             if node == None:
@@ -609,9 +639,10 @@ class TreeParser():
         else:
             # get taxonomy of sister lineage for each bin
             binIdToSisterTaxonomy = self.getBinSisterTaxonomy(outDir, binIds)
+            binIdToUID = self.getInsertionBranchId(outDir, binIds)
 
             binIdToLineageStatistics = self.readLineageMetadata(outDir, binIds)
-            self.__printFullTable(binIdToTaxonomy, binIdToSisterTaxonomy, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile)
+            self.__printFullTable(binIdToUID, binIdToTaxonomy, binIdToSisterTaxonomy, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile)
 
     def __printSimpleSummaryTable(self, binIdToTaxonomy, resultsParser, bTabTable, outFile):
         # redirect output
@@ -649,14 +680,14 @@ class TreeParser():
         # restore stdout
         restoreStdOut(outFile, oldStdOut)
 
-    def __printFullTable(self, binIdToTaxonomy, binIdToSisterTaxonomy, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile):
+    def __printFullTable(self, binIdToUID, binIdToTaxonomy, binIdToSisterTaxonomy, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
         arbitraryBinId = binIdToTaxonomy.keys()[0]
         markerCountLabel = '# unique markers (of %d)' % len(resultsParser.models[arbitraryBinId])
         header = ['Bin Id', markerCountLabel, "# multi-copy"]
-        header += ['Taxonomy (contained)', 'Taxonomy (sister lineage)']
+        header += ['Insertion branch UID', 'Taxonomy (contained)', 'Taxonomy (sister lineage)']
         header += ['GC', 'Genome size (Mbp)', 'Gene count', 'Coding density', 'Translation table']
         header += ['# descendant genomes', 'Lineage: GC mean', 'Lineage: GC std']
         header += ['Lineage: genome size (Mbp) mean', 'Lineage: genome size (Mbp) std']
@@ -675,6 +706,7 @@ class TreeParser():
             pTable.float_format['Lineage: gene count std'] = '.0'
             pTable.align = 'c'
             pTable.align[header[0]] = 'l'
+            pTable.align['Insertion branch UID'] = 'l'
             pTable.align['Taxonomy (contained)'] = 'l'
             pTable.align['Taxonomy (sister lineage)'] = 'l'
             pTable.hrules = prettytable.FRAME
@@ -693,7 +725,7 @@ class TreeParser():
                 truncSisterLineage = truncSisterLineage[0:-1]
 
             row = [binId, uniqueHits, multiCopyHits]
-            row += [binIdToTaxonomy[binId], truncSisterLineage]
+            row += [binIdToUID[binId], binIdToTaxonomy[binId], truncSisterLineage]
             row += [binStats[binId]['GC'] * 100]
             row += [float(binStats[binId]['Genome size']) / 1e6]
             row += [binStats[binId]['# predicted genes']]

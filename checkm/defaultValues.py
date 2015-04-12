@@ -24,12 +24,18 @@ from checkm.checkmData import DBManager
 
 
 class DefaultValues():
+    """Default values for filenames and common constants."""
 
     __DBM = DBManager()
 
-    """Default values for filenames and common constants."""
+    # set of markers recognized to be unreliable. These are often
+    # ubiquitous, single-copy genes, but ones which are challenging
+    # to correctly annotate with the PFAM and TIGRFAM models.
+    MARKERS_TO_EXCLUDE = {'TIGR00398', 'TIGR00399'}
+
     E_VAL = 1e-10
     LENGTH = 0.7
+    PSEUDOGENE_LENGTH = 0.3
 
     TAXON_MARKER_FILE_HEADER = '# [Taxon Marker File]'
     LINEAGE_MARKER_FILE_HEADER = '# [Lineage Marker File]'
@@ -77,10 +83,10 @@ class DefaultValues():
     PPLACER_TREE_OUT = 'concatenated.tre'
 
     BIN_STATS_PHYLO_OUT = 'bin_stats.tree.tsv'
-    SEQ_STATS_PHYLO_OUT = 'seq_stats.tree.tsv'
+    # SEQ_STATS_PHYLO_OUT = 'seq_stats.tree.tsv'
 
     BIN_STATS_OUT = 'bin_stats.analyze.tsv'
-    SEQ_STATS_OUT = 'seq_stats.analyze.tsv'
+    # SEQ_STATS_OUT = 'seq_stats.analyze.tsv'
 
     BIN_STATS_EXT_OUT = 'bin_stats_ext.tsv'
     MARKER_GENE_STATS = 'marker_gene_stats.tsv'

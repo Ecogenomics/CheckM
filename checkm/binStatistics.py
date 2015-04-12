@@ -35,11 +35,11 @@ from numpy import mean
 
 class BinStatistics():
     """Calculate statistics (GC, coding density, etc.) for genome bins."""
-    def __init__(self, threads):
+    def __init__(self, threads=1):
         self.logger = logging.getLogger()
         self.totalThreads = threads
 
-    def calculate(self, binFiles, outDir, binStatsFile, seqStatsFile):
+    def calculate(self, binFiles, outDir, binStatsFile):
         """Calculate statistics for each putative genome bin."""
 
         # process each bin
@@ -56,7 +56,7 @@ class BinStatistics():
 
         try:
             calcProc = [mp.Process(target=self.__processBin, args=(outDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target=self.__reportProgress, args=(outDir, binStatsFile, seqStatsFile, len(binFiles), writerQueue))
+            writeProc = mp.Process(target=self.__reportProgress, args=(outDir, binStatsFile, len(binFiles), writerQueue))
 
             writeProc.start()
 
@@ -66,7 +66,7 @@ class BinStatistics():
             for p in calcProc:
                 p.join()
 
-            writerQueue.put((None, None, None))
+            writerQueue.put((None, None))
             writeProc.join()
         except:
             # make sure all processes are terminated
@@ -83,7 +83,6 @@ class BinStatistics():
                 break
 
             binStats = {}
-            scaffoldStats = {}
 
             binId = binIdFromFilename(binFile)
             binDir = os.path.join(outDir, 'bins', binId)
@@ -91,16 +90,14 @@ class BinStatistics():
 
             # read scaffolds
             scaffolds = readFasta(binFile)
-            for seqId in scaffolds:
-                scaffoldStats[seqId] = {}
 
             # calculate GC statistics
-            GC, stdGC = self.calculateGC(scaffolds, scaffoldStats)
+            GC, stdGC = self.calculateGC(scaffolds)
             binStats['GC'] = GC
             binStats['GC std'] = stdGC
 
-            # calculate statistics related to scaffold lengths
-            maxScaffoldLen, maxContigLen, genomeSize, scaffold_N50, contig_N50, numContigs, numAmbiguousBases = self.calculateSeqStats(scaffolds, scaffoldStats)
+            # calculate statistics related to contigs and scaffolds
+            maxScaffoldLen, maxContigLen, genomeSize, scaffold_N50, contig_N50, scaffoldAvgLen, contigAvgLen, numContigs, numAmbiguousBases = self.calculateSeqStats(scaffolds)
             binStats['Genome size'] = genomeSize
             binStats['# ambiguous bases'] = numAmbiguousBases
             binStats['# scaffolds'] = len(scaffolds)
@@ -109,17 +106,22 @@ class BinStatistics():
             binStats['Longest contig'] = maxContigLen
             binStats['N50 (scaffolds)'] = scaffold_N50
             binStats['N50 (contigs)'] = contig_N50
+            binStats['Mean scaffold length'] = scaffoldAvgLen
+            binStats['Mean contig length'] = contigAvgLen
 
             # calculate coding density statistics
-            codingDensity, translationTable, numORFs = self.calculateCodingDensity(binDir, genomeSize, scaffoldStats)
+            codingDensity, translationTable, numORFs = self.calculateCodingDensity(binDir, genomeSize)
             binStats['Coding density'] = codingDensity
             binStats['Translation table'] = translationTable
             binStats['# predicted genes'] = numORFs
 
-            queueOut.put((binId, binStats, scaffoldStats))
+            queueOut.put((binId, binStats))
 
-    def __reportProgress(self, outDir, binStatsFile, seqStatsFile, numBins, queueIn):
+    def __reportProgress(self, outDir, binStatsFile, numBins, queueIn):
         """Report number of processed bins and write statistics to file."""
+
+        storagePath = os.path.join(outDir, 'storage')
+        fout = open(os.path.join(storagePath, binStatsFile), 'w')
 
         numProcessedBins = 0
         if self.logger.getEffectiveLevel() <= logging.INFO:
@@ -127,16 +129,12 @@ class BinStatistics():
             sys.stderr.write('%s\r' % statusStr)
             sys.stderr.flush()
 
-        binStats = {}
-        seqStats = {}
         while True:
-            binId, curBinStats, curSeqStats = queueIn.get(block=True, timeout=None)
+            binId, curBinStats = queueIn.get(block=True, timeout=None)
             if binId == None:
                 break
 
-            binStats[binId] = curBinStats
-            seqStats[binId] = curSeqStats
-
+            fout.write(binId + '\t' + str(curBinStats) + '\n')
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
                 statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
@@ -146,18 +144,9 @@ class BinStatistics():
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
 
-        # save results
-        storagePath = os.path.join(outDir, 'storage')
-
-        fout = open(os.path.join(storagePath, binStatsFile), 'w')
-        fout.write(str(binStats))
         fout.close()
 
-        fout = open(os.path.join(storagePath, seqStatsFile), 'w')
-        fout.write(str(seqStats))
-        fout.close()
-
-    def calculateGC(self, seqs, seqStats):
+    def calculateGC(self, seqs, seqStats=None):
         """Calculate fraction of nucleotides that are G or C."""
         totalGC = 0
         totalAT = 0
@@ -175,7 +164,9 @@ class BinStatistics():
                 gcContent = float(gc) / (gc + at)
             else:
                 gcContent = 0.0
-            seqStats[seqId]['GC'] = gcContent
+
+            if seqStats:
+                seqStats[seqId]['GC'] = gcContent
 
             if len(seq) > DefaultValues.MIN_SEQ_LEN_GC_STD:
                 gcPerSeq.append(gcContent)
@@ -191,7 +182,7 @@ class BinStatistics():
 
         return GC, math.sqrt(varGC)
 
-    def calculateSeqStats(self, scaffolds, scaffoldsStats):
+    def calculateSeqStats(self, scaffolds, seqStats=None):
         """Calculate scaffold length statistics (min length, max length, total length, N50, # contigs)."""
         scaffoldLens = []
         contigLens = []
@@ -209,18 +200,19 @@ class BinStatistics():
 
             contigLens += lenContigsInScaffold
 
-            scaffoldsStats[scaffoldId]['Length'] = scaffoldLen
-            scaffoldsStats[scaffoldId]['Total contig length'] = sum(lenContigsInScaffold)
-            scaffoldsStats[scaffoldId]['# contigs'] = len(lenContigsInScaffold)
+            if seqStats:
+                seqStats[scaffoldId]['Length'] = scaffoldLen
+                seqStats[scaffoldId]['Total contig length'] = sum(lenContigsInScaffold)
+                seqStats[scaffoldId]['# contigs'] = len(lenContigsInScaffold)
 
             numAmbiguousBases += scaffold.count('N') + scaffold.count('n')
 
         scaffold_N50 = calculateN50(scaffoldLens)
         contig_N50 = calculateN50(contigLens)
 
-        return max(scaffoldLens), max(contigLens), sum(scaffoldLens), scaffold_N50, contig_N50, len(contigLens), numAmbiguousBases
+        return max(scaffoldLens), max(contigLens), sum(scaffoldLens), scaffold_N50, contig_N50, mean(scaffoldLens), mean(contigLens), len(contigLens), numAmbiguousBases
 
-    def calculateCodingDensity(self, outDir, genomeSize, seqStats):
+    def calculateCodingDensity(self, outDir, genomeSize):
         """Calculate coding density of putative genome bin."""
         gffFile = os.path.join(outDir, DefaultValues.PRODIGAL_GFF)
         if os.path.exists(gffFile):
@@ -229,22 +221,47 @@ class BinStatistics():
             aaFile = os.path.join(outDir, DefaultValues.PRODIGAL_AA)  # use AA file as nucleotide file is optional
             aaGenes = readFasta(aaFile)
 
-            codingBasePairs = self.__calculateCodingBases(aaGenes, seqStats)
+            codingBasePairs = self.__calculateCodingBases(aaGenes)
 
             return float(codingBasePairs) / genomeSize, prodigalParserGFF.translationTable, len(aaGenes)
         else:
-            # there is not gene feature file (perhaps the user specified precalculated genes)
-            # so calculting the coding density is not possible
+            # there is no gene feature file (perhaps the user specified pre-calculated genes)
+            # so calculating the coding density is not possible
             return -1, -1, -1
 
-    def __calculateCodingBases(self, aaGenes, seqStats):
+    def __calculateCodingBases(self, aaGenes):
         """Calculate number of coding bases in a set of genes."""
         codingBasePairs = 0
-        for geneId, gene in aaGenes.iteritems():
+        for _geneId, gene in aaGenes.iteritems():
             codingBasePairs += len(gene) * 3
 
-            scaffoldId = geneId[0:geneId.rfind('_')]
-            seqStats[scaffoldId]['# ORFs'] = seqStats[scaffoldId].get('# ORFs', 0) + 1
-            seqStats[scaffoldId]['Coding bases'] = seqStats[scaffoldId].get('Coding bases', 0) + len(gene) * 3
-
         return codingBasePairs
+
+    def sequenceStats(self, outDir, binFile):
+        """Calculate statistics for all sequences within a bin."""
+
+        # read scaffolds
+        seqs = readFasta(binFile)
+
+        seqStats = {}
+        for seqId in seqs:
+            seqStats[seqId] = {}
+
+        self.calculateGC(seqs, seqStats)
+        self.calculateSeqStats(seqs, seqStats)
+
+        binId = binIdFromFilename(binFile)
+        aaFile = os.path.join(outDir, 'bins', binId, DefaultValues.PRODIGAL_AA)
+        if os.path.exists(aaFile):
+            aaGenes = readFasta(aaFile)
+            for geneId, gene in aaGenes.iteritems():
+                seqId = geneId[0:geneId.rfind('_')]
+                seqStats[seqId]['# ORFs'] = seqStats[seqId].get('# ORFs', 0) + 1
+                seqStats[seqId]['Coding bases'] = seqStats[seqId].get('Coding bases', 0) + len(gene) * 3
+        else:
+            # missing amino acid file likely indicates users used a pre-called gene file, so
+            # just set some defaults
+            seqStats[seqId]['# ORFs'] = seqStats[seqId].get('# ORFs', 0) + 1
+            seqStats[seqId]['Coding bases'] = seqStats[seqId].get('Coding bases', 0) + len(gene) * 3
+
+        return seqStats

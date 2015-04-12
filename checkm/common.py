@@ -61,6 +61,19 @@ def findNearest(array, value):
     return array[idx]
 
 
+def checkEmptyDir(inputDir):
+    """Check the the specified directory is empty and create it if necessary."""
+    if not os.path.exists(inputDir):
+        makeSurePathExists(inputDir)
+    else:
+        # check if directory is empty
+        files = os.listdir(inputDir)
+        if len(files) != 0:
+            logger = logging.getLogger()
+            logger.warning('  [Warning] Output directory must be empty: ' + inputDir + '\n')
+            sys.exit()
+
+
 def checkFileExists(inputFile):
     """Check if file exists."""
     if not os.path.exists(inputFile):
@@ -79,6 +92,9 @@ def checkDirExists(inputDir):
 
 def makeSurePathExists(path):
     """Create directory if it does not exist."""
+    if not path:
+        return
+
     try:
         os.makedirs(path)
     except OSError as exception:
@@ -105,7 +121,7 @@ def reassignStdOut(outFile):
             sys.stdout = open(outFile, 'w')
         except:
             logger = logging.getLogger()
-            logger.error("   [Error] Error diverting stout to file: " + outFile)
+            logger.error("   [Error] Error diverting stdout to file: " + outFile)
             sys.exit()
 
     return oldStdOut

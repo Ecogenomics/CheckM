@@ -141,16 +141,17 @@ class VerifyEcoli():
         np.testing.assert_equal(binStats['637000110']['Genome size'], 4646332, err_msg="Failed genome size test")
 
         # verify sequence stats using  independently verified ground truth values
-        with open(os.path.join(outdir, 'storage', DefaultValues.SEQ_STATS_PHYLO_OUT), 'r') as f:
-            s = f.read()
-            seqStats = ast.literal_eval(s)
+        # [The sequence stats file is not generated in CheckM >= v0.9.8 in order to reduce memory requirements.]
+        # with open(os.path.join(outdir, 'storage', DefaultValues.SEQ_STATS_PHYLO_OUT), 'r') as f:
+        #    s = f.read()
+        #    seqStats = ast.literal_eval(s)
 
-        np.testing.assert_almost_equal(seqStats['637000110']['AC_000091']['GC'], 0.508, decimal=3, err_msg="Failed GC test")
-        np.testing.assert_equal(seqStats['637000110']['AC_000091']['Total contig length'], 4646332, err_msg="Failed total contig length test")
+        # np.testing.assert_almost_equal(seqStats['637000110']['AC_000091']['GC'], 0.508, decimal=3, err_msg="Failed GC test")
+        # np.testing.assert_equal(seqStats['637000110']['AC_000091']['Total contig length'], 4646332, err_msg="Failed total contig length test")
         # np.testing.assert_equal(seqStats['637000110']['AC_000091']['Coding bases'], 4077069, err_msg="Failed coding bases test") # depends on exact version of prodigal
         # np.testing.assert_equal(seqStats['637000110']['AC_000091']['# ORFs'], 4326, err_msg="Failed # genes test") # depends on exact version of prodigal
-        np.testing.assert_equal(seqStats['637000110']['AC_000091']['Length'], 4646332, err_msg="Failed length test")
-        np.testing.assert_equal(seqStats['637000110']['AC_000091']['# contigs'], 1, err_msg="Failed # contigs test")
+        # np.testing.assert_equal(seqStats['637000110']['AC_000091']['Length'], 4646332, err_msg="Failed length test")
+        # np.testing.assert_equal(seqStats['637000110']['AC_000091']['# contigs'], 1, err_msg="Failed # contigs test")
 
     def verifyTreeQA(self, qaTableFile):
         """Verify output of tree QA command."""
@@ -220,16 +221,17 @@ class VerifyEcoli():
         np.testing.assert_equal(binStats['637000110']['Genome size'], 4646332, err_msg="Failed genome size test")
 
         # verify sequence stats using  independently verified ground truth values
-        with open(os.path.join(outdir, 'storage', DefaultValues.SEQ_STATS_OUT), 'r') as f:
-            s = f.read()
-            seqStats = ast.literal_eval(s)
+        # [The sequence stats file is not generated in CheckM >= v0.9.8 in order to reduce memory requirements.]
+        # with open(os.path.join(outdir, 'storage', DefaultValues.SEQ_STATS_OUT), 'r') as f:
+        #    s = f.read()
+        #    seqStats = ast.literal_eval(s)
 
-        np.testing.assert_almost_equal(seqStats['637000110']['AC_000091']['GC'], 0.508, decimal=3, err_msg="Failed GC test")
-        np.testing.assert_equal(seqStats['637000110']['AC_000091']['Total contig length'], 4646332, err_msg="Failed total contig length test")
+        # np.testing.assert_almost_equal(seqStats['637000110']['AC_000091']['GC'], 0.508, decimal=3, err_msg="Failed GC test")
+        # np.testing.assert_equal(seqStats['637000110']['AC_000091']['Total contig length'], 4646332, err_msg="Failed total contig length test")
         # np.testing.assert_equal(seqStats['637000110']['AC_000091']['Coding bases'], 4077069, err_msg="Failed coding bases test") # depends on exact version of prodigal
         # np.testing.assert_equal(seqStats['637000110']['AC_000091']['# ORFs'], 4326, err_msg="Failed # genes test") # depends on exact version of prodigal
-        np.testing.assert_equal(seqStats['637000110']['AC_000091']['Length'], 4646332, err_msg="Failed length test")
-        np.testing.assert_equal(seqStats['637000110']['AC_000091']['# contigs'], 1, err_msg="Failed # contigs test")
+        # np.testing.assert_equal(seqStats['637000110']['AC_000091']['Length'], 4646332, err_msg="Failed length test")
+        # np.testing.assert_equal(seqStats['637000110']['AC_000091']['# contigs'], 1, err_msg="Failed # contigs test")
 
     def verifyQA(self, qaTableFile):
         """Verify output of qa command."""

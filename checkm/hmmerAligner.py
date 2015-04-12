@@ -405,6 +405,7 @@ class HmmerAligner:
 
     def __extractSeq(self, seqId, seqs):
         """Extract sequence data."""
+
         if DefaultValues.SEQ_CONCAT_CHAR in seqId:
             seqIds = seqId.split(DefaultValues.SEQ_CONCAT_CHAR)
 

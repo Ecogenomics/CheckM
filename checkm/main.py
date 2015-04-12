@@ -1,8 +1,4 @@
 ###############################################################################
-#
-# checkm.py - wraps coarse workflows
-#
-###############################################################################
 #                                                                             #
 #    This program is free software: you can redistribute it and/or modify     #
 #    it under the terms of the GNU General Public License as published by     #
@@ -48,7 +44,7 @@ from checkm.profile import Profile
 from checkm.binTools import BinTools
 from checkm.ssuFinder import SSU_Finder
 from checkm.PCA import PCA
-from checkm.common import makeSurePathExists, checkFileExists, binIdFromFilename, reassignStdOut, restoreStdOut, getBinIdsFromOutDir, checkDirExists
+from checkm.common import makeSurePathExists, checkFileExists, binIdFromFilename, reassignStdOut, restoreStdOut, getBinIdsFromOutDir, checkDirExists, checkEmptyDir
 
 from checkm.plot.gcPlots import GcPlots
 from checkm.plot.codingDensityPlots import CodingDensityPlots
@@ -108,7 +104,7 @@ class OptionsParser():
         binFiles = self.binFiles(options.bin_folder, options.extension)
 
         # setup directory structure
-        makeSurePathExists(options.out_folder)
+        checkEmptyDir(options.out_folder)
         makeSurePathExists(os.path.join(options.out_folder, 'bins'))
         makeSurePathExists(os.path.join(options.out_folder, 'storage'))
 
@@ -131,7 +127,7 @@ class OptionsParser():
         # calculate statistics for each genome bin
         self.logger.info('')
         binStats = BinStatistics(options.threads)
-        binStats.calculate(binFiles, options.out_folder, DefaultValues.BIN_STATS_PHYLO_OUT, DefaultValues.SEQ_STATS_PHYLO_OUT)
+        binStats.calculate(binFiles, options.out_folder, DefaultValues.BIN_STATS_PHYLO_OUT)
 
         # align identified marker genes
         self.logger.info('')
@@ -171,9 +167,8 @@ class OptionsParser():
 
         # calculate marker gene statistics
         RP = ResultsParser(binIdToModels)
-        binStats, _ = RP.analyseResults(options.tree_folder,
+        binStats = RP.analyseResults(options.tree_folder,
                                           DefaultValues.BIN_STATS_PHYLO_OUT,
-                                          DefaultValues.SEQ_STATS_PHYLO_OUT,
                                           DefaultValues.HMMER_TABLE_PHYLO_OUT)
 
         # determine taxonomy of each bin
@@ -182,7 +177,6 @@ class OptionsParser():
         treeParser.printSummary(options.out_format, options.tree_folder, RP, options.bTabTable, options.file, binStats)
 
         if options.file != '':
-            self.logger.info('')
             self.logger.info('  QA information written to: ' + options.file)
 
         self.timeKeeper.printTimeStamp()
@@ -205,9 +199,8 @@ class OptionsParser():
         # calculate marker gene statistics
         resultsParser = ResultsParser(binIdToModels)
         resultsParser.analyseResults(options.tree_folder,
-                                          DefaultValues.BIN_STATS_PHYLO_OUT,
-                                          DefaultValues.SEQ_STATS_PHYLO_OUT,
-                                          DefaultValues.HMMER_TABLE_PHYLO_OUT)
+                                      DefaultValues.BIN_STATS_PHYLO_OUT,
+                                      DefaultValues.HMMER_TABLE_PHYLO_OUT)
 
         # These options are incompatible with how the lineage-specific marker set is selected, so
         # the default values are currently hard-coded
@@ -323,7 +316,7 @@ class OptionsParser():
         # calculate statistics for each genome bin
         self.logger.info('')
         binStats = BinStatistics(options.threads)
-        binStats.calculate(binFiles, options.out_folder, DefaultValues.BIN_STATS_OUT, DefaultValues.SEQ_STATS_OUT)
+        binStats.calculate(binFiles, options.out_folder, DefaultValues.BIN_STATS_OUT)
 
         self.timeKeeper.printTimeStamp()
 
@@ -368,6 +361,9 @@ class OptionsParser():
 
         checkDirExists(options.analyze_folder)
 
+        if options.exclude_markers:
+            checkFileExists(options.exclude_markers)
+
         # calculate AAI between marks with multiple hits in a single bin
         aai = AminoAcidIdentity()
         aai.run(options.aai_strain, options.analyze_folder, options.alignment_file)
@@ -379,18 +375,21 @@ class OptionsParser():
         hmmModelInfoFile = os.path.join(options.analyze_folder, 'storage', DefaultValues.CHECKM_HMM_MODEL_INFO)
         binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
 
-        binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.analyze_folder, getBinIdsFromOutDir(options.analyze_folder), options.marker_file)
+        binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.analyze_folder,
+                                                             getBinIdsFromOutDir(options.analyze_folder),
+                                                             options.marker_file,
+                                                             options.exclude_markers)
 
         # get results for each bin
         RP = ResultsParser(binIdToModels)
         RP.analyseResults(options.analyze_folder,
                           DefaultValues.BIN_STATS_OUT,
-                          DefaultValues.SEQ_STATS_OUT,
                           DefaultValues.HMMER_TABLE_OUT,
                           bIgnoreThresholds=options.bIgnoreThresholds,
                           evalueThreshold=options.e_value,
                           lengthThreshold=options.length,
-                          bSkipOrfCorrection=options.bSkipOrfCorrection
+                          bSkipPseudoGeneCorrection=options.bSkipPseudoGeneCorrection,
+                          bSkipAdjCorrection=options.bSkipAdjCorrection
                           )
 
         self.logger.info('')
@@ -742,6 +741,9 @@ class OptionsParser():
             self.logger.info('  Plotting marker gene position plot for %s (%d of %d)' % (binId, filesProcessed, len(binFiles)))
             filesProcessed += 1
 
+            if binId not in markerGeneStats or binId not in binStats:
+                continue  # bin has no marker genes
+
             bPlotted = plot.plot(f, markerGeneStats[binId], binStats[binId])
 
             if bPlotted:
@@ -767,15 +769,20 @@ class OptionsParser():
 
         binFiles = self.binFiles(options.bin_folder, options.extension)
 
-        # read sequence stats file
-        resultsParser = ResultsParser(None)
-        seqStats = resultsParser.parseSeqStats(options.out_folder, DefaultValues.SEQ_STATS_OUT)
-
         # read coverage stats file
         coverage = Coverage(threads=1)
         coverageStats = coverage.parseCoverage(options.coverage_file)
 
+        # calculate sequence stats for all bins
+        self.logger.info('  Calculating sequence statistics for each bin.')
+        binStats = BinStatistics()
+        seqStats = {}
+        for f in binFiles:
+            binId = binIdFromFilename(f)
+            seqStats[binId] = binStats.sequenceStats(options.out_folder, f)
+
         # create plot for each bin
+        self.logger.info('')
         plot = ParallelCoordPlot(options)
         filesProcessed = 1
         for f in binFiles:
@@ -814,17 +821,19 @@ class OptionsParser():
 
         # create plot for each bin
         plot = BinQAPlot(options)
+        bMakePlot = True
         if not options.bIgnoreHetero:
             aai = AminoAcidIdentity()
             aai.run(options.aai_strain, options.out_folder, None)
-            plot.plot(binFiles, binStatsExt, options.bIgnoreHetero, aai.aaiHetero)
+            bMakePlot = plot.plot(binFiles, binStatsExt, options.bIgnoreHetero, aai.aaiHetero)
         else:
-            plot.plot(binFiles, binStatsExt, options.bIgnoreHetero, None)
+            bMakePlot = plot.plot(binFiles, binStatsExt, options.bIgnoreHetero, None)
 
-        outputFile = os.path.join(options.plot_folder, 'bin_qa_plot.' + options.image_type)
-        plot.savePlot(outputFile, dpi=options.dpi)
-        self.logger.info('')
-        self.logger.info('  Plot written to: ' + outputFile)
+        if bMakePlot:
+            outputFile = os.path.join(options.plot_folder, 'bin_qa_plot.' + options.image_type)
+            plot.savePlot(outputFile, dpi=options.dpi)
+            self.logger.info('')
+            self.logger.info('  Plot written to: ' + outputFile)
 
         self.timeKeeper.printTimeStamp()
 
@@ -858,6 +867,7 @@ class OptionsParser():
         self.logger.info('')
 
         checkDirExists(options.bin_folder)
+        makeSurePathExists(os.path.dirname(options.output_file))
 
         binFiles = self.binFiles(options.bin_folder, options.extension)
 
@@ -876,6 +886,7 @@ class OptionsParser():
         self.logger.info('*******************************************************************************')
 
         checkFileExists(options.seq_file)
+        makeSurePathExists(os.path.dirname(options.output_file))
 
         self.logger.info('')
         tetraSig = GenomicSignatures(4, options.threads)
@@ -965,6 +976,7 @@ class OptionsParser():
 
         checkDirExists(options.bin_folder)
         checkFileExists(options.tetra_profile)
+        makeSurePathExists(os.path.dirname(options.output_file))
 
         binFiles = self.binFiles(options.bin_folder, options.extension)
 
@@ -1028,6 +1040,8 @@ class OptionsParser():
         self.logger.info(' [CheckM - modify] Modifying sequences in bin.')
         self.logger.info('*******************************************************************************')
         self.logger.info('')
+
+        makeSurePathExists(os.path.dirname(options.output_file))
 
         if not (options.add or options.remove or options.outlier_file):
             self.logger.warning('  [Warning] No modification to bin requested.\n')
@@ -1197,7 +1211,7 @@ class OptionsParser():
             options.analyze_folder = options.out_folder
             options.out_format = 1
             options.bAlignTopHit = False
-            options
+            options.exclude_markers = None
 
             self.tree(options)
             self.lineageSet(options)
@@ -1208,6 +1222,7 @@ class OptionsParser():
             options.analyze_folder = options.out_folder
             options.out_format = 1
             options.bAlignTopHit = False
+            options.exclude_markers = None
 
             self.taxonSet(options)
             self.analyze(options)

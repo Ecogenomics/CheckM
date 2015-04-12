@@ -89,7 +89,7 @@ class BinMarkerSets():
             if len(self.markerSets) == 1:
                 return self.markerSets[0]
 
-            self.logger.error('  [Error] Expected a single marker set to be associated with each bin.\n')
+            self.logger.error('  [Error] Expect a single marker set to be associated with each bin.')
             sys.exit()
 
     def setLineageSpecificSelectedMarkerSet(self, selectedMarkerSetMap):
@@ -105,8 +105,22 @@ class BinMarkerSets():
 
         if self.selectedLinageSpecificMarkerSet == None:
             # something has gone wrong
-            self.logger.error('  [Error] Failed to set a selected lineage-specific marker set.\n')
+            self.logger.error('  [Error] Failed to set a selected lineage-specific marker set.')
             sys.exit()
+
+    def removeMarkers(self, markersToRemove):
+        """Remove specified markers from all marker sets."""
+        for markerSet in self.markerSets:
+            curMarkerSet = markerSet.markerSet
+
+            newMarkerSet = []
+            for ms in curMarkerSet:
+                newMS = ms - markersToRemove
+
+                if len(newMS) != 0:
+                    newMarkerSet.append(newMS)
+
+            markerSet.markerSet = newMarkerSet
 
     def write(self, fout):
         """Write marker set to file."""
@@ -208,7 +222,7 @@ class MarkerSetParser():
         self.logger = logging.getLogger()
         self.numThreads = threads
 
-    def getMarkerSets(self, outDir, binIds, markerFile):
+    def getMarkerSets(self, outDir, binIds, markerFile, excludeMarkersFile=None):
         """Determine marker set for each bin."""
 
         # determine type of marker set file
@@ -236,7 +250,28 @@ class MarkerSetParser():
                 binMarkerSets.addMarkerSet(markerSet)
                 binIdToBinMarkerSets[binId] = binMarkerSets
 
+        # remove marker genes specified by user or marker for exclusion
+        markersToExclude = set()
+        if excludeMarkersFile:
+            markersToExclude = self.readExcludeMarkersFile(excludeMarkersFile)
+
+        markersToExclude.update(DefaultValues.MARKERS_TO_EXCLUDE)
+        for binId, binMarkerSet in binIdToBinMarkerSets.iteritems():
+            binMarkerSet.removeMarkers(markersToExclude)
+
         return binIdToBinMarkerSets
+
+    def readExcludeMarkersFile(self, excludeMarkersFile):
+        """Parse file specifying markers to exclude."""
+        markersToExclude = set()
+        for line in open(excludeMarkersFile):
+            if line[0] == '#':
+                continue
+
+            marker = line.strip()
+            markersToExclude.add(marker)
+
+        return markersToExclude
 
     def createHmmModels(self, outDir, binIds, markerFile):
         """Create HMM model for each bins marker set."""
