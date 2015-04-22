@@ -418,7 +418,7 @@ class MarkerSetParser():
             sys.exit()
 
     def __createMarkerHMMs(self, binMarkerSet, outputFile, bReportProgress=True):
-        """Create HMM file for taxonomic markers."""
+        """Create HMM file for markers."""
 
         # get list of marker genes
         markerGenes = binMarkerSet.getMarkerGenes()

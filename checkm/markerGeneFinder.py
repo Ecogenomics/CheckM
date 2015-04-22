@@ -156,7 +156,12 @@ class MarkerGeneFinder():
 
             binIdToModels[binId] = models
 
-            os.remove(hmmModelFile)
+            if os.path.exists(hmmModelFile):
+                os.remove(hmmModelFile)
+
+            indexFile = hmmModelFile + '.ssi'
+            if os.path.exists(indexFile):
+                os.remove(indexFile)
 
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1
