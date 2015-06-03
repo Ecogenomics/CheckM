@@ -393,7 +393,7 @@ class OptionsParser():
                           )
 
         self.logger.info('')
-        RP.printSummary(options.out_format, aai, binIdToBinMarkerSets, options.bIndividualMarkers, options.coverage_file, options.bTabTable, options.file)
+        RP.printSummary(options.out_format, aai, binIdToBinMarkerSets, options.bIndividualMarkers, options.coverage_file, options.bTabTable, options.file, anaFolder=options.analyze_folder)
         RP.cacheResults(options.analyze_folder, binIdToBinMarkerSets, options.bIndividualMarkers)
 
         if options.file != '':

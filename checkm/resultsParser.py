@@ -35,7 +35,7 @@ from checkm.coverage import Coverage
 from checkm.hmmer import HMMERParser
 
 from checkm.util.pfam import PFAM
-
+from checkm.util.seqUtils import readFasta, writeFasta
 
 class ResultsParser():
     """Parse output of Prodigal+HMMER run and derived statistics."""
@@ -234,10 +234,12 @@ class ResultsParser():
             header = ['Bin Id', 'Gene Id', '{Marker Id, Start position, End position}']
         elif outputFormat == 9:
             header = ['Scaffold Id', 'Bin Id', 'Length', '# contigs', 'GC', '# ORFs', 'Coding density', 'Marker Ids']
+        elif outputFormat == 10:
+            header = None
 
         return header
 
-    def printSummary(self, outputFormat, aai, binIdToBinMarkerSets, bIndividualMarkers, coverageFile, bTabTable, outFile):
+    def printSummary(self, outputFormat, aai, binIdToBinMarkerSets, bIndividualMarkers, coverageFile, bTabTable, outFile, anaFolder):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
@@ -265,7 +267,7 @@ class ResultsParser():
 
         seqsReported = 0
         for binId in sorted(self.results.keys()):
-            seqsReported += self.results[binId].printSummary(outputFormat, aai, binIdToBinMarkerSets[binId], bIndividualMarkers, coverageBinProfiles, pTable)
+            seqsReported += self.results[binId].printSummary(outputFormat, aai, binIdToBinMarkerSets[binId], bIndividualMarkers, coverageBinProfiles, pTable, anaFolder)
 
         if outputFormat in [6, 7] and seqsReported == 0:
             print('[No marker genes satisfied the reporting criteria.]')
@@ -622,7 +624,8 @@ class ResultsManager():
 
         return summary
 
-    def printSummary(self, outputFormat, aai, binMarkerSets, bIndividualMarkers, coverageBinProfiles=None, table=None):
+    def printSummary(self, outputFormat, aai, binMarkerSets, bIndividualMarkers, coverageBinProfiles=None, table=None, anaFolder=None):
+
         """Print out information about bin."""
         if outputFormat == 1:
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
@@ -789,13 +792,66 @@ class ResultsManager():
                     rowStr += '\t' + hit.query_accession + ',' + str(hit.ali_from) + ',' + str(hit.ali_to)
                 print(rowStr)
 
+        # Hunter Cameron, May 29, 2015 - print a fasta of marker genes
+        elif outputFormat == 10:
+            # tabular of bin_id, marker, contig_id
+           
+            # check for the analyze folder for later use
+            if anaFolder is None:
+                raise ValueError("AnaFolder must not be None for outputFormat 10")
+
+            ### build a dict to link target_names with marker gene alignment information
+            markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
+            hitInfo = {}
+            for marker, hit_list in self.markerHits.items():
+                if marker not in markerGenes:
+                    continue
+
+                for hit in hit_list:
+                    name = hit.target_name
+                    hitInfo[name] = {
+                            "marker": marker,
+                            "ali_from": hit.ali_from,
+                            "ali_to": hit.ali_to
+                            }
+
+            
+            ### Open genes.faa and print the ones that were found with some descriptive info in the header
+            path_to_genes = "/".join([anaFolder, "bins", self.binId, "genes.faa"])
+            for header, seq in readFasta(path_to_genes, trimHeader=False).iteritems():
+                elems = header.split(" # ")
+                gene_name = elems[0]
+                if gene_name in hitInfo:
+
+                    # remove the gene number from Prodigal to get the original contig name
+                    contig_name, gene_num = gene_name.rsplit("_", 1)
+
+                    # parse some info about the gene from the header line
+                    gene_start = elems[1]
+                    gene_end = elems[2]
+                    gene_strand = elems[3]
+
+                    gene_info = "geneId={};start={};end={};strand={};protlen={}".format(
+                            gene_num, gene_start, gene_end, gene_strand, str(len(seq)))
+                    
+                    marker_info = "marker={};mstart={};mend={}".format(
+                            hitInfo[gene_name]["marker"], 
+                            hitInfo[gene_name]["ali_from"], 
+                            hitInfo[gene_name]["ali_to"])
+
+                    # new header will be the bin name, contig name, gene info, and marker info separated by spaces
+                    new_header = ">" + " ".join([self.binId, contig_name, gene_info, marker_info])
+
+                    print(new_header, seq, sep="\n")
+            
+
         else:
             self.logger.error("Unknown output format: %d", outputFormat)
 
         return 0
 
         '''
-        elif outputFormat == 9:
+        elif outputFormat == 10:
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             markersInScaffold = {}
