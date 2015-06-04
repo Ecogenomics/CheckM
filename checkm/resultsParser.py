@@ -196,7 +196,7 @@ class ResultsParser():
         except IOError as detail:
             sys.stderr.write(str(detail) + "\n")
 
-    def __getHeader(self, outputFormat, binMarkerSets, coverageBinProfiles=None):
+    def __getHeader(self, outputFormat, binMarkerSets, coverageBinProfiles=None, table=None):
         """Get header for requested output table."""
 
         # keep count of single, double, triple genes etc...
@@ -235,7 +235,10 @@ class ResultsParser():
         elif outputFormat == 9:
             header = ['Scaffold Id', 'Bin Id', 'Length', '# contigs', 'GC', '# ORFs', 'Coding density', 'Marker Ids']
         elif outputFormat == 10:
-            header = None
+            if table is not None:
+                header = ['Bin Id', 'Contig', 'Gene Number', 'Gene Start', 'Gene End', 'Gene Strand', 'Prot Length', 'Marker Id', 'Align Start', 'Align End', 'Sequence']
+            else:
+                header = " "
 
         return header
 
@@ -248,9 +251,9 @@ class ResultsParser():
             coverage = Coverage(1)
             coverageBinProfiles = coverage.binProfiles(coverageFile)
 
-        prettyTableFormats = [1, 2, 3]
+        prettyTableFormats = [1, 2, 3, 10]
 
-        header = self.__getHeader(outputFormat, binIdToBinMarkerSets[binIdToBinMarkerSets.keys()[0]], coverageBinProfiles)
+        header = self.__getHeader(outputFormat, binIdToBinMarkerSets[binIdToBinMarkerSets.keys()[0]], coverageBinProfiles, bTabTable)
         if bTabTable or outputFormat not in prettyTableFormats:
             bTabTable = True
             pTable = None
@@ -276,7 +279,9 @@ class ResultsParser():
             if outputFormat in [1, 2]:
                 print(pTable.get_string(sortby='Completeness', reversesort=True))
             else:
-                print(pTable.get_string())
+                # only print if there are rows
+                if pTable.get_string(print_empty=False):
+                    print(pTable.get_string(print_empty=False))
 
         # restore stdout
         restoreStdOut(outFile, oldStdOut)
@@ -811,28 +816,49 @@ class ResultsManager():
                     name = hit.target_name
                     hitInfo[name] = {
                             "marker": marker,
-                            "ali_from": hit.ali_from,
-                            "ali_to": hit.ali_to
+                            "ali_from": str(hit.ali_from),
+                            "ali_to": str(hit.ali_to)
                             }
 
             
             ### Open genes.faa and print the ones that were found with some descriptive info in the header
             path_to_genes = "/".join([anaFolder, "bins", self.binId, "genes.faa"])
-            for header, seq in readFasta(path_to_genes, trimHeader=False).iteritems():
+
+
+            # get only the seqs we need and their information as a dict
+            seqs = readFasta(path_to_genes, trimHeader=False)
+
+            filt_seqs = []
+            # remove seqs without markers
+            for header in seqs.keys():
+                gene_name = header.split(" # ")[0]
+                if gene_name in hitInfo:
+                    filt_seqs.append(header)
+
+
+            def sort_header(header):
+                """ sorts headers by contig and gene number """
+                name = header.split(" # ")[0]
+                ctg_name, gene_num = name.rsplit("_", 1)
+                return ctg_name, int(gene_num)
+
+
+            for header in sorted(filt_seqs, key=sort_header):
                 elems = header.split(" # ")
                 gene_name = elems[0]
-                if gene_name in hitInfo:
 
-                    # remove the gene number from Prodigal to get the original contig name
-                    contig_name, gene_num = gene_name.rsplit("_", 1)
+                # remove the gene number from Prodigal to get the original contig name
+                contig_name, gene_num = gene_name.rsplit("_", 1)
 
-                    # parse some info about the gene from the header line
-                    gene_start = elems[1]
-                    gene_end = elems[2]
-                    gene_strand = elems[3]
+                # parse some info about the gene from the header line
+                gene_start = elems[1]
+                gene_end = elems[2]
+                gene_strand = elems[3]
 
+                # if table output not specified, print FASTA
+                if table != None:
                     gene_info = "geneId={};start={};end={};strand={};protlen={}".format(
-                            gene_num, gene_start, gene_end, gene_strand, str(len(seq)))
+                            gene_num, gene_start, gene_end, gene_strand, str(len(seqs[header])))
                     
                     marker_info = "marker={};mstart={};mend={}".format(
                             hitInfo[gene_name]["marker"], 
@@ -842,9 +868,24 @@ class ResultsManager():
                     # new header will be the bin name, contig name, gene info, and marker info separated by spaces
                     new_header = ">" + " ".join([self.binId, contig_name, gene_info, marker_info])
 
-                    print(new_header, seq, sep="\n")
-            
+                    print(new_header, seqs[header], sep="\n")
+                # otherwise, print a table
+                else:
+                    print("\t".join([
+                            self.binId, 
+                            contig_name,
+                            gene_num,
+                            gene_start,
+                            gene_end,
+                            gene_strand,
+                            str(len(seqs[header])),
+                            hitInfo[gene_name]["marker"],
+                            hitInfo[gene_name]["ali_from"],
+                            hitInfo[gene_name]["ali_to"],
+                            seqs[header]
+                            ]))
 
+            
         else:
             self.logger.error("Unknown output format: %d", outputFormat)
 
