@@ -24,7 +24,7 @@ import gzip
 import logging
 
 
-def readFasta(fastaFile):
+def readFasta(fastaFile, trimHeader=True):
     '''Read sequences from FASTA file.'''
     try:
         if fastaFile.endswith('.gz'):
@@ -39,7 +39,10 @@ def readFasta(fastaFile):
                 continue
 
             if line[0] == '>':
-                seqId = line[1:].split(None, 1)[0]
+                if trimHeader:
+                    seqId = line[1:].split(None, 1)[0]
+                else:
+                    seqId = line[1:].rstrip()
                 seqs[seqId] = []
             else:
                 seqs[seqId].append(line[0:-1])
