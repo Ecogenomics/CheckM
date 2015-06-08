@@ -248,9 +248,9 @@ Example: checkm qa ./output/lineage.ms ./output
   6. list of marker genes present multiple times in a bin
   7. list of marker genes present multiple times on the same scaffold
   8. list indicating position of each marker gene within a bin
-  10. FASTA of marker genes identified in each bin''',
-  # 9. scaffold statistics: scaffold id, bin id, length, GC, ..., marker gene(s)''',
-                                default=1, choices=[1, 2, 3, 4, 5, 6, 7, 8, 10])
+  9. FASTA file of marker genes identified in each bin''',
+  # 10. scaffold statistics: scaffold id, bin id, length, GC, ..., marker gene(s)''',
+                                default=1, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9])
     qa_parser.add_argument('--exclude_markers', default=None, help="file specifying marker to exclude from marker sets")
     qa_parser.add_argument('--individual_markers', dest='bIndividualMarkers', action="store_true", default=False, help="treat marker as independent (i.e., ignore co-located set structure)")
     qa_parser.add_argument('--skip_adj_correction', dest='bSkipAdjCorrection', action="store_true", default=False, help="do not exclude adjacent marker genes when estimating contamination")

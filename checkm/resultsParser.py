@@ -233,12 +233,12 @@ class ResultsParser():
         elif outputFormat == 8:
             header = ['Bin Id', 'Gene Id', '{Marker Id, Start position, End position}']
         elif outputFormat == 9:
-            header = ['Scaffold Id', 'Bin Id', 'Length', '# contigs', 'GC', '# ORFs', 'Coding density', 'Marker Ids']
-        elif outputFormat == 10:
             if table is not None:
                 header = ['Bin Id', 'Contig', 'Gene Number', 'Gene Start', 'Gene End', 'Gene Strand', 'Prot Length', 'Marker Id', 'Align Start', 'Align End', 'Sequence']
             else:
                 header = " "
+        elif outputFormat == 10:
+            header = ['Scaffold Id', 'Bin Id', 'Length', '# contigs', 'GC', '# ORFs', 'Coding density', 'Marker Ids']
 
         return header
 
@@ -251,7 +251,7 @@ class ResultsParser():
             coverage = Coverage(1)
             coverageBinProfiles = coverage.binProfiles(coverageFile)
 
-        prettyTableFormats = [1, 2, 3, 10]
+        prettyTableFormats = [1, 2, 3, 9]
 
         header = self.__getHeader(outputFormat, binIdToBinMarkerSets[binIdToBinMarkerSets.keys()[0]], coverageBinProfiles, bTabTable)
         if bTabTable or outputFormat not in prettyTableFormats:
@@ -798,14 +798,14 @@ class ResultsManager():
                 print(rowStr)
 
         # Hunter Cameron, May 29, 2015 - print a fasta of marker genes
-        elif outputFormat == 10:
+        elif outputFormat == 9:
             # tabular of bin_id, marker, contig_id
-           
+
             # check for the analyze folder for later use
             if anaFolder is None:
                 raise ValueError("AnaFolder must not be None for outputFormat 10")
 
-            ### build a dict to link target_names with marker gene alignment information
+            # ## build a dict to link target_names with marker gene alignment information
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
             hitInfo = {}
             for marker, hit_list in self.markerHits.items():
@@ -820,10 +820,8 @@ class ResultsManager():
                             "ali_to": str(hit.ali_to)
                             }
 
-            
-            ### Open genes.faa and print the ones that were found with some descriptive info in the header
+            # ## Open genes.faa and print the ones that were found with some descriptive info in the header
             path_to_genes = "/".join([anaFolder, "bins", self.binId, "genes.faa"])
-
 
             # get only the seqs we need and their information as a dict
             seqs = readFasta(path_to_genes, trimHeader=False)
@@ -835,13 +833,11 @@ class ResultsManager():
                 if gene_name in hitInfo:
                     filt_seqs.append(header)
 
-
             def sort_header(header):
                 """ sorts headers by contig and gene number """
                 name = header.split(" # ")[0]
                 ctg_name, gene_num = name.rsplit("_", 1)
                 return ctg_name, int(gene_num)
-
 
             for header in sorted(filt_seqs, key=sort_header):
                 elems = header.split(" # ")
@@ -859,10 +855,10 @@ class ResultsManager():
                 if table != None:
                     gene_info = "geneId={};start={};end={};strand={};protlen={}".format(
                             gene_num, gene_start, gene_end, gene_strand, str(len(seqs[header])))
-                    
+
                     marker_info = "marker={};mstart={};mend={}".format(
-                            hitInfo[gene_name]["marker"], 
-                            hitInfo[gene_name]["ali_from"], 
+                            hitInfo[gene_name]["marker"],
+                            hitInfo[gene_name]["ali_from"],
                             hitInfo[gene_name]["ali_to"])
 
                     # new header will be the bin name, contig name, gene info, and marker info separated by spaces
@@ -872,7 +868,7 @@ class ResultsManager():
                 # otherwise, print a table
                 else:
                     print("\t".join([
-                            self.binId, 
+                            self.binId,
                             contig_name,
                             gene_num,
                             gene_start,
@@ -884,8 +880,6 @@ class ResultsManager():
                             hitInfo[gene_name]["ali_to"],
                             seqs[header]
                             ]))
-
-            
         else:
             self.logger.error("Unknown output format: %d", outputFormat)
 
