@@ -263,7 +263,7 @@ class SSU_Finder(object):
                 seq = seqs[seqId]
                 summaryOut.write(binId + '\t' + '\t'.join(seqInfo) + '\t' + str(len(seq)) + '\n')
                 seqOut.write('>' + binId + DefaultValues.SEQ_CONCAT_CHAR + seqInfo[0] + '\n')
-                seqOut.write(seq[int(seqInfo[3]):int(seqInfo[4])] + '\n')
+                seqOut.write(seq[int(seqInfo[3]):int(seqInfo[4]) + 1] + '\n')
 
         summaryOut.close()
         seqOut.close()

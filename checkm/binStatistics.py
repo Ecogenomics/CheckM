@@ -34,8 +34,29 @@ from numpy import mean
 
 
 class BinStatistics():
-    """Calculate statistics (GC, coding density, etc.) for genome bins."""
+    """Statistics for genomes.
+
+    This class calculates statistics for genomes comprised
+    of one or more scaffolds. Mean statistics are weighted by
+    scaffold length. The following statistics are calculated:
+     - bin assignment
+     - mean GC
+     - mean and median scaffold length
+     - N50
+     - mean coverage
+     - mean tetranucleotide signature
+
+    """
+
     def __init__(self, threads=1):
+        """Initialization.
+
+        Parameters
+        ----------
+        cpus : int
+            Number of cpus to use.
+        """
+
         self.logger = logging.getLogger()
         self.totalThreads = threads
 
