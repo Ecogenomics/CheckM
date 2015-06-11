@@ -803,7 +803,7 @@ class ResultsManager():
 
             # check for the analyze folder for later use
             if anaFolder is None:
-                raise ValueError("AnaFolder must not be None for outputFormat 10")
+                raise ValueError("AnaFolder must not be None for outputFormat 9")
 
             # ## build a dict to link target_names with marker gene alignment information
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()

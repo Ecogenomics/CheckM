@@ -25,7 +25,11 @@ import logging
 import json
 
 import dendropy
-from  dendropy.dataobject.taxon import Taxon
+
+try:
+    from  dendropy.dataobject.taxon import Taxon
+except:
+    from dendropy.datamodel.taxonmodel import Taxon
 
 import checkm.prettytable as prettytable
 
