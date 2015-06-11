@@ -6,6 +6,7 @@ setup.py
 bin/checkm
 checkm/DATA_CONFIG
 checkm/PCA.py
+checkm/VERSION
 checkm/__init__.py
 checkm/aminoAcidIdentity.py
 checkm/binComparer.py
@@ -16,6 +17,7 @@ checkm/checkmData.py
 checkm/common.py
 checkm/coverage.py
 checkm/coverageWindows.py
+checkm/customHelpFormatter.py
 checkm/defaultValues.py
 checkm/genomicSignatures.py
 checkm/hmmer.py

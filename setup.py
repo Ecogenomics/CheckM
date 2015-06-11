@@ -25,6 +25,6 @@ setup(
         "scipy >= 0.9.0",
         "matplotlib >= 1.3.1",
         "pysam >= 0.7.4",
-        "dendropy >= 3.12.0",
+        "dendropy >= 4.0.0",
         "ScreamingBackpack >= 0.2.333"],
 )

@@ -25,11 +25,7 @@ import logging
 import json
 
 import dendropy
-
-try:
-    from  dendropy.dataobject.taxon import Taxon
-except:
-    from dendropy.datamodel.taxonmodel import Taxon
+from dendropy.datamodel.taxonmodel import Taxon
 
 import checkm.prettytable as prettytable
 
@@ -109,7 +105,7 @@ class TreeParser():
 
         # read tree
         treeFile = os.path.join(outDir, 'storage', 'tree', DefaultValues.PPLACER_TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
+        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
 
         # clean up internal node labels
         for node in tree.internal_nodes():
@@ -162,7 +158,7 @@ class TreeParser():
         # read genome tree (if it exists)
         binIdToUID = {}
         treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
+        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
 
         # find first parent of each bin with a taxonomic label
         for binId in binIds:
@@ -193,7 +189,7 @@ class TreeParser():
         # read genome tree (if it exists)
         binIdToTaxonomy = {}
         treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
+        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
 
         # find first parent of each bin with a taxonomic label
         for binId in binIds:
@@ -264,7 +260,7 @@ class TreeParser():
 
         # read genome tree
         treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
+        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
 
         # read taxonomy string for each IMG genome
         leafIdToTaxonomy = {}
@@ -479,7 +475,7 @@ class TreeParser():
 
         # determine marker set for each bin
         treeFile = os.path.join(outDir, 'storage', 'tree', DefaultValues.PPLACER_TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
+        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
         rootNode = tree.find_node(filter_fn=lambda n: n.parent_node == None)
 
         fout = open(markerFile, 'w')
@@ -587,7 +583,7 @@ class TreeParser():
 
         # read genome tree
         treeFile = os.path.join(outDir, 'storage', 'tree', DefaultValues.PPLACER_TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
+        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
 
         # find first parent of each bin with a label
         binIdToLineageStatistics = {}
