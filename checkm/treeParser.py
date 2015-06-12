@@ -25,7 +25,6 @@ import logging
 import json
 
 import dendropy
-from dendropy.datamodel.taxonmodel import Taxon
 
 import checkm.prettytable as prettytable
 
@@ -128,7 +127,7 @@ class TreeParser():
                 curLeaf = leaf.parent_node.remove_child(leaf)
                 newParent.new_child(taxon=curLeaf.taxon, edge_length=0)
                 for d in duplicates:
-                    newParent.new_child(taxon=Taxon(label=d), edge_length=0)
+                    newParent.new_child(taxon=dendropy.Taxon(label=d), edge_length=0)
 
         # append taxonomy to leaf nodes
         if leafLabels == 'taxonomy':

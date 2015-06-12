@@ -25,6 +25,7 @@ import os
 import ast
 import shutil
 
+from checkm.resultsParser import ResultsParser
 from checkm.markerSets import MarkerSet
 from checkm.defaultValues import DefaultValues
 from checkm.common import makeSurePathExists, checkFileExists
@@ -107,11 +108,13 @@ class VerifyEcoli():
         options.alignment_file = None
         options.analyze_folder = options.out_folder
         options.out_format = 1
+        options.exclude_markers = None
+        options.bSkipPseudoGeneCorrection = False
+        options.bSkipAdjCorrection = False
         options.file = os.path.join(options.out_folder, 'qa_test.tsv')
         options.bIndividualMarkers = False
-        options.bSkipOrfCorrection = False
         options.bIgnoreThresholds = False
-        options.aai_strain = 0.95
+        options.aai_strain = 0.9
         options.e_value = 1e-10
         options.length = 0.7
         options.coverage_file = None
@@ -124,9 +127,7 @@ class VerifyEcoli():
         """Verify output of tree command."""
 
         # verify bin stats using independently verified ground truth values
-        with open(os.path.join(outdir, 'storage', DefaultValues.BIN_STATS_PHYLO_OUT), 'r') as f:
-            s = f.read()
-            binStats = ast.literal_eval(s)
+        binStats = ResultsParser(None).parseBinStats(outdir, DefaultValues.BIN_STATS_PHYLO_OUT)
 
         np.testing.assert_almost_equal(binStats['637000110']['GC'], 0.508, decimal=3, err_msg="Failed GC test")
         np.testing.assert_almost_equal(binStats['637000110']['GC std'], 0.0, err_msg="Failed GC std test")
@@ -187,7 +188,7 @@ class VerifyEcoli():
                     uid = lineSplit[2]
                     lineage = lineSplit[3]
                     numGenomes = int(lineSplit[4])
-                    markerSet = MarkerSet(uid, lineage, numGenomes, eval(lineSplit[5].rstrip()))
+                    _markerSet = MarkerSet(uid, lineage, numGenomes, eval(lineSplit[5].rstrip()))
 
         np.testing.assert_almost_equal(int(binId), 637000110, err_msg="Failed bin ID test")
         if not bRequireTaxonomy:
@@ -203,10 +204,8 @@ class VerifyEcoli():
     def verifyAnalyze(self, outdir):
         """Verify output of analyze command."""
 
-                # verify bin stats using independently verified ground truth values
-        with open(os.path.join(outdir, 'storage', DefaultValues.BIN_STATS_OUT), 'r') as f:
-            s = f.read()
-            binStats = ast.literal_eval(s)
+        # verify bin stats using independently verified ground truth values
+        binStats = ResultsParser(None).parseBinStats(outdir, DefaultValues.BIN_STATS_OUT)
 
         np.testing.assert_almost_equal(binStats['637000110']['GC'], 0.508, decimal=3, err_msg="Failed GC test")
         np.testing.assert_almost_equal(binStats['637000110']['GC std'], 0.0, err_msg="Failed GC std test")

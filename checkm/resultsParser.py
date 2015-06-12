@@ -35,7 +35,8 @@ from checkm.coverage import Coverage
 from checkm.hmmer import HMMERParser
 
 from checkm.util.pfam import PFAM
-from checkm.util.seqUtils import readFasta, writeFasta
+from checkm.util.seqUtils import readFasta
+
 
 class ResultsParser():
     """Parse output of Prodigal+HMMER run and derived statistics."""
