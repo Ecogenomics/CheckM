@@ -35,52 +35,6 @@ from checkm.util.seqUtils import readFasta
 from numpy import mean, sqrt
 
 
-class ReadLoader:
-    """Callback for counting aligned reads with pysam.fetch"""
-
-    def __init__(self, refLength, bAllReads, minAlignPer, maxEditDistPer):
-        self.bAllReads = bAllReads
-        self.minAlignPer = minAlignPer
-        self.maxEditDistPer = maxEditDistPer
-
-        self.numReads = 0
-        self.numMappedReads = 0
-        self.numDuplicates = 0
-        self.numSecondary = 0
-        self.numFailedQC = 0
-        self.numFailedAlignLen = 0
-        self.numFailedEditDist = 0
-        self.numFailedProperPair = 0
-
-        self.coverage = 0
-
-    def __call__(self, read):
-        self.numReads += 1
-
-        if read.is_unmapped:
-            pass
-        elif read.is_duplicate:
-            self.numDuplicates += 1
-        elif read.is_secondary:
-            self.numSecondary += 1
-        elif read.is_qcfail:
-            self.numFailedQC += 1
-        elif read.alen < self.minAlignPer * read.rlen:
-            self.numFailedAlignLen += 1
-        elif read.opt('NM') > self.maxEditDistPer * read.rlen:
-            self.numFailedEditDist += 1
-        elif not self.bAllReads and not read.is_proper_pair:
-            self.numFailedProperPair += 1
-        else:
-            self.numMappedReads += 1
-
-            # Note: the alignment length (alen) is used instead of the
-            # read length (rlen) as this bring the calculated coverage
-            # in line with 'samtools depth' (at least when the min
-            # alignment length and edit distance thresholds are zero).
-            self.coverage += read.alen
-
-
 class CoverageStruct():
     def __init__(self, seqLen, mappedReads, coverage):
         self.seqLen = seqLen
@@ -233,15 +187,49 @@ class Coverage():
             bamfile = pysam.Samfile(bamFile, 'rb')
 
             for seqId, seqLen in zip(seqIds, seqLens):
-                readLoader = ReadLoader(seqLen, bAllReads, minAlignPer, maxEditDistPer)
-                bamfile.fetch(seqId, 0, seqLen, callback=readLoader)
+                numReads = 0
+                numMappedReads = 0
+                numDuplicates = 0
+                numSecondary = 0
+                numFailedQC = 0
+                numFailedAlignLen = 0
+                numFailedEditDist = 0
+                numFailedProperPair = 0
 
-                coverage = float(readLoader.coverage) / seqLen
+                coverage = 0
 
-                queueOut.put((seqId, seqLen, coverage, readLoader.numReads,
-                                readLoader.numDuplicates, readLoader.numSecondary, readLoader.numFailedQC,
-                                readLoader.numFailedAlignLen, readLoader.numFailedEditDist,
-                                readLoader.numFailedProperPair, readLoader.numMappedReads))
+                for read in bamfile.fetch(seqId, 0, seqLen):
+                    numReads += 1
+
+                    if read.is_unmapped:
+                        pass
+                    elif read.is_duplicate:
+                        numDuplicates += 1
+                    elif read.is_secondary:
+                        numSecondary += 1
+                    elif read.is_qcfail:
+                        numFailedQC += 1
+                    elif read.alen < minAlignPer * read.rlen:
+                        numFailedAlignLen += 1
+                    elif read.opt('NM') > maxEditDistPer * read.rlen:
+                        numFailedEditDist += 1
+                    elif not bAllReads and not read.is_proper_pair:
+                        numFailedProperPair += 1
+                    else:
+                        numMappedReads += 1
+
+                        # Note: the alignment length (alen) is used instead of the
+                        # read length (rlen) as this bring the calculated coverage
+                        # in line with 'samtools depth' (at least when the min
+                        # alignment length and edit distance thresholds are zero).
+                        coverage += read.alen
+
+                coverage = float(coverage) / seqLen
+
+                queueOut.put((seqId, seqLen, coverage, numReads,
+                                numDuplicates, numSecondary, numFailedQC,
+                                numFailedAlignLen, numFailedEditDist,
+                                numFailedProperPair, numMappedReads))
 
             bamfile.close()
 
