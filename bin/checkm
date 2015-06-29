@@ -49,8 +49,8 @@ class ChangeTempAction(argparse.Action):
 
 
 def version():
-    binDir = os.path.dirname(os.path.realpath(__file__))
-    versionFile = open(os.path.join(binDir, '..', 'checkm', 'VERSION'))
+    import checkm
+    versionFile = open(os.path.join(checkm.__path__[0], 'VERSION'))
     return versionFile.read().strip()
 
 

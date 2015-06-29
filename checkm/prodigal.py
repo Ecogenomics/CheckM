@@ -172,12 +172,13 @@ class ProdigalGeneFeatureParser():
 
     def __parseGFF(self, filename):
         """Parse genes from GFF file."""
-        bGetTranslationTable = True
+        self.translationTable = None
         for line in open(filename):
-            if bGetTranslationTable and line.startswith('# Model Data'):
-                self.translationTable = line.split(';')[4]
-                self.translationTable = int(self.translationTable[self.translationTable.find('=') + 1:])
-                bGetTranslationTable = False
+            if line.startswith('# Model Data') and not self.translationTable:
+                lineSplit = line.split(';')
+                for token in lineSplit:
+                    if 'transl_table' in token:
+                        self.translationTable = int(token[token.find('=') + 1:])
 
             if line[0] == '#':
                 continue
