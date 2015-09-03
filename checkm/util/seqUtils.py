@@ -23,12 +23,11 @@ import sys
 import gzip
 import logging
 
-protein_bases = {'a', 'r', 'n', 'd', 'c', 'q', 'e', 'g', 'h', 'i', 'l', 'k', 'm', 'f', 'p', 's', 't', 'w', 'y', 'v'}
 nucleotide_bases = {'a', 'c', 'g', 't'}
 insertion_bases = {'-', '.'}
 
 
-def is_nucleotide(self, seq_file, req_perc=0.9, max_seqs_to_read=10):
+def isNucleotide(seq_file, req_perc=0.9, max_seqs_to_read=10):
     """Check if a file contains sequences in nucleotide space.
 
     The check is performed by looking for the characters in
@@ -67,54 +66,6 @@ def is_nucleotide(self, seq_file, req_perc=0.9, max_seqs_to_read=10):
             nt_bases += seq.count(c)
 
         if float(nt_bases) / len(seq) >= req_perc:
-            return True
-
-        seq_count += 1
-        if seq_count == max_seqs_to_read:
-            break
-
-    return False
-
-
-def is_protein(seq_file, req_perc=0.9, max_seqs_to_read=10):
-    """Check if a file contains sequences in protein space.
-
-    The check is performed by looking for the 20 amino acids,
-    along with X, and the insertion characters '-' and '.', in
-    order to confirm that these comprise the majority of a
-    sequences. A set number of sequences are read and the file
-    assumed to be not be in nucleotide space if none of these
-    sequences are comprised primarily of the defined nucleotide set.
-
-    Parameters
-    ----------
-    seq_file : str
-        Name of fasta/q file to read.
-    req_perc : float
-        Percentage of amino acid bases before
-        declaring the sequences as being in nucleotide
-        space.
-    max_seqs_to_read : int
-        Maximum sequences to read before declaring
-        sequence file to not be in amino acid space.
-
-    Returns
-    -------
-    boolean
-        True is sequences are in protein space.
-    """
-
-    seqs = readFasta(seq_file)
-
-    seq_count = 0
-    for _seq_id, seq in seqs.iteritems():
-        seq = seq.lower()
-
-        prot_bases = 0
-        for c in (protein_bases | {'x'} | insertion_bases):
-            prot_bases += seq.count(c)
-
-        if float(prot_bases) / len(seq) >= req_perc:
             return True
 
         seq_count += 1
@@ -166,7 +117,7 @@ def queryYesNo(question, default="yes"):
                              "(or 'y' or 'n').\n")
 
 
-def checkNuclotideSeqs(self, seq_files):
+def checkNuclotideSeqs(seq_files):
     """Check if files contain sequences in nucleotide space.
 
     Parameters
@@ -181,9 +132,9 @@ def checkNuclotideSeqs(self, seq_files):
     """
 
     for seq_file in seq_files:
-        if not self._is_nucleotide(seq_file):
+        if not isNucleotide(seq_file):
             print('Expected all files to contain sequences in nucleotide space.')
-            print('File %s appears like it may contain amino acids sequences.' % seq_file)
+            print('File %s appears to contain amino acids sequences.' % seq_file)
 
             yes_response = queryYesNo('Do all files contain only nucleotide sequences?', default='no')
             if not yes_response:
@@ -192,7 +143,7 @@ def checkNuclotideSeqs(self, seq_files):
     return True
 
 
-def checkProteinSeqs(self, seq_files):
+def checkProteinSeqs(seq_files):
     """Check if files contain sequences in amino acid space.
 
     Parameters
@@ -207,9 +158,9 @@ def checkProteinSeqs(self, seq_files):
     """
 
     for seq_file in seq_files:
-        if not self._is_protein(seq_file):
+        if isNucleotide(seq_file):
             print('Expected all files to contain sequences in amino acid space.')
-            print('File %s appears like it may contain nucleotide sequences.' % seq_file)
+            print('File %s appears to contain nucleotide sequences.' % seq_file)
 
             yes_response = queryYesNo('Do all files contain only amino acid sequences?', default='no')
             if not yes_response:

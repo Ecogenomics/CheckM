@@ -105,10 +105,12 @@ class OptionsParser():
 
         binFiles = self.binFiles(options.bin_folder, options.extension)
 
-        if not options.genes:
-            checkNuclotideSeqs(binFiles)
+        if not options.bCalledGenes:
+            if not checkNuclotideSeqs(binFiles):
+                return
         else:
-            checkProteinSeqs(binFiles)
+            if not checkProteinSeqs(binFiles):
+                return
 
         # setup directory structure
         checkEmptyDir(options.out_folder)
@@ -270,6 +272,13 @@ class OptionsParser():
         self.logger.info('')
 
         binFiles = self.binFiles(options.bin_folder, options.extension)
+
+        if not options.bCalledGenes:
+            if not checkNuclotideSeqs(binFiles):
+                return
+        else:
+            if not checkProteinSeqs(binFiles):
+                return
 
         # setup directory structure
         makeSurePathExists(options.out_folder)
@@ -931,6 +940,15 @@ class OptionsParser():
 
         checkDirExists(options.bin_folder)
 
+        binFiles = self.binFiles(options.bin_folder, options.extension)
+
+        if not options.bCalledGenes:
+            if not checkNuclotideSeqs(binFiles):
+                return
+        else:
+            if not checkProteinSeqs(binFiles):
+                return
+
         markerSetParser = MarkerSetParser()
         if markerSetParser.markerFileType(options.marker_file) == BinMarkerSets.TREE_MARKER_SET:
             self.logger.error('  [Error] Merge command requires a taxonomic-specific marker set or a user-defined HMM file.\n')
@@ -941,8 +959,6 @@ class OptionsParser():
         makeSurePathExists(os.path.join(options.out_folder, 'bins'))
         makeSurePathExists(os.path.join(options.out_folder, 'storage'))
         makeSurePathExists(os.path.join(options.out_folder, 'storage', 'hmms'))
-
-        binFiles = self.binFiles(options.bin_folder, options.extension)
 
         binIds = []
         for binFile in binFiles:
