@@ -59,6 +59,8 @@ from checkm.plot.binQAPlot import BinQAPlot
 from checkm.plot.pcaPlot import PcaPlot
 from checkm.plot.gcBiasPlots import GcBiasPlot
 
+from checkm.util.seqUtils import checkNuclotideSeqs, checkProteinSeqs
+
 from checkm.checkmData import DBManager
 
 from checkm.test.test_ecoli import VerifyEcoli
@@ -102,6 +104,11 @@ class OptionsParser():
         self.logger.info('')
 
         binFiles = self.binFiles(options.bin_folder, options.extension)
+
+        if not options.genes:
+            checkNuclotideSeqs(binFiles)
+        else:
+            checkProteinSeqs(binFiles)
 
         # setup directory structure
         checkEmptyDir(options.out_folder)

@@ -141,7 +141,7 @@ if __name__ == '__main__':
                                         epilog='Example: checkm tree ./bins ./output')
     tree_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     tree_parser.add_argument('out_folder', help="folder to write output files")
-    tree_parser.add_argument('-r', '--reduced_tree', dest='bReducedTree', action="store_true", help="use reduced tree for determining lineage of each bin")
+    tree_parser.add_argument('-r', '--reduced_tree', dest='bReducedTree', action="store_true", help="use reduced tree (requires <16GB of memory) for determining lineage of each bin")
     tree_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
     tree_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
     tree_parser.add_argument('-g', '--genes', dest='bCalledGenes', action="store_true", default=False, help="bins contain genes as amino acids instead of nucleotide contigs")
@@ -274,7 +274,7 @@ Example: checkm qa ./output/lineage.ms ./output
                                         epilog='Example: checkm lineage_wf ./bins ./output')
     lineage_wf_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     lineage_wf_parser.add_argument('out_folder', help="folder to write output files")
-    lineage_wf_parser.add_argument('-r', '--reduced_tree', dest='bReducedTree', action="store_true", help="use reduced tree for determining lineage of each bin")
+    lineage_wf_parser.add_argument('-r', '--reduced_tree', dest='bReducedTree', action="store_true", help="use reduced tree (requires <16GB of memory) for determining lineage of each bin")
     lineage_wf_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
     lineage_wf_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
     lineage_wf_parser.add_argument('-g', '--genes', dest='bCalledGenes', action="store_true", default=False, help="bins contain genes as amino acids instead of nucleotide contigs")
@@ -621,7 +621,7 @@ i.e. checkm unique will now fail''')
     merge_parser = subparsers.add_parser('merge',
                                             formatter_class=CustomHelpFormatter,
                                             description='Identify bins with complementary sets of marker genes.',
-                                            epilog='Example: checkm merge lineage.ms ./bins ./output')
+                                            epilog='Example: checkm merge bacteria.ms ./bins ./output')
     merge_parser.add_argument('marker_file', help="marker file to use for assessing potential bin mergers (marker set or HMM file)")
     merge_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     merge_parser.add_argument('out_folder', help="folder to write output files")

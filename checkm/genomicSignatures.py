@@ -131,10 +131,12 @@ class GenomicSignatures(object):
     def seqSignature(self, seq):
         sig = [0] * len(self.kmerCols)
 
-        numMers = len(seq) - self.K + 1
+        tmp_seq = seq.upper()
+
+        numMers = len(tmp_seq) - self.K + 1
         for i in range(0, numMers):
             try:
-                kmerIndex = self.kmerToCanonicalIndex[seq[i:i + self.K]]
+                kmerIndex = self.kmerToCanonicalIndex[tmp_seq[i:i + self.K]]
                 sig[kmerIndex] += 1  # Note: a numpy array would be slow here due to this single element increment
             except KeyError:
                 # unknown kmer (e.g., contains a N)

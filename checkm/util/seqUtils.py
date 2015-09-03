@@ -23,6 +23,200 @@ import sys
 import gzip
 import logging
 
+protein_bases = {'a', 'r', 'n', 'd', 'c', 'q', 'e', 'g', 'h', 'i', 'l', 'k', 'm', 'f', 'p', 's', 't', 'w', 'y', 'v'}
+nucleotide_bases = {'a', 'c', 'g', 't'}
+insertion_bases = {'-', '.'}
+
+
+def is_nucleotide(self, seq_file, req_perc=0.9, max_seqs_to_read=10):
+    """Check if a file contains sequences in nucleotide space.
+
+    The check is performed by looking for the characters in
+    {a,c,g,t,n,.,-} and confirming that these comprise the
+    majority of a sequences. A set number of sequences are
+    read and the file assumed to be not be in nucleotide space
+    if none of these sequences are comprised primarily of the
+    defined nucleotide set.
+
+    Parameters
+    ----------
+    seq_file : str
+        Name of fasta/q file to read.
+    req_perc : float
+        Percentage of bases in {a,c,g,t,n,.,-} before
+        declaring the sequences as being in nucleotide
+        space.
+    max_seqs_to_read : int
+        Maximum sequences to read before declaring
+        sequence file to not be in nucleotide space.
+
+    Returns
+    -------
+    boolean
+        True is sequences are in nucleotide space.
+    """
+
+    seqs = readFasta(seq_file)
+
+    seq_count = 0
+    for _seq_id, seq in seqs.iteritems():
+        seq = seq.lower()
+
+        nt_bases = 0
+        for c in (nucleotide_bases | {'n'} | insertion_bases):
+            nt_bases += seq.count(c)
+
+        if float(nt_bases) / len(seq) >= req_perc:
+            return True
+
+        seq_count += 1
+        if seq_count == max_seqs_to_read:
+            break
+
+    return False
+
+
+def is_protein(seq_file, req_perc=0.9, max_seqs_to_read=10):
+    """Check if a file contains sequences in protein space.
+
+    The check is performed by looking for the 20 amino acids,
+    along with X, and the insertion characters '-' and '.', in
+    order to confirm that these comprise the majority of a
+    sequences. A set number of sequences are read and the file
+    assumed to be not be in nucleotide space if none of these
+    sequences are comprised primarily of the defined nucleotide set.
+
+    Parameters
+    ----------
+    seq_file : str
+        Name of fasta/q file to read.
+    req_perc : float
+        Percentage of amino acid bases before
+        declaring the sequences as being in nucleotide
+        space.
+    max_seqs_to_read : int
+        Maximum sequences to read before declaring
+        sequence file to not be in amino acid space.
+
+    Returns
+    -------
+    boolean
+        True is sequences are in protein space.
+    """
+
+    seqs = readFasta(seq_file)
+
+    seq_count = 0
+    for _seq_id, seq in seqs.iteritems():
+        seq = seq.lower()
+
+        prot_bases = 0
+        for c in (protein_bases | {'x'} | insertion_bases):
+            prot_bases += seq.count(c)
+
+        if float(prot_bases) / len(seq) >= req_perc:
+            return True
+
+        seq_count += 1
+        if seq_count == max_seqs_to_read:
+            break
+
+    return False
+
+
+def queryYesNo(question, default="yes"):
+    """Ask a yes/no question via raw_input() and return their answer.
+
+    http://stackoverflow.com/questions/3041986/python-command-line-yes-no-input
+
+    Parameters
+    ----------
+    question : str
+        Prompt presented to the user.
+    default : str
+        Presumed answer if the user just hits <Enter>.
+        It must be "yes" (the default), "no" or None (meaning
+        an answer is required of the user).
+
+    Returns
+    -------
+    boolean
+        True for "yes", False for "no".
+    """
+    valid = {"yes": True, "y": True, "ye": True,
+             "no": False, "n": False}
+    if default is None:
+        prompt = " [y/n] "
+    elif default == "yes":
+        prompt = " [Y/n] "
+    elif default == "no":
+        prompt = " [y/N] "
+    else:
+        raise ValueError("invalid default answer: '%s'" % default)
+
+    while True:
+        sys.stdout.write(question + prompt)
+        choice = raw_input().lower()
+        if default is not None and choice == '':
+            return valid[default]
+        elif choice in valid:
+            return valid[choice]
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no' "
+                             "(or 'y' or 'n').\n")
+
+
+def checkNuclotideSeqs(self, seq_files):
+    """Check if files contain sequences in nucleotide space.
+
+    Parameters
+    ----------
+    seq_files : iterable
+        Sequence files to check.
+
+    Returns
+    -------
+    boolean
+        True if files can be treated as containing nucleotide sequences.
+    """
+
+    for seq_file in seq_files:
+        if not self._is_nucleotide(seq_file):
+            print('Expected all files to contain sequences in nucleotide space.')
+            print('File %s appears like it may contain amino acids sequences.' % seq_file)
+
+            yes_response = queryYesNo('Do all files contain only nucleotide sequences?', default='no')
+            if not yes_response:
+                return False
+
+    return True
+
+
+def checkProteinSeqs(self, seq_files):
+    """Check if files contain sequences in amino acid space.
+
+    Parameters
+    ----------
+    seq_files : iterable
+        Sequence files to check.
+
+    Returns
+    -------
+    boolean
+        True if files can be treated as containing amino acid sequences.
+    """
+
+    for seq_file in seq_files:
+        if not self._is_protein(seq_file):
+            print('Expected all files to contain sequences in amino acid space.')
+            print('File %s appears like it may contain nucleotide sequences.' % seq_file)
+
+            yes_response = queryYesNo('Do all files contain only amino acid sequences?', default='no')
+            if not yes_response:
+                return False
+
+    return True
+
 
 def readFasta(fastaFile, trimHeader=True):
     '''Read sequences from FASTA file.'''
