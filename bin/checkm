@@ -536,6 +536,7 @@ Example: checkm qa ./output/lineage.ms ./output
     coverage_parser.add_argument('-r', '--all_reads', action='store_true', help="use all reads to estimate coverage instead of just those in proper pairs")
     coverage_parser.add_argument('-a', '--min_align', help='minimum alignment length as percentage of read length', type=float, default=0.98)
     coverage_parser.add_argument('-e', '--max_edit_dist', help='maximum edit distance as percentage of read length', type=float, default=0.02)
+    coverage_parser.add_argument('-m', '--min_qc', help='minimum quality score (in phred)', type=int, default=15)
     coverage_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     coverage_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 

@@ -888,7 +888,8 @@ class OptionsParser():
         binFiles = self.binFiles(options.bin_folder, options.extension)
 
         coverage = Coverage(options.threads)
-        coverage.run(binFiles, options.bam_files, options.output_file, options.all_reads, options.min_align, options.max_edit_dist)
+        coverage.run(binFiles, options.bam_files, options.output_file, options.all_reads,
+                        options.min_align, options.max_edit_dist, options.min_qc)
 
         self.logger.info('  Coverage information written to: ' + options.output_file)
 

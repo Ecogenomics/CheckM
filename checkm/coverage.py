@@ -49,7 +49,7 @@ class Coverage():
 
         self.totalThreads = threads
 
-    def run(self, binFiles, bamFiles, outFile, bAllReads, minAlignPer, maxEditDistPer):
+    def run(self, binFiles, bamFiles, outFile, bAllReads, minAlignPer, maxEditDistPer, minQC):
         """Calculate coverage of sequences for each BAM file."""
 
         # determine bin assignment of each sequence
@@ -83,7 +83,7 @@ class Coverage():
             self.logger.info('  Processing %s (%d of %d):' % (ntpath.basename(bamFile), numFilesStarted, len(bamFiles)))
 
             coverageInfo[bamFile] = mp.Manager().dict()
-            coverageInfo[bamFile] = self.__processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, coverageInfo[bamFile])
+            coverageInfo[bamFile] = self.__processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, coverageInfo[bamFile])
 
         # redirect output
         self.logger.info('  Writing coverage information to file.')
@@ -116,7 +116,7 @@ class Coverage():
         # restore stdout
         restoreStdOut(outFile, oldStdOut)
 
-    def __processBam(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, coverageInfo):
+    def __processBam(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, coverageInfo):
         """Calculate coverage of sequences in BAM file."""
 
         # determine coverage for each reference sequence
@@ -155,7 +155,7 @@ class Coverage():
             workerQueue.put((None, None))
 
         try:
-            workerProc = [mp.Process(target=self.__workerThread, args=(bamFile, bAllReads, minAlignPer, maxEditDistPer, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            workerProc = [mp.Process(target=self.__workerThread, args=(bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
             writeProc = mp.Process(target=self.__writerThread, args=(coverageInfo, len(refSeqIds), writerQueue))
 
             writeProc.start()
@@ -177,7 +177,7 @@ class Coverage():
 
         return coverageInfo
 
-    def __workerThread(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, queueIn, queueOut):
+    def __workerThread(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, queueIn, queueOut):
         """Process each data item in parallel."""
         while True:
             seqIds, seqLens = queueIn.get(block=True, timeout=None)
@@ -205,24 +205,24 @@ class Coverage():
                         pass
                     elif read.is_duplicate:
                         numDuplicates += 1
-                    elif read.is_secondary:
+                    elif read.is_secondary or read.is_supplementary:
                         numSecondary += 1
-                    elif read.is_qcfail:
+                    elif read.is_qcfail or read.mapping_quality < minQC:
                         numFailedQC += 1
-                    elif read.alen < minAlignPer * read.rlen:
+                    elif read.query_alignment_length < minAlignPer * read.query_length:
                         numFailedAlignLen += 1
-                    elif read.opt('NM') > maxEditDistPer * read.rlen:
+                    elif read.get_tag('NM') > maxEditDistPer * read.query_length:
                         numFailedEditDist += 1
                     elif not bAllReads and not read.is_proper_pair:
                         numFailedProperPair += 1
                     else:
                         numMappedReads += 1
 
-                        # Note: the alignment length (alen) is used instead of the
-                        # read length (rlen) as this bring the calculated coverage
+                        # Note: the alignment length (query_alignment_length) is used instead of the
+                        # read length (query_length) as this bring the calculated coverage
                         # in line with 'samtools depth' (at least when the min
                         # alignment length and edit distance thresholds are zero).
-                        coverage += read.alen
+                        coverage += read.query_alignment_length
 
                 coverage = float(coverage) / seqLen
 
