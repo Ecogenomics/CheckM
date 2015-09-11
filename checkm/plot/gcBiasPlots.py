@@ -19,8 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-import matplotlib.pyplot as pylab
-
 from AbstractPlot import AbstractPlot
 
 from checkm.util.seqUtils import readFasta, baseCount
@@ -74,7 +72,7 @@ class GcBiasPlot(AbstractPlot):
             gc += gcInfo[1]
             coverage += coverageProfile[seqId][1]
 
-        windowAxes.scatter(gc, coverage, c=abs(array(coverage)), s=10, lw=0.5, cmap=pylab.cm.Greys)
+        windowAxes.scatter(gc, coverage, c=abs(array(coverage)), s=10, lw=0.5, cmap='gray_r')
         windowAxes.set_xlabel('GC (mean = %.1f%%)' % (mean(gc) * 100))
         windowAxes.set_ylabel('Coverage (mean = %.1f)' % mean(coverage))
 
@@ -123,7 +121,7 @@ class GcBiasPlot(AbstractPlot):
         markerSize = (markerSize - min(markerSize)) / max(markerSize)  # normalize between 0 and 1
         markerSize = markerSize * 200 + 10  # normalize between 10 and 200
 
-        seqAxes.scatter(gc, coverage, c=abs(array(coverage)), s=markerSize, lw=0.5, cmap=pylab.cm.Greys)
+        seqAxes.scatter(gc, coverage, c=abs(array(coverage)), s=markerSize, lw=0.5, cmap='gray_r')
         seqAxes.set_xlabel('GC (mean = %.1f%%)' % (mean(gc) * 100))
         seqAxes.set_ylabel('Coverage (mean = %.1f)' % mean(coverage))
         seqAxes.set_title('GC vs. Coverage\nIndividual Sequences')

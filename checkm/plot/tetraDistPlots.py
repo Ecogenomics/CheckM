@@ -19,8 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-import matplotlib.pyplot as pylab
-
 import numpy as np
 
 from AbstractPlot import AbstractPlot
@@ -122,7 +120,7 @@ class TetraDistPlots(AbstractPlot):
         meanTD, deltaTDs = binTools.tetraDiffDist(seqs, genomicSig, tetraSigs, binSig)
 
         # Delta-TD vs Sequence length plot
-        axesDeltaTD.scatter(deltaTDs, seqLens, c=abs(deltaTDs), s=10, lw=0.5, cmap=pylab.cm.Greys)
+        axesDeltaTD.scatter(deltaTDs, seqLens, c=abs(deltaTDs), s=10, lw=0.5, cmap='gray_r')
         axesDeltaTD.set_xlabel(r'$\Delta$ TD (mean TD = %.2f)' % meanTD)
         axesDeltaTD.set_ylabel('Sequence length (kbp)')
 

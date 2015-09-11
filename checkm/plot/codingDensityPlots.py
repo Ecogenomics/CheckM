@@ -22,8 +22,6 @@
 import os
 import sys
 
-import matplotlib.pyplot as pylab
-
 import numpy as np
 
 from AbstractPlot import AbstractPlot
@@ -127,7 +125,7 @@ class CodingDensityPlots(AbstractPlot):
         meanCD, deltaCDs, _ = binTools.codingDensityDist(seqs, prodigalParser)
 
         # Delta-CD vs sequence length plot
-        axesDeltaCD.scatter(deltaCDs, seqLens, c=abs(deltaCDs), s=10, lw=0.5, cmap=pylab.cm.Greys)
+        axesDeltaCD.scatter(deltaCDs, seqLens, c=abs(deltaCDs), s=10, lw=0.5, cmap='gray_r')
         axesDeltaCD.set_xlabel(r'$\Delta$ CD (mean coding density = %.1f%%)' % (meanCD * 100))
         axesDeltaCD.set_ylabel('Sequence length (kbp)')
 
