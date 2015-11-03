@@ -80,7 +80,7 @@ class SSU_Finder(object):
                         revComp = True
                         aliFrom, aliTo = aliTo, aliFrom
 
-                    alignLen = int(aliTo) - int(aliFrom) + 1
+                    alignLen = int(aliTo) - int(aliFrom)
 
                     if float(iEvalue) <= evalueThreshold:
                         seqInfo[seqId] = seqInfo.get(seqId, []) + [[domain, iEvalue, str(aliFrom), str(aliTo), str(alignLen), str(revComp)]]
@@ -117,7 +117,7 @@ class SSU_Finder(object):
                 del hits[seqId]
                 info[2] = str(startNew)
                 info[3] = str(end)
-                info[4] = str(end - startNew + 1)
+                info[4] = str(end - startNew)
                 hits[concateSeqId] = info
                 bConcatenate = True
 
@@ -126,7 +126,7 @@ class SSU_Finder(object):
                 del hits[seqId]
                 info[2] = str(start)
                 info[3] = str(endNew)
-                info[4] = str(endNew - start + 1)
+                info[4] = str(endNew - start)
                 hits[concateSeqId] = info
                 bConcatenate = True
 
@@ -263,7 +263,7 @@ class SSU_Finder(object):
                 seq = seqs[seqId]
                 summaryOut.write(binId + '\t' + '\t'.join(seqInfo) + '\t' + str(len(seq)) + '\n')
                 seqOut.write('>' + binId + DefaultValues.SEQ_CONCAT_CHAR + seqInfo[0] + '\n')
-                seqOut.write(seq[int(seqInfo[3]):int(seqInfo[4]) + 1] + '\n')
+                seqOut.write(seq[int(seqInfo[3]) + 1:int(seqInfo[4]) + 1] + '\n')
 
         summaryOut.close()
         seqOut.close()

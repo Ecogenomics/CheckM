@@ -88,8 +88,8 @@ class GenomeTreeWorkflow(object):
         self.phyloUbiquity = 0.90
         self.phyloSingleCopy = 0.90
         self.paralogAcceptPer = 0.01
-        #self.consistencyAcceptPer = 0.95    # for trees at the class-level
-        self.consistencyAcceptPer = 0.906   # for trees at the phylum-level
+        # self.consistencyAcceptPer = 0.95    # for trees at the class-level
+        self.consistencyAcceptPer = 0.906  # for trees at the phylum-level
         self.consistencyMinTaxa = 20
 
         # create output directories
@@ -170,8 +170,8 @@ class GenomeTreeWorkflow(object):
         for _ in range(numThreads):
             workerQueue.put(None)
 
-        calcProc = [mp.Process(target = self.__runHmmAlign, args = (genomeIds, genesInGenomes, outputGeneDir, outputModelDir, workerQueue, writerQueue)) for _ in range(numThreads)]
-        writeProc = mp.Process(target = self.__reportThreads, args = (len(markerGenes), writerQueue))
+        calcProc = [mp.Process(target=self.__runHmmAlign, args=(genomeIds, genesInGenomes, outputGeneDir, outputModelDir, workerQueue, writerQueue)) for _ in range(numThreads)]
+        writeProc = mp.Process(target=self.__reportThreads, args=(len(markerGenes), writerQueue))
 
         writeProc.start()
 
@@ -227,7 +227,7 @@ class GenomeTreeWorkflow(object):
                 break
 
             numProcessedGenes += 1
-            statusStr = '    Finished processing %d of %d (%.2f%%) marker genes.' % (numProcessedGenes, numGenes, float(numProcessedGenes)*100/numGenes)
+            statusStr = '    Finished processing %d of %d (%.2f%%) marker genes.' % (numProcessedGenes, numGenes, float(numProcessedGenes) * 100 / numGenes)
             sys.stdout.write('%s\r' % statusStr)
             sys.stdout.flush()
 
@@ -260,20 +260,20 @@ class GenomeTreeWorkflow(object):
         """Get genomes and marker genes for a specific lineage."""
 
         genomeIds = self.img.genomeIdsByTaxonomy(taxaStr, metadata)
-        
+
         # hack to add in other genomes with incorrect taxonomy
         aceIds = set()
         for line in open('./taxonomicTrees/firmicutes.nds'):
             aceIds.add(line.strip())
-            
+
         aceIdsToImgIds = self.aceIdsToImgIds()
         for aceId in aceIds:
             if aceId in aceIdsToImgIds:
                 genomeId = aceIdsToImgIds[aceId]
                 if genomeId in metadata:
                     genomeIds.add(genomeId)
-        
-        markerGenes = self.markerSetBuilder.buildMarkerGenes(genomeIds, ubiquityThreshold, singleCopyThreshold )
+
+        markerGenes = self.markerSetBuilder.buildMarkerGenes(genomeIds, ubiquityThreshold, singleCopyThreshold)
 
         return genomeIds, markerGenes
 
@@ -295,7 +295,7 @@ class GenomeTreeWorkflow(object):
         metadata = self.img.genomeMetadata()
         ingroupGenomeIds, ingroupMarkers = self.__taxonomicMarkers('Bacteria;Firmicutes', metadata, phyloUbiquityThreshold, phyloSingleCopyThreshold)
         outgroupGenomeIds = self.img.genomeIdsByTaxonomy('Bacteria;Coprothermobacter', metadata)
-        #alphaGenomeIds, _ = self.__taxonomicMarkers('Bacteria;Proteobacteria;Alphaproteobacteria', metadata, phyloUbiquityThreshold, phyloSingleCopyThreshold)
+        # alphaGenomeIds, _ = self.__taxonomicMarkers('Bacteria;Proteobacteria;Alphaproteobacteria', metadata, phyloUbiquityThreshold, phyloSingleCopyThreshold)
 
         print '  Identified ingroup genomes: %d' % len(ingroupGenomeIds)
         print '  Identified outgroup genomes: %d' % len(outgroupGenomeIds)
@@ -319,7 +319,7 @@ class GenomeTreeWorkflow(object):
 
         # align gene sequences and infer gene trees
         print '  Aligning marker genes:'
-        self.__alignMarkers(genomeIds, ingroupMarkers, genesInGenomes, numThreads, outputGeneDir, outputModelDir)
+        #***self.__alignMarkers(genomeIds, ingroupMarkers, genesInGenomes, numThreads, outputGeneDir, outputModelDir)
 
         return genomeIds
 
@@ -337,7 +337,7 @@ class GenomeTreeWorkflow(object):
         print '  Number of genomes without an ACE id: ' + str(missing)
 
         return imgIdToAceId
-    
+
     def aceIdsToImgIds(self):
         aceIdsToImgIds = {}
         for line in open('ggg_tax_img.feb_2014.txt'):
@@ -380,7 +380,7 @@ class GenomeTreeWorkflow(object):
         print ''
         print '--- Inferring full genome tree ---'
         inferGenomeTree = InferGenomeTree()
-        inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.treeOut, self.taxonomyOut, bSupportValues = True)
+        inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.treeOut, self.taxonomyOut, bSupportValues=True)
 
         # replace IMG identifiers with ACE identifiers
         imgIdToAceId = self.imgIdsToAceIds(genomeIds)
@@ -401,8 +401,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('output_dir', help='output directory')
-    parser.add_argument('-t', '--threads', help='number of threads', type = int, default = 16)
-    parser.add_argument('-n', '--outgroup_size', help='number of taxa in outgroup', type = int, default = 30)
+    parser.add_argument('-t', '--threads', help='number of threads', type=int, default=16)
+    parser.add_argument('-n', '--outgroup_size', help='number of taxa in outgroup', type=int, default=30)
 
     args = parser.parse_args()
 

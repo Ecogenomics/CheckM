@@ -24,6 +24,7 @@ import os
 import multiprocessing as mp
 import logging
 import ntpath
+import traceback
 from collections import defaultdict
 
 import pysam
@@ -170,6 +171,7 @@ class Coverage():
             writeProc.join()
         except:
             # make sure all processes are terminated
+            print traceback.format_exc()
             for p in workerProc:
                 p.terminate()
 
@@ -195,7 +197,6 @@ class Coverage():
                 numFailedAlignLen = 0
                 numFailedEditDist = 0
                 numFailedProperPair = 0
-
                 coverage = 0
 
                 for read in bamfile.fetch(seqId, 0, seqLen):

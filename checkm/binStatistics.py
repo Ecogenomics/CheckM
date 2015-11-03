@@ -131,7 +131,7 @@ class BinStatistics():
             binStats['Mean contig length'] = contigAvgLen
 
             # calculate coding density statistics
-            codingDensity, translationTable, numORFs = self.calculateCodingDensity(binDir, genomeSize)
+            codingDensity, translationTable, numORFs = self.calculateCodingDensity(binDir, scaffolds, genomeSize)
             binStats['Coding density'] = codingDensity
             binStats['Translation table'] = translationTable
             binStats['# predicted genes'] = numORFs
@@ -233,7 +233,7 @@ class BinStatistics():
 
         return max(scaffoldLens), max(contigLens), sum(scaffoldLens), scaffold_N50, contig_N50, mean(scaffoldLens), mean(contigLens), len(contigLens), numAmbiguousBases
 
-    def calculateCodingDensity(self, outDir, genomeSize):
+    def calculateCodingDensity(self, outDir, scaffolds, genomeSize):
         """Calculate coding density of putative genome bin."""
         gffFile = os.path.join(outDir, DefaultValues.PRODIGAL_GFF)
         if os.path.exists(gffFile):
@@ -242,7 +242,9 @@ class BinStatistics():
             aaFile = os.path.join(outDir, DefaultValues.PRODIGAL_AA)  # use AA file as nucleotide file is optional
             aaGenes = readFasta(aaFile)
 
-            codingBasePairs = self.__calculateCodingBases(aaGenes)
+            codingBasePairs = 0  # self.__calculateCodingBases(aaGenes)
+            for scaffold_id in scaffolds.keys():
+                codingBasePairs += prodigalParserGFF.codingBases(scaffold_id)
 
             return float(codingBasePairs) / genomeSize, prodigalParserGFF.translationTable, len(aaGenes)
         else:

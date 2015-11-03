@@ -52,10 +52,13 @@ def isNucleotide(seq_file, req_perc=0.9, max_seqs_to_read=10):
     Returns
     -------
     boolean
-        True is sequences are in nucleotide space.
+        True is sequences are in nucleotide space, or file
+        contains no sequences.
     """
 
     seqs = readFasta(seq_file)
+    if len(seqs) == 0:
+        return True
 
     seq_count = 0
     for _seq_id, seq in seqs.iteritems():

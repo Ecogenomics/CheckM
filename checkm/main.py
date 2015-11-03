@@ -154,7 +154,7 @@ class OptionsParser():
 
         # place bins into genome tree
         self.logger.info('')
-        pplacer = PplacerRunner(options.threads)
+        pplacer = PplacerRunner(threads=options.pplacer_threads)  # fix at one thread to keep memory requirements reasonable
         pplacer.run(binFiles, resultsParser, options.out_folder, options.bReducedTree)
 
         self.timeKeeper.printTimeStamp()
