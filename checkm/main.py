@@ -1303,6 +1303,7 @@ class OptionsParser():
             self.binUnion(options)
         elif(options.subparser_name == 'test'):
             options.bCalledGenes = False
+            options.pplacer_threads = 1
             self.test(options)
         else:
             self.logger.error('  [Error] Unknown CheckM command: ' + options.subparser_name + '\n')
