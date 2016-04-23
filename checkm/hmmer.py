@@ -99,6 +99,10 @@ class HMMERRunner():
 
         os.system('hmmfetch ' + keyFileOpt + ' %s %s > %s' % (db, key, fetchFileName))
 
+    def press(self, hmmModelFile):
+        """Press a HMM file."""
+        os.system('hmmpress %s > /dev/null' % hmmModelFile)
+
     def index(self, hmmModelFile):
         """Index a HMM file."""
         if self.mode != 'fetch':
