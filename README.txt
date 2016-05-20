@@ -1,3 +1,5 @@
+[![Latest Version](https://pypip.in/version/checkm-genome/badge.svg)](https://pypi.python.org/pypi/checkm-genome/)
+
 Please see the project home page for usage details and installation instructions:
 https://github.com/Ecogenomics/CheckM/wiki
 
