@@ -89,7 +89,10 @@ class ProdigalRunner():
             for seqId, seq in seqs.iteritems():
                 codingBases += prodigalParser.codingBases(seqId)
 
-            codingDensity = float(codingBases) / totalBases
+            if totalBases != 0:
+                codingDensity = float(codingBases) / totalBases
+            else:
+                codingDensity = 0
             tableCodingDensity[translationTable] = codingDensity
 
         # determine best translation table

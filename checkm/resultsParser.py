@@ -675,9 +675,12 @@ class ResultsManager():
                 row += '\t' + '\t'.join([str(data[i]) for i in xrange(6)])
 
                 if coverageBinProfiles:
-                    for _, coverageStats in coverageBinProfiles[self.binId].iteritems():
-                        row += '\t%.2f\t%.2f' % (coverageStats[0], coverageStats[1])
-
+                    if self.binId in coverageBinProfiles:
+                        for _, coverageStats in coverageBinProfiles[self.binId].iteritems():
+                            row += '\t%.2f\t%.2f' % (coverageStats[0], coverageStats[1])
+                    else:
+                        for bamId in coverageBinProfiles[coverageBinProfiles.keys()[0]]:
+                            row += '\t%.2f\t%.2f' % (0, 0)
                 print(row)
             else:
                 row = [self.binId, lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets()]
@@ -691,8 +694,12 @@ class ResultsManager():
                 row.extend(data[0:6])
 
                 if coverageBinProfiles:
-                    for _, coverageStats in coverageBinProfiles[self.binId].iteritems():
-                        row.extend(coverageStats)
+                    if self.binId in coverageBinProfiles:
+                        for _, coverageStats in coverageBinProfiles[self.binId].iteritems():
+                            row.extend(coverageStats)
+                    else:
+                        for bamId in coverageBinProfiles[coverageBinProfiles.keys()[0]]:
+                            row.extend([0,0])
 
                 table.add_row(row)
         elif outputFormat == 3:
