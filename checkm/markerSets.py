@@ -179,6 +179,17 @@ class MarkerSet():
                 markerGenes.add(marker)
 
         return markerGenes
+        
+    def removeMarkers(self, markersToRemove):
+        """Remove specified markers from marker sets."""
+        newMarkerSet = []
+        for ms in self.markerSet:
+            newMS = ms - markersToRemove
+
+            if len(newMS) != 0:
+                newMarkerSet.append(newMS)
+
+        self.markerSet = newMarkerSet
 
     def genomeCheck(self, hits, bIndividualMarkers):
         """Calculate genome completeness and contamination."""

@@ -44,8 +44,11 @@ class TaxonParser():
             lineage = lineSplit[2]
             numGenomes = int(lineSplit[3])
             markerSet = eval(lineSplit[6].rstrip())
+            
+            ms = MarkerSet(ranksByLabel[rank], lineage, numGenomes, markerSet)
+            ms.removeMarkers(DefaultValues.MARKERS_TO_EXCLUDE)
 
-            taxonMarkerSets[rank][taxon] = MarkerSet(ranksByLabel[rank], lineage, numGenomes, markerSet)
+            taxonMarkerSets[rank][taxon] = ms
 
         return taxonMarkerSets
 

@@ -174,7 +174,7 @@ class DBManager(mm.ManifestManager):
             return None
 
         # validate the supplied path or prompt for a new one
-	path = self.confirmPath(path=path)
+        path = self.confirmPath(path=path)
         if path is None:
             # The user is not interested
             return None
@@ -193,11 +193,11 @@ class DBManager(mm.ManifestManager):
         minimal = False
         while not path_set:
             if not path:
-	    	if(minimal):
+                if(minimal):
                     path = raw_input("Please specify a location or type 'abort' to stop trying: \n")
-            	else:
+                else:
                     path = raw_input("Where should CheckM store it's data?\n" \
-                    	             "Please specify a location or type 'abort' to stop trying: \n")
+                                    "Please specify a location or type 'abort' to stop trying: \n")
 
             if path.upper() == "ABORT":
                 # user has given up
@@ -242,10 +242,3 @@ class DBManager(mm.ManifestManager):
             return False
 
         return True
-
-
-
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
