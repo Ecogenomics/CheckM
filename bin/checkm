@@ -642,7 +642,7 @@ i.e. checkm unique will now fail''')
                                             formatter_class=CustomHelpFormatter,
                                             parents=[plot_need_qa_results_parser],
                                             description='Identify outliers in bins relative to reference distributions.',
-                                            epilog='Example: checkm outliers ./bins tetra.tsv outliers.tsv')
+                                            epilog='Example: checkm outliers ./output ./bins tetra.tsv outliers.tsv')
     outlier_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     outlier_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
     outlier_parser.add_argument('output_file', help="print results to file")

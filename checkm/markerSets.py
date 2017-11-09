@@ -96,11 +96,23 @@ class BinMarkerSets():
         uid = self.mostSpecificMarkerSet().UID
 
         selectedId = selectedMarkerSetMap[uid]
-
         self.selectedLinageSpecificMarkerSet = None
-        for ms in self.markerSets:
-            if ms.UID == selectedId:
-                self.selectedLinageSpecificMarkerSet = ms
+        
+        while not self.selectedLinageSpecificMarkerSet:
+            for ms in self.markerSets:
+                if ms.UID == selectedId:
+                    self.selectedLinageSpecificMarkerSet = ms
+                    break
+                
+            if not self.selectedLinageSpecificMarkerSet:
+                # This is a hack for the reduced tree. Since not all
+                # marker sets are in the reduced tree it is possible the
+                # selected marker set might not be avaliable. In this case,
+                # we should move to the next suitable marker set. Ideally,
+                # this could be avoided by just forcing in the selected
+                # marker set.
+                selectedId = selectedMarkerSetMap[selectedId]
+            else:
                 break
 
         if self.selectedLinageSpecificMarkerSet == None:
