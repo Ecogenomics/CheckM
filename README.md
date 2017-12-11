@@ -1,6 +1,6 @@
 # CheckM
 
-[![version status](https://img.shields.io/pypi/v/checkm.svg)](https://pypi.python.org/pypi/checkm)
+[![version status](https://img.shields.io/pypi/v/checkm-genome.svg)](https://pypi.python.org/pypi/checkm-genome)
 
 Please see the project home page for usage details and installation instructions:
 https://github.com/Ecogenomics/CheckM/wiki
