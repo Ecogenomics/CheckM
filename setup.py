@@ -6,7 +6,7 @@ import os
 def version():
     setupDir = os.path.dirname(os.path.realpath(__file__))
     versionFile = open(os.path.join(setupDir, 'checkm', 'VERSION'))
-    return versionFile.read().strip()
+    return versionFile.readline().strip()
 
 setup(
     name='checkm-genome',
@@ -19,12 +19,11 @@ setup(
     url='http://pypi.python.org/pypi/checkm/',
     license='GPL3',
     description='Assess the quality of putative genome bins.',
-    long_description=open('README.txt').read(),
+    #long_description=open('README.txt').read(),
     install_requires=[
         "numpy >= 1.8.0",
         "scipy >= 0.9.0",
         "matplotlib >= 1.3.1",
         "pysam >= 0.8.3",
-        "dendropy >= 4.0.0",
-        "ScreamingBackpack >= 0.2.333"],
+        "dendropy >= 4.0.0"],
 )

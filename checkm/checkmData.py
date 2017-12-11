@@ -25,7 +25,7 @@ import logging
 from pkg_resources import resource_filename
 import json
 
-import screamingbackpack.manifestManager as mm
+import checkm.manifestManager as mm
 
 
 class DBConfig(object):
@@ -116,16 +116,8 @@ class DBManager(mm.ManifestManager):
 
     def runAction(self, action):
         """Main entry point for the updating code"""
-        if action[0] == "update":
-            self.update()
-        elif action[0] == "diff":
-            # Find and display any changes between the local data and the remote store
-            self.diffManifests(self.config.values["dataRoot"],
-                               self.config.values["remoteManifestURL"],
-                               self.config.values["localManifestName"],
-                               self.config.values["remoteManifestName"],
-                               printDiffs=True)
-        elif action[0] == "setRoot":
+        
+        if action[0] == "setRoot":
             if len(action) > 1:
                 path = self.setRoot(path=action[1])
             else:
@@ -137,35 +129,6 @@ class DBManager(mm.ManifestManager):
                 self.logger.info("Data location successfully changed to: %s" % path)
         else:
             self.logger.error("Unknown action: %s" % action[0])
-
-    def update(self):
-        """Check the version of files in the database directory and update if necessary
-
-        Can also use this to get the original database from the remote server if there is
-        no valid data at the specified path"""
-        if not self.checkPermissions():
-            return
-
-        if not self.config.checkPermissions():
-            return
-
-        print "Connecting to ACE server.\n"
-
-        rtn = self.updateManifest(self.config.values["dataRoot"],
-                            self.config.values["remoteManifestURL"],
-                            self.config.values["localManifestName"],
-                            self.config.values["remoteManifestName"],
-                            prompt=True)
-
-        if not rtn:
-            print ""
-            print "You can download the required data files manually form:"
-            print "  " + self.config.values["remoteManifestURL"]
-            print ""
-            print "Uncompress the data files to a directory of your choice,"
-            print "then run 'checkm data setRoot' to specify the location"
-            print "of the data files."
-            print ""
 
     def setRoot(self, path=None):
         """Set the data folder"""
@@ -228,9 +191,6 @@ class DBManager(mm.ManifestManager):
         # (re)make the manifest file
         print "(re) creating manifest file (please be patient)."
         self.createManifest(path, self.config.values["localManifestName"])
-
-        print ""
-        print "You can run 'checkm data update' to ensure you have the latest data files.\n"
 
         return path
 

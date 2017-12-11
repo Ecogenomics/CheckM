@@ -51,7 +51,7 @@ class ChangeTempAction(argparse.Action):
 def version():
     import checkm
     versionFile = open(os.path.join(checkm.__path__[0], 'VERSION'))
-    return versionFile.read().strip()
+    return versionFile.readline().strip()
 
 
 def printHelp():
@@ -113,9 +113,9 @@ def printHelp():
     join_tables  -> Join tab-separated value tables containing bin information
     ssu_finder   -> Identify SSU (16S/18S) rRNAs in sequences
 
-  Use: 'checkm data' to find, download and install database updates
+  Use 'checkm data setRoot' to specify the location of CheckM database files.
 
-  Use: checkm <command> -h for command specific help
+  Usage: checkm <command> -h for command specific help
     '''
 
 if __name__ == '__main__':
@@ -125,13 +125,11 @@ if __name__ == '__main__':
 
     data_parser = subparsers.add_parser('data',
                                         formatter_class=CustomHelpFormatter,
-                                        description='Check / Update the CheckM database',
-                                        epilog='Example: checkm data update')
+                                        description='Set path to the CheckM database files.',
+                                        epilog='Example: checkm data setRoot')
     data_parser.add_argument('action', nargs="+",
-            help='''action is either:
+            help='''
   setRoot <PATH>  -> set the data directory to <PATH> (requires permissions)
-  update          -> check the ACE servers and apply updates (requires permissions)
-  diff            -> check the ACE servers and display any changes
             ''')
 
     # determine placement of each genome bin in the genome tree
