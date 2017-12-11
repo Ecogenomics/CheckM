@@ -18,11 +18,13 @@ checkm/coverage.py
 checkm/coverageWindows.py
 checkm/customHelpFormatter.py
 checkm/defaultValues.py
+checkm/fileEntity.py
 checkm/genomicSignatures.py
 checkm/hmmer.py
 checkm/hmmerAligner.py
 checkm/hmmerModelParser.py
 checkm/main.py
+checkm/manifestManager.py
 checkm/markerGeneFinder.py
 checkm/markerSets.py
 checkm/merger.py
