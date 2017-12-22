@@ -230,8 +230,14 @@ class TreeParser():
 
         # find first parent node which contains at least one IMG genome
         curNode = binNode.parent_node
-        for leaf in curNode.leaf_nodes():
-            if leaf.taxon.label.startswith('IMG_'):
+        while True:
+            found_ref_genome = False
+            for leaf in curNode.leaf_nodes():
+                if leaf.taxon.label.startswith('IMG_'):
+                    found_ref_genome = True
+                    break
+                    
+            if found_ref_genome:
                 break
 
             curNode = curNode.parent_node

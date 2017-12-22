@@ -19,6 +19,7 @@
 #                                                                             #
 ###############################################################################
 
+import os
 import sys
 import gzip
 import logging
@@ -135,6 +136,9 @@ def checkNuclotideSeqs(seq_files):
     """
 
     for seq_file in seq_files:
+        if os.stat(seq_file).st_size == 0:
+            continue
+            
         if not isNucleotide(seq_file):
             print('Expected all files to contain sequences in nucleotide space.')
             print('File %s appears to contain amino acids sequences.' % seq_file)
@@ -161,6 +165,9 @@ def checkProteinSeqs(seq_files):
     """
 
     for seq_file in seq_files:
+        if os.stat(seq_file).st_size == 0:
+            continue
+        
         if isNucleotide(seq_file):
             print('Expected all files to contain sequences in amino acid space.')
             print('File %s appears to contain nucleotide sequences.' % seq_file)

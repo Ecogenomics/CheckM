@@ -289,7 +289,6 @@ Example: checkm qa ./output/lineage.ms ./output
     lineage_wf_parser.add_argument('--ignore_thresholds', dest='bIgnoreThresholds', action="store_true", default=False, help="ignore model-specific score thresholds")
     lineage_wf_parser.add_argument('-e', '--e_value', type=float, default=DefaultValues.E_VAL, help="e-value cut off")
     lineage_wf_parser.add_argument('-l', '--length', type=float, default=DefaultValues.LENGTH, help="percent overlap between target and query")
-    lineage_wf_parser.add_argument('-c', '--coverage_file', default=None, help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
     lineage_wf_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     lineage_wf_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     lineage_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
@@ -304,7 +303,7 @@ Example: checkm qa ./output/lineage.ms ./output
                                         description='Runs taxon_set, analyze, qa',
                                         epilog='Example: checkm taxonomy_wf domain Bacteria ./bins ./output')
 
-    taxonomy_wf_parser.add_argument('rank', help="taxonomic rank", choices=['domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'])
+    taxonomy_wf_parser.add_argument('rank', help="taxonomic rank", choices=['life', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'])
     taxonomy_wf_parser.add_argument('taxon', help="taxon of interest")
     taxonomy_wf_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
     taxonomy_wf_parser.add_argument('out_folder', help="folder to write output files")
