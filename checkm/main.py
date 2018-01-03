@@ -413,8 +413,16 @@ class OptionsParser():
                           )
 
         self.logger.info('')
-        RP.printSummary(options.out_format, aai, binIdToBinMarkerSets, options.bIndividualMarkers, options.coverage_file, options.bTabTable, options.file, anaFolder=options.analyze_folder)
-        RP.cacheResults(options.analyze_folder, binIdToBinMarkerSets, options.bIndividualMarkers)
+        RP.printSummary(options.out_format, 
+                        aai, binIdToBinMarkerSets, 
+                        options.bIndividualMarkers, 
+                        options.coverage_file, 
+                        options.bTabTable, 
+                        options.file, 
+                        anaFolder=options.analyze_folder)
+        RP.cacheResults(options.analyze_folder, 
+                            binIdToBinMarkerSets, 
+                            options.bIndividualMarkers)
 
         if options.file != '':
             self.logger.info('  QA information written to: ' + options.file)
@@ -1240,6 +1248,7 @@ class OptionsParser():
             options.out_format = 1
             options.bAlignTopHit = False
             options.exclude_markers = None
+            options.coverage_file = None
 
             self.tree(options)
             self.lineageSet(options)

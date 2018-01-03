@@ -1,3 +1,5 @@
+1.0.11
+- fix to lineage_wf CLI regarding missing coverage_file argument
 1.0.10
 - updated version number for pypi
 1.0.9
