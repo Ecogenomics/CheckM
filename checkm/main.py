@@ -864,6 +864,8 @@ class OptionsParser():
             self.logger.info('  Plot written to: ' + outputFile)
 
         self.timeKeeper.printTimeStamp()
+        if not bMakePlot:
+            sys.exit(1)
 
     def unbinned(self, options):
         """Unbinned Command"""
