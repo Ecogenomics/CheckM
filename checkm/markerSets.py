@@ -457,8 +457,7 @@ class MarkerSetParser():
             self.logger.info("  There are %d genes in the marker set and %d genes from the same PFAM clan." % (len(markerGenes), len(genesInSameClan)))
 
         # create file with all model accession numbers
-        tmpDir = tempfile.gettempdir()
-	keyFile = os.path.join(tmpDir, str(uuid.uuid4()))
+        keyFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         fout = open(keyFile, 'w')
         for modelAcc in allMarkers:
             fout.write(modelAcc + '\n')
@@ -474,7 +473,7 @@ class MarkerSetParser():
         HF.index(outputFile)
 
         # remove key file
-        os.system(keyFile)
+        os.remove(keyFile)
 
     def parseTaxonomicMarkerSetFile(self, markerSetFile):
         """Parse marker set from a taxonomic-specific marker set file."""
