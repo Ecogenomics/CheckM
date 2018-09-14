@@ -24,6 +24,7 @@ import sys
 import uuid
 import logging
 import tempfile
+import shutil
 import multiprocessing as mp
 from collections import defaultdict
 
@@ -193,7 +194,8 @@ class HmmerAligner:
                 binAlignOutputDir = os.path.join(alignOutputDir, binId)
                 makeSurePathExists(binAlignOutputDir)
                 for markerId in markersWithMultipleHits:
-                    tempModelFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+                    tmpDir = tempfile.gettempdir()
+		    tempModelFile = os.path.join(tmpDir, str(uuid.uuid4()))
                     HF.fetch(hmmModelFile, markerId, tempModelFile)
 
                     self.__alignMarker(markerId, markersWithMultipleHits[markerId], None, False, binAlignOutputDir, tempModelFile, bKeepUnmaskedAlign=False)
@@ -460,8 +462,8 @@ class HmmerAligner:
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
 
-        for modelId in modelKeys:
-            fetchFilename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+	for modelId in modelKeys:
+	    fetchFilename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
             hmmModelFiles[modelId] = fetchFilename
             workerQueue.put((modelId, fetchFilename))
 

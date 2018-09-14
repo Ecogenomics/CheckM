@@ -615,7 +615,6 @@ i.e. checkm unique will now fail''')
     bin_union_parser.add_argument('--min_completeness', help="ignore bins with less completeness than this, as a percentage e.g. '70'", type=float, default=70)
     bin_union_parser.add_argument('--max_contamination', help="ignore bins with more contamination than this, as a percentage e.g. '10'", type=float, default=10)
     bin_union_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
-    bin_union_parser.add_argument('--verbose', dest='bVerbose', action="store_true", default=False, help="Give extra information to the console output")
 
     # Identify bins with complementary marker sets
     merge_parser = subparsers.add_parser('merge',

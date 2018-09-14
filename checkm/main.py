@@ -1210,9 +1210,7 @@ class OptionsParser():
     def parseOptions(self, options):
         """Parse user options and call the correct pipeline(s)"""
         try:
-            if options.bVerbose:
-                logging.basicConfig(format='', level=logging.DEBUG)
-            elif options.bQuiet:
+            if hasattr(options, 'bQuiet') and options.bQuiet:
                 logging.basicConfig(format='', level=logging.ERROR)
             else:
                 logging.basicConfig(format='', level=logging.INFO)
