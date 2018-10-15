@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -130,11 +130,11 @@ class MarkerSetBuilder(object):
 
     def markerGenes(self, genomeIds, countTable, ubiquityThreshold, singleCopyThreshold):
         if ubiquityThreshold < 1 or singleCopyThreshold < 1:
-            print '[Warning] Looks like degenerate threshold.'
+            print('[Warning] Looks like degenerate threshold.')
 
         # find genes meeting ubiquity and single-copy thresholds
         markers = set()
-        for clusterId, genomeCounts in countTable.iteritems():
+        for clusterId, genomeCounts in list(countTable.items()):
             ubiquity = 0
             singleCopy = 0
             
@@ -160,8 +160,8 @@ class MarkerSetBuilder(object):
         """Identify co-located gene pairs."""
                 
         colocatedGenes = defaultdict(int)
-        for _, clusterIdToGeneLocs in geneDistTable.iteritems():
-            clusterIds = clusterIdToGeneLocs.keys()
+        for _, clusterIdToGeneLocs in list(geneDistTable.items()):
+            clusterIds = list(clusterIdToGeneLocs.keys())
             for i, clusterId1 in enumerate(clusterIds):
                 geneLocations1 = clusterIdToGeneLocs[clusterId1]
                 
@@ -185,7 +185,7 @@ class MarkerSetBuilder(object):
                         colocatedGenes[colocatedStr] += 1
 
         colocated = []
-        for colocatedStr, count in colocatedGenes.iteritems():
+        for colocatedStr, count in list(colocatedGenes.items()):
             if float(count)/len(geneDistTable) > genomeThreshold:
                 colocated.append(colocatedStr)
 
@@ -201,7 +201,7 @@ class MarkerSetBuilder(object):
         # combine any sets with overlapping genes
         bProcessed = [False]*len(sets)
         finalSets = []
-        for i in xrange(0, len(sets)):
+        for i in range(0, len(sets)):
             if bProcessed[i]:
                 continue
 
@@ -211,7 +211,7 @@ class MarkerSetBuilder(object):
             bUpdated = True
             while bUpdated:
                 bUpdated = False
-                for j in xrange(i+1, len(sets)):
+                for j in range(i+1, len(sets)):
                     if bProcessed[j]:
                         continue
 
@@ -268,7 +268,7 @@ class MarkerSetBuilder(object):
         # calculate distance between adjacent points
         dists = []
         pts = sorted(pts)
-        for i in xrange(0, len(pts)-1):
+        for i in range(0, len(pts)-1):
             dists.append(pts[i+1] - pts[i])
 
         # calculate uniformity index
@@ -290,8 +290,8 @@ class MarkerSetBuilder(object):
         contigsToSampleCont = int(contigsInGenome*percentCont + 0.5)
 
         # randomly sample contigs with contamination done via sampling with replacement
-        compContigs = random.sample(xrange(contigsInGenome), contigsToSampleComp)  
-        contContigs = choice(xrange(contigsInGenome), contigsToSampleCont, replace=True)
+        compContigs = random.sample(list(range(contigsInGenome)), contigsToSampleComp)  
+        contContigs = choice(list(range(contigsInGenome)), contigsToSampleCont, replace=True)
     
         # determine start of each contig
         contigStarts = [c*contigLen for c in compContigs]
@@ -309,7 +309,7 @@ class MarkerSetBuilder(object):
         
         # calculate probability of sampling a sequences
         seqProb = []
-        for _, seqLen in seqLens.iteritems():
+        for _, seqLen in list(seqLens.items()):
             prob = 1.0 / (float(seqLen) / genomeSize)
             seqProb.append(prob)
             
@@ -317,7 +317,7 @@ class MarkerSetBuilder(object):
         seqProb /= sum(seqProb)
             
         # select sequence with probability proportional to length
-        selectedSeqsIds = choice(seqLens.keys(), size = len(seqLens), replace=False, p = seqProb)
+        selectedSeqsIds = choice(list(seqLens.keys()), size = len(seqLens), replace=False, p = seqProb)
         
         sampledSeqIds = []
         truePer = 0.0
@@ -337,7 +337,7 @@ class MarkerSetBuilder(object):
           greater than or equal to the desired target percentage.
         """
  
-        selectedSeqsIds = choice(seqLens.keys(), size = len(seqLens), replace=False)
+        selectedSeqsIds = choice(list(seqLens.keys()), size = len(seqLens), replace=False)
         
         sampledSeqIds = []
         truePer = 0.0
@@ -471,7 +471,7 @@ class MarkerSetBuilder(object):
             s = set()
             for gene in ms:
                 if gene.startswith('PF'):
-                    print 'ERROR! Expected genes to start with pfam, not PF.'
+                    print('ERROR! Expected genes to start with pfam, not PF.')
                     
                 if gene not in lineageSpecificMarkersToRemove:
                     s.add(gene)
@@ -493,7 +493,7 @@ class MarkerSetBuilder(object):
         
         # find genes meeting ubiquity and single-copy thresholds
         missing = set()
-        for clusterId, genomeCounts in geneCountTable.iteritems():
+        for clusterId, genomeCounts in list(geneCountTable.items()):
             if clusterId not in markerGenes:
                 continue
                  
@@ -519,7 +519,7 @@ class MarkerSetBuilder(object):
         
         # find genes meeting ubiquity and single-copy thresholds
         duplicate = set()
-        for clusterId, genomeCounts in geneCountTable.iteritems():
+        for clusterId, genomeCounts in list(geneCountTable.items()):
             if clusterId not in markerGenes:
                 continue
                  

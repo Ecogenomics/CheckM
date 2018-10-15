@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #
@@ -47,7 +47,7 @@ class DeltaTetraDiff(object):
             start = time.time()
 
             seqs = readGenomicSeqsFromFasta(os.path.join(genomeDir, genomeId, genomeId + '.fna'))
-            genomeScaffold = 'NNNN'.join(seqs.values())
+            genomeScaffold = 'NNNN'.join(list(seqs.values()))
 
             # calculate tetranucleotide signature of genome
             gsCalculator = GenomicSignatures(4)
@@ -79,12 +79,12 @@ class DeltaTetraDiff(object):
                 fout.write(','.join(map(str, deltaTDs)) + '\n')
             fout.close()
             endW = time.time()
-            print endW - startW
+            print((endW - startW))
 
             queueOut.put(genomeId)
 
             end = time.time()
-            print end - start
+            print((end - start))
 
     def __storeResults(self, queue, numGenomes):
         processedRef = 0
@@ -101,7 +101,7 @@ class DeltaTetraDiff(object):
 
     def run(self, metadataFile, genomeDir, numWindows, numThreads):
         # read metadata file
-        print 'Determining finished prokaryotic reference genomes.'
+        print('Determining finished prokaryotic reference genomes.')
         genomeIds = []
         bHeader = True
         for line in open(metadataFile):
@@ -121,7 +121,7 @@ class DeltaTetraDiff(object):
 
         genomeIds = genomeIds[0:1]
 
-        print '  Identified reference genomes: ' + str(len(genomeIds))
+        print(('  Identified reference genomes: ' + str(len(genomeIds))))
 
         # window sizes to sample
         windowSizes = [ws for ws in np.arange(500, 1000, 100)]
@@ -133,7 +133,7 @@ class DeltaTetraDiff(object):
         windowSizes += [ws for ws in np.arange(100000, 400000, 100000)]
         windowSizes += [ws for ws in np.arange(400000, 1000001, 200000)]
 
-        print '# window sizes: ' + str(len(windowSizes))
+        print(('# window sizes: ' + str(len(windowSizes))))
 
         # sample windows from each genome
         workerQueue = mp.Queue()

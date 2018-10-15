@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #
@@ -42,7 +42,7 @@ class DeltaCodingDensity(object):
         # create numpy array of genome with G and C as 0, A and T as 1, and degenerate/ambiguous bases as 2
         trans = string.maketrans('CGATUNRYMKBDHVWS', '0000011111111111')
         transScaffold= scaffold.translate(trans)
-        numericScaffold = np.array(map(int, transScaffold), dtype=np.int)
+        numericScaffold = np.array(list(map(int, transScaffold)), dtype=np.int)
 
         return numericScaffold
 
@@ -56,7 +56,7 @@ class DeltaCodingDensity(object):
 
             # for simplicity, create a single scaffold from all sequences
             genomeFile = os.path.join('./deltaCD/genomes', genomeId + '.single_scaffold.fna')
-            genomeScaffold = 'NNNNNNNNNN'.join(seqs.values()).upper()
+            genomeScaffold = 'NNNNNNNNNN'.join(list(seqs.values())).upper()
             fout = open(genomeFile, 'w')
             fout.write('>' + genomeId + '\n')
             fout.write(genomeScaffold)
@@ -129,7 +129,7 @@ class DeltaCodingDensity(object):
 
     def run(self, metadataFile, genomeDir, numWindows, numThreads):
         # read metadata file
-        print 'Determining finished prokaryotic reference genomes.'
+        print('Determining finished prokaryotic reference genomes.')
         genomeIds = []
         bHeader = True
         for line in open(metadataFile):
@@ -147,7 +147,7 @@ class DeltaCodingDensity(object):
                 if os.path.exists(os.path.join(genomeDir, genomeId, genomeId + '.fna')):
                     genomeIds.append(genomeId)
 
-        print '  Identified reference genomes: ' + str(len(genomeIds))
+        print(('  Identified reference genomes: ' + str(len(genomeIds))))
 
         # window sizes to sample
         windowSizes = [ws for ws in np.arange(500, 1000, 100)]
@@ -159,7 +159,7 @@ class DeltaCodingDensity(object):
         windowSizes += [ws for ws in np.arange(100000, 400000, 100000)]
         windowSizes += [ws for ws in np.arange(400000, 1000001, 200000)]
 
-        print '# window sizes: ' + str(len(windowSizes))
+        print(('# window sizes: ' + str(len(windowSizes))))
 
         # sample windows from each genome
         workerQueue = mp.Queue()

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -55,7 +55,7 @@ class IdentifyCompleteGenomes(object):
         allTrustedGenomeIds = set()
         for lineage in ['Archaea', 'Bacteria']:
             # get all genomes in lineage and build gene count table
-            print '\nBuilding gene count table.'
+            print('\nBuilding gene count table.')
             allLineageGenomeIds = img.genomeIdsByTaxonomy(lineage, metadata, 'All')
             countTable = img.countTable(allLineageGenomeIds)
             countTable = img.filterTable(allLineageGenomeIds, countTable, 0.9*ubiquityThreshold, 0.9*singleCopyThreshold)
@@ -63,7 +63,7 @@ class IdentifyCompleteGenomes(object):
             # get all genomes from specific lineage
             allGenomeIds = allGenomeIds.union(allLineageGenomeIds)
 
-            print 'Lineage ' + lineage + ' contains ' + str(len(allLineageGenomeIds)) + ' genomes.'
+            print(('Lineage ' + lineage + ' contains ' + str(len(allLineageGenomeIds)) + ' genomes.'))
 
             # tabulate genomes from each phylum
             allPhylumCounts = {}
@@ -73,12 +73,12 @@ class IdentifyCompleteGenomes(object):
 
             # identify marker set for genomes
             markerGenes = markerset.markerGenes(allLineageGenomeIds, countTable, ubiquityThreshold*len(allLineageGenomeIds), singleCopyThreshold*len(allLineageGenomeIds))
-            print '  Marker genes: ' + str(len(markerGenes))
+            print(('  Marker genes: ' + str(len(markerGenes))))
 
             geneDistTable = img.geneDistTable(allLineageGenomeIds, markerGenes, spacingBetweenContigs=1e6)
             colocatedGenes = markerset.colocatedGenes(geneDistTable, metadata)
             colocatedSets = markerset.colocatedSets(colocatedGenes, markerGenes)
-            print '  Marker set size: ' + str(len(colocatedSets))
+            print(('  Marker set size: ' + str(len(colocatedSets))))
 
             # identifying trusted genomes (highly complete, low contamination genomes)
             trustedGenomeIds = set()
@@ -103,35 +103,35 @@ class IdentifyCompleteGenomes(object):
                     filteredOut.write('\t' + metadata[genomeId]['status'])
                     filteredOut.write('\t%.3f\t%.3f' % (completeness, contamination) + '\n')
 
-            print '  Trusted genomes: ' + str(len(trustedGenomeIds))
+            print(('  Trusted genomes: ' + str(len(trustedGenomeIds))))
 
             # determine status of trusted genomes
             statusBreakdown = {}
             for genomeId in trustedGenomeIds:
                 statusBreakdown[metadata[genomeId]['status']] = statusBreakdown.get(metadata[genomeId]['status'], 0) + 1
 
-            print '  Trusted genome status breakdown: '
-            for status, count in statusBreakdown.iteritems():
-                print '    ' + status + ': ' + str(count)
+            print('  Trusted genome status breakdown: ')
+            for status, count in list(statusBreakdown.items()):
+                print(('    ' + status + ': ' + str(count)))
 
             # determine status of retained genomes
             proposalNameBreakdown = {}
             for genomeId in trustedGenomeIds:
                 proposalNameBreakdown[metadata[genomeId]['proposal name']] = proposalNameBreakdown.get(metadata[genomeId]['proposal name'], 0) + 1
 
-            print '  Retained genome proposal name breakdown: '
-            for pn, count in proposalNameBreakdown.iteritems():
+            print('  Retained genome proposal name breakdown: ')
+            for pn, count in list(proposalNameBreakdown.items()):
                 if 'KMG' in pn or 'GEBA' in pn or 'HMP' in pn:
-                    print '    ' + pn + ': ' + str(count)
+                    print(('    ' + pn + ': ' + str(count)))
 
-            print '  Filtered genomes by phylum:'
+            print('  Filtered genomes by phylum:')
             trustedPhylumCounts = {}
             for genomeId in trustedGenomeIds:
                 taxon = metadata[genomeId]['taxonomy'][1]
                 trustedPhylumCounts[taxon] = trustedPhylumCounts.get(taxon, 0) + 1
 
-            for phylum, count in allPhylumCounts.iteritems():
-                print phylum + ': %d of %d' % (trustedPhylumCounts.get(phylum, 0), count)
+            for phylum, count in list(allPhylumCounts.items()):
+                print((phylum + ': %d of %d' % (trustedPhylumCounts.get(phylum, 0), count)))
 
         trustedOut.close()
         filteredOut.close()
@@ -140,8 +140,8 @@ class IdentifyCompleteGenomes(object):
         allStats = {}
         trustedStats = {}
 
-        for r in xrange(0, 6): # Domain to Genus
-            for genomeId, data in metadata.iteritems():
+        for r in range(0, 6): # Domain to Genus
+            for genomeId, data in list(metadata.items()):
                 taxaStr = '; '.join(data['taxonomy'][0:r+1])
                 allStats[taxaStr] = allStats.get(taxaStr, 0) + 1
                 if genomeId in allTrustedGenomeIds:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #
@@ -38,7 +38,7 @@ class CalculateBounds(object):
         """Process central values in parallel."""  
         
         # get mean value of all genomes
-        print 'Parsing mean values from all genomes.'
+        print('Parsing mean values from all genomes.')
         files = os.listdir(genomeDir)
         
         meanValues = {}
@@ -81,7 +81,7 @@ class CalculateBounds(object):
         
     def __getGenomesInRange(self, meanValues, minValue, maxValue):
         genomeIds = []
-        for genomeId, value in meanValues.iteritems():
+        for genomeId, value in list(meanValues.items()):
             if value >= minValue and value <= maxValue:
                 genomeIds.append(genomeId)
                 
@@ -120,7 +120,7 @@ class CalculateBounds(object):
             
             windows = self.__getDeltaForWindows(genomeDir, genomeIds)  
             d = {} # Note: defaultdict doesn't play well with 'ast' library
-            for windowSize, testPts in windows.iteritems():
+            for windowSize, testPts in list(windows.items()):
                 testPts = np.array(testPts)
                 
                 d[windowSize] = {}
@@ -135,7 +135,7 @@ class CalculateBounds(object):
 
     def __storeResults(self, outputFile, totalItems, queue):
         """Store confidence intervals (i.e., to shared memory)."""
-        print 'Calculating distributions for %d mean values.' % totalItems
+        print(('Calculating distributions for %d mean values.' % totalItems))
         
         globalDist = {} # Note: defaultdict doesn't play well with 'ast' library
         while True:

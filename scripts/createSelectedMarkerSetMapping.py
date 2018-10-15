@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -56,7 +56,7 @@ class CreateSelectedMarkerSetMapping(object):
             node = node.parent_node
 
         # started at root, so just return its unique id
-        print uniqueId
+        print(uniqueId)
         return uniqueId
         
     def run(self):   

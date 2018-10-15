@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -48,33 +48,33 @@ class GetMarkerGeneHMMs(object):
 
     def run(self):
         # read all taxonomic-specific marker genes
-        print 'Reading taxonomic-specific marker genes.'
+        print('Reading taxonomic-specific marker genes.')
         taxonomicMarkers = set()
         taxonParser = TaxonParser()
         taxonMarkerSets = taxonParser.readMarkerSets()
-        for _, taxa in taxonMarkerSets.iteritems():
-            for _, markerSet in taxa.iteritems():
+        for _, taxa in list(taxonMarkerSets.items()):
+            for _, markerSet in list(taxa.items()):
                 taxonomicMarkers = taxonomicMarkers.union(markerSet.getMarkerGenes())
                 
-        print '  Taxonomic-specific marker genes: %d' % len(taxonomicMarkers)
+        print(('  Taxonomic-specific marker genes: %d' % len(taxonomicMarkers)))
                 
         # read all lineage-specific marker genes
-        print 'Reading lineage-specific marker genes.'
+        print('Reading lineage-specific marker genes.')
         lineageMarkers = set()
         treeParser = TreeParser()
         uniqueIdToLineageStatistics = treeParser.readNodeMetadata()
-        for uniqueId, d in uniqueIdToLineageStatistics.iteritems():
+        for uniqueId, d in list(uniqueIdToLineageStatistics.items()):
             markerSet = MarkerSet(uniqueId, 'NA', int(d['# genomes']), eval(d['marker set']))
             lineageMarkers = lineageMarkers.union(markerSet.getMarkerGenes())
             
-        print '  Lineage-specific marker genes: %d' % len(lineageMarkers)
+        print(('  Lineage-specific marker genes: %d' % len(lineageMarkers)))
         
         # gather all marker genes
         markerGenes = taxonomicMarkers.union(lineageMarkers)
-        print '  Total marker genes: %d' % len(markerGenes)
+        print(('  Total marker genes: %d' % len(markerGenes)))
         
         # get genes from same clan as marker genes
-        print 'Gathering HMMs from the same clan as marker genes.'
+        print('Gathering HMMs from the same clan as marker genes.')
         pfam = PFAM()
         genesInSameClan = pfam.genesInSameClan(markerGenes)
         allMarkers = markerGenes.union(genesInSameClan)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -196,8 +196,8 @@ class TaxonomicMarkerSets(object):
         writeProc.join()
 
 if __name__ == '__main__':
-    print __prog_name__ + ' v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print((__prog_name__ + ' v' + __version__ + ': ' + __prog_desc__))
+    print(('  by ' + __author__ + ' (' + __email__ + ')' + '\n'))
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('output_dir', help='output directory')
@@ -214,7 +214,7 @@ if __name__ == '__main__':
         taxonomicMarkerSets = TaxonomicMarkerSets()
         taxonomicMarkerSets.run(args.output_dir, args.ubiquity, args. single_copy, args.min_genomes, args.distance_threshold, args.genome_threshold, args.threads)
     except SystemExit:
-        print "\nControlled exit resulting from an unrecoverable error or warning."
+        print("\nControlled exit resulting from an unrecoverable error or warning.")
     except:
-        print "\nUnexpected error:", sys.exc_info()[0]
+        print(("\nUnexpected error:", sys.exc_info()[0]))
         raise

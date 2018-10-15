@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #
@@ -120,7 +120,7 @@ class Tigr2Pfam(object):
 
         # find TIGRFAMs that generally hit the same gene as a PFAM
         fout = open('../data/pfam/tigrfam2pfam.tsv', 'w')
-        for key, genomeSet in matches.iteritems():
+        for key, genomeSet in list(matches.items()):
             pfam, tigr = key.split('-')
 
             # deem a TIGRFAM HMM redundant if it is almost always hits that
@@ -130,8 +130,8 @@ class Tigr2Pfam(object):
         fout.close()
 
 if __name__ == '__main__':
-    print 'Tigr2Pfam v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print(('Tigr2Pfam v' + __version__ + ': ' + __prog_desc__))
+    print(('  by ' + __author__ + ' (' + __email__ + ')' + '\n'))
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('metadata_file', help='IMG metadata file')

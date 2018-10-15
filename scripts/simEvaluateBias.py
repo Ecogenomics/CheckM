@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -95,12 +95,12 @@ class SimCompare(object):
                     trueCont = [float(x) for x in lineSplit[18].rstrip().split(',')]
                 else:
                     # assume true comp and cont is extremely close to target comp and cont
-                    trueComp = [float(lineSplit[2])*100 for x in xrange(len(lineSplit[15].rstrip().split(',')))]
-                    trueCont = [float(lineSplit[3])*100 for x in xrange(len(lineSplit[15].rstrip().split(',')))]               
+                    trueComp = [float(lineSplit[2])*100 for x in range(len(lineSplit[15].rstrip().split(',')))]
+                    trueCont = [float(lineSplit[3])*100 for x in range(len(lineSplit[15].rstrip().split(',')))]               
             
                 results[simId][uid] = [numDescendants, compIM, contIM, compMS, contMS, compRMS, contRMS, trueComp, trueCont]
                 
-        print '    Number of test genomes: ' + str(len(genomeIds))
+        print(('    Number of test genomes: ' + str(len(genomeIds))))
         
         return results
     
@@ -113,7 +113,7 @@ class SimCompare(object):
         trueComps[key].extend(trueComp)
         trueConts[key].extend(trueCont)
         
-        for i in xrange(0, len(compRMS)):
+        for i in range(0, len(compRMS)):
             compError[key].append(abs(compRMS[i]))
             contError[key].append(abs(contRMS[i]))
             
@@ -132,12 +132,12 @@ class SimCompare(object):
             
 
     def run(self):
-        print '\n  Reading reference genome tree.'
+        print('\n  Reading reference genome tree.')
         treeFile = os.path.join('/srv/whitlam/bio/db/checkm/genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
         
         # read simulation results        
-        print '  Reading full simulation results.'
+        print('  Reading full simulation results.')
         results = self.__readFullResults(self.simResultsFile)
                 
         # reading marker set inferred via simulation
@@ -152,7 +152,7 @@ class SimCompare(object):
                 inferredMarkerSet[uid] = markerSetId
                 
         # determine best marker set
-        print '  Evaluating results.'
+        print('  Evaluating results.')
         
         compBias = defaultdict(list)
         contBias = defaultdict(list)
@@ -220,48 +220,48 @@ class SimCompare(object):
         for key in trueComps:
             comp, cont = key.split('-')
             
-            print ''
-            print 'Target comp: %s' % comp
-            print 'Target cont: %s' % cont
+            print('')
+            print(('Target comp: %s' % comp))
+            print(('Target cont: %s' % cont))
             
             meanTrueComps = mean(trueComps[key])/100.0
             meanTrueConts = mean(trueConts[key])/100.0
-            print ''
-            print 'Mean actual comp: %.2f' % (meanTrueComps * 100)
-            print 'Mean actual cont: %.2f' % (meanTrueConts * 100)
+            print('')
+            print(('Mean actual comp: %.2f' % (meanTrueComps * 100)))
+            print(('Mean actual cont: %.2f' % (meanTrueConts * 100)))
             
             estComp = meanTrueComps + meanTrueConts * ( 1.0 - meanTrueComps)
             estCont = meanTrueConts - meanTrueConts * ( 1.0 - meanTrueComps)
-            print '\n------'
-            print 'Predicted comp bias: %.2f' % ((estComp - meanTrueComps) * 100)
-            print 'Predicted cont bias: %.2f' % ((estCont - meanTrueConts) * 100)
+            print('\n------')
+            print(('Predicted comp bias: %.2f' % ((estComp - meanTrueComps) * 100)))
+            print(('Predicted cont bias: %.2f' % ((estCont - meanTrueConts) * 100)))
                 
-            print '\n------'
-            print 'Estimated comp bias: %.2f +/- %.2f' % (mean(compBias[key]), std(compBias[key]))
-            print 'Estimated cont bias: %.2f +/- %.2f' % (mean(contBias[key]), std(contBias[key]))
-            print 'Estimated comp bias lineage: %.2f +/- %.2f' % (mean(compBiasLineage[key]), std(compBiasLineage[key]))
-            print 'Estimated cont bias lineage: %.2f +/- %.2f' % (mean(contBiasLineage[key]), std(contBiasLineage[key]))
+            print('\n------')
+            print(('Estimated comp bias: %.2f +/- %.2f' % (mean(compBias[key]), std(compBias[key]))))
+            print(('Estimated cont bias: %.2f +/- %.2f' % (mean(contBias[key]), std(contBias[key]))))
+            print(('Estimated comp bias lineage: %.2f +/- %.2f' % (mean(compBiasLineage[key]), std(compBiasLineage[key]))))
+            print(('Estimated cont bias lineage: %.2f +/- %.2f' % (mean(contBiasLineage[key]), std(contBiasLineage[key]))))
             
-            print '\n------'
-            print 'Corrected comp bias: %.2f +/- %.2f' % (mean(correctCompBias[key]), std(correctCompBias[key]))
-            print 'Corrected cont bias: %.2f +/- %.2f' % (mean(correctContBias[key]), std(correctContBias[key]))
-            print 'Corrected comp bias lineage: %.2f +/- %.2f' % (mean(correctCompBiasLineage[key]), std(correctCompBiasLineage[key]))
-            print 'Corrected cont bias lineage: %.2f +/- %.2f' % (mean(correctContBiasLineage[key]), std(correctContBiasLineage[key]))
+            print('\n------')
+            print(('Corrected comp bias: %.2f +/- %.2f' % (mean(correctCompBias[key]), std(correctCompBias[key]))))
+            print(('Corrected cont bias: %.2f +/- %.2f' % (mean(correctContBias[key]), std(correctContBias[key]))))
+            print(('Corrected comp bias lineage: %.2f +/- %.2f' % (mean(correctCompBiasLineage[key]), std(correctCompBiasLineage[key]))))
+            print(('Corrected cont bias lineage: %.2f +/- %.2f' % (mean(correctContBiasLineage[key]), std(correctContBiasLineage[key]))))
             
-            print '\n------'
-            print 'Abs. error comp: %.2f +/- %.2f' % (mean(compError[key]), std(compError[key]))
-            print 'Abs. error cont: %.2f +/- %.2f' % (mean(contError[key]), std(contError[key]))
-            print 'Abs. error comp lineage: %.2f +/- %.2f' % (mean(compErrorLineage[key]), std(compErrorLineage[key]))
-            print 'Abs. error cont lineage: %.2f +/- %.2f' % (mean(contErrorLineage[key]), std(contErrorLineage[key]))
+            print('\n------')
+            print(('Abs. error comp: %.2f +/- %.2f' % (mean(compError[key]), std(compError[key]))))
+            print(('Abs. error cont: %.2f +/- %.2f' % (mean(contError[key]), std(contError[key]))))
+            print(('Abs. error comp lineage: %.2f +/- %.2f' % (mean(compErrorLineage[key]), std(compErrorLineage[key]))))
+            print(('Abs. error cont lineage: %.2f +/- %.2f' % (mean(contErrorLineage[key]), std(contErrorLineage[key]))))
             
-            print '\n------'
-            print 'Corrected abs. error comp: %.2f +/- %.2f' % (mean(correctCompError[key]), std(correctCompError[key]))
-            print 'Corrected abs. error cont: %.2f +/- %.2f' % (mean(correctContError[key]), std(correctContError[key]))
-            print 'Corrected abs. error comp lineage: %.2f +/- %.2f' % (mean(correctCompErrorLineage[key]), std(correctCompErrorLineage[key]))
-            print 'Corrected abs. error cont lineage: %.2f +/- %.2f' % (mean(correctContErrorLineage[key]), std(correctContErrorLineage[key]))
+            print('\n------')
+            print(('Corrected abs. error comp: %.2f +/- %.2f' % (mean(correctCompError[key]), std(correctCompError[key]))))
+            print(('Corrected abs. error cont: %.2f +/- %.2f' % (mean(correctContError[key]), std(correctContError[key]))))
+            print(('Corrected abs. error comp lineage: %.2f +/- %.2f' % (mean(correctCompErrorLineage[key]), std(correctCompErrorLineage[key]))))
+            print(('Corrected abs. error cont lineage: %.2f +/- %.2f' % (mean(correctContErrorLineage[key]), std(correctContErrorLineage[key]))))
             
-            print ''
-            print '*******************************************************************'
+            print('')
+            print('*******************************************************************')
             
             fout = open('./simulations/correct_comp_cont_' + key + '.test.tsv','w')
             fout.write('\t'.join(map(str, compBias[key])) + '\n')

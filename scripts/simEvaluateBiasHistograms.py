@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -55,15 +55,15 @@ class Histogram(AbstractPlot):
         fin.close()
         
         
-        compDom = map(float, data[0].split('\t'))
-        contDom =map(float, data[1].split('\t'))
-        compLineage = map(float, data[2].split('\t'))
-        contLineage =map(float, data[3].split('\t'))
+        compDom = list(map(float, data[0].split('\t')))
+        contDom =list(map(float, data[1].split('\t')))
+        compLineage = list(map(float, data[2].split('\t')))
+        contLineage =list(map(float, data[3].split('\t')))
         
-        correctCompDom = map(float, data[4].split('\t'))
-        correctContDom =map(float, data[5].split('\t'))
-        correctCompLineage = map(float, data[6].split('\t'))
-        correctContLineage =map(float, data[7].split('\t'))
+        correctCompDom = list(map(float, data[4].split('\t')))
+        correctContDom =list(map(float, data[5].split('\t')))
+        correctCompLineage = list(map(float, data[6].split('\t')))
+        correctContLineage =list(map(float, data[7].split('\t')))
         
         compMin = min(compDom + compLineage + correctCompDom + correctCompLineage)
         compMax = max(compDom + compLineage + correctCompDom + correctCompLineage)
@@ -127,7 +127,7 @@ class Histogram(AbstractPlot):
         for line in axes.xaxis.get_ticklines(): 
             line.set_color('black')
             
-        for loc, spine in axes.spines.iteritems():
+        for loc, spine in list(axes.spines.items()):
             if loc in ['right','top']:
                 spine.set_color('none') 
             else:

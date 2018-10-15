@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -32,20 +32,20 @@ import os
 import sys
 import argparse
 
-from genometreeworkflow.phylogeneticInferenceGenes import PhylogeneticInferenceGenes
-from genometreeworkflow.makeTrees import MakeTrees
-from genometreeworkflow.paralogTest import ParalogTest
-from genometreeworkflow.consistencyTest import ConsistencyTest
-from genometreeworkflow.getPhylogeneticHMMs import GetPhylogeneticHMMs
-from genometreeworkflow.inferGenomeTree import InferGenomeTree
-from genometreeworkflow.rerootTree import RerootTree
-from genometreeworkflow.decorateTree import DecorateTree
+from .genometreeworkflow.phylogeneticInferenceGenes import PhylogeneticInferenceGenes
+from .genometreeworkflow.makeTrees import MakeTrees
+from .genometreeworkflow.paralogTest import ParalogTest
+from .genometreeworkflow.consistencyTest import ConsistencyTest
+from .genometreeworkflow.getPhylogeneticHMMs import GetPhylogeneticHMMs
+from .genometreeworkflow.inferGenomeTree import InferGenomeTree
+from .genometreeworkflow.rerootTree import RerootTree
+from .genometreeworkflow.decorateTree import DecorateTree
 
 class GenomeTreeWorkflow(object):
     def __init__(self, outputDir):
         if False:
             if os.path.exists(outputDir):
-                print '[Error] Output directory already exists: ' + outputDir
+                print(('[Error] Output directory already exists: ' + outputDir))
                 sys.exit(0)
             else:
                 os.makedirs(outputDir)
@@ -98,11 +98,11 @@ class GenomeTreeWorkflow(object):
         try:
             exit_status = os.system('hmmfetch -h > /dev/null')
         except:
-            print "Unexpected error!", sys.exc_info()[0]
+            print(("Unexpected error!", sys.exc_info()[0]))
             raise
 
         if exit_status != 0:
-            print "[Error] hmmfetch is not on the system path"
+            print("[Error] hmmfetch is not on the system path")
             sys.exit()
 
     def __checkForFastTree(self):
@@ -111,11 +111,11 @@ class GenomeTreeWorkflow(object):
         try:
             exit_status = os.system('FastTree 2> /dev/null')
         except:
-            print "Unexpected error!", sys.exc_info()[0]
+            print(("Unexpected error!", sys.exc_info()[0]))
             raise
 
         if exit_status != 0:
-            print "[Error] FastTree is not on the system path"
+            print("[Error] FastTree is not on the system path")
             sys.exit()
 
     def __checkForSeqMagick(self):
@@ -124,11 +124,11 @@ class GenomeTreeWorkflow(object):
         try:
             exit_status = os.system('seqmagick -h > /dev/null')
         except:
-            print "Unexpected error!", sys.exc_info()[0]
+            print(("Unexpected error!", sys.exc_info()[0]))
             raise
 
         if exit_status != 0:
-            print "[Error] seqmagick is not on the system path"
+            print("[Error] seqmagick is not on the system path")
             sys.exit()
 
     def __checkForTax2Tree(self):
@@ -137,86 +137,86 @@ class GenomeTreeWorkflow(object):
         try:
             exit_status = os.system('t2t -h > /dev/null')
         except:
-            print "Unexpected error!", sys.exc_info()[0]
+            print(("Unexpected error!", sys.exc_info()[0]))
             raise
 
         if exit_status != 0:
-            print "[Error] t2t is not on the system path"
+            print("[Error] t2t is not on the system path")
             sys.exit()
 
     def run(self, numThreads):
         # identify genes suitable for phylogenetic inference
         if False:
-            print '--- Identifying genes suitable for phylogenetic inference ---'
+            print('--- Identifying genes suitable for phylogenetic inference ---')
             phylogeneticInferenceGenes = PhylogeneticInferenceGenes()
             phylogeneticInferenceGenes.run(self.phyloUbiquity, self.phyloSingleCopy, numThreads, self.alignmentDir, self.hmmDir)
 
             # infer gene trees
-            print ''
-            print '--- Inferring gene trees ---'
+            print('')
+            print('--- Inferring gene trees ---')
             makeTrees = MakeTrees()
             makeTrees.run(self.alignmentDir, self.geneTreeDir, '.aln.masked.faa', numThreads)
 
             # test gene trees for paralogs
-            print ''
-            print '--- Testing for paralogs in gene trees ---'
+            print('')
+            print('--- Testing for paralogs in gene trees ---')
             paralogTest = ParalogTest()
             paralogTest.run(self.geneTreeDir, self.paralogAcceptPer, '.tre', self.conspecificGeneTreeDir)
 
             sys.exit()
 
             # test gene trees for consistency with IMG taxonomy
-            print ''
-            print '--- Testing taxonomic consistency of gene trees ---'
+            print('')
+            print('--- Testing taxonomic consistency of gene trees ---')
             consistencyTest = ConsistencyTest()
             consistencyTest.run(self.conspecificGeneTreeDir, '.tre', self.consistencyAcceptPer, self.consistencyMinTaxa, self.consistencyOut, self.finalGeneTreeDir)
 
             # gather phylogenetically informative HMMs into a single model file
-            print ''
-            print '--- Gathering phylogenetically informative HMMs ---'
+            print('')
+            print('--- Gathering phylogenetically informative HMMs ---')
             getPhylogeneticHMMs = GetPhylogeneticHMMs()
             getPhylogeneticHMMs.run(self.hmmDir, self.finalGeneTreeDir, self.phyloHMMsOut)
 
             # infer genome tree
-            print ''
-            print '--- Inferring full genome tree ---'
+            print('')
+            print('--- Inferring full genome tree ---')
             inferGenomeTree = InferGenomeTree()
             inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.treeOut, self.taxonomyOut)
 
             # root genome tree between archaea and bacteria
-            print ''
-            print '--- Rooting full genome tree ---'
+            print('')
+            print('--- Rooting full genome tree ---')
             rerootTree = RerootTree()
             rerootTree.run(self.treeOut, self.treeRootedOut)
 
         # decorate genome tree with taxonomy using nlevel from tax2tree
-        print ''
-        print '--- Decorating full genome tree with taxonomic information using tax2tree ---'
+        print('')
+        print('--- Decorating full genome tree with taxonomic information using tax2tree ---')
         os.system('t2t decorate -t %s -m %s -o %s' % (self.treeRootedOut, self.taxonomyOut, self.treeTaxonomyOut))
 
         if False:
             # dereplicate identical sequences
-            print ''
-            print '--- Identifying duplicate sequences ---'
+            print('')
+            print('--- Identifying duplicate sequences ---')
             os.system('seqmagick convert --deduplicate-sequences --deduplicated-sequences-file ' + self.derepSeqFile + ' ' + self.concatenatedAlignFile + ' ' + self.derepConcatenatedAlignFile)
 
             # infer dereplicated genome tree
-            print ''
-            print '--- Inferring dereplicated genome tree ---'
+            print('')
+            print('--- Inferring dereplicated genome tree ---')
             outputLog = self.treeDerepOut[0:self.treeDerepOut.rfind('.')] + '.log'
             # cmd = 'FastTreeMP -nosupport -wag -gamma -log ' + outputLog + ' ' + self.derepConcatenatedAlignFile + ' > ' + self.treeDerepOut
             cmd = 'FastTreeMP -wag -gamma -log ' + outputLog + ' ' + self.derepConcatenatedAlignFile + ' > ' + self.treeDerepOut
             os.system(cmd)
 
             # root genome tree between archaea and bacteria
-            print ''
-            print '--- Rooting dereplicated genome tree ---'
+            print('')
+            print('--- Rooting dereplicated genome tree ---')
             rerootTree = RerootTree()
             rerootTree.run(self.treeDerepOut, self.treeDerepRootedOut)
 
             # calculate bootstraps for genome tree
-            print ''
-            print '--- Calculating bootstrap support ---'
+            print('')
+            print('--- Calculating bootstrap support ---')
             # bootstrapTree = BootstrapTree()
             # bootstrapTree.run(self.bootstrapDir, self.treeDerepRootedOut, self.concatenatedAlignFile, 100, numThreads, self.treeDerepBootstrapOut)
 
@@ -226,14 +226,14 @@ class GenomeTreeWorkflow(object):
         os.system('cp ' + self.treeDerepRootedOut + ' ' + self.treeDerepFinalOut)
 
         # decorate dereplicated tree with unique IDs and a complementary file indicating properties of each internal node
-        print ''
-        print '--- Decorating final tree with lineage-specific statistics and marker set information ---'
+        print('')
+        print('--- Decorating final tree with lineage-specific statistics and marker set information ---')
         decorateTree = DecorateTree()
         decorateTree.decorate(self.treeTaxonomyOut, self.derepSeqFile, self.treeDerepFinalOut, self.treeMetadata, numThreads)
 
 if __name__ == '__main__':
-    print 'GenomeTreeWorkflow v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print(('GenomeTreeWorkflow v' + __version__ + ': ' + __prog_desc__))
+    print(('  by ' + __author__ + ' (' + __email__ + ')' + '\n'))
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('output_dir', help='output directory')

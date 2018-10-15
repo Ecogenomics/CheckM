@@ -65,9 +65,9 @@ class IdentifyColocatedGenes(object):
             if len(colocatedSets) < minMarkers:
                 continue
 
-            print '\nLineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes (' + str(lineageCount) + ' of ' + str(len(lineages)) + ').'
-            print '  Marker genes: ' + str(len(markerGenes))
-            print '  Co-located gene sets: ' + str(len(colocatedSets))
+            print(('\nLineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes (' + str(lineageCount) + ' of ' + str(len(lineages)) + ').'))
+            print(('  Marker genes: ' + str(len(markerGenes))))
+            print(('  Co-located gene sets: ' + str(len(colocatedSets))))
 
             fout.write(lineage + '\t' + str(len(genomeIds)) + '\t' + str(len(markerGenes)) + '\t' + str(len(colocatedSets)))
             for cs in colocatedSets:

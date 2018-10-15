@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -41,34 +41,34 @@ class GeneCountDict(object):
     def run(self, outputFile):
         img = IMG()
         
-        print 'Identifying all IMG prokaryotic genomes with valid data.'
+        print('Identifying all IMG prokaryotic genomes with valid data.')
         metadata = img.genomeMetadata()
         genomeIds = img.genomeIdsByTaxonomy('prokaryotes', metadata)
         genomeMissingData = img.genomesWithMissingData(genomeIds)
         genomeIds -= genomeMissingData
         
-        print '  Identified %d valid genomes.' % (len(genomeIds))
+        print(('  Identified %d valid genomes.' % (len(genomeIds))))
         
-        print 'Calculating gene copy number for each genome.'
+        print('Calculating gene copy number for each genome.')
         countTable = img.geneCountTable(genomeIds)
         
         counts = []
-        for _, count in countTable['pfam00318'].iteritems():
+        for _, count in list(countTable['pfam00318'].items()):
             counts.append(count)
                 
-        print len(genomeIds)
-        print len(counts)
-        print mean(counts)
+        print((len(genomeIds)))
+        print((len(counts)))
+        print((mean(counts)))
          
         fout = open(outputFile, 'w')
         fout.write(str(countTable))
         fout.close()
         
-        print 'Gene count dictionary to: ' + outputFile
+        print(('Gene count dictionary to: ' + outputFile))
         
 if __name__ == '__main__':
-    print 'GeneCountDict v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print(('GeneCountDict v' + __version__ + ': ' + __prog_desc__))
+    print(('  by ' + __author__ + ' (' + __email__ + ')' + '\n'))
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('output_file', help='output file')

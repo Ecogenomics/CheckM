@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Performs bootstrap replicates.
@@ -26,7 +26,7 @@ class BootstrapTree(object):
         try:
             fh = file(seqFile)
         except IOError:
-            print "File '" + seqFile + "' does not exist."
+            print(("File '" + seqFile + "' does not exist."))
             sys.exit()
 
         seqs = {}
@@ -40,8 +40,8 @@ class BootstrapTree(object):
         return seqs
 
     def bootstrap(self, seqs, outputFile):
-        alignmentLen = len(seqs[seqs.keys()[0]])
-        cols = [random.randint(0, alignmentLen-1) for _ in xrange(alignmentLen)]
+        alignmentLen = len(seqs[list(seqs.keys())[0]])
+        cols = [random.randint(0, alignmentLen-1) for _ in range(alignmentLen)]
 
         fout = open(outputFile, 'w')
         for seqId in seqs:
@@ -57,12 +57,12 @@ class BootstrapTree(object):
         seqs = self.readFasta(seqFile)
 
         # create bootstrap trees
-        print 'Creating bootstrap alignments.'
+        print('Creating bootstrap alignments.')
         treeListFile = os.path.join(bootstrapDir, 'bootstrap_trees.txt')
         treeListOut = open(treeListFile, 'w')
 
         bootstrapTreeFiles = []
-        for i in xrange(0, numBootstraps):
+        for i in range(0, numBootstraps):
             bootstrapTreeFile = os.path.join(bootstrapDir, 'bootstrap_tree.' + str(i) + '.tre')
             bootstrapTreeFiles.append(bootstrapTreeFile)
 
@@ -74,7 +74,7 @@ class BootstrapTree(object):
 
         treeListOut.close()
         
-        print 'Building bootstrap trees.'
+        print('Building bootstrap trees.')
         os.system('cat ' + treeListFile + ' | parallel --max-procs ' + str(numProcessors))
 
         # create single file with bootstrap trees
@@ -85,10 +85,10 @@ class BootstrapTree(object):
                 bootstrapOut.write(line)
         bootstrapOut.close()
 
-        print '  Bootstrap trees written to: ' + bootstrapFile
+        print(('  Bootstrap trees written to: ' + bootstrapFile))
 
         # determine bootstrap support for original tree
-        print 'Determining bootstrap support for original tree.'
+        print('Determining bootstrap support for original tree.')
         os.system('CompareToBootstrap.pl -tree ' + treeFile + ' -boot ' + bootstrapFile + ' > ' + outputTree)
 
 if __name__ == '__main__':

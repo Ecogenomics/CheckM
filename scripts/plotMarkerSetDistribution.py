@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -55,7 +55,7 @@ class PlotMarkerSetDistribution(object):
                 genomeIds.append(genomeId)
         genomeIds = set(genomeIds) - img.genomesWithMissingData(genomeIds)
 
-        print 'Lineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.'
+        print(('Lineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.'))
 
         # get marker set
         countTable = img.countTable(genomeIds)
@@ -65,7 +65,7 @@ class PlotMarkerSetDistribution(object):
         markerGenes = markerGenes - tigrToRemove
         geneDistTable = img.geneDistTable(genomeIds, markerGenes, spacingBetweenContigs=1e6)
 
-        print 'Number of marker genes: ' + str(len(markerGenes))
+        print(('Number of marker genes: ' + str(len(markerGenes))))
 
         # randomly set genomes to plot
         if numRndGenomes != -1:
@@ -83,7 +83,7 @@ class PlotMarkerSetDistribution(object):
 
             binCounts = [0]*numBins
             pts = []
-            for _, data in geneDistTable[genomeId].iteritems():
+            for _, data in list(geneDistTable[genomeId].items()):
                 for genePos in data:
                     binNum = int(genePos[1] / binSize)
                     binCounts[binNum] += 1
@@ -93,7 +93,7 @@ class PlotMarkerSetDistribution(object):
             u = markerSet.uniformity(metadata[genomeId]['genome size'], pts)
 
             fout.write(genomeId + '\t' + '; '.join(metadata[genomeId]['taxonomy']) + '\t' + str(len(geneDistTable[genomeId])) + '\t%.3f' % u)
-            for b in xrange(0, numBins):
+            for b in range(0, numBins):
                 fout.write('\t' + str(binCounts[b]))
             fout.write('\n')
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -63,7 +63,7 @@ class SimCompare(object):
         """Get stats for best marker set."""
         bestUID, numDescendantsBest, dCompBest, dContBest = self.__domainMarkerSet(simId, simResults)
         curBest = dCompBest + dContBest
-        for uid, results in simResults[simId].iteritems():
+        for uid, results in list(simResults[simId].items()):
             numDescendants, dComp, dCont, _, _, _, _, _, _ = results
             if numDescendants < 10:
                 continue
@@ -129,7 +129,7 @@ class SimCompare(object):
 
                 summaryResults[simId][uid] = [numDescendants, compIM, contIM, compMS, contMS, compRMS, contRMS, compUnmodified, contUnmodified]
 
-        print '    Number of test genomes: ' + str(len(genomeIds))
+        print(('    Number of test genomes: ' + str(len(genomeIds))))
 
         return summaryResults
 
@@ -157,20 +157,20 @@ class SimCompare(object):
 
                 summaryResults[simId][uid] = [numDescendants, compIM, contIM, compMS, contMS, compRMS, contRMS]
 
-        print '    Number of test genomes: ' + str(len(genomeIds))
+        print(('    Number of test genomes: ' + str(len(genomeIds))))
 
         return summaryResults
 
     def run(self):
-        print '\n  Reading reference genome tree.'
+        print('\n  Reading reference genome tree.')
         treeFile = os.path.join('/srv/whitlam/bio/db/checkm/genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
 
         # read simulation results
-        print '  Reading summary simulation results.'
+        print('  Reading summary simulation results.')
         summaryResults = self.__readSummaryResults(self.resultsSummaryFile)
 
-        print '  Reading full simulation results.'
+        print('  Reading full simulation results.')
         fullResults = self.__readFullResults(self.resultsFullFile)
 
         # reading marker set inferred via simulation
@@ -185,7 +185,7 @@ class SimCompare(object):
                 inferredMarkerSet[uid] = markerSetId
 
         # determine best marker set
-        print '  Comparing best marker set to selected marker set.'
+        print('  Comparing best marker set to selected marker set.')
         foutSummary = open(self.simCompareSummaryOut, 'w')
         foutSummary.write('Sim Id\tBest Id\tDescendants\tSelected Id\tDescendants\tDomain Id')
         foutSummary.write('\tdComp Best [IM]\tdCont Best [IM]')
@@ -347,10 +347,10 @@ class SimCompare(object):
 
         sys.stdout.write('\n')
 
-        print '\nOverall results:'
+        print('\nOverall results:')
         for comp in sorted(dCompSimBestList.keys()):
             for cont in sorted(dCompSimBestList[comp].keys()):
-                print 'Comp: %s, cont: %s' % (comp, cont)
+                print(('Comp: %s, cont: %s' % (comp, cont)))
 
                 dCompSimBest = array(dCompSimBestList[comp][cont])
                 dContSimBest = array(dContSimBestList[comp][cont])
@@ -359,64 +359,64 @@ class SimCompare(object):
                 dCompSim = array(dCompSimList[comp][cont])
                 dContSim = array(dContSimList[comp][cont])
 
-                print 'delta Comp Sim - Best: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dCompSimBest)), std(abs(dCompSimBest)), percentile(dCompSimBest, 10), percentile(dCompSimBest, 90))
-                print 'delta Cont Sim - Best: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dContSimBest)), std(abs(dContSimBest)), percentile(dContSimBest, 10), percentile(dContSimBest, 90))
-                print 'Comp Dom: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dCompDom)), std(abs(dCompDom)), percentile(dCompDom, 10), percentile(dCompDom, 90))
-                print 'Cont Dom: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dContDom)), std(abs(dContDom)), percentile(dContDom, 10), percentile(dContDom, 90))
-                print 'Comp Sim: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dCompSim)), std(abs(dCompSim)), percentile(dCompSim, 10), percentile(dCompSim, 90))
-                print 'Cont Sim: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dContSim)), std(abs(dContSim)), percentile(dContSim, 10), percentile(dContSim, 90))
-                print '\n'
+                print(('delta Comp Sim - Best: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dCompSimBest)), std(abs(dCompSimBest)), percentile(dCompSimBest, 10), percentile(dCompSimBest, 90))))
+                print(('delta Cont Sim - Best: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dContSimBest)), std(abs(dContSimBest)), percentile(dContSimBest, 10), percentile(dContSimBest, 90))))
+                print(('Comp Dom: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dCompDom)), std(abs(dCompDom)), percentile(dCompDom, 10), percentile(dCompDom, 90))))
+                print(('Cont Dom: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dContDom)), std(abs(dContDom)), percentile(dContDom, 10), percentile(dContDom, 90))))
+                print(('Comp Sim: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dCompSim)), std(abs(dCompSim)), percentile(dCompSim, 10), percentile(dCompSim, 90))))
+                print(('Cont Sim: %.3f +/- %.3f, %.3f, %.3f' % (mean(abs(dContSim)), std(abs(dContSim)), percentile(dContSim, 10), percentile(dContSim, 90))))
+                print('\n')
 
-        print 'Unmodified comp for best ms: mean = %.1f, 5th = %.1f, 95th = %.1f, std = %.2f, min = %.1f' % (mean(unmodifiedComp), percentile(unmodifiedComp, 5), percentile(unmodifiedComp, 95), std(unmodifiedComp), min(unmodifiedComp))
-        print 'Unmodified cont for best ms: mean = %.1f, 5th = %.1f, 95th = %.1f, std = %.2f, max = %.1f' % (mean(unmodifiedCont), percentile(unmodifiedCont, 5), percentile(unmodifiedCont, 95), std(unmodifiedCont), max(unmodifiedCont))
+        print(('Unmodified comp for best ms: mean = %.1f, 5th = %.1f, 95th = %.1f, std = %.2f, min = %.1f' % (mean(unmodifiedComp), percentile(unmodifiedComp, 5), percentile(unmodifiedComp, 95), std(unmodifiedComp), min(unmodifiedComp))))
+        print(('Unmodified cont for best ms: mean = %.1f, 5th = %.1f, 95th = %.1f, std = %.2f, max = %.1f' % (mean(unmodifiedCont), percentile(unmodifiedCont, 5), percentile(unmodifiedCont, 95), std(unmodifiedCont), max(unmodifiedCont))))
 
-        print 'There are %d of %d (%.2f%%) genomes with a comp < 95%% on the domain ms.' % (len(incompleteGenomesDomain), len(totalGenomes), len(incompleteGenomesDomain)*100.0/len(totalGenomes))
-        print 'There are %d of %d (%.2f%%) genomes with a cont > 5%% on the domain ms.' % (len(contaminatedGenomesDomain), len(totalGenomes), len(contaminatedGenomesDomain)*100.0/len(totalGenomes))
+        print(('There are %d of %d (%.2f%%) genomes with a comp < 95%% on the domain ms.' % (len(incompleteGenomesDomain), len(totalGenomes), len(incompleteGenomesDomain)*100.0/len(totalGenomes))))
+        print(('There are %d of %d (%.2f%%) genomes with a cont > 5%% on the domain ms.' % (len(contaminatedGenomesDomain), len(totalGenomes), len(contaminatedGenomesDomain)*100.0/len(totalGenomes))))
 
-        print 'There are %d of %d (%.2f%%) genomes with a comp < 95%% on the selected ms.' % (len(incompleteGenomesSelected), len(totalGenomes), len(incompleteGenomesSelected)*100.0/len(totalGenomes))
-        print 'There are %d of %d (%.2f%%) genomes with a cont > 5%% on the selected ms.' % (len(contaminatedGenomesSelected), len(totalGenomes), len(contaminatedGenomesSelected)*100.0/len(totalGenomes))
+        print(('There are %d of %d (%.2f%%) genomes with a comp < 95%% on the selected ms.' % (len(incompleteGenomesSelected), len(totalGenomes), len(incompleteGenomesSelected)*100.0/len(totalGenomes))))
+        print(('There are %d of %d (%.2f%%) genomes with a cont > 5%% on the selected ms.' % (len(contaminatedGenomesSelected), len(totalGenomes), len(contaminatedGenomesSelected)*100.0/len(totalGenomes))))
 
-        print 'There are %d of %d (%.2f%%) genomes with a comp < 95%% on the best ms.' % (len(incompleteGenomesBest), len(totalGenomes), len(incompleteGenomesBest)*100.0/len(totalGenomes))
-        print 'There are %d of %d (%.2f%%) genomes with a cont > 5%% on the best ms.' % (len(contaminatedGenomesBest), len(totalGenomes), len(contaminatedGenomesBest)*100.0/len(totalGenomes))
+        print(('There are %d of %d (%.2f%%) genomes with a comp < 95%% on the best ms.' % (len(incompleteGenomesBest), len(totalGenomes), len(incompleteGenomesBest)*100.0/len(totalGenomes))))
+        print(('There are %d of %d (%.2f%%) genomes with a cont > 5%% on the best ms.' % (len(contaminatedGenomesBest), len(totalGenomes), len(contaminatedGenomesBest)*100.0/len(totalGenomes))))
 
         #for genomeId in contaminatedGenomesDomain:
         #    os.system('cp /srv/db/img/07042014/genomes/' + genomeId + '/' + genomeId + '.fna ./genome_test/incomplete_dom10')
 
-        print 'Completeness for domain and selected: %.2f +/- %.2f, %.2f +/- %.2f' % (mean(abs(array(dCompDomOverall))), std(abs(array(dCompDomOverall))), mean(abs(array(dCompSelectedOverall))), std(abs(array(dCompSelectedOverall))))
-        print 'Contamination for domain and selected: %.2f +/- %.2f, %.2f +/- %.2f' % (mean(abs(array(dContDomOverall))), std(abs(array(dContDomOverall))), mean(abs(array(dContSelectedOverall))), std(abs(array(dContSelectedOverall))))
+        print(('Completeness for domain and selected: %.2f +/- %.2f, %.2f +/- %.2f' % (mean(abs(array(dCompDomOverall))), std(abs(array(dCompDomOverall))), mean(abs(array(dCompSelectedOverall))), std(abs(array(dCompSelectedOverall))))))
+        print(('Contamination for domain and selected: %.2f +/- %.2f, %.2f +/- %.2f' % (mean(abs(array(dContDomOverall))), std(abs(array(dContDomOverall))), mean(abs(array(dContSelectedOverall))), std(abs(array(dContSelectedOverall))))))
 
 
-        print ''
-        print domBetter, simBetter
-        print 'Domain better: %.2f' % (float(domBetter)*100/(domBetter+simBetter))
-        print 'Sim better: %.2f' % (float(simBetter)*100/(domBetter+simBetter))
+        print('')
+        print((domBetter, simBetter))
+        print(('Domain better: %.2f' % (float(domBetter)*100/(domBetter+simBetter))))
+        print(('Sim better: %.2f' % (float(simBetter)*100/(domBetter+simBetter))))
 
-        print ''
-        print msBetter, rmsBetter
-        print 'MS better: %.2f' % (float(msBetter)*100/(msBetter+rmsBetter))
-        print 'RMS better: %.2f' % (float(rmsBetter)*100/(msBetter+rmsBetter))
+        print('')
+        print((msBetter, rmsBetter))
+        print(('MS better: %.2f' % (float(msBetter)*100/(msBetter+rmsBetter))))
+        print(('RMS better: %.2f' % (float(rmsBetter)*100/(msBetter+rmsBetter))))
 
-        print ''
-        print imDomBetter, msDomBetter
-        print 'IM Domain better: %.2f' % (float(imDomBetter)*100/(imDomBetter+msDomBetter))
-        print 'MS Domain better: %.2f' % (float(msDomBetter)*100/(imDomBetter+msDomBetter))
+        print('')
+        print((imDomBetter, msDomBetter))
+        print(('IM Domain better: %.2f' % (float(imDomBetter)*100/(imDomBetter+msDomBetter))))
+        print(('MS Domain better: %.2f' % (float(msDomBetter)*100/(imDomBetter+msDomBetter))))
 
         briefSummaryOut.close()
         
-        print 'MS comp, cont: %.2f, %.2f' % (mean(msComp), mean(msCont))
-        print 'RMS comp, cont: %.2f, %.2f' % (mean(rmsComp), mean(rmsCont))
+        print(('MS comp, cont: %.2f, %.2f' % (mean(msComp), mean(msCont))))
+        print(('RMS comp, cont: %.2f, %.2f' % (mean(rmsComp), mean(rmsCont))))
         
         diff = []
         for a, b in zip(msComp, rmsComp):
             diff.append(abs(a-b))
             
-        print 'Abs diff comp: %.2f' % mean(diff)
+        print(('Abs diff comp: %.2f' % mean(diff)))
         
         diff = []
         for a, b in zip(msCont, rmsCont):
             diff.append(abs(a-b))
             
-        print 'Abs diff cont: %.2f' % mean(diff)
+        print(('Abs diff cont: %.2f' % mean(diff)))
         
 
 if __name__ == '__main__':

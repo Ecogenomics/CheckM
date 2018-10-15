@@ -68,7 +68,7 @@ class HmmerAligner:
         markerSeqs, markerStats = self.__extractMarkerSeqsTopHits(outDir, resultsParser)
 
         # generate individual HMMs required to create multiple sequence alignments
-        binId = binIdToModels.keys()[0]
+        binId = list(binIdToModels.keys())[0]
         hmmModelFiles = {}
         self.__makeAlignmentModels(hmmModelFile, binIdToModels[binId], hmmModelFiles)
 
@@ -108,7 +108,7 @@ class HmmerAligner:
         markerSeqs, markerStats = self.__extractMarkerSeqsUnique(outDir, resultsParser)
 
         # generate individual HMMs required to create multiple sequence alignments
-        binId = binIdToModels.keys()[0]
+        binId = list(binIdToModels.keys())[0]
         hmmModelFiles = {}
         self.__makeAlignmentModels(hmmModelFile, binIdToModels[binId], hmmModelFiles)
 
@@ -277,8 +277,8 @@ class HmmerAligner:
         unalignSeqFile = os.path.join(alignOutputDir, markerId + '.unaligned.faa')
         fout = open(unalignSeqFile, 'w')
         numSeqs = 0
-        for binId, seqs in binSeqs.iteritems():
-            for seqId, seq in seqs.iteritems():
+        for binId, seqs in list(binSeqs.items()):
+            for seqId, seq in list(seqs.items()):
                 header = '>' + binId + DefaultValues.SEQ_CONCAT_CHAR + seqId
                 if bReportHitStats:
                     header += ' [e-value=%.4g,score=%.1f]' % (binStats[binId][seqId][0], binStats[binId][seqId][1])
@@ -347,13 +347,13 @@ class HmmerAligner:
 
         # output masked sequences in FASTA format
         fout = open(outputFile, 'w')
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in list(seqs.items()):
             if seqStats:
                 fout.write('>%s %s\n' % (seqId, seqStats[seqId]))
             else:
                 fout.write('>' + seqId + '\n')
 
-            maskedSeq = ''.join([seq[i] for i in xrange(0, len(seq)) if mask[i] == 'x'])
+            maskedSeq = ''.join([seq[i] for i in range(0, len(seq)) if mask[i] == 'x'])
             fout.write(maskedSeq + '\n')
         fout.close()
 
@@ -368,7 +368,7 @@ class HmmerAligner:
             binORFs = readFasta(aaGeneFile)
 
             # extract ORFs hitting a marker
-            for markerId, hits in resultsParser.results[binId].markerHits.iteritems():
+            for markerId, hits in list(resultsParser.results[binId].markerHits.items()):
                 markerSeqs[markerId][binId] = {}
                 markerStats[markerId][binId] = {}
 
@@ -392,7 +392,7 @@ class HmmerAligner:
             binORFs = readFasta(aaGeneFile)
 
             # extract ORFs hitting a marker
-            for markerId, hits in resultsParser.results[binId].markerHits.iteritems():
+            for markerId, hits in list(resultsParser.results[binId].markerHits.items()):
                 markerSeqs[markerId][binId] = {}
                 markerStats[markerId][binId] = {}
 
@@ -436,7 +436,7 @@ class HmmerAligner:
         binORFs = readFasta(aaGeneFile)
 
         markerGenes = binMarkerSet.selectedMarkerSet().getMarkerGenes()
-        for markerId, hits in resultsParser.results[binId].markerHits.iteritems():
+        for markerId, hits in list(resultsParser.results[binId].markerHits.items()):
             if markerId not in markerGenes or len(hits) < 2:
                 continue
 

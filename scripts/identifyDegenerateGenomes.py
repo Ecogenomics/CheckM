@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -40,13 +40,13 @@ class IdentifyDegenerateGenomes(object):
         pass
 
     def run(self, ubiquityThreshold, singleCopyThreshold, minGenomes, mostSpecificRank, minMarkers, completenessThreshold, contaminationThreshold):
-        print 'Ubiquity threshold: ' + str(ubiquityThreshold)
-        print 'Single-copy threshold: ' + str(singleCopyThreshold)
-        print 'Min. genomes: ' + str(minGenomes)
-        print 'Most specific taxonomic rank: ' + str(mostSpecificRank)
-        print 'Min markers: ' + str(minMarkers)
-        print 'Completeness threshold: ' + str(completenessThreshold)
-        print 'Contamination threshold: ' + str(contaminationThreshold)
+        print(('Ubiquity threshold: ' + str(ubiquityThreshold)))
+        print(('Single-copy threshold: ' + str(singleCopyThreshold)))
+        print(('Min. genomes: ' + str(minGenomes)))
+        print(('Most specific taxonomic rank: ' + str(mostSpecificRank)))
+        print(('Min markers: ' + str(minMarkers)))
+        print(('Completeness threshold: ' + str(completenessThreshold)))
+        print(('Contamination threshold: ' + str(contaminationThreshold)))
 
         img = IMG()
         markerset = MarkerSet()
@@ -57,8 +57,8 @@ class IdentifyDegenerateGenomes(object):
         for lineage in lineages:
             genomeIds = img.genomeIdsByTaxonomy(lineage, 'Final')
 
-            print ''
-            print 'Lineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.'
+            print('')
+            print(('Lineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.'))
 
             # get table of PFAMs and do some initial filtering to remove PFAMs that are
             # clearly not going to pass the ubiquity and single-copy thresholds
@@ -84,7 +84,7 @@ class IdentifyDegenerateGenomes(object):
 
         fout = open('./data/degenerate_genomes.tsv', 'w')
         fout.write('Genome Id\tTaxonomy\tGenome Size (Gbps)\tScaffolds\tBiotic Relationships\tStatus\tLineage\t# genomes\tMarker set size\tCompleteness\tContamination\n')
-        for genomeId, data in degenerateGenomes.iteritems():
+        for genomeId, data in list(degenerateGenomes.items()):
             fout.write(genomeId + '\t' + '; '.join(metadata[genomeId]['taxonomy']) + '\t%.2f' % (float(metadata[genomeId]['genome size']) / 1e6) + '\t' + str(metadata[genomeId]['scaffold count']))
             fout.write('\t' + metadata[genomeId]['biotic relationships'] + '\t' + metadata[genomeId]['status'])
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -49,22 +49,22 @@ class IdentifyGeneLossAndDuplication(object):
 
     def run(self, ubiquityThreshold, minGenomes):
         # Pre-compute gene count table
-        print 'Computing gene count table.'
+        print('Computing gene count table.')
         start = time.time()
         metadata = self.img.genomeMetadata()
-        self.markerSetBuilder.cachedGeneCountTable = self.img.geneCountTable(metadata.keys())
+        self.markerSetBuilder.cachedGeneCountTable = self.img.geneCountTable(list(metadata.keys()))
         end = time.time()
-        print '    globalGeneCountTable: %.2f' % (end - start)
+        print(('    globalGeneCountTable: %.2f' % (end - start)))
 
         # read selected node for defining marker set
-        print 'Reading node defining marker set for each internal node.'
+        print('Reading node defining marker set for each internal node.')
         selectedMarkerNode = {}
         for line in open('/srv/whitlam/bio/db/checkm/selected_marker_sets.tsv'):
             lineSplit = line.split('\t')
             selectedMarkerNode[lineSplit[0].strip()] = lineSplit[1].strip()
             
         # read duplicate taxa
-        print 'Reading list of identical taxa in genome tree.'
+        print('Reading list of identical taxa in genome tree.')
         duplicateTaxa = {}
         for line in open('/srv/whitlam/bio/db/checkm/genome_tree/genome_tree.derep.txt'):
             lineSplit = line.rstrip().split()
@@ -72,18 +72,18 @@ class IdentifyGeneLossAndDuplication(object):
                 duplicateTaxa[lineSplit[0]] = lineSplit[1:]
         
         # read in node metadata
-        print 'Reading node metadata.'
+        print('Reading node metadata.')
         treeParser = TreeParser()
         uniqueIdToLineageStatistics = treeParser.readNodeMetadata()
         
         # read genome tree
-        print 'Reading in genome tree.'
+        print('Reading in genome tree.')
                 
         treeFile = '/srv/whitlam/bio/db/checkm/genome_tree/genome_tree_prok.refpkg/genome_tree.final.tre'
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
         
         # determine lineage-specific gene loss and duplication (relative to potential marker genes used by a node)
-        print 'Determining lineage-specific gene loss and duplication'
+        print('Determining lineage-specific gene loss and duplication')
         
         fout = open('/srv/whitlam/bio/db/checkm/genome_tree/missing_duplicate_genes_50.tsv', 'w')
         

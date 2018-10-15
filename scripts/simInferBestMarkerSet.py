@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -91,7 +91,7 @@ class Simulation(object):
             genomeSize = readFastaBases(os.path.join(self.img.genomeDir, testGenomeId, testGenomeId + '.fna'))
             
             repsPerGenome = 100
-            for _ in xrange(0, repsPerGenome): 
+            for _ in range(0, repsPerGenome): 
                 testComp = random.uniform(0.5, 1.0)
                 testCont = random.uniform(0, 0.2)
                 trueComp, trueCont, startPartialGenomeContigs = self.markerSetBuilder.sampleGenome(genomeSize, testComp, testCont, self.simContigLen)   
@@ -100,11 +100,11 @@ class Simulation(object):
                     containedMarkerGenes = self.markerSetBuilder.containedMarkerGenes(ms.getMarkerGenes(), geneDistTable[testGenomeId], startPartialGenomeContigs, self.simContigLen)
                     completeness, contamination = ms.genomeCheck(containedMarkerGenes, bIndividualMarkers=True)      
                     if completeness == 0.0:
-                        print ms.getMarkerGenes()
-                        print geneDistTable[testGenomeId]
-                        print startPartialGenomeContigs
-                        print genomeSize
-                        print '*****************' + testGenomeId
+                        print((ms.getMarkerGenes()))
+                        print((geneDistTable[testGenomeId]))
+                        print(startPartialGenomeContigs)
+                        print(genomeSize)
+                        print(('*****************' + testGenomeId))
                         sys.exit()
                     deltaComp[ms.lineageStr].append(completeness - trueComp)
                     deltaCont[ms.lineageStr].append(contamination - trueCont)
@@ -165,15 +165,15 @@ class Simulation(object):
     def run(self, ubiquityThreshold, singleCopyThreshold, numThreads):
         random.seed(0)
           
-        print '\n  Calculating global gene count table.'
+        print('\n  Calculating global gene count table.')
         metadata = self.img.genomeMetadata()
-        self.markerSetBuilder.globalGeneCountTable = self.img.geneCountTable(metadata.keys())
+        self.markerSetBuilder.globalGeneCountTable = self.img.geneCountTable(list(metadata.keys()))
           
-        print '\n  Reading reference genome tree.'
+        print('\n  Reading reference genome tree.')
         treeFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
             
-        print '  Evaluating %d internal nodes.' % len(tree.internal_nodes())
+        print(('  Evaluating %d internal nodes.' % len(tree.internal_nodes())))
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
 

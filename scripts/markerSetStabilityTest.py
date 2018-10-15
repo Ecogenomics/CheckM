@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -65,7 +65,7 @@ class MarkerSetStabilityTest(object):
 
                 markerGenes = markerGenes - tigrToRemove
 
-                for _ in xrange(0, 100):
+                for _ in range(0, 100):
                     # calculate marker set for subset of genomes
                     subsetGenomeIds = random.sample(genomeIds, numGenomesToSelect)
                     geneCountTable = self.img.geneCountTable(subsetGenomeIds)
@@ -108,7 +108,7 @@ class MarkerSetStabilityTest(object):
     def run(self, outputFile, ubiquityThreshold, singleCopyThreshold, minGenomes, mostSpecificRank, numThreads):
         """Calculate stability of marker sets for named taxonomic groups."""  
         
-        print '  Testing stability of marker sets:'
+        print('  Testing stability of marker sets:')
         
         random.seed(1)
         

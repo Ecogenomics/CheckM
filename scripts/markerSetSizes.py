@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -59,14 +59,14 @@ class MarkerSetSizes(object):
             if len(genomeIds) < minGenomes:
                 continue
 
-            print '\nLineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.'
+            print(('\nLineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.'))
             fout.write(lineage + '\t' + str(len(genomeIds)))
 
             pfamTable = img.pfamTable(genomeIds)
             for threshold in arange(maxThreshold, minThreshold, -stepSize):
                 markerSet = img.markerGenes(genomeIds, pfamTable, threshold*len(genomeIds), threshold*len(genomeIds))
                 fout.write('\t' + str(len(markerSet)))
-                print '  Threshold = %.2f, marker set size = %d' % (threshold, len(markerSet))
+                print(('  Threshold = %.2f, marker set size = %d' % (threshold, len(markerSet))))
             fout.write('\n')
 
         fout.close()

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 #                                                                             #
@@ -45,23 +45,23 @@ class EvaluateHMMs(object):
         pass
 
     def runProdigal(self, genomeId):
-        print '  Running Prodigal.'
+        print('  Running Prodigal.')
         os.system('time prodigal -m -c -f gff -g 11 -a ./prodigal_test/' + genomeId + '.genes.faa -d ./prodigal_test/' + genomeId + '.genes.fna -i ' + IMG.genomeDir + genomeId + '/' + genomeId + '.fna > ./prodigal_test/' + genomeId + '.prodigal.gff\n')
 
     def runGeneMark(self, genomeId):
-        print '  Running GeneMarkS.'
+        print('  Running GeneMarkS.')
         os.system('time ~/apps/genemark/gmsuite/gmsn.pl --prok --format GFF --gcode 11 --name ' + genomeId + ' --species ' + genomeId + ' --faa --fnn ' + IMG.genomeDir + genomeId + '/' + genomeId + '.fna')
         os.system('mv ' + genomeId + '.fna.faa ./genemark_test/' + genomeId + '.genes.faa')
         os.system('mv ' + genomeId + '.fna.fnn ./genemark_test/' + genomeId + '.genes.fna')
         os.system('mv ' + genomeId + '* ./genemark_test/')
 
     def runPFAM(self, genomeId):
-        print '  Running PFAM HMMs.'
+        print('  Running PFAM HMMs.')
         os.system('hmmsearch --notextw --noali --cpu 0 --cut_ga --domtblout ./genemark_test/' + genomeId + '.pfam.table.txt ./hmm/pfam_markers.hmm ./genemark_test/' + genomeId + '.genes.faa > ./genemark_test/' + genomeId + '.pfam.tsv\n')
         os.system('hmmsearch --notextw --noali --cpu 0 --cut_ga --domtblout ./prodigal_test/' + genomeId + '.pfam.table.txt ./hmm/pfam_markers.hmm ./prodigal_test/' + genomeId + '.genes.faa > ./prodigal_test/' + genomeId + '.pfam.tsv\n')
 
     def runTIGRFAM(self, genomeId):
-        print '  Running TIGR HMMs.'
+        print('  Running TIGR HMMs.')
         os.system('hmmsearch --notextw --noali --cpu 0 --cut_nc --domtblout ./genemark_test/' + genomeId + '.tigr.table.txt ./hmm/tigr_markers.hmm ./genemark_test/' + genomeId + '.genes.faa > ./genemark_test/' + genomeId + '.tigr.tsv\n')
         os.system('hmmsearch --notextw --noali --cpu 0 --cut_nc --domtblout ./prodigal_test/' + genomeId + '.tigr.table.txt ./hmm/tigr_markers.hmm ./prodigal_test/' + genomeId + '.genes.faa > ./prodigal_test/' + genomeId + '.tigr.tsv\n')
 
@@ -81,7 +81,7 @@ class EvaluateHMMs(object):
                 s.add(lineSplit[0])
                 hits[clusterId] = s
 
-        for clusterId, geneSet in hits.iteritems():
+        for clusterId, geneSet in list(hits.items()):
             hits[clusterId] = len(geneSet)
 
         return hits
@@ -112,29 +112,29 @@ class EvaluateHMMs(object):
         imgPfamHits = self.readImgTable(genomeId, pfamMarkers, '.pfam.tab.txt', 8)
         imgTigrHits = self.readImgTable(genomeId, tigrMarkers, '.tigrfam.tab.txt', 6)
 
-        print '  PFAM IMG hits: ' + str(len(imgPfamHits))
-        print '  PFAM TIGR hits: ' + str(len(imgTigrHits))
+        print(('  PFAM IMG hits: ' + str(len(imgPfamHits))))
+        print(('  PFAM TIGR hits: ' + str(len(imgTigrHits))))
 
         # get prodigal marker hits to genes as determined by HMMs
         hmmPfamHits = self.readHmmTable('./prodigal_test/' + genomeId + '.pfam.table.txt')
         hmmTigrHits = self.readHmmTable('./prodigal_test/' + genomeId + '.tigr.table.txt')
 
-        print '  Prodigal PFAM HMM hits: ' + str(len(hmmPfamHits))
-        print '  Prodigal TIGR HMM hits: ' + str(len(hmmTigrHits))
+        print(('  Prodigal PFAM HMM hits: ' + str(len(hmmPfamHits))))
+        print(('  Prodigal TIGR HMM hits: ' + str(len(hmmTigrHits))))
 
         # remove overlapping PFAM hits from the same clan
-        print '  Filtering Prodigal PFAM hits from the same clan.'
+        print('  Filtering Prodigal PFAM hits from the same clan.')
         filteredHmmPfamHits = self.pfam.filterHitsFromSameClan(hmmPfamHits, pfamMarkers)
-        print '  Filtered Prodigal PFAM hits: ' + str(len(filteredHmmPfamHits))
+        print(('  Filtered Prodigal PFAM hits: ' + str(len(filteredHmmPfamHits))))
 
         # reformat filtered PFAM hits
         prodigalPfamHits = {}
-        for pfamId, geneIds in filteredHmmPfamHits.iteritems():
+        for pfamId, geneIds in list(filteredHmmPfamHits.items()):
             prodigalPfamHits[pfamId] = len(geneIds)
 
         # reformat TIGR hits so dictionary is indexed by TIGR ids
         prodigalTigrHits = {}
-        for _, hits in hmmTigrHits.iteritems():
+        for _, hits in list(hmmTigrHits.items()):
             for h in hits:
                 tigrId = h[0]
                 prodigalTigrHits[tigrId] = prodigalTigrHits.get(tigrId, 0) + 1
@@ -143,22 +143,22 @@ class EvaluateHMMs(object):
         hmmPfamHits = self.readHmmTable('./genemark_test/' + genomeId + '.pfam.table.txt')
         hmmTigrHits = self.readHmmTable('./genemark_test/' + genomeId + '.tigr.table.txt')
 
-        print '  GeneMark PFAM HMM hits: ' + str(len(hmmPfamHits))
-        print '  GeneMark TIGR HMM hits: ' + str(len(hmmTigrHits))
+        print(('  GeneMark PFAM HMM hits: ' + str(len(hmmPfamHits))))
+        print(('  GeneMark TIGR HMM hits: ' + str(len(hmmTigrHits))))
 
         # remove overlapping PFAM hits from the same clan
-        print '  Filtering GeneMark PFAM hits from the same clan.'
+        print('  Filtering GeneMark PFAM hits from the same clan.')
         filteredHmmPfamHits = self.pfam.filterHitsFromSameClan(hmmPfamHits, pfamMarkers)
-        print '  Filtered GeneMark PFAM hits: ' + str(len(filteredHmmPfamHits))
+        print(('  Filtered GeneMark PFAM hits: ' + str(len(filteredHmmPfamHits))))
 
         # reformat filtered PFAM hits
         genemarkPfamHits = {}
-        for pfamId, geneIds in filteredHmmPfamHits.iteritems():
+        for pfamId, geneIds in list(filteredHmmPfamHits.items()):
             genemarkPfamHits[pfamId] = len(geneIds)
 
         # reformat TIGR hits so dictionary is indexed by TIGR ids
         genemarkTigrHits = {}
-        for _, hits in hmmTigrHits.iteritems():
+        for _, hits in list(hmmTigrHits.items()):
             for h in hits:
                 tigrId = h[0]
                 genemarkTigrHits[tigrId] = genemarkTigrHits.get(tigrId, 0) + 1
@@ -176,7 +176,7 @@ class EvaluateHMMs(object):
             totalProdigalHits += prodigalPfamHits.get(pfamId, 0)
             totalGeneMarkHits += genemarkPfamHits.get(pfamId, 0)
 
-        print '  PFAM (Prodigal diff, GeneMark diff, IMG hits, Prodigal hits, GeneMark hits): ' + str(prodigalDiff) + ', ' + str(genemarkDiff) + ', ' + str(totalImgHits) + ', ' + str(totalProdigalHits) + ', ' + str(totalGeneMarkHits)
+        print(('  PFAM (Prodigal diff, GeneMark diff, IMG hits, Prodigal hits, GeneMark hits): ' + str(prodigalDiff) + ', ' + str(genemarkDiff) + ', ' + str(totalImgHits) + ', ' + str(totalProdigalHits) + ', ' + str(totalGeneMarkHits)))
         fout.write('  PFAM (Prodigal diff, GeneMark diff, IMG hits, Prodigal hits, GeneMark hits): ' + str(prodigalDiff) + ', ' + str(genemarkDiff) + ', ' + str(totalImgHits) + ', ' + str(totalProdigalHits) + ', ' + str(totalGeneMarkHits) + '\n')
 
         prodigalDiff = 0
@@ -191,8 +191,8 @@ class EvaluateHMMs(object):
             totalProdigalHits += prodigalTigrHits.get(tigrId, 0)
             totalGeneMarkHits += genemarkTigrHits.get(tigrId, 0)
 
-        print '  TIGR (Prodigal diff, GeneMark diff, IMG hits, Prodigal hits, GeneMark hits): ' + str(prodigalDiff) + ', ' + str(genemarkDiff) + ', ' + str(totalImgHits) + ', ' + str(totalProdigalHits) + ', ' + str(totalGeneMarkHits)
-        print ''
+        print(('  TIGR (Prodigal diff, GeneMark diff, IMG hits, Prodigal hits, GeneMark hits): ' + str(prodigalDiff) + ', ' + str(genemarkDiff) + ', ' + str(totalImgHits) + ', ' + str(totalProdigalHits) + ', ' + str(totalGeneMarkHits)))
+        print('')
         fout.write('  TIGR (Prodigal diff, GeneMark diff, IMG hits, Prodigal hits, GeneMark hits): ' + str(prodigalDiff) + ', ' + str(genemarkDiff) + ', ' + str(totalImgHits) + ', ' + str(totalProdigalHits) + ', ' + str(totalGeneMarkHits) + '\n\n')
 
     def run(self):
@@ -204,14 +204,14 @@ class EvaluateHMMs(object):
         markerset = MarkerSet()
         pfamMarkers, tigrMarkers = markerset.getCalculatedMarkerGenes()
 
-        print 'PFAM marker genes: ' + str(len(tigrMarkers))
-        print 'TIGR marker genes: ' + str(len(pfamMarkers))
-        print ''
+        print(('PFAM marker genes: ' + str(len(tigrMarkers))))
+        print(('TIGR marker genes: ' + str(len(pfamMarkers))))
+        print('')
 
         # run HMMs on each of the finished genomes
         genomeIds = img.genomeIds('Finished')
         for genomeId in genomeIds:
-            print genomeId + ':'
+            print((genomeId + ':'))
             fout.write(genomeId + ':\n')
 
             self.runProdigal(genomeId)
