@@ -86,10 +86,10 @@ class DBConfig(object):
         try:
             open(self.configFile, 'a')
         except IOError, e:
-            print "You do not seem to have permission to edit the checkm config file"
-            print "located at %s" % self.configFile
-            print "Please try again with updated privileges. Error was:\n"
-            print e
+            print("You do not seem to have permission to edit the checkm config file")
+            print("located at %s" % self.configFile)
+            print("Please try again with updated privileges. Error was:\n")
+            print(e)
             return False
         return True
 
@@ -116,7 +116,7 @@ class DBManager(mm.ManifestManager):
 
     def runAction(self, action):
         """Main entry point for the updating code"""
-        
+
         if action[0] == "setRoot":
             if len(action) > 1:
                 path = self.setRoot(path=action[1])

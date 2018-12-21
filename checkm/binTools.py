@@ -123,7 +123,7 @@ class BinTools():
                     seqId = line[1:].split(None, 1)[0]
 
                     if seqId in seqIds:
-                        print '  [Warning] Sequence %s found multiple times in bin %s.' % (seqId, binId)
+                        print('  [Warning] Sequence %s found multiple times in bin %s.' % (seqId, binId))
                     seqIds.add(seqId)
 
             binSeqs[binId] = seqIds
@@ -137,13 +137,13 @@ class BinTools():
 
                 if len(seqInter) > 0:
                     bDuplicates = True
-                    print '  Sequences shared between %s and %s: ' % (binIds[i], binIds[j])
+                    print('  Sequences shared between %s and %s: ' % (binIds[i], binIds[j]))
                     for seqId in seqInter:
-                        print '    ' + seqId
-                    print ''
+                        print('    ' + seqId)
+                    print('')
 
         if not bDuplicates:
-            print '  No sequences assigned to multiple bins.'
+            print('  No sequences assigned to multiple bins.')
 
     def gcDist(self, seqs):
         """GC statistics for bin."""
