@@ -708,7 +708,7 @@ i.e. checkm unique will now fail''')
         else:
             checkmParser.parseOptions(args)
     except SystemExit:
-        print "\n  Controlled exit resulting from an unrecoverable error or warning."
+        print("\n  Controlled exit resulting from an unrecoverable error or warning.")
     except:
-        print "\nUnexpected error:", sys.exc_info()[0]
+        print("\nUnexpected error:", sys.exc_info()[0])
         raise
