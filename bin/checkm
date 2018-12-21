@@ -55,9 +55,9 @@ def version():
 
 
 def printHelp():
-    print ''
-    print '                ...::: CheckM v' + version() + ' :::...'''
-    print '''\
+    print('')
+    print('                ...::: CheckM v' + version() + ' :::...''')
+    print('''\
 
   Lineage-specific marker set:
     tree         -> Place bins in the reference genome tree
@@ -117,6 +117,7 @@ def printHelp():
 
   Usage: checkm <command> -h for command specific help
     '''
+)
 
 if __name__ == '__main__':
     # initialize the options parser
