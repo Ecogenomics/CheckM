@@ -358,7 +358,7 @@ class ManifestManager(object):
     def hashfile(self, fileName, blocksize=65536):
         """Hash a file and return the digest"""
         hasher = hashlib.sha256()
-        with open(fileName) as fh:
+        with open(fileName, 'rb') as fh:
             buf = fh.read(blocksize)
             while len(buf) > 0:
                 hasher.update(buf)
