@@ -47,7 +47,7 @@ class GetPhylogeneticHMMs(object):
                 markerId = f[0:f.find('.')]
                 markerIds.append(markerId)
                 
-        print 'Identified %d phylogenetically informative marker genes.' % (len(markerIds))
+        print('Identified %d phylogenetically informative marker genes.' % (len(markerIds)))
                 
         # place all phylogenetically informative marker genes into a single model file
         fout = open(outputFile, 'w')
@@ -57,7 +57,7 @@ class GetPhylogeneticHMMs(object):
         
         fout.close()
         
-        print 'HMMs written to: ' + outputFile
+        print('HMMs written to: ' + outputFile)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Gather all phylogenetically informative HMMs into a single model file.",

@@ -44,26 +44,26 @@ class MarkerGeneCorelation(object):
         img = IMG()
         markerset = MarkerSet()
 
-        print 'Reading metadata.'
+        print('Reading metadata.')
         metadata = img.genomeMetadata('Final')
 
-        print 'Getting marker genes.'
+        print('Getting marker genes.')
         pfamMarkers, tigrMarkers = markerset.getLineageMarkerGenes('Archaea')
         markerGenes = pfamMarkers.union(tigrMarkers)
-        print '  Marker genes: ' + str(len(markerGenes))
+        print('  Marker genes: ' + str(len(markerGenes)))
 
-        print 'Getting genomes of interest.'
+        print('Getting genomes of interest.')
         genomeIds = img.genomeIdsByTaxonomy('Archaea', 'Final')
-        print '  Genomes: ' + str(len(genomeIds))
+        print('  Genomes: ' + str(len(genomeIds)))
 
-        print 'Getting position of each marker gene.'
+        print('Getting position of each marker gene.')
         geneDistTable = img.geneDistTable(genomeIds, markerGenes, spacingBetweenContigs=1e6)
 
         spearmanValues = []
         pearsonValues = []
         genomeIds = list(genomeIds)
-        for i in xrange(0, len(genomeIds)):
-            print str(i+1) + ' of ' + str(len(genomeIds))
+        for i in range(0, len(genomeIds)):
+            print(str(i+1) + ' of ' + str(len(genomeIds)))
 
             geneOrderI = []
             maskI = []
@@ -76,7 +76,7 @@ class MarkerGeneCorelation(object):
                     maskI.append(1)
 
 
-            for j in xrange(i+1, len(genomeIds)):
+            for j in range(i+1, len(genomeIds)):
                 geneOrderJ = []
                 maskJ = []
                 for markerGenesId in markerGenes:
@@ -90,10 +90,10 @@ class MarkerGeneCorelation(object):
                 # test all translations
                 bestSpearman = 0
                 bestPearson = 0
-                for _ in xrange(0, len(markerGenes)):
+                for _ in range(0, len(markerGenes)):
                     maskedI = []
                     maskedJ = []
-                    for k in xrange(0, len(maskI)):
+                    for k in range(0, len(maskI)):
                         if maskI[k] == 0 and maskJ[k] == 0:
                             maskedI.append(geneOrderI[k])
                             maskedJ.append(geneOrderJ[k])
@@ -111,8 +111,8 @@ class MarkerGeneCorelation(object):
                 spearmanValues.append(bestSpearman)
                 pearsonValues.append(bestPearson)
 
-        print 'Spearman: %.2f +/- %.2f: ' % (mean(spearmanValues), std(spearmanValues))
-        print 'Pearson: %.2f +/- %.2f: ' % (mean(pearsonValues), std(pearsonValues))
+        print('Spearman: %.2f +/- %.2f: ' % (mean(spearmanValues), std(spearmanValues)))
+        print('Pearson: %.2f +/- %.2f: ' % (mean(pearsonValues), std(pearsonValues)))
 
 if __name__ == '__main__':
     markerGeneCorelation = MarkerGeneCorelation()

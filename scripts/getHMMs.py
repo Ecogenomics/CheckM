@@ -49,8 +49,8 @@ class GetHMMs(object):
         markerset = MarkerSet()
         pfamIds, tigrIds = markerset.getCalculatedMarkerGenes()
 
-        print 'TIGR marker genes: ' + str(len(tigrIds))
-        print 'PFAM marker genes: ' + str(len(pfamIds))
+        print('TIGR marker genes: ' + str(len(tigrIds)))
+        print('PFAM marker genes: ' + str(len(pfamIds)))
 
         # get all PFAM HMMs that are in the same clan
         # as any of the marker genes
@@ -60,11 +60,11 @@ class GetHMMs(object):
             if pfamId.replace('PF', 'pfam') in pfamIdToClanId:
                 clans.add(pfamIdToClanId[pfamId])
 
-        for pfamId, clanId in pfamIdToClanId.iteritems():
+        for pfamId, clanId in pfamIdToClanId.items():
             if clanId in clans:
                 pfamIds.add(pfamId)
 
-        print '  PFAM HMMs require to cover marker gene clans: ' + str(len(pfamIds))
+        print('  PFAM HMMs require to cover marker gene clans: ' + str(len(pfamIds)))
 
         # get name of each PFAM HMM
         fout = open('./hmm/pfam.keyfile.txt', 'w')
@@ -79,7 +79,7 @@ class GetHMMs(object):
                     fout.write(name + '\n')
         fout.close()
 
-        print 'PFAM names: ' + str(len(pfamNames))
+        print('PFAM names: ' + str(len(pfamNames)))
 
         # extract each PFAM HMM
         os.system('hmmfetch -f ' + img.pfamHMMs + ' ./hmm/pfam.keyfile.txt > ./hmm/pfam_markers.hmm')

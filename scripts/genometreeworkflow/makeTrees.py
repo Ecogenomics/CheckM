@@ -61,12 +61,12 @@ class MakeTrees(object):
 
         treeList.close()
 
-        print 'Building trees...'
+        print('Building trees...')
         os.system('cat ' + outputDir + '/treeList.txt | parallel --max-procs ' + str(numThreads))
 
 if __name__ == '__main__':
-    print 'MakeTrees v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print('MakeTrees v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('align_dir', help='directory containing multiple sequence alignments')

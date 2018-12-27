@@ -46,7 +46,7 @@ class SimLineageSpecificMarkerSets(object):
 
         lineages = []
         taxon = taxonomyStr.split(';')
-        for r in xrange(0, len(taxon)):
+        for r in range(0, len(taxon)):
             lineages.append(';'.join(taxon[0:r+1]))
 
         # get all marker sets
@@ -55,17 +55,17 @@ class SimLineageSpecificMarkerSets(object):
         colocatedSets = []
         for lineage in lineages:
             genomeIds = img.genomeIdsByTaxonomy(lineage, 'Final')
-            print '\nLineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.'
+            print('\nLineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.')
 
             # build marker genes and colocated marker sets
             countTable = img.countTable(genomeIds)
             mg = img.markerGenes(genomeIds, countTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
-            print '  Marker genes: ' + str(len(mg))
+            print('  Marker genes: ' + str(len(mg)))
 
             mdt = img.geneDistTable(genomeIds, mg, spacingBetweenContigs=1e6)
             colocatedGenes = img.colocatedGenes(mdt)
             cs = img.colocatedSets(colocatedGenes, mg)
-            print '  Co-located gene sets: ' + str(len(cs))
+            print('  Co-located gene sets: ' + str(len(cs)))
 
             markerGenes.append(mg)
             geneDistTable.append(mdt)
@@ -82,12 +82,12 @@ class SimLineageSpecificMarkerSets(object):
         plotLabels = []
         plotData = []
         for genomeId in rndGenomeIds:
-            completion = [[] for _ in xrange(len(lineages))]
-            for _ in xrange(0, numReplicates):
+            completion = [[] for _ in range(len(lineages))]
+            for _ in range(0, numReplicates):
                 startPartialGenomeContigs = img.sampleGenome(metadata[genomeId]['genome size'], percentCompletion, contigLen)
 
                 # calculate completion with marker set
-                for i in xrange(len(lineages)):
+                for i in range(len(lineages)):
                     containedMarkerGenes = img.containedMarkerGenes(markerGenes[i], geneDistTable[i][genomeId], startPartialGenomeContigs, contigLen)
 
                     comp = 0.0

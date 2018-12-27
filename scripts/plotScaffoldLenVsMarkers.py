@@ -91,7 +91,7 @@ class ScatterPlot(AbstractPlot):
         for line in axes.xaxis.get_ticklines(): 
             line.set_color(self.axesColour)
             
-        for loc, spine in axes.spines.iteritems():
+        for loc, spine in axes.spines.items():
             if loc in ['right','top']:
                 spine.set_color('none') 
             else:
@@ -105,9 +105,9 @@ class PlotScaffoldLenVsMarkers(object):
 
     def run(self):
         # get all draft genomes consisting of a user-specific minimum number of scaffolds
-        print ''
+        print('')
         metadata = self.img.genomeMetadata()
-        print '  Total genomes: %d' % len(metadata)
+        print('  Total genomes: %d' % len(metadata))
         
         arGenome = set()
         for genomeId in metadata:
@@ -115,30 +115,30 @@ class PlotScaffoldLenVsMarkers(object):
                 arGenome.add(genomeId)
                 
         draftGenomeIds = arGenome - self.img.filterGenomeIds(arGenome, metadata, 'status', 'Finished')
-        print '  Number of draft genomes: %d' % len(draftGenomeIds)
+        print('  Number of draft genomes: %d' % len(draftGenomeIds))
         
         minScaffolds = 20
         genomeIdsToTest = set()
         for genomeId in draftGenomeIds:
             if metadata[genomeId]['scaffold count'] >= minScaffolds:
                 genomeIdsToTest.add(genomeId)
-        print '  Number of draft genomes with >= %d scaffolds: %d' % (minScaffolds, len(genomeIdsToTest))
+        print('  Number of draft genomes with >= %d scaffolds: %d' % (minScaffolds, len(genomeIdsToTest)))
 
-        print ''
-        print '  Calculating genome information for calculating marker sets:'
+        print('')
+        print('  Calculating genome information for calculating marker sets:')
         genomeFamilyScaffolds = self.img.precomputeGenomeFamilyScaffolds(genomeIdsToTest)
         
-        print '  Calculating genome sequence lengths.'
+        print('  Calculating genome sequence lengths.')
         genomeSeqLens = self.img.precomputeGenomeSeqLens(genomeIdsToTest)
         
-        print '  Determining domain-specific marker sets.'
+        print('  Determining domain-specific marker sets.')
         taxonParser = TaxonParser()
         taxonMarkerSets = taxonParser.readMarkerSets()
         bacMarkers = taxonMarkerSets['domain']['Bacteria'].getMarkerGenes()
         arMarkers = taxonMarkerSets['domain']['Archaea'].getMarkerGenes()
-        print '    There are %d bacterial markers and %d archaeal markers.' % (len(bacMarkers), len(arMarkers))
+        print('    There are %d bacterial markers and %d archaeal markers.' % (len(bacMarkers), len(arMarkers)))
         
-        print '  Determining percentage of markers on each scaffold.'
+        print('  Determining percentage of markers on each scaffold.')
         totalMarkers = 0
         totalSequenceLen = 0
         markersOnShortScaffolds = 0
@@ -146,7 +146,7 @@ class PlotScaffoldLenVsMarkers(object):
         
         scaffoldLen = {}
         percentageMarkers = defaultdict(float)
-        for genomeId, markerIds in genomeFamilyScaffolds.iteritems():
+        for genomeId, markerIds in genomeFamilyScaffolds.items():
             domain = metadata[genomeId]['taxonomy'][0]
             markerGenes = bacMarkers if domain == 'Bacteria' else arMarkers
             for markerId in markerGenes:
@@ -165,10 +165,10 @@ class PlotScaffoldLenVsMarkers(object):
                             markersOnShortScaffolds += 1
                             totalShortScaffoldLen += genomeSeqLens[genomeId][scaffoldId]
        
-        print 'Markers on short scaffolds: %d over %d Mbp (%f markers per base)' % (markersOnShortScaffolds, totalShortScaffoldLen, float(markersOnShortScaffolds)/totalShortScaffoldLen)
-        print 'Total markers on scaffolds: %d over %d Mbp (%f markers per base)' % (totalMarkers, totalSequenceLen, float(totalMarkers)/totalSequenceLen)
+        print('Markers on short scaffolds: %d over %d Mbp (%f markers per base)' % (markersOnShortScaffolds, totalShortScaffoldLen, float(markersOnShortScaffolds)/totalShortScaffoldLen))
+        print('Total markers on scaffolds: %d over %d Mbp (%f markers per base)' % (totalMarkers, totalSequenceLen, float(totalMarkers)/totalSequenceLen))
                         
-        print '  Create plot.'
+        print('  Create plot.')
         plotLens = []
         plotPerMarkers = []
         for scaffoldId in percentageMarkers:

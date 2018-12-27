@@ -46,17 +46,17 @@ class SimMarkerGenesVsMarkerSets(object):
         img = IMG()
 
         genomeIds = img.genomeIdsByTaxonomy(taxonomyStr, 'Final')
-        print '\nLineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.'
+        print('\nLineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.')
 
         # build marker genes and colocated marker sets
         countTable = img.countTable(genomeIds)
         markerGenes = img.markerGenes(genomeIds, countTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
-        print '  Marker genes: ' + str(len(markerGenes))
+        print('  Marker genes: ' + str(len(markerGenes)))
 
         geneDistTable = img.geneDistTable(genomeIds, markerGenes)
         colocatedGenes = img.colocatedGenes(geneDistTable)
         colocatedSets = img.colocatedSets(colocatedGenes, markerGenes)
-        print '  Co-located gene sets: ' + str(len(colocatedSets))
+        print('  Co-located gene sets: ' + str(len(colocatedSets)))
 
 
         # random sample genomes
@@ -72,7 +72,7 @@ class SimMarkerGenesVsMarkerSets(object):
         for genomeId in rndGenomeIds:
             mgCompletion = []
             msCompletion = []
-            for _ in xrange(0, numReplicates):
+            for _ in range(0, numReplicates):
                 startPartialGenomeContigs = img.sampleGenome(metadata[genomeId]['genome size'], percentCompletion, contigLen)
 
                 # calculate completion with marker genes

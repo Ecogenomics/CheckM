@@ -64,10 +64,10 @@ class MarkerSetStability(object):
                 tigrToRemove = self.img.identifyRedundantTIGRFAMs(markerGenes)
                 markerGenes = markerGenes - tigrToRemove
      
-                for selectPer in xrange(50, 101, 5):
+                for selectPer in range(50, 101, 5):
                     numGenomesToSelect = int(float(selectPer)/100 * len(genomeIds))
                     perChange = []
-                    for _ in xrange(0, 10):
+                    for _ in range(0, 10):
                         # calculate marker set for subset of genomes
                         subsetGenomeIds = random.sample(genomeIds, numGenomesToSelect)
                         geneCountTable = self.img.geneCountTable(subsetGenomeIds)
@@ -109,7 +109,7 @@ class MarkerSetStability(object):
     def run(self, outputFile, ubiquityThreshold, singleCopyThreshold, minGenomes, mostSpecificRank, numThreads):
         """Calculate stability of marker sets for named taxonomic groups."""  
         
-        print '  Calculating stability of marker sets:'
+        print('  Calculating stability of marker sets:')
         
         random.seed(1)
         

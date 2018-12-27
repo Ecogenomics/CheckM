@@ -109,13 +109,13 @@ class SimComparePlots(object):
                 
                 results[simId] = [bestCompIM, bestContIM, bestCompMS, bestContMS, domCompIM, domContIM, domCompMS, domContMS, simCompIM, simContIM, simCompMS, simContMS, simCompRMS, simContRMS]
                 
-        print '    Number of test genomes: ' + str(len(genomeIds))
+        print('    Number of test genomes: ' + str(len(genomeIds)))
         
         return results
     
     def markerSets(self, results):
         # summarize results from IM vs MS
-        print '  Tabulating results for domain-level marker genes vs marker sets.'
+        print('  Tabulating results for domain-level marker genes vs marker sets.')
         
         itemsProcessed = 0      
         compDataDict = defaultdict(lambda : defaultdict(list))
@@ -138,14 +138,14 @@ class SimComparePlots(object):
             contDataDict[expCondStr]['IM'] += results[simId][5]
             contDataDict[expCondStr]['MS'] += results[simId][7]
                 
-        print '  There are %d unique genomes.' % len(genomeIds)
+        print('  There are %d unique genomes.' % len(genomeIds))
               
         sys.stdout.write('\n')
         
-        print '    There are %d experimental conditions.' % (len(compDataDict))
+        print('    There are %d experimental conditions.' % (len(compDataDict)))
                 
         # plot data
-        print '  Plotting results.'
+        print('  Plotting results.')
         compData = []
         contData = []
         rowLabels = []
@@ -160,8 +160,8 @@ class SimComparePlots(object):
                         compData.append(compDataDict[expCondStr][msStr])
                         contData.append(contDataDict[expCondStr][msStr])  
                                        
-        print 'MS:\t%.2f\t%.2f' % (mean(abs(array(compData[0::2]))), mean(abs(array(contData[0::2]))))
-        print 'IM:\t%.2f\t%.2f' % (mean(abs(array(compData[1::2]))), mean(abs(array(contData[1::2]))))   
+        print('MS:\t%.2f\t%.2f' % (mean(abs(array(compData[0::2]))), mean(abs(array(contData[0::2])))))
+        print('IM:\t%.2f\t%.2f' % (mean(abs(array(compData[1::2]))), mean(abs(array(contData[1::2])))))   
             
         boxPlot = BoxPlot()
         plotFilename = self.plotPrefix + '.markerSets.png'
@@ -223,7 +223,7 @@ class SimComparePlots(object):
     
     def conditionsPlot(self, results):
         # summarize results for each experimental condition  
-        print '  Tabulating results for each experimental condition using marker sets.'
+        print('  Tabulating results for each experimental condition using marker sets.')
         
         itemsProcessed = 0      
         compDataDict = defaultdict(lambda : defaultdict(list))
@@ -264,14 +264,14 @@ class SimComparePlots(object):
             for dCont in results[simId][3]:
                 contOutliers[expCondStr] += [[dCont, genomeId]]
                 
-        print '  There are %d unique genomes.' % len(genomeIds)
+        print('  There are %d unique genomes.' % len(genomeIds))
               
         sys.stdout.write('\n')
         
-        print '    There are %d experimental conditions.' % (len(compDataDict))
+        print('    There are %d experimental conditions.' % (len(compDataDict)))
                 
         # plot data
-        print '  Plotting results.'
+        print('  Plotting results.')
         compData = []
         contData = []
         rowLabels = []
@@ -296,7 +296,7 @@ class SimComparePlots(object):
                 dComps = array([r[0] for r in compOutliers[expCondStr]])
                 perc1 = scoreatpercentile(dComps, 1)
                 perc99 = scoreatpercentile(dComps, 99)
-                print expCondStr, perc1, perc99
+                print(expCondStr, perc1, perc99)
                 
                 foutComp.write('\t%.2f\t%.2f' % (perc1, perc99))
                 
@@ -334,9 +334,9 @@ class SimComparePlots(object):
         foutComp.close()
         foutCont.close()
                                
-        print 'best:\t%.2f\t%.2f' % (mean(abs(array(compData[0::3]))), mean(abs(array(contData[0::3]))))
-        print 'selected:\t%.2f\t%.2f' % (mean(abs(array(compData[1::3]))), mean(abs(array(contData[1::3]))))   
-        print 'domain:\t%.2f\t%.2f' % (mean(abs(array(compData[2::3]))), mean(abs(array(contData[2::3]))))   
+        print('best:\t%.2f\t%.2f' % (mean(abs(array(compData[0::3]))), mean(abs(array(contData[0::3])))))
+        print('selected:\t%.2f\t%.2f' % (mean(abs(array(compData[1::3]))), mean(abs(array(contData[1::3])))))   
+        print('domain:\t%.2f\t%.2f' % (mean(abs(array(compData[2::3]))), mean(abs(array(contData[2::3])))))   
 
         boxPlot = BoxPlot()
         plotFilename = self.plotPrefix + '.conditions.png'
@@ -412,7 +412,7 @@ class SimComparePlots(object):
         
     def taxonomicPlots(self, results):
         # summarize results for different taxonomic groups  
-        print '  Tabulating results for taxonomic groups.'
+        print('  Tabulating results for taxonomic groups.')
         
         metadata = self.img.genomeMetadata()
         
@@ -424,7 +424,7 @@ class SimComparePlots(object):
         seqLens = set()
         
         ranksToProcess = 3
-        taxaByRank = [set() for _ in xrange(0, ranksToProcess)]
+        taxaByRank = [set() for _ in range(0, ranksToProcess)]
         
         overallComp = []
         overallCont = []
@@ -443,7 +443,7 @@ class SimComparePlots(object):
                 continue
             
             if str(float(comp)) in ['0.5', '0.7', '0.8', '0.9'] and str(float(cont)) in ['0.05', '0.10', '0.1', '0.15']:
-                print comp, cont
+                print(comp, cont)
                 taxonomy = metadata[genomeId]['taxonomy']
                 
                 testCases += 1
@@ -455,11 +455,11 @@ class SimComparePlots(object):
                 overallComp += results[simId][10]
                 overallCont += results[simId][11]
                 
-                for r in xrange(0, ranksToProcess):
+                for r in range(0, ranksToProcess):
                     taxon = taxonomy[r]
                     
                     if r == 0 and taxon == 'unclassified':
-                        print '*****************************Unclassified at domain-level*****************'
+                        print('*****************************Unclassified at domain-level*****************')
                         continue
                     
                     if taxon == 'unclassified':
@@ -481,20 +481,20 @@ class SimComparePlots(object):
             
         sys.stdout.write('\n')
         
-        print 'Test cases', testCases
+        print('Test cases', testCases)
         
-        print ''        
-        print 'Creating plots for:'
-        print '  comps = ', comps
-        print '  conts = ', conts
+        print('')        
+        print('Creating plots for:')
+        print('  comps = ', comps)
+        print('  conts = ', conts)
         
-        print ''
-        print '    There are %d taxa.' % (len(compDataDict))
+        print('')
+        print('    There are %d taxa.' % (len(compDataDict)))
         
-        print ''
-        print '  Overall bias:'
-        print '    Selected comp: %.2f' % mean(overallComp)
-        print '    Selected cont: %.2f' % mean(overallCont)
+        print('')
+        print('  Overall bias:')
+        print('    Selected comp: %.2f' % mean(overallComp))
+        print('    Selected cont: %.2f' % mean(overallCont))
         
         # get list of ordered taxa by rank
         orderedTaxa = []
@@ -502,7 +502,7 @@ class SimComparePlots(object):
             orderedTaxa += sorted(taxa)
                 
         # plot data
-        print '  Plotting results.'
+        print('  Plotting results.')
         compData = []
         contData = []
         rowLabels = []
@@ -517,7 +517,7 @@ class SimComparePlots(object):
                 contData.append(contDataDict[taxon][msStr])        
                 
         for i, rowLabel in enumerate(rowLabels):
-            print rowLabel + '\t%.2f\t%.2f' % (mean(abs(array(compData[i]))), mean(abs(array(contData[i]))))            
+            print(rowLabel + '\t%.2f\t%.2f' % (mean(abs(array(compData[i]))), mean(abs(array(contData[i])))))            
                   
         # print taxonomic table of results organized by class
         taxonomyTableOut = open(self.simCompareTaxonomyTableOut, 'w')
@@ -548,7 +548,7 @@ class SimComparePlots(object):
     
     def refinementPlots(self, results):
         # summarize results for different CheckM refinements 
-        print '  Tabulating results for different refinements.'
+        print('  Tabulating results for different refinements.')
         
         metadata = self.img.genomeMetadata()
         
@@ -560,7 +560,7 @@ class SimComparePlots(object):
         seqLens = set()
         
         ranksToProcess = 3
-        taxaByRank = [set() for _ in xrange(0, ranksToProcess)]
+        taxaByRank = [set() for _ in range(0, ranksToProcess)]
         
         overallCompIM = []
         overallContIM = [] 
@@ -599,7 +599,7 @@ class SimComparePlots(object):
             overallCompRMS.append(results[simId][12])
             overallContRMS.append(results[simId][13])
             
-            for r in xrange(0, ranksToProcess):
+            for r in range(0, ranksToProcess):
                 taxon = taxonomy[r]
                 
                 if taxon == 'unclassified':
@@ -619,20 +619,20 @@ class SimComparePlots(object):
             
         sys.stdout.write('\n')
         
-        print 'Creating plots for:'
-        print '  comps = ', comps
-        print '  conts = ', conts
+        print('Creating plots for:')
+        print('  comps = ', comps)
+        print('  conts = ', conts)
         
-        print ''
-        print '    There are %d taxon.' % (len(compDataDict))
-        print ''
-        print 'Percentage change MS-IM comp: %.4f' % ((mean(abs(array(overallCompMS))) - mean(abs(array(overallCompIM)))) * 100 / mean(abs(array(overallCompIM))))
-        print 'Percentage change MS-IM cont: %.4f' % ((mean(abs(array(overallContMS))) - mean(abs(array(overallContIM)))) * 100 / mean(abs(array(overallContIM))))
-        print ''
-        print 'Percentage change RMS-MS comp: %.4f' % ((mean(abs(array(overallCompRMS))) - mean(abs(array(overallCompMS)))) * 100 / mean(abs(array(overallCompIM))))
-        print 'Percentage change RMS-MS cont: %.4f' % ((mean(abs(array(overallContRMS))) - mean(abs(array(overallContMS)))) * 100 / mean(abs(array(overallContIM))))
+        print('')
+        print('    There are %d taxon.' % (len(compDataDict)))
+        print('')
+        print('Percentage change MS-IM comp: %.4f' % ((mean(abs(array(overallCompMS))) - mean(abs(array(overallCompIM)))) * 100 / mean(abs(array(overallCompIM)))))
+        print('Percentage change MS-IM cont: %.4f' % ((mean(abs(array(overallContMS))) - mean(abs(array(overallContIM)))) * 100 / mean(abs(array(overallContIM)))))
+        print('')
+        print('Percentage change RMS-MS comp: %.4f' % ((mean(abs(array(overallCompRMS))) - mean(abs(array(overallCompMS)))) * 100 / mean(abs(array(overallCompIM)))))
+        print('Percentage change RMS-MS cont: %.4f' % ((mean(abs(array(overallContRMS))) - mean(abs(array(overallContMS)))) * 100 / mean(abs(array(overallContIM)))))
         
-        print ''
+        print('')
         
         # get list of ordered taxa by rank
         orderedTaxa = []
@@ -661,7 +661,7 @@ class SimComparePlots(object):
         refinmentTableOut.close()
        
         # plot data
-        print '  Plotting results.'
+        print('  Plotting results.')
         compData = []
         contData = []
         rowLabels = []
@@ -676,7 +676,7 @@ class SimComparePlots(object):
                 contData.append(contDataDict[taxon][refineStr])       
                 
         for i, rowLabel in enumerate(rowLabels):
-            print rowLabel + '\t%.2f\t%.2f' % (mean(abs(array(compData[i]))), mean(abs(array(contData[i]))))
+            print(rowLabel + '\t%.2f\t%.2f' % (mean(abs(array(compData[i]))), mean(abs(array(contData[i])))))
             
         boxPlot = BoxPlot()
         plotFilename = self.plotPrefix + '.refinements.png'
@@ -687,19 +687,19 @@ class SimComparePlots(object):
         
     def run(self):
         # read simulation results
-        print '  Reading simulation results.'
+        print('  Reading simulation results.')
         results = self.__readResults(self.simCompareFile)
         
-        print '\n'         
+        print('\n')         
         #self.markerSets(results)
                    
-        print '\n'         
+        print('\n')         
         #self.conditionsPlot(results)
         
         #print '\n'
         self.taxonomicPlots(results)
         
-        print '\n'
+        print('\n')
         #self.refinementPlots(results)
 
 if __name__ == '__main__':

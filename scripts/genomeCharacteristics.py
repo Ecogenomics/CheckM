@@ -48,11 +48,11 @@ class GenomeCharacteristics(object):
         return dna.translate(self.complements)[::-1]
 
     def runProdigal(self, genomeId):
-        print '  Running Prodigal.'
+        print('  Running Prodigal.')
         #os.system('prodigal -c -f gff -g 11 -d ./genome_characteristics/' + genomeId + '.genes.fna -a ./genome_characteristics/' + genomeId + '.genes.faa -i ' + IMG.genomeDir + genomeId + '/' + genomeId + '.fna > ./genome_characteristics/' + genomeId + '.prodigal.gff\n')
 
     def readSeqs(self, filename):
-        print '  Reading sequences.'
+        print('  Reading sequences.')
         seqs = {}
         seqId = None
         seq = ''
@@ -91,7 +91,7 @@ class GenomeCharacteristics(object):
             negStrand += 1
             stopCodon = self.revComp(seq[start-1:start+2])
         else:
-            print '[Error] Unknown strand type.'
+            print('[Error] Unknown strand type.')
             sys.exit()
 
         features = lineSplit[8].split(';')
@@ -138,7 +138,7 @@ class GenomeCharacteristics(object):
             lineNum += 1
 
             if lineNum % 10000 == 0:
-                print '  Reading line: ' + str(lineNum)
+                print('  Reading line: ' + str(lineNum))
 
             if line[0] == '#':
                 if 'seqlen=' in line:
@@ -159,25 +159,25 @@ class GenomeCharacteristics(object):
                 genes, posStrand, negStrand = self.parseLineGFF(line, genes, posStrand, negStrand, startCodonFreq, stopCodonFreq, rbsMotifFreq, geneLens, seqs)
 
         if totalSeqLen != 0 and genes == 0:
-            print '[Error] No Genes!'
+            print('[Error] No Genes!')
             sys.exit()
 
         codingDensity = float( sum(geneLens) ) / max(totalSeqLen, 1)
         codingDensityPlasmid = float( sum(geneLensPlasmid) ) / max(totalSeqLenPlasmid, 1)
-        for codon, count in startCodonFreq.iteritems():
+        for codon, count in startCodonFreq.items():
             startCodonFreq[codon] = float( count ) / max(genes, 1)
-        for codon, count in stopCodonFreq.iteritems():
+        for codon, count in stopCodonFreq.items():
             stopCodonFreq[codon] = float( count ) / max(genes, 1)
-        for motif, count in rbsMotifFreq.iteritems():
+        for motif, count in rbsMotifFreq.items():
             rbsMotifFreq[motif] = float( count ) / max(genes, 1)
 
         strandedness = float( abs(posStrand - negStrand) ) / max(genes, 1)
         strandednessPlasmid = float( abs(posStrandPlasmid - negStrandPlasmid) ) / max(genesPlasmid, 1)
-        for codon, count in startCodonFreqPlasmid.iteritems():
+        for codon, count in startCodonFreqPlasmid.items():
             startCodonFreqPlasmid[codon] = float( count ) / max(genesPlasmid, 1)
-        for codon, count in stopCodonFreqPlasmid.iteritems():
+        for codon, count in stopCodonFreqPlasmid.items():
             stopCodonFreqPlasmid[codon] = float( count ) / max(genesPlasmid, 1)
-        for motif, count in rbsMotifFreqPlasmid.iteritems():
+        for motif, count in rbsMotifFreqPlasmid.items():
             rbsMotifFreqPlasmid[motif] = float( count ) / max(genes, 1)
 
         return [[totalSeqLen, codingDensity, strandedness, startCodonFreq, stopCodonFreq, rbsMotifFreq, geneLens], [totalSeqLenPlasmid, codingDensityPlasmid, strandednessPlasmid, startCodonFreqPlasmid, stopCodonFreqPlasmid, rbsMotifFreqPlasmid, geneLensPlasmid]];
@@ -215,10 +215,10 @@ class GenomeCharacteristics(object):
     def writeResults(self, charByGroup):
         fout = open('./data/genome_characteristics.tsv', 'w')
         fout.write('Group name\t# genomes\tSeq length\t\tCoding density\t\tStrandedness\t\tGene length\t\tStart codon freq\t\t\t\t\t\tStop codon freq\t\tRBS motif freq\n')
-        for groupName, data in charByGroup.iteritems():
+        for groupName, data in charByGroup.items():
             #sanity check
             if len(data['seq_len']) != len(data['coding_density']) or len(data['seq_len']) != len(data['strandedness']) or len(data['seq_len']) != len(data['gene_lens']):
-                print '[Error] Not all genome characteristics have the same length: ' + groupName
+                print('[Error] Not all genome characteristics have the same length: ' + groupName)
                 sys.exit()
 
             fout.write(groupName)
@@ -235,26 +235,26 @@ class GenomeCharacteristics(object):
 
             meanStartCodonDic = {}
             for startCodonDic in data['start_codon_freq']:
-                for codon, freq in startCodonDic.iteritems():
+                for codon, freq in startCodonDic.items():
                     meanStartCodonDic[codon] = meanStartCodonDic.get(codon, []) + [freq]
 
-            for codon, freqList in meanStartCodonDic.iteritems():
+            for codon, freqList in meanStartCodonDic.items():
                 fout.write('\t' + codon + ': %.2f\t%.3f' % (mean(freqList), std(freqList)))
 
             meanStopCodonDic = {}
             for stopCodonDic in data['stop_codon_freq']:
-                for codon, freq in stopCodonDic.iteritems():
+                for codon, freq in stopCodonDic.items():
                     meanStopCodonDic[codon] = meanStopCodonDic.get(codon, []) + [freq]
 
-            for codon, freqList in meanStopCodonDic.iteritems():
+            for codon, freqList in meanStopCodonDic.items():
                 fout.write('\t' + codon + ': %.2f\t%.3f' % (mean(freqList), std(freqList)))
 
             meanRbsMotifDic = {}
             for rbsMotifDic in data['rbs_motif']:
-                for motif, freq in rbsMotifDic.iteritems():
+                for motif, freq in rbsMotifDic.items():
                     meanRbsMotifDic[motif] = meanRbsMotifDic.get(motif, []) + [freq]
 
-            for motif, freqList in meanRbsMotifDic.iteritems():
+            for motif, freqList in meanRbsMotifDic.items():
                 fout.write('\t' + motif + ': %.2f\t%.3f' % (mean(freqList), std(freqList)))
             fout.write('\n')
 
@@ -264,7 +264,7 @@ class GenomeCharacteristics(object):
         img = IMG()
 
         # get genome ids of all prokaryotes and euks
-        print 'Reading Proks and Euks metadata.'
+        print('Reading Proks and Euks metadata.')
         bHeader = True
         genomeIdToGroup = {}
         missingGenomeData = {}
@@ -289,7 +289,7 @@ class GenomeCharacteristics(object):
                 missingGenomeData[domain] = missingGenomeData.get(domain, 0) + 1
 
         # get genome ids of all viruses
-        print 'Reading Virus metadata.'
+        print('Reading Virus metadata.')
         bHeader = True
         for line in open(img.virusMetadataFile):
             if bHeader:
@@ -306,15 +306,15 @@ class GenomeCharacteristics(object):
                 missingGenomeData[domain] = missingGenomeData.get(domain, 0) + 1
 
         # report results
-        print 'Number of valid genomes: ' + str(len(genomeIdToGroup))
-        print 'Number of genomes missing genomic data: '
-        for domain, count in missingGenomeData.iteritems():
-            print '  ' + domain + ': ' + str(count)
+        print('Number of valid genomes: ' + str(len(genomeIdToGroup)))
+        print('Number of genomes missing genomic data: ')
+        for domain, count in missingGenomeData.items():
+            print('  ' + domain + ': ' + str(count))
 
         # process all genomes
         charByGroup = {}
-        for genomeId, groupName in genomeIdToGroup.iteritems():
-            print genomeId
+        for genomeId, groupName in genomeIdToGroup.items():
+            print(genomeId)
             self.runProdigal(genomeId)
             self.getCharacteristics(genomeId, groupName, charByGroup)
 

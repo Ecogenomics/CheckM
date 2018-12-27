@@ -38,12 +38,12 @@ class DeltaGC(object):
 
     def __createNumericGenome(self, genome):
         # for simplicity, create a single sequence from all scaffolds/contigs
-        genomeSeq = ''.join(genome.values()).upper()
+        genomeSeq = ''.join(list(genome.values())).upper()
 
         # create numpy array of genome with G and C as 0, A and T as 1, and degenerate/ambiguous bases as 2
         trans = string.maketrans('CGATUNRYMKBDHVWS', '0011122222222222')
         transGenomeSeq = genomeSeq.translate(trans)
-        numericGenome = np.array(map(int, transGenomeSeq), dtype=np.int)
+        numericGenome = np.array(list(map(int, transGenomeSeq)), dtype=np.int)
 
         return numericGenome
 
@@ -112,7 +112,7 @@ class DeltaGC(object):
 
     def run(self, metadataFile, genomeDir, numWindows, numThreads):
         # read metadata file
-        print 'Determining finished prokaryotic reference genomes.'
+        print('Determining finished prokaryotic reference genomes.')
         genomeIds = []
         bHeader = True
         for line in open(metadataFile):
@@ -130,7 +130,7 @@ class DeltaGC(object):
                 if os.path.exists(os.path.join(genomeDir, genomeId, genomeId + '.fna')):
                     genomeIds.append(genomeId)
 
-        print '  Identified reference genomes: ' + str(len(genomeIds))
+        print('  Identified reference genomes: ' + str(len(genomeIds)))
 
         # window sizes to sample
         windowSizes = [ws for ws in np.arange(500, 1000, 100)]
@@ -142,7 +142,7 @@ class DeltaGC(object):
         windowSizes += [ws for ws in np.arange(100000, 400000, 100000)]
         windowSizes += [ws for ws in np.arange(400000, 1000001, 200000)]
 
-        print '# window sizes: ' + str(len(windowSizes))
+        print('# window sizes: ' + str(len(windowSizes)))
 
         # sample windows from each genome
         workerQueue = mp.Queue()

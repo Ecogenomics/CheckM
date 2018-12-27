@@ -60,7 +60,7 @@ class RerootTree(object):
         taxa = tree.leaf_nodes()
 
         # root tree with archaeal genomes
-        print '  Attempting to rerooting tree between archaea and bacteria.'
+        print('  Attempting to rerooting tree between archaea and bacteria.')
         outgroup = []
         genomeIds = set()
         for t in taxa:
@@ -69,17 +69,17 @@ class RerootTree(object):
                 genomeIds.add(genomeId)
                 domain = self.metadata[genomeId]['taxonomy'][0].lower()
             except:
-                print '[Error] Missing IMG metadata for: ' + t.taxon.label
+                print('[Error] Missing IMG metadata for: ' + t.taxon.label)
                 sys.exit()
 
             if domain == 'archaea':
                 outgroup.append(t.taxon.label)
 
         if outgroup == [] or len(outgroup) == len(taxa) or not self.__isMonophyletic(tree, outgroup):
-            print '    Archaea are paraphyletic or tree is exclusively bacteria or archaea. Rerooting at midpoint.'
+            print('    Archaea are paraphyletic or tree is exclusively bacteria or archaea. Rerooting at midpoint.')
             tree.reroot_at_midpoint(update_splits=True)
         else:
-            print '    Archaea are monophyletic. Rerooting between archaea and bacteria.'
+            print('    Archaea are monophyletic. Rerooting between archaea and bacteria.')
             mrca = tree.mrca(taxon_labels=outgroup)
             tree.reroot_at_edge(mrca.edge, length1 = 0.5*mrca.edge_length, length2 = 0.5*mrca.edge_length, update_splits=True)
 
@@ -91,8 +91,8 @@ class RerootTree(object):
         tree.write_to_path(outputTree, schema='newick', suppress_rooting=True, unquoted_underscores=True)
 
 if __name__ == '__main__':
-    print 'RerootTree v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print('RerootTree v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('input_tree', help='tree to reroot')

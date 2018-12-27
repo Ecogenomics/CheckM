@@ -42,11 +42,11 @@ from lib.markerSetBuilder import MarkerSetBuilder
 from checkm.seqUtils import readFasta
 from checkm.hmmer import HMMERRunner
 
-from genometreeworkflow.makeTrees import MakeTrees
-from genometreeworkflow.paralogTest import ParalogTest
-from genometreeworkflow.consistencyTest import ConsistencyTest
-from genometreeworkflow.getPhylogeneticHMMs import GetPhylogeneticHMMs
-from genometreeworkflow.inferGenomeTree import InferGenomeTree
+from .genometreeworkflow.makeTrees import MakeTrees
+from .genometreeworkflow.paralogTest import ParalogTest
+from .genometreeworkflow.consistencyTest import ConsistencyTest
+from .genometreeworkflow.getPhylogeneticHMMs import GetPhylogeneticHMMs
+from .genometreeworkflow.inferGenomeTree import InferGenomeTree
 
 class GenomeTreeWorkflow(object):
     def __init__(self, outputDir):
@@ -54,7 +54,7 @@ class GenomeTreeWorkflow(object):
         self.markerSetBuilder = MarkerSetBuilder()
 
         if os.path.exists(outputDir):
-            print '[Error] Output directory already exists: ' + outputDir
+            print('[Error] Output directory already exists: ' + outputDir)
             sys.exit(0)
         else:
             os.makedirs(outputDir)
@@ -105,11 +105,11 @@ class GenomeTreeWorkflow(object):
         try:
             exit_status = os.system('hmmfetch -h > /dev/null')
         except:
-            print "Unexpected error!", sys.exc_info()[0]
+            print("Unexpected error!", sys.exc_info()[0])
             raise
 
         if exit_status != 0:
-            print "[Error] hmmfetch is not on the system path"
+            print("[Error] hmmfetch is not on the system path")
             sys.exit()
 
     def __checkForFastTree(self):
@@ -118,11 +118,11 @@ class GenomeTreeWorkflow(object):
         try:
             exit_status = os.system('FastTree 2> /dev/null')
         except:
-            print "Unexpected error!", sys.exc_info()[0]
+            print("Unexpected error!", sys.exc_info()[0])
             raise
 
         if exit_status != 0:
-            print "[Error] FastTree is not on the system path"
+            print("[Error] FastTree is not on the system path")
             sys.exit()
 
     def __genesInGenomes(self, genomeIds):
@@ -249,10 +249,10 @@ class GenomeTreeWorkflow(object):
 
         # output masked sequences in FASTA format
         fout = open(outputFile, 'w')
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in seqs.items():
             fout.write('>' + seqId + '\n')
 
-            maskedSeq = ''.join([seq[i] for i in xrange(0, len(seq)) if mask[i] == 'x'])
+            maskedSeq = ''.join([seq[i] for i in range(0, len(seq)) if mask[i] == 'x'])
             fout.write(maskedSeq + '\n')
         fout.close()
 
@@ -290,35 +290,35 @@ class GenomeTreeWorkflow(object):
             os.remove(os.path.join(outputGeneDir, f))
 
         # get genomes and marker genes for taxonomic groups of interest
-        print ''
-        print 'Identifying genomes and marker genes of interest:'
+        print('')
+        print('Identifying genomes and marker genes of interest:')
         metadata = self.img.genomeMetadata()
         ingroupGenomeIds, ingroupMarkers = self.__taxonomicMarkers('Bacteria;Firmicutes', metadata, phyloUbiquityThreshold, phyloSingleCopyThreshold)
         outgroupGenomeIds = self.img.genomeIdsByTaxonomy('Bacteria;Coprothermobacter', metadata)
         # alphaGenomeIds, _ = self.__taxonomicMarkers('Bacteria;Proteobacteria;Alphaproteobacteria', metadata, phyloUbiquityThreshold, phyloSingleCopyThreshold)
 
-        print '  Identified ingroup genomes: %d' % len(ingroupGenomeIds)
-        print '  Identified outgroup genomes: %d' % len(outgroupGenomeIds)
+        print('  Identified ingroup genomes: %d' % len(ingroupGenomeIds))
+        print('  Identified outgroup genomes: %d' % len(outgroupGenomeIds))
 
         numOutgroupTaxa = min(outgroupSize, len(outgroupGenomeIds))
-        print ''
-        print '  Selecting %d taxa from the outgroup.' % (numOutgroupTaxa)
+        print('')
+        print('  Selecting %d taxa from the outgroup.' % (numOutgroupTaxa))
         genomeIds = ingroupGenomeIds.union(random.sample(outgroupGenomeIds, numOutgroupTaxa))
 
         self.imgIdsToAceIds(genomeIds)
 
-        print '  Identified markers: %d' % len(ingroupMarkers)
+        print('  Identified markers: %d' % len(ingroupMarkers))
 
         # get mapping of marker ids to gene ids for each genome
-        print '  Determine genes for genomes of interest.'
+        print('  Determine genes for genomes of interest.')
         genesInGenomes = self.__genesInGenomes(genomeIds)
 
         # get HMM for each marker gene
-        print '  Fetching HMM for each marker genes.'
+        print('  Fetching HMM for each marker genes.')
         self.__fetchMarkerModels(ingroupMarkers, outputModelDir)
 
         # align gene sequences and infer gene trees
-        print '  Aligning marker genes:'
+        print('  Aligning marker genes:')
         #***self.__alignMarkers(genomeIds, ingroupMarkers, genesInGenomes, numThreads, outputGeneDir, outputModelDir)
 
         return genomeIds
@@ -334,7 +334,7 @@ class GenomeTreeWorkflow(object):
             if imgId not in imgIdToAceId:
                 missing += 1
 
-        print '  Number of genomes without an ACE id: ' + str(missing)
+        print('  Number of genomes without an ACE id: ' + str(missing))
 
         return imgIdToAceId
 
@@ -349,36 +349,36 @@ class GenomeTreeWorkflow(object):
     def run(self, numThreads, outgroupSize):
 
         # identify genes suitable for phylogenetic inference
-        print '--- Identifying genes suitable for phylogenetic inference ---'
+        print('--- Identifying genes suitable for phylogenetic inference ---')
         genomeIds = self.inferGeneTrees(self.phyloUbiquity, self.phyloSingleCopy, numThreads, self.alignmentDir, self.hmmDir, outgroupSize)
 
         # infer gene trees
-        print ''
-        print '--- Inferring gene trees ---'
+        print('')
+        print('--- Inferring gene trees ---')
         makeTrees = MakeTrees()
         makeTrees.run(self.alignmentDir, self.geneTreeDir, '.aln.masked.faa', numThreads)
 
         # test gene trees for paralogs
-        print ''
-        print '--- Testing for paralogs in gene trees ---'
+        print('')
+        print('--- Testing for paralogs in gene trees ---')
         paralogTest = ParalogTest()
         paralogTest.run(self.geneTreeDir, self.paralogAcceptPer, '.tre', self.conspecificGeneTreeDir)
 
         # test gene trees for consistency with IMG taxonomy
-        print ''
-        print '--- Testing taxonomic consistency of gene trees ---'
+        print('')
+        print('--- Testing taxonomic consistency of gene trees ---')
         consistencyTest = ConsistencyTest()
         consistencyTest.run(self.conspecificGeneTreeDir, '.tre', self.consistencyAcceptPer, self.consistencyMinTaxa, self.consistencyOut, self.finalGeneTreeDir)
 
         # gather phylogenetically informative HMMs into a single model file
-        print ''
-        print '--- Gathering phylogenetically informative HMMs ---'
+        print('')
+        print('--- Gathering phylogenetically informative HMMs ---')
         getPhylogeneticHMMs = GetPhylogeneticHMMs()
         getPhylogeneticHMMs.run(self.hmmDir, self.finalGeneTreeDir, self.phyloHMMsOut)
 
         # infer genome tree
-        print ''
-        print '--- Inferring full genome tree ---'
+        print('')
+        print('--- Inferring full genome tree ---')
         inferGenomeTree = InferGenomeTree()
         inferGenomeTree.run(self.finalGeneTreeDir, self.alignmentDir, '.aln.masked.faa', self.concatenatedAlignFile, self.treeOut, self.taxonomyOut, bSupportValues=True)
 
@@ -396,8 +396,8 @@ class GenomeTreeWorkflow(object):
         fout.close()
 
 if __name__ == '__main__':
-    print 'GenomeTreeWorkflow v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print('GenomeTreeWorkflow v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('output_dir', help='output directory')

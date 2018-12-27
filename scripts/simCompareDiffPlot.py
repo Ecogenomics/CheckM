@@ -77,7 +77,7 @@ class StackedBarPlot(AbstractPlot):
         axes.set_ylabel('% test genomes')
                 
         labels = []
-        for i in xrange(0, len(lineageCounts), 2):
+        for i in range(0, len(lineageCounts), 2):
             labels.append('%d%%' % (i+1))
             labels.append('')
                   
@@ -104,7 +104,7 @@ class StackedBarPlot(AbstractPlot):
         for line in axes.xaxis.get_ticklines(): 
             line.set_color('black')
             
-        for loc, spine in axes.spines.iteritems():
+        for loc, spine in axes.spines.items():
             if loc in ['right','top']:
                 spine.set_color('none') 
             else:
@@ -176,28 +176,28 @@ class SimCompareDiffPlot(object):
                     
                 totalCountsCont += 1
                 
-        print '%% times lineage comp better than domain: %.2f' % (float(lineageCompBest)*100/(domCompBest + lineageCompBest))
-        print '%% times lineage cont better than domain: %.2f' % (float(lineageContBest)*100/(domContBest + lineageContBest))
+        print('%% times lineage comp better than domain: %.2f' % (float(lineageCompBest)*100/(domCompBest + lineageCompBest)))
+        print('%% times lineage cont better than domain: %.2f' % (float(lineageContBest)*100/(domContBest + lineageContBest)))
         
-        print ''
-        print 'Taxonomy breakdown (dom best, lineage best):'
-        taxa = set(domCompTaxon.keys()).union(lineageCompTaxon.keys())
+        print('')
+        print('Taxonomy breakdown (dom best, lineage best):')
+        taxa = set(domCompTaxon.keys()).union(list(lineageCompTaxon.keys()))
         for t in taxa:
-            print '%s\t%.2f\t%.2f' % (t, domCompTaxon[t]*100.0/domCompBest, lineageCompTaxon[t]*100.0/lineageCompBest)
+            print('%s\t%.2f\t%.2f' % (t, domCompTaxon[t]*100.0/domCompBest, lineageCompTaxon[t]*100.0/lineageCompBest))
                 
         # normalize counts
-        for i in xrange(0, numBars):
+        for i in range(0, numBars):
             lineageCountsComp[i] = float(lineageCountsComp[i])*100 / totalCountsComp
             domainCountsComp[i] = float(domainCountsComp[i])*100 / totalCountsComp
             
             if domainCountsComp[i] > lineageCountsComp[i]:
-                print 'Domain bets lineage (comp): %d%% (%f, %f)' % (i+1, domainCountsComp[i], lineageCountsComp[i])
+                print('Domain bets lineage (comp): %d%% (%f, %f)' % (i+1, domainCountsComp[i], lineageCountsComp[i]))
             
             lineageCountsCont[i] = float(lineageCountsCont[i])*100 / totalCountsCont
             domainCountsCont[i] = float(domainCountsCont[i])*100 / totalCountsCont
             
             if domainCountsCont[i] > lineageCountsCont[i]:
-                print 'Domain bets lineage (cont): %d%% (%f, %f)' % (i+1, domainCountsCont[i], lineageCountsCont[i])
+                print('Domain bets lineage (cont): %d%% (%f, %f)' % (i+1, domainCountsCont[i], lineageCountsCont[i]))
          
         stackedBarPlot = StackedBarPlot()
         stackedBarPlot.plot(lineageCountsComp, domainCountsComp, lineageCountsCont, domainCountsCont)     

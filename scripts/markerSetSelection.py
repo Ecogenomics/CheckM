@@ -75,13 +75,13 @@ class MarkerSetSelection(object):
         # calculate change in marker set for all pairs
         markerSetSize = []
         diffMarkerSet = []
-        for i in xrange(0, len(looMarkerGenes)):
+        for i in range(0, len(looMarkerGenes)):
             markerSetSize.append(len(looMarkerGenes[i]))
-            for j in xrange(i+1, len(looMarkerGenes)):     
+            for j in range(i+1, len(looMarkerGenes)):     
                 symmDiff = looMarkerGenes[i].symmetric_difference(looMarkerGenes[j])
                 diffMarkerSet.append(len(symmDiff))
                             
-        print len(genomeIds), mean(diffMarkerSet), mean(markerSetSize)
+        print(len(genomeIds), mean(diffMarkerSet), mean(markerSetSize))
         return (float(mean(diffMarkerSet)) / mean(markerSetSize)) <= stabilityThreshold
         
     def __patristicDist(self, tree, taxa1, taxa2):
@@ -140,16 +140,16 @@ class MarkerSetSelection(object):
                     genomeIds.add(dup.replace('IMG_', ''))
                           
             # remove genome (LOO-style analysis)
-            print 'Full:', len(genomeIds)
+            print('Full:', len(genomeIds))
             genomeIds.difference_update([genomeId])
-            print 'LOO:', len(genomeIds)
+            print('LOO:', len(genomeIds))
             
             # remove all genomes from the same taxonomic group as the genome of interest
             taxon = metadata[genomeId]['taxonomy'][self.looRank]
             genomeIds.difference_update(taxonToGenomeIds[taxon]) 
-            print 'Rank reduced:', len(genomeIds)
+            print('Rank reduced:', len(genomeIds))
               
-            print uniqueId
+            print(uniqueId)
             if len(genomeIds) > 10 and self.__stabilityTest(genomeIds):
                 uidSelected = uniqueId
                 break
@@ -165,7 +165,7 @@ class MarkerSetSelection(object):
         """Get stats for best marker set."""
         curBest = 1000
         bestUID = None
-        for uid, results in simResults[genomeId].iteritems():
+        for uid, results in simResults[genomeId].items():
             numDescendants, dComp, dCont = results
             if (dComp + dCont) < curBest:
                 numDescendantsBest = numDescendants
@@ -244,17 +244,17 @@ class MarkerSetSelection(object):
         sys.stdout.write('\n')
         fout.close()
         
-        print ''
-        print '  General results:'
-        print '   Best comp: %.2f +/- %.2f' % (mean(bestComp), std(bestComp))
-        print '   Best cont: %.2f +/- %.2f' % (mean(bestCont), std(bestCont))
-        print '   Selected comp: %.2f +/- %.2f' % (mean(selectedComp), std(selectedComp))
-        print '   Selected cont: %.2f +/- %.2f' % (mean(selectedCont), std(selectedCont))
-        print ''
-        print '   Delta comp: %.2f +/- %.2f' % (mean(dComps), std(dComps))
-        print '   Delta cont: %.2f +/- %.2f' % (mean(dConts), std(dConts))
-        print '   Delta comp per error: %.1f +/- %.1f' % (mean(dCompsPer), std(dCompsPer))
-        print '   Delta cont per error: %.1f +/- %.1f' % (mean(dContsPer), std(dContsPer))
+        print('')
+        print('  General results:')
+        print('   Best comp: %.2f +/- %.2f' % (mean(bestComp), std(bestComp)))
+        print('   Best cont: %.2f +/- %.2f' % (mean(bestCont), std(bestCont)))
+        print('   Selected comp: %.2f +/- %.2f' % (mean(selectedComp), std(selectedComp)))
+        print('   Selected cont: %.2f +/- %.2f' % (mean(selectedCont), std(selectedCont)))
+        print('')
+        print('   Delta comp: %.2f +/- %.2f' % (mean(dComps), std(dComps)))
+        print('   Delta cont: %.2f +/- %.2f' % (mean(dConts), std(dConts)))
+        print('   Delta comp per error: %.1f +/- %.1f' % (mean(dCompsPer), std(dCompsPer)))
+        print('   Delta cont per error: %.1f +/- %.1f' % (mean(dContsPer), std(dContsPer)))
         
     def __distanceToAncestor(self, leaf, ancestor):
         dist = 0
@@ -313,19 +313,19 @@ class MarkerSetSelection(object):
             percDiff = abs(distanceToBinBest - avgDistanceToLeafBest) * 100 / distanceToBinBest
             percDiffs.append(percDiff)
             
-        print '    # descendants: %.2f +/- %.2f' % (mean(numDescendants), std(numDescendants))
-        print '    # nodes to bin: %.2f +/- %.2f' % (mean(nodesToBin), std(nodesToBin))
-        print '    Distance to bin: %.2f +/- %.2f' % (mean(distanceToBin), std(distanceToBin))
+        print('    # descendants: %.2f +/- %.2f' % (mean(numDescendants), std(numDescendants)))
+        print('    # nodes to bin: %.2f +/- %.2f' % (mean(nodesToBin), std(nodesToBin)))
+        print('    Distance to bin: %.2f +/- %.2f' % (mean(distanceToBin), std(distanceToBin)))
         
         distanceToBin = array(distanceToBin)
         avgDistanceToLeaf = array(avgDistanceToLeaf)
-        print '    Distance to bin - average distance to leaf: %.2f +/- %.2f' % (mean(abs(distanceToBin - avgDistanceToLeaf)), std(abs(distanceToBin - avgDistanceToLeaf)))
-        print '    Percent difference to average leaf distance: %.2f +/- %.2f' % (mean(percDiffs), std(percDiffs))
-        print ''
+        print('    Distance to bin - average distance to leaf: %.2f +/- %.2f' % (mean(abs(distanceToBin - avgDistanceToLeaf)), std(abs(distanceToBin - avgDistanceToLeaf))))
+        print('    Percent difference to average leaf distance: %.2f +/- %.2f' % (mean(percDiffs), std(percDiffs)))
+        print('')
 
     def run(self, numThreads):
         # read reference tree
-        print '\n  Reading reference genome tree.'
+        print('\n  Reading reference genome tree.')
         treeFile = os.path.join(os.path.dirname(sys.argv[0]), '..', 'data', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
         
@@ -337,7 +337,7 @@ class MarkerSetSelection(object):
                 taxonToGenomeIds[t].add(genomeId)
 
         # read simulation results
-        print '  Reading simulation results.'
+        print('  Reading simulation results.')
         
         simResults = defaultdict(dict)
         with open(self.simFile) as f:
@@ -357,7 +357,7 @@ class MarkerSetSelection(object):
         #print '  Properties of best marker sets:'
         #self.__propertiesOfBestMarkerSets(tree, simResults)
                         
-        print '  Evaluating %d test genomes.' % len(simResults)
+        print('  Evaluating %d test genomes.' % len(simResults))
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
 

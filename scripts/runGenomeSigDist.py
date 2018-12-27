@@ -31,7 +31,7 @@ class RunGenomeSigDist(object):
 
     def run(self, metadataFile, genomeDir, numWindows, numThreads):
         # read metadata file
-        print 'Determining finished prokaryotic reference genomes.'
+        print('Determining finished prokaryotic reference genomes.')
         genomeIds = []
         bHeader = True
         for line in open(metadataFile):
@@ -49,7 +49,7 @@ class RunGenomeSigDist(object):
                 if os.path.exists(os.path.join(genomeDir, genomeId, genomeId + '.fna')):
                     genomeIds.append(genomeId)
 
-        print 'Finished genomes to process: ' + str(len(genomeIds))
+        print('Finished genomes to process: ' + str(len(genomeIds)))
 
         # calculate difference in genomic signatures for each genome
         fout = open('cmdList.txt', 'w')

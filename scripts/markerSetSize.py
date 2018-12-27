@@ -46,7 +46,7 @@ class MarkerSetTest(object):
 
         genomeIds = img.genomeIdsByTaxonomy(taxonomyStr, 'Final')
 
-        print 'Lineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.'
+        print('Lineage ' + taxonomyStr + ' contains ' + str(len(genomeIds)) + ' genomes.')
 
         markerSetSizes = []
 
@@ -60,7 +60,7 @@ class MarkerSetTest(object):
 
             markerSetSizes.append(len(colocatedSets))
 
-            print '  Threshold = %.2f, marker set size = %d' % (threshold, len(markerGenes))
+            print('  Threshold = %.2f, marker set size = %d' % (threshold, len(markerGenes)))
 
         # plot data
         plot = LinePlot()

@@ -51,7 +51,7 @@ class EvaluateHMMs(object):
             yield revseq[i:].translate(table)
 
     def translateSixFrames(self, genomeId):
-        print '  Creating six frame translation.'
+        print('  Creating six frame translation.')
         outFile = open('./hmm_test/' + genomeId + '.six_frames.fna', 'w')
 
         contigFile = open(IMG.genomeDir + genomeId + '/' + genomeId + '.fna')
@@ -64,19 +64,19 @@ class EvaluateHMMs(object):
         outFile.close()
 
     def runPFAM(self, genomeId):
-        print '  Running PFAM HMMs.'
+        print('  Running PFAM HMMs.')
         os.system('hmmsearch --notextw --noali --cpu 0 --cut_ga --domtblout ./hmm_test/' + genomeId + '.pfam.table.txt ./hmm/pfam_markers.hmm ' + IMG.genomeDir + genomeId + '/' + genomeId + '.genes.derep.faa > ./hmm_test/' + genomeId + '.pfam.tsv\n')
 
     def runTIGRFAM(self, genomeId):
-        print '  Running TIGRFAM HMMs.'
+        print('  Running TIGRFAM HMMs.')
         os.system('hmmsearch --notextw --noali --cpu 0 --cut_nc --domtblout ./hmm_test/' + genomeId + '.tigr.table.txt ./hmm/tigr_markers.hmm ' + IMG.genomeDir + genomeId + '/' + genomeId + '.genes.faa > ./hmm_test/' + genomeId + '.tigr.tsv\n')
 
     def runPFAM_SixFrames(self, genomeId):
-        print '  Running PFAM HMMs on six frame translation.'
+        print('  Running PFAM HMMs on six frame translation.')
         os.system('hmmsearch --notextw --noali --cpu 0 --cut_ga --domtblout ./hmm_test/' + genomeId + '.pfam.table.six_frames.txt ./hmm/pfam_markers.hmm ./hmm_test/' + genomeId + '.six_frames.fna > ./hmm_test/' + genomeId + '.pfam.six_frames.tsv\n')
 
     def runTIGRFAM_SixFrames(self, genomeId):
-        print '  Running TIGRFAM HMMs on six frame translation.'
+        print('  Running TIGRFAM HMMs on six frame translation.')
         os.system('hmmsearch --notextw --noali --cpu 0 --cut_nc --domtblout ./hmm_test/' + genomeId + '.tigr.table.six_frames.txt ./hmm/tigr_markers.hmm ./hmm_test/' + genomeId + '.six_frames.fna > ./hmm_test/' + genomeId + '.tigr.six_frames.tsv\n')
 
     def readImgTable(self, genomeId, markers, extension, clusterIdIndex):
@@ -123,24 +123,24 @@ class EvaluateHMMs(object):
             imgPfamHits= self.readImgTable(genomeId, pfamMarkers, '.pfam.tab.txt', 8)
             imgTigrHits = self.readImgTable(genomeId, tigrMarkers, '.tigrfam.tab.txt', 6)
 
-            print '  PFAM IMG hits: ' + str(len(imgPfamHits))
-            print '  PFAM TIGR hits: ' + str(len(imgTigrHits))
+            print('  PFAM IMG hits: ' + str(len(imgPfamHits)))
+            print('  PFAM TIGR hits: ' + str(len(imgTigrHits)))
 
             # get marker hits to genes as determined by HMMs
             hmmPfamHits = self.readHmmTable(genomeId, '.pfam.table.txt')
             hmmTigrHits = self.readHmmTable(genomeId, '.tigr.table.txt')
 
-            print '  PFAM HMM hits: ' + str(len(hmmPfamHits))
-            print '  TIGR HMM hits: ' + str(len(hmmTigrHits))
+            print('  PFAM HMM hits: ' + str(len(hmmPfamHits)))
+            print('  TIGR HMM hits: ' + str(len(hmmTigrHits)))
 
             # remove overlapping PFAM hits from the same clan
-            print '  Filtering PFAM hits from the same clan.'
+            print('  Filtering PFAM hits from the same clan.')
             filteredHmmPfamHits = self.pfam.filterHitsFromSameClan(hmmPfamHits, pfamMarkers)
-            print '  Filtered PFAM hits: ' + str(len(filteredHmmPfamHits))
+            print('  Filtered PFAM hits: ' + str(len(filteredHmmPfamHits)))
 
             # reform TIGR hits so dictionary is indexed by TIGR ids
             reformedHmmTigrHits = {}
-            for geneId, hits in hmmTigrHits.iteritems():
+            for geneId, hits in hmmTigrHits.items():
                 for h in hits:
                     tigrId = h[0]
                     s = reformedHmmTigrHits.get(tigrId, set())
@@ -164,7 +164,7 @@ class EvaluateHMMs(object):
                 totalImgHits += len(imgPfamHits.get(pfamId, set()))
                 totalHmmHits += len(filteredHmmPfamHits.get(pfamId, set()))
 
-            print '  PFAM (symmetric diff, IMG hits, HMM hits, IMG additional, HMM additional): ' + str(pfamDiff) + ', ' + str(totalImgHits) + ', ' + str(totalHmmHits) + ', ' + str(imgAdditions) + ', ' + str(hmmAdditions)
+            print('  PFAM (symmetric diff, IMG hits, HMM hits, IMG additional, HMM additional): ' + str(pfamDiff) + ', ' + str(totalImgHits) + ', ' + str(totalHmmHits) + ', ' + str(imgAdditions) + ', ' + str(hmmAdditions))
             fout.write('  PFAM (diff, IMG hits, HMM hits, IMG additional, HMM additional): ' + str(pfamDiff) + ', ' + str(totalImgHits) + ', ' + str(totalHmmHits) + ', ' + str(imgAdditions) + ', ' + str(hmmAdditions) + '\n')
 
             tigrDiff = 0
@@ -183,8 +183,8 @@ class EvaluateHMMs(object):
                 totalImgHits += len(imgTigrHits.get(tigrId, set()))
                 totalHmmHits += len(reformedHmmTigrHits.get(tigrId, set()))
 
-            print '  TIGR (symmetric diff, IMG hits, HMM hits, IMG additional, HMM additional): ' + str(tigrDiff) + ', ' + str(totalImgHits) + ', ' + str(totalHmmHits) + ', ' + str(imgAdditions) + ', ' + str(hmmAdditions)
-            print ''
+            print('  TIGR (symmetric diff, IMG hits, HMM hits, IMG additional, HMM additional): ' + str(tigrDiff) + ', ' + str(totalImgHits) + ', ' + str(totalHmmHits) + ', ' + str(imgAdditions) + ', ' + str(hmmAdditions))
+            print('')
             fout.write('  TIGR (diff, IMG hits, HMM hits, IMG additional, HMM additional): ' + str(tigrDiff) + ', ' + str(totalImgHits) + ', ' + str(totalHmmHits) + ', ' + str(imgAdditions) + ', ' + str(hmmAdditions) + '\n\n')
 
         def compareSixFrameResults(self, genomeId, pfamMarkers, tigrMarkers, fout):
@@ -213,7 +213,7 @@ class EvaluateHMMs(object):
                 totalImgHits += len(imgPfamHits.get(pfamId, set()))
                 totalHmmHits += len(hmmPfamHits.get(pfamId, set()))
 
-            print '  PFAM (diff, IMG hits, HMM hits, IMG additional, HMM additional): ' + str(pfamDiff) + ', ' + str(totalImgHits) + ', ' + str(totalHmmHits) + ', ' + str(imgAdditions) + ', ' + str(hmmAdditions)
+            print('  PFAM (diff, IMG hits, HMM hits, IMG additional, HMM additional): ' + str(pfamDiff) + ', ' + str(totalImgHits) + ', ' + str(totalHmmHits) + ', ' + str(imgAdditions) + ', ' + str(hmmAdditions))
             fout.write('  PFAM (diff, IMG hits, HMM hits, IMG additional, HMM additional): ' + str(pfamDiff) + ', ' + str(totalImgHits) + ', ' + str(totalHmmHits) + ', ' + str(imgAdditions) + ', ' + str(hmmAdditions) + '\n')
 
             tigrDiff = 0
@@ -232,8 +232,8 @@ class EvaluateHMMs(object):
                 totalImgHits += len(imgTigrHits.get(tigrId, set()))
                 totalHmmHits += len(hmmTigrHits.get(tigrId, set()))
 
-            print '  TIGR (diff, IMG hits, HMM hits, IMG additional, HMM additional): ' + str(tigrDiff) + ', ' + str(totalImgHits) + ', ' + str(totalHmmHits) + ', ' + str(imgAdditions) + ', ' + str(hmmAdditions)
-            print ''
+            print('  TIGR (diff, IMG hits, HMM hits, IMG additional, HMM additional): ' + str(tigrDiff) + ', ' + str(totalImgHits) + ', ' + str(totalHmmHits) + ', ' + str(imgAdditions) + ', ' + str(hmmAdditions))
+            print('')
             fout.write('  TIGR (diff, IMG hits, HMM hits, IMG additional, HMM additional): ' + str(tigrDiff) + ', ' + str(totalImgHits) + ', ' + str(totalHmmHits) + ', ' + str(imgAdditions) + ', ' + str(hmmAdditions) + '\n\n')
 
         def run(self):
@@ -245,14 +245,14 @@ class EvaluateHMMs(object):
             markerset = MarkerSet()
             pfamMarkers, tigrMarkers = markerset.getCalculatedMarkerGenes()
 
-            print 'PFAM marker genes: ' + str(len(tigrMarkers))
-            print 'TIGR marker genes: ' + str(len(pfamMarkers))
-            print ''
+            print('PFAM marker genes: ' + str(len(tigrMarkers)))
+            print('TIGR marker genes: ' + str(len(pfamMarkers)))
+            print('')
 
             # run HMMs on each of the finished genomes
             genomeIds = img.genomeIds('Finished')
             for genomeId in genomeIds:
-                print genomeId + ':'
+                print(genomeId + ':')
                 fout.write(genomeId + ':\n')
 
                 self.runPFAM(genomeId)

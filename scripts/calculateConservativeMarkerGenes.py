@@ -43,9 +43,9 @@ class CalculateConservativeMarkerGenes(object):
         img = IMG()
         markerset = MarkerSet()
 
-        print 'Reading metadata.'
+        print('Reading metadata.')
         metadata = img.genomeMetadata()
-        print '  Genomes with metadata: ' + str(len(metadata))
+        print('  Genomes with metadata: ' + str(len(metadata)))
 
         # calculate marker set for each lineage at the specified rank
         sortedLineages = img.lineagesSorted(metadata, rank)
@@ -61,20 +61,20 @@ class CalculateConservativeMarkerGenes(object):
         if len(genomeIds) < 3:
             continue
 
-        print 'Lineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.'
+        print('Lineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.')
 
         markerGenes = markerset.markerGenes(genomeIds, countTable, ubiquityThreshold*len(genomeIds), singleCopyThreshold*len(genomeIds))
 
-        print '  Marker genes: ' + str(len(markerGenes))
-        print ''
+        print('  Marker genes: ' + str(len(markerGenes)))
+        print('')
 
         markerGeneLists[lineage] = markerGenes
 
         # calculate union of marker gene list for higher taxonomic groups
-        for r in xrange(rank-1, -1, -1):
-            print 'Processing rank ' + str(r)
+        for r in range(rank-1, -1, -1):
+            print('Processing rank ' + str(r))
             rankMarkerGeneLists = {}
-            for lineage, markerGenes in markerGeneLists.iteritems():
+            for lineage, markerGenes in markerGeneLists.items():
                 taxonomy = lineage.split(';')
                 if len(taxonomy) != r+2:
                     continue
@@ -90,8 +90,8 @@ class CalculateConservativeMarkerGenes(object):
             # combine marker gene list dictionaries
             markerGeneLists.update(rankMarkerGeneLists)
 
-    print 'Archaeal markers: ' + str(len(markerGeneLists['Archaea']))
-    print 'Bacterial markers: ' + str(len(markerGeneLists['Bacteria']))
+    print('Archaeal markers: ' + str(len(markerGeneLists['Archaea'])))
+    print('Bacterial markers: ' + str(len(markerGeneLists['Bacteria'])))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Calculate conservative list of marker genes for each lineage.",

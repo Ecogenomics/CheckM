@@ -62,7 +62,7 @@ class SimulationScaffolds(object):
         """Calculate lengths of seqs."""
         genomeSize = 0
         seqLens = {}
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in seqs.items():
             seqLens[seqId] = len(seq)
             genomeSize += len(seq)
     
@@ -118,7 +118,7 @@ class SimulationScaffolds(object):
                         
                         numDescendants = {}
             
-                        for i in xrange(0, numReplicates):
+                        for i in range(0, numReplicates):
                             # generate test genome with a specific level of completeness, by randomly sampling scaffolds to remove 
                             # (this will sample >= the desired level of completeness)
                             retainedTestSeqs, trueComp = self.markerSetBuilder.sampleGenomeScaffoldsWithoutReplacement(percentComp, testSeqLens, genomeSize)
@@ -235,23 +235,23 @@ class SimulationScaffolds(object):
     def run(self, ubiquityThreshold, singleCopyThreshold, numReplicates, minScaffolds, numThreads):
         random.seed(0)
 
-        print '\n  Reading reference genome tree.'
+        print('\n  Reading reference genome tree.')
         treeFile = os.path.join('/srv', 'db', 'checkm', 'genome_tree', 'genome_tree_prok.refpkg', 'genome_tree.final.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
         
-        print '    Number of taxa in tree: %d' % (len(tree.leaf_nodes()))
+        print('    Number of taxa in tree: %d' % (len(tree.leaf_nodes())))
         
         genomesInTree = set()
         for leaf in tree.leaf_iter():
             genomesInTree.add(leaf.taxon.label.replace('IMG_', ''))
 
         # get all draft genomes consisting of a user-specific minimum number of scaffolds
-        print ''
+        print('')
         metadata = self.img.genomeMetadata()
-        print '  Total genomes: %d' % len(metadata)
+        print('  Total genomes: %d' % len(metadata))
         
         draftGenomeIds = genomesInTree - self.img.filterGenomeIds(genomesInTree, metadata, 'status', 'Finished')
-        print '  Number of draft genomes: %d' % len(draftGenomeIds)
+        print('  Number of draft genomes: %d' % len(draftGenomeIds))
         
         genomeIdsToTest = set()
         for genomeId in draftGenomeIds:
@@ -259,37 +259,37 @@ class SimulationScaffolds(object):
                 genomeIdsToTest.add(genomeId)
                 
         
-        print '  Number of draft genomes with >= %d scaffolds: %d' % (minScaffolds, len(genomeIdsToTest))
+        print('  Number of draft genomes with >= %d scaffolds: %d' % (minScaffolds, len(genomeIdsToTest)))
 
-        print ''
+        print('')
         start = time.time()
         self.markerSetBuilder.readLineageSpecificGenesToRemove()
         end = time.time()
-        print '    readLineageSpecificGenesToRemove: %.2f' % (end - start)
+        print('    readLineageSpecificGenesToRemove: %.2f' % (end - start))
         
-        print '  Pre-computing genome information for calculating marker sets:'
+        print('  Pre-computing genome information for calculating marker sets:')
         start = time.time()
-        self.markerSetBuilder.precomputeGenomeFamilyScaffolds(metadata.keys())
+        self.markerSetBuilder.precomputeGenomeFamilyScaffolds(list(metadata.keys()))
         end = time.time()
-        print '    precomputeGenomeFamilyScaffolds: %.2f' % (end - start)
-        
-        start = time.time()
-        self.markerSetBuilder.cachedGeneCountTable = self.img.geneCountTable(metadata.keys())
-        end = time.time()
-        print '    globalGeneCountTable: %.2f' % (end - start)
+        print('    precomputeGenomeFamilyScaffolds: %.2f' % (end - start))
         
         start = time.time()
-        self.markerSetBuilder.precomputeGenomeSeqLens(metadata.keys())
+        self.markerSetBuilder.cachedGeneCountTable = self.img.geneCountTable(list(metadata.keys()))
         end = time.time()
-        print '    precomputeGenomeSeqLens: %.2f' % (end - start)
+        print('    globalGeneCountTable: %.2f' % (end - start))
         
         start = time.time()
-        self.markerSetBuilder.precomputeGenomeFamilyPositions(metadata.keys(), 0)
+        self.markerSetBuilder.precomputeGenomeSeqLens(list(metadata.keys()))
         end = time.time()
-        print '    precomputeGenomeFamilyPositions: %.2f' % (end - start)
+        print('    precomputeGenomeSeqLens: %.2f' % (end - start))
+        
+        start = time.time()
+        self.markerSetBuilder.precomputeGenomeFamilyPositions(list(metadata.keys()), 0)
+        end = time.time()
+        print('    precomputeGenomeFamilyPositions: %.2f' % (end - start))
                      
-        print ''    
-        print '  Evaluating %d test genomes.' % len(genomeIdsToTest)
+        print('')    
+        print('  Evaluating %d test genomes.' % len(genomeIdsToTest))
             
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()

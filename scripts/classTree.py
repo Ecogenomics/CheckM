@@ -65,8 +65,8 @@ class ClassTree(object):
         tree.write_to_path('./experiments/classTree_no_internal.tre', schema='newick', suppress_rooting=True, suppress_edge_lengths=True, unquoted_underscores=True, suppress_internal_node_labels=True)
 
 if __name__ == '__main__':
-    print 'ClassTree v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print('ClassTree v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     classTree = ClassTree()
     classTree.run()

@@ -56,7 +56,7 @@ class ClassTreeMetadata(object):
             
         # write out results
         fout = open('./experiments/classTree.internal_nodes.metadata.tsv', 'w')
-        for uid, label in metadata.iteritems():
+        for uid, label in metadata.items():
             fout.write(uid + '\t' + label + '\n')
         fout.close()
             

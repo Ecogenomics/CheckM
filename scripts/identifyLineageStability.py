@@ -63,14 +63,14 @@ class IdentifySufficientLineages(object):
             if len(markerGenes) < minMarkers:
                 continue
 
-            print '\nLineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.'
-            print '  Marker genes: ' + str(len(markerGenes))
+            print('\nLineage ' + lineage + ' contains ' + str(len(genomeIds)) + ' genomes.')
+            print('  Marker genes: ' + str(len(markerGenes)))
 
             fout.write(lineage + '\t' + str(len(genomeIds)) + '\t' + str(len(markerGenes)) + '\t%.2f' % percentGenomes + '\t' + str(numReplicates))
 
             # withhold select percentage of genomes and calculate new marker set
             changeMarkerSetSize = []
-            for _ in xrange(0, numReplicates):
+            for _ in range(0, numReplicates):
                 subsetGenomeIds = random.sample(genomeIds, int((1.0-percentGenomes)*len(genomeIds) + 0.5))
 
                 newMarkerGenes = img.markerGenes(subsetGenomeIds, countTable, ubiquityThreshold*len(subsetGenomeIds), singleCopyThreshold*len(subsetGenomeIds))
@@ -80,7 +80,7 @@ class IdentifySufficientLineages(object):
             m = mean(changeMarkerSetSize)
             s = std(changeMarkerSetSize)
 
-            print '  Mean: %.2f, Std: %.2f, Per: %.2f' % (m, s, (m+ 2*s) * 100 / len(markerGenes))
+            print('  Mean: %.2f, Std: %.2f, Per: %.2f' % (m, s, (m+ 2*s) * 100 / len(markerGenes)))
             fout.write('\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f' % (m, s, m * 100 / len(markerGenes), (m + s) * 100 / len(markerGenes), (m + 2*s) * 100 / len(markerGenes)) + '\n')
 
         fout.close()

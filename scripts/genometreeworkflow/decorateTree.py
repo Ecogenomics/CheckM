@@ -37,7 +37,7 @@ import dendropy
 from numpy import mean, std
 
 from checkm.util.img import IMG
-from markerSetBuilder import MarkerSetBuilder
+from .markerSetBuilder import MarkerSetBuilder
 
 class DecorateTree(object):
     def __init__(self):
@@ -80,11 +80,11 @@ class DecorateTree(object):
 
     def decorate(self, taxaTreeFile, derepFile, inputTreeFile, metadataOut, numThreads):
         # read genome metadata
-        print '  Reading metadata.'
+        print('  Reading metadata.')
         metadata = self.img.genomeMetadata()
 
         # read list of taxa with duplicate sequences
-        print '  Read list of taxa with duplicate sequences.'
+        print('  Read list of taxa with duplicate sequences.')
         duplicateTaxa = {}
         for line in open(derepFile):
             lineSplit = line.rstrip().split()
@@ -92,12 +92,12 @@ class DecorateTree(object):
                 duplicateTaxa[lineSplit[0]] = lineSplit[1:]
 
         # build gene count table
-        print '  Building gene count table.'
-        genomeIds = self.img.genomeMetadata().keys()
-        print '    # trusted genomes = ' + str(len(genomeIds))
+        print('  Building gene count table.')
+        genomeIds = list(self.img.genomeMetadata().keys())
+        print('    # trusted genomes = ' + str(len(genomeIds)))
 
         # calculate statistics for each internal node using multiple threads
-        print '  Calculating statistics for each internal node.'
+        print('  Calculating statistics for each internal node.')
         self.__internalNodeStatistics(taxaTreeFile, inputTreeFile, duplicateTaxa, metadata, metadataOut, numThreads)
 
     def __internalNodeStatistics(self, taxaTreeFile, inputTreeFile, duplicateTaxa, metadata, metadataOut, numThreads):
@@ -228,8 +228,8 @@ class DecorateTree(object):
         inputTree.write_to_path(inputTreeFile, schema='newick', suppress_rooting=True, unquoted_underscores=True)
 
 if __name__ == '__main__':
-    print 'DecorateTree v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print('DecorateTree v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('taxa_tree', help='tree with internal nodes labeled with taxonomic information')

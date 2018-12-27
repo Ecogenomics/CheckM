@@ -39,7 +39,7 @@ from collections import defaultdict
 import multiprocessing as mp
 
 from checkm.util.img import IMG
-from markerSetBuilder import MarkerSetBuilder
+from .markerSetBuilder import MarkerSetBuilder
 
 from checkm.util.seqUtils import readFasta
 from checkm.hmmer import HMMERRunner
@@ -58,16 +58,16 @@ class PhylogeneticInferenceGenes(object):
         phyloMarkerGenes = {}
         for lineage in ['Archaea', 'Bacteria']:
             # get all genomes in lineage
-            print '\nIdentifying all ' + lineage + ' genomes.'
+            print('\nIdentifying all ' + lineage + ' genomes.')
             trustedGenomeIds = img.genomeIdsByTaxonomy(lineage, metadata)
-            print '  Trusted genomes in lineage: ' + str(len(trustedGenomeIds))
+            print('  Trusted genomes in lineage: ' + str(len(trustedGenomeIds)))
             if len(trustedGenomeIds) < 1:
-                print '  Skipping lineage due to insufficient number of genomes.'
+                print('  Skipping lineage due to insufficient number of genomes.')
                 continue
             
             allTrustedGenomeIds.update(trustedGenomeIds)
             
-            print '  Building marker set.'
+            print('  Building marker set.')
             markerGenes = markerSetBuilder.buildMarkerGenes(trustedGenomeIds, phyloUbiquityThreshold, phyloSingleCopyThreshold)
             phyloMarkerGenes[lineage] = markerGenes
             
@@ -78,7 +78,7 @@ class PhylogeneticInferenceGenes(object):
 
         # universal marker genes
         universalMarkerGenes = None
-        for markerGenes in phyloMarkerGenes.values():
+        for markerGenes in list(phyloMarkerGenes.values()):
             if universalMarkerGenes == None:
                 universalMarkerGenes = markerGenes
             else:
@@ -88,8 +88,8 @@ class PhylogeneticInferenceGenes(object):
         fout.write(str(universalMarkerGenes))
         fout.close()
 
-        print ''
-        print '  Universal marker genes: ' + str(len(universalMarkerGenes))
+        print('')
+        print('  Universal marker genes: ' + str(len(universalMarkerGenes)))
         
         return allTrustedGenomeIds, universalMarkerGenes
     
@@ -110,8 +110,8 @@ class PhylogeneticInferenceGenes(object):
         return genesInGenomes
     
     def __fetchMarkerModels(self, universalMarkerGenes, outputModelDir):
-        print ''
-        print 'Grabbing HMMs for universal marker genes.'
+        print('')
+        print('Grabbing HMMs for universal marker genes.')
         markerIdToName = {}
         for line in open('/srv/whitlam/bio/db/pfam/27/Pfam-A.hmm'):
             if 'NAME' in line:
@@ -131,8 +131,8 @@ class PhylogeneticInferenceGenes(object):
     def __alignMarkers(self, allTrustedGenomeIds, universalMarkerGenes, genesInGenomes, numThreads, outputGeneDir, outputModelDir):
         """Perform multithreaded alignment of marker genes using HMM align."""
         
-        print ''
-        print 'Aligning gene sequences.'
+        print('')
+        print('Aligning gene sequences.')
         
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
@@ -217,10 +217,10 @@ class PhylogeneticInferenceGenes(object):
 
         # output masked sequences in FASTA format
         fout = open(outputFile, 'w')
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in seqs.items():
             fout.write('>' + seqId + '\n')
 
-            maskedSeq = ''.join([seq[i] for i in xrange(0, len(seq)) if mask[i] == 'x'])
+            maskedSeq = ''.join([seq[i] for i in range(0, len(seq)) if mask[i] == 'x'])
             fout.write(maskedSeq + '\n')
         fout.close()
 
@@ -249,8 +249,8 @@ class PhylogeneticInferenceGenes(object):
         self.__alignMarkers(allTrustedGenomeIds, universalMarkerGenes, genesInGenomes, numThreads, outputGeneDir, outputModelDir)
         
 if __name__ == '__main__':
-    print 'PhylogeneticInferenceGenes v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print('PhylogeneticInferenceGenes v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
     
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-x', '--phylo_ubiquity', help='ubiquity threshold for defining phylogenetic marker genes', type=float, default = 0.90)

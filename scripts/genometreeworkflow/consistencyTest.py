@@ -89,7 +89,7 @@ class ConsistencyTest(object):
         img = IMG('/srv/whitlam/bio/db/checkm/img/img_metadata.tsv', '/srv/whitlam/bio/db/checkm/pfam/tigrfam2pfam.tsv')
         metadata = img.genomeMetadata()
         genomeIdToTaxonomy = {}
-        for genomeId, m in metadata.iteritems():
+        for genomeId, m in metadata.items():
             genomeIdToTaxonomy[genomeId] = m['taxonomy']
 
         # perform analysis for each tree
@@ -102,7 +102,7 @@ class ConsistencyTest(object):
             if not treeFile.endswith(treeExtension):
                 continue
 
-            print treeFile
+            print(treeFile)
             tree = dendropy.Tree.get_from_path(os.path.join(geneTreeDir, treeFile), schema='newick', as_rooted=True, preserve_underscores=True)
 
             domainConsistency = {}
@@ -113,19 +113,19 @@ class ConsistencyTest(object):
             # get abundance of taxa at different taxonomic ranks
             totals = [{}, {}, {}]
             leaves = tree.leaf_nodes()
-            print '  Number of leaves: ' + str(len(leaves))
+            print('  Number of leaves: ' + str(len(leaves)))
             totalValidLeaves = 0
 
             for leaf in leaves:
                 genomeId = self.__genomeId(leaf.taxon.label)
 
                 if genomeId not in metadata:
-                    print '[Error] Genome is missing metadata: ' + genomeId
+                    print('[Error] Genome is missing metadata: ' + genomeId)
                     sys.exit()
 
                 totalValidLeaves += 1
                 taxonomy = genomeIdToTaxonomy[genomeId]
-                for r in xrange(0, 3):
+                for r in range(0, 3):
                     totals[r][taxonomy[r]] = totals[r].get(taxonomy[r], 0) + 1
                     consistencyDict[r][taxonomy[r]] = 0
                     allTaxa[r].add(taxonomy[r])
@@ -137,7 +137,7 @@ class ConsistencyTest(object):
             for node in internalNodes:
                 leaves = node.leaf_nodes()
 
-                for r in xrange(0, 3):
+                for r in range(0, 3):
                     leafCounts = {}
                     for leaf in leaves:
                         genomeId = self.__genomeId(leaf.taxon.label)
@@ -170,13 +170,13 @@ class ConsistencyTest(object):
                 os.makedirs(consistencyDir)
             fout = open(os.path.join(consistencyDir, treeFile + '.results.tsv'), 'w')
             fout.write('Tree')
-            for r in xrange(0, 3):
+            for r in range(0, 3):
                 for taxa in sorted(consistencyDict[r].keys()):
                     fout.write('\t' + taxa)
             fout.write('\n')
 
             fout.write(treeFile)
-            for r in xrange(0, 3):
+            for r in range(0, 3):
                 for taxa in sorted(consistencyDict[r].keys()):
                     if consistencyDict[r][taxa] != 'N/A':
                         fout.write('\t%.2f' % (consistencyDict[r][taxa]*100))
@@ -186,7 +186,7 @@ class ConsistencyTest(object):
 
             # calculate average consistency at each taxonomic rank
             average = []
-            for r in xrange(0, 3):
+            for r in range(0, 3):
                 sumConsistency = []
                 for taxa in consistencyDict[r]:
                     if totals[r][taxa] > minTaxaForAverage and consistencyDict[r][taxa] != 'N/A':
@@ -199,13 +199,13 @@ class ConsistencyTest(object):
             avgConsistency[treeFile] = average
             allResults[treeFile] = consistencyDict
 
-            print '  Average consistency: ' + str(average) + ', mean = %.2f' % (sum(average)/len(average))
-            print ''
+            print('  Average consistency: ' + str(average) + ', mean = %.2f' % (sum(average)/len(average)))
+            print('')
 
         # print out combined results
         fout = open(outputFile, 'w')
         fout.write('Tree\tShort Desc.\tLong Desc.\tAlignment Length\t# Taxa\t# Bacteria\t# Archaea\tAvg. Consistency\tAvg. Domain Consistency\tAvg. Phylum Consistency\tAvg. Class Consistency')
-        for r in xrange(0, 3):
+        for r in range(0, 3):
             for t in sorted(allTaxa[r]):
                 fout.write('\t' + t)
         fout.write('\n')
@@ -222,7 +222,7 @@ class ConsistencyTest(object):
             fout.write('\t' + str(taxaCounts[treeFile][0]) + '\t' + str(taxaCounts[treeFile][1]) + '\t' + str(taxaCounts[treeFile][2]))
 
             avgCon = 0
-            for r in xrange(0, 3):
+            for r in range(0, 3):
                 avgCon += avgConsistency[treeFile][r]
             avgCon /= 3
             fout.write('\t' + str(avgCon))
@@ -232,12 +232,12 @@ class ConsistencyTest(object):
                 os.system('cp ' + os.path.join(geneTreeDir, treeFile) + ' ' + os.path.join(outputDir, treeFile))
             else:
                 filteredGeneTrees += 1
-                print 'Filtered % s with an average consistency of %.4f.' % (treeFile, avgCon)
+                print('Filtered % s with an average consistency of %.4f.' % (treeFile, avgCon))
 
-            for r in xrange(0, 3):
+            for r in range(0, 3):
                 fout.write('\t' + str(avgConsistency[treeFile][r]))
 
-            for r in xrange(0, 3):
+            for r in range(0, 3):
                 for t in sorted(allTaxa[r]):
                     if t in consistencyDict[r]:
                         if consistencyDict[r][t] != 'N/A':
@@ -249,12 +249,12 @@ class ConsistencyTest(object):
             fout.write('\n')
         fout.close()
 
-        print 'Retained gene trees: ' + str(retainedGeneTrees)
-        print 'Filtered gene trees: ' + str(filteredGeneTrees)
+        print('Retained gene trees: ' + str(retainedGeneTrees))
+        print('Filtered gene trees: ' + str(filteredGeneTrees))
 
 if __name__ == '__main__':
-    print 'ConsistencyTest v' + __version__ + ': ' + __prog_desc__
-    print '  by ' + __author__ + ' (' + __email__ + ')' + '\n'
+    print('ConsistencyTest v' + __version__ + ': ' + __prog_desc__)
+    print('  by ' + __author__ + ' (' + __email__ + ')' + '\n')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('gene_tree_dir', help='directory containing gene trees to test')

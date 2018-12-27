@@ -73,8 +73,8 @@ class Simulation(object):
             # determine distribution of all marker genes within the test genome
             geneDistTable = self.img.geneDistTable([testGenomeId], binMarkerSets.getMarkerGenes(), spacingBetweenContigs=0)
 
-            print '# marker genes: ', len(binMarkerSets.getMarkerGenes())
-            print '# genes in table: ', len(geneDistTable[testGenomeId])
+            print('# marker genes: ', len(binMarkerSets.getMarkerGenes()))
+            print('# genes in table: ', len(geneDistTable[testGenomeId]))
 
             # estimate completeness of unmodified genome
             unmodifiedComp = {}
@@ -88,11 +88,11 @@ class Simulation(object):
                 unmodifiedComp[ms.lineageStr] = completeness
                 unmodifiedCont[ms.lineageStr] = contamination
 
-            print completeness, contamination
+            print(completeness, contamination)
 
             # estimate completion and contamination of genome after subsampling using both the domain and lineage-specific marker sets
             genomeSize = readFastaBases(os.path.join(self.img.genomeDir, testGenomeId, testGenomeId + '.fna'))
-            print 'genomeSize', genomeSize
+            print('genomeSize', genomeSize)
 
             for contigLen in self.contigLens:
                 for percentComp in self.percentComps:
@@ -112,9 +112,9 @@ class Simulation(object):
 
                         numDescendants = {}
 
-                        for _ in xrange(0, numReplicates):
+                        for _ in range(0, numReplicates):
                             trueComp, trueCont, startPartialGenomeContigs = self.markerSetBuilder.sampleGenome(genomeSize, percentComp, percentCont, contigLen)
-                            print contigLen, trueComp, trueCont, len(startPartialGenomeContigs)
+                            print(contigLen, trueComp, trueCont, len(startPartialGenomeContigs))
 
                             trueComps.append(trueComp)
                             trueConts.append(trueCont)
@@ -218,49 +218,49 @@ class Simulation(object):
         sys.stdout.write('\n')
 
     def run(self, ubiquityThreshold, singleCopyThreshold, numReplicates, numThreads):
-        print '\n  Reading reference genome tree.'
+        print('\n  Reading reference genome tree.')
         treeFile = os.path.join('/srv', 'db', 'checkm', 'genome_tree', 'genome_tree_full.refpkg', 'genome_tree.tre')
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', as_rooted=True, preserve_underscores=True)
 
-        print '    Number of taxa in tree: %d' % (len(tree.leaf_nodes()))
+        print('    Number of taxa in tree: %d' % (len(tree.leaf_nodes())))
 
         genomesInTree = set()
         for leaf in tree.leaf_iter():
             genomesInTree.add(leaf.taxon.label.replace('IMG_', ''))
 
         # get all draft genomes for testing
-        print ''
+        print('')
         metadata = self.img.genomeMetadata()
-        print '  Total genomes: %d' % len(metadata)
+        print('  Total genomes: %d' % len(metadata))
 
         genomeIdsToTest = genomesInTree - self.img.filterGenomeIds(genomesInTree, metadata, 'status', 'Finished')
-        print '  Number of draft genomes: %d' % len(genomeIdsToTest)
+        print('  Number of draft genomes: %d' % len(genomeIdsToTest))
 
-        print ''
-        print '  Pre-computing genome information for calculating marker sets:'
+        print('')
+        print('  Pre-computing genome information for calculating marker sets:')
         start = time.time()
         self.markerSetBuilder.readLineageSpecificGenesToRemove()
         end = time.time()
-        print '    readLineageSpecificGenesToRemove: %.2f' % (end - start)
+        print('    readLineageSpecificGenesToRemove: %.2f' % (end - start))
 
 
         start = time.time()
         # self.markerSetBuilder.cachedGeneCountTable = self.img.geneCountTable(metadata.keys())
         end = time.time()
-        print '    globalGeneCountTable: %.2f' % (end - start)
+        print('    globalGeneCountTable: %.2f' % (end - start))
 
         start = time.time()
         # self.markerSetBuilder.precomputeGenomeSeqLens(metadata.keys())
         end = time.time()
-        print '    precomputeGenomeSeqLens: %.2f' % (end - start)
+        print('    precomputeGenomeSeqLens: %.2f' % (end - start))
 
         start = time.time()
         # self.markerSetBuilder.precomputeGenomeFamilyPositions(metadata.keys(), 0)
         end = time.time()
-        print '    precomputeGenomeFamilyPositions: %.2f' % (end - start)
+        print('    precomputeGenomeFamilyPositions: %.2f' % (end - start))
 
-        print ''
-        print '  Evaluating %d test genomes.' % len(genomeIdsToTest)
+        print('')
+        print('  Evaluating %d test genomes.' % len(genomeIdsToTest))
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
 

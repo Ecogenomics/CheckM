@@ -159,7 +159,7 @@ class GenomicSignatures(object):
 
         seqs = readFasta(seqFile)
 
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in seqs.items():
             workerQueue.put((seqId, seq))
 
         for _ in range(self.totalThreads):
