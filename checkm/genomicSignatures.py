@@ -23,7 +23,6 @@
 
 import sys
 import multiprocessing as mp
-from string import maketrans
 import logging
 
 import numpy as np
@@ -36,7 +35,7 @@ class GenomicSignatures(object):
         self.logger = logging.getLogger()
 
         self.K = K
-        self.compl = maketrans('ACGT', 'TGCA')
+        self.compl = K.maketrans('ACGT', 'TGCA')
         self.kmerCols, self.kmerToCanonicalIndex = self.__makeKmerColNames()
 
         self.totalThreads = threads
