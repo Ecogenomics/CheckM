@@ -7,8 +7,8 @@ The easiest way to install CheckM is with Conda.
 
 
 ```
-# Create a new environment with Python 2.7  
-conda create -n checkm python=2.7 -y
+# Create a new environment with Python 3  
+conda create -n checkm python=3 -y
 
 # Install CheckM and dependencies
 conda install -c bioconda pplacer hmmer prodigal checkm-genome -y
