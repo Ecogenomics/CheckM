@@ -49,7 +49,7 @@ class VerifyEcoli():
 
         options = Options()
         options.threads = 1
-	options.pplacer_threads = 1
+        options.pplacer_threads = 1
         options.extension = 'fna'
         options.bQuiet = True
         options.out_folder = os.path.join(outputDir, 'results')
