@@ -90,7 +90,7 @@ class BinMarkerSets():
                 return self.markerSets[0]
 
             self.logger.error('  [Error] Expect a single marker set to be associated with each bin.')
-            sys.exit()
+            sys.exit(1)
 
     def setLineageSpecificSelectedMarkerSet(self, selectedMarkerSetMap):
         uid = self.mostSpecificMarkerSet().UID
@@ -118,7 +118,7 @@ class BinMarkerSets():
         if self.selectedLinageSpecificMarkerSet == None:
             # something has gone wrong
             self.logger.error('  [Error] Failed to set a selected lineage-specific marker set.')
-            sys.exit()
+            sys.exit(1)
 
     def removeMarkers(self, markersToRemove):
         """Remove specified markers from all marker sets."""
@@ -438,7 +438,7 @@ class MarkerSetParser():
             return BinMarkerSets.HMM_MODELS_SET
         else:
             self.logger.error('Unrecognized file type: ' + markerFile)
-            sys.exit()
+            sys.exit(1)
 
     def __createMarkerHMMs(self, binMarkerSet, outputFile, bReportProgress=True):
         """Create HMM file for markers."""

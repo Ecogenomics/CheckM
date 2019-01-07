@@ -95,7 +95,7 @@ class OptionsParser():
 
         if not binFiles:
             self.logger.error("  [Error] No bins found. Check the extension (-x) used to identify bins.")
-            sys.exit()
+            sys.exit(1)
 
         return sorted(binFiles)
 
@@ -117,7 +117,8 @@ class OptionsParser():
                 return
 
         # setup directory structure
-        checkEmptyDir(options.out_folder)
+        if not options.force_overwrite:
+            checkEmptyDir(options.out_folder)
         makeSurePathExists(os.path.join(options.out_folder, 'bins'))
         makeSurePathExists(os.path.join(options.out_folder, 'storage'))
 
@@ -611,7 +612,7 @@ class OptionsParser():
         coverageProfiles = np.array(coverageProfiles)
         if coverageProfiles.shape[1] < 2:
             self.logger.error('  [Error] Coverage profile is 1 dimensional. PCA requires at least 2 dimensions.')
-            sys.exit()
+            sys.exit(1)
 
         self.logger.info('  Computing PCA of coverage profiles.\n')
         pca = PCA()
@@ -1080,12 +1081,12 @@ class OptionsParser():
         makeSurePathExists(os.path.dirname(options.output_file))
 
         if not (options.add or options.remove or options.outlier_file):
-            self.logger.warning('  [Warning] No modification to bin requested.\n')
-            sys.exit()
+            self.logger.error('  [Error] No modification to bin requested.\n')
+            sys.exit(1)
 
         if (options.add or options.remove) and options.outlier_file:
-            self.logger.warning("  [Warning] The 'outlier_file' option cannot be specified with 'add' or 'remove'.\n")
-            sys.exit()
+            self.logger.error("  [Error] The 'outlier_file' option cannot be specified with 'add' or 'remove'.\n")
+            sys.exit(1)
 
         binTools = BinTools()
 
@@ -1176,10 +1177,10 @@ class OptionsParser():
 
         if len(bin_folders) < 2:
             self.logger.error("   [Error] Need to specify at least two bin folders, found %i: " % len(bin_folders))
-            sys.exit()
+            sys.exit(1)
         if len(bin_folders) != len(checkmQaTsvs):
             self.logger.error("   [Error] Need to specify the same number of bin folders as checkm_qa_tsv files, found %i and %i, respectively: " % (len(bin_folders), len(checkmQaTsvs)))
-            sys.exit()
+            sys.exit(1)
 
         binFileSets = []
         for bin_folder in bin_folders:
@@ -1318,6 +1319,6 @@ class OptionsParser():
             self.test(options)
         else:
             self.logger.error('  [Error] Unknown CheckM command: ' + options.subparser_name + '\n')
-            sys.exit()
+            sys.exit(1)
 
         return 0

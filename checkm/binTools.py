@@ -43,7 +43,7 @@ class BinTools():
         missingSeqIds = set(seqsToRemove).difference(set(seqs.keys()))
         if len(missingSeqIds) > 0:
             self.logger.error('  [Error] Missing sequence(s) specified for removal: ' + ', '.join(missingSeqIds) + '\n')
-            sys.exit()
+            sys.exit(1)
 
         for seqId in seqsToRemove:
             seqs.pop(seqId)
@@ -53,7 +53,7 @@ class BinTools():
         missingSeqIds = set(seqsToAdd).difference(set(refSeqs.keys()))
         if len(missingSeqIds) > 0:
             self.logger.error('  [Error] Missing sequence(s) specified for addition: ' + ', '.join(missingSeqIds) + '\n')
-            sys.exit()
+            sys.exit(1)
 
         for seqId in seqsToAdd:
             seqs[seqId] = refSeqs[seqId]
@@ -242,7 +242,7 @@ class BinTools():
             gffFile = os.path.join(outDir, 'bins', binId, DefaultValues.PRODIGAL_GFF)
             if not os.path.exists(gffFile):
                 self.logger.error('  [Error] Missing gene feature file (%s). This plot if not compatible with the --genes option.\n' % DefaultValues.PRODIGAL_GFF)
-                sys.exit()
+                sys.exit(1)
 
             prodigalParser = ProdigalGeneFeatureParser(gffFile)
             meanCD, deltaCDs, CDs = self.codingDensityDist(seqs, prodigalParser)

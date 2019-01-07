@@ -134,7 +134,7 @@ class PplacerRunner():
             subprocess.call(['pplacer', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
         except:
             self.logger.error("  [Error] Make sure pplacer is on your system path.")
-            sys.exit()
+            sys.exit(1)
 
     def __checkForGuppy(self):
         """Check to see if guppy is on the system before we try to run it."""
@@ -145,4 +145,4 @@ class PplacerRunner():
             subprocess.call(['guppy', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
         except:
             self.logger.error("  [Error] Make sure guppy, which is part of the pplacer package, is on your system path.")
-            sys.exit()
+            sys.exit(1)

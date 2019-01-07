@@ -255,7 +255,7 @@ class TreeParser():
                     queue.append(child)
 
         self.logger.error('  [Error] Failed to associate bin with a domain. Please report this bug.')
-        sys.exit()
+        sys.exit(1)
 
     def getBinSisterTaxonomy(self, outDir, binIds):
         # make sure output and tree directories exist

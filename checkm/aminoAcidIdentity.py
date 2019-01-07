@@ -90,7 +90,7 @@ class AminoAcidIdentity():
                         else:
                             # something is wrong as the bin Ids should always be the same
                             self.logger.error('  [Error] Bin ids do not match.')
-                            sys.exit()
+                            sys.exit(1)
 
         if alignmentOutputFile:
             fout.close()
