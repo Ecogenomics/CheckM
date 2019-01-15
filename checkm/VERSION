@@ -1,3 +1,6 @@
+1.0.14
+- fixed bug with test command missing "--force-overwrite" option
+
 1.0.13
 - failed commands not exit with error code 1
 - added "--force-overwrite" option
