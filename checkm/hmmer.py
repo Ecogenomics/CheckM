@@ -291,3 +291,4 @@ class HmmerHitDOM():
                           str(self.acc),
                           self.target_description]
                          )
+      

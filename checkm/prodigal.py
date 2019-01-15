@@ -134,7 +134,7 @@ class ProdigalRunner():
             subprocess.call(['prodigal', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
         except:
             self.logger.error("  [Error] Make sure prodigal is on your system path.")
-            sys.exit()
+            sys.exit(1)
 
 
 class ProdigalFastaParser():

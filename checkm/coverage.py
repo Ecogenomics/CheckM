@@ -74,7 +74,7 @@ class Coverage():
         for bamFile in bamFiles:
             if not os.path.exists(bamFile + '.bai'):
                 self.logger.error('  [Error] BAM file is either unsorted or not indexed: ' + bamFile + '\n')
-                sys.exit()
+                sys.exit(1)
 
         # calculate coverage of each BAM file
         coverageInfo = {}

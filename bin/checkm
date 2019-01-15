@@ -147,6 +147,7 @@ if __name__ == '__main__':
     tree_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     tree_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     tree_parser.add_argument('--pplacer_threads', type=int, default=1, help="number of threads used by pplacer (memory usage increases linearly with additional threads)")
+    tree_parser.add_argument('--force_overwrite', action="store_true", default=False, help="force overwriting of output directory")
     tree_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     tree_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
@@ -295,6 +296,7 @@ Example: checkm qa ./output/lineage.ms ./output
     lineage_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     lineage_wf_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     lineage_wf_parser.add_argument('--pplacer_threads', type=int, default=1, help="number of threads used by pplacer (memory usage increases linearly with additional threads)")
+    lineage_wf_parser.add_argument('--force_overwrite', action="store_true", default=False, help="force overwriting of output directory")
     lineage_wf_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     lineage_wf_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
@@ -324,6 +326,7 @@ Example: checkm qa ./output/lineage.ms ./output
     taxonomy_wf_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     taxonomy_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
     taxonomy_wf_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
+    taxonomy_wf_parser.add_argument('--force_overwrite', action="store_true", default=False, help="force overwriting of output directory")
     taxonomy_wf_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     taxonomy_wf_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 

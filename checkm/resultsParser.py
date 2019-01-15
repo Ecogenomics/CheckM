@@ -220,7 +220,7 @@ class ResultsParser():
 
             if DefaultValues.MIN_SEQ_LEN_GC_STD != 1000:
                 self.logger.error('  [Error] Labeling error: GC std (scaffolds > 1kbp)')
-                sys.exit()
+                sys.exit(1)
         elif outputFormat == 3:
             header = ['Bin Id', 'Node Id', 'Marker lineage', '# genomes', '# markers', '# marker sets', '0', '1', '2', '3', '4', '5+', 'Completeness', 'Contamination', 'Strain heterogeneity']
         elif outputFormat == 4:

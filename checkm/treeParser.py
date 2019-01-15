@@ -568,7 +568,7 @@ class TreeParser():
                 try:
                     d['bootstrap'] = float(lineSplit[3])
                 except:
-                    d['bootstrap'] = 0.0
+                    d['bootstrap'] = 100.0
                 d['gc mean'] = float(lineSplit[4])
                 d['gc std'] = float(lineSplit[5])
                 d['genome size mean'] = float(lineSplit[6]) / 1e6

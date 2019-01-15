@@ -70,8 +70,8 @@ def checkEmptyDir(inputDir):
         files = os.listdir(inputDir)
         if len(files) != 0:
             logger = logging.getLogger()
-            logger.warning('  [Warning] Output directory must be empty: ' + inputDir + '\n')
-            sys.exit()
+            logger.error('  [Error] Output directory must be empty: ' + inputDir + '\n')
+            sys.exit(1)
 
 
 def checkFileExists(inputFile):
@@ -79,7 +79,7 @@ def checkFileExists(inputFile):
     if not os.path.exists(inputFile):
         logger = logging.getLogger()
         logger.error('  [Error] Input file does not exists: ' + inputFile + '\n')
-        sys.exit()
+        sys.exit(1)
 
 
 def checkDirExists(inputDir):
@@ -87,7 +87,7 @@ def checkDirExists(inputDir):
     if not os.path.exists(inputDir):
         logger = logging.getLogger()
         logger.error('  [Error] Input directory does not exists: ' + inputDir + '\n')
-        sys.exit()
+        sys.exit(1)
 
 
 def makeSurePathExists(path):
@@ -101,7 +101,7 @@ def makeSurePathExists(path):
         if exception.errno != errno.EEXIST:
             logger = logging.getLogger()
             logger.error('  [Error] Specified path does not exist: ' + path + '\n')
-            sys.exit()
+            sys.exit(1)
 
 
 def binIdFromFilename(filename):
@@ -122,7 +122,7 @@ def reassignStdOut(outFile):
         except:
             logger = logging.getLogger()
             logger.error("   [Error] Error diverting stdout to file: " + outFile)
-            sys.exit()
+            sys.exit(1)
 
     return oldStdOut
 
@@ -137,4 +137,4 @@ def restoreStdOut(outFile, oldStdOut):
         except:
             logger = logging.getLogger()
             logger.error("   [Error] Error restoring stdout ", outFile)
-            sys.exit()
+            sys.exit(1)

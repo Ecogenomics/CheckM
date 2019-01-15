@@ -95,7 +95,7 @@ class CoverageWindows():
         # make sure BAM file is sorted
         if not os.path.exists(bamFile + '.bai'):
             self.logger.error('  [Error] BAM file is not sorted: ' + bamFile + '\n')
-            sys.exit()
+            sys.exit(1)
 
         # calculate coverage of each BAM file
         self.logger.info('  Calculating coverage of windows.')
