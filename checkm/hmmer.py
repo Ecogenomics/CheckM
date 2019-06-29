@@ -114,9 +114,13 @@ class HMMERRunner():
         """Check to see if HMMER is on the system path."""
         try:
             subprocess.call(['hmmsearch', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
-        except:
-            self.logger.error("  [Error] Make sure HMMER executables (e.g., hmmsearch, hmmfetch) are on your system path.")
-            sys.exit(1)
+        except OSError as ose:
+            if ose.errno == 2 && ose.message == "No such file or directory":
+                self.logger.error("  [Error] Make sure HMMER executables (e.g., hmmsearch, hmmfetch) are on your system path.")
+                sys.exit(1)
+            else:
+                self.logger.error("  [Error] unexpected exception while checking for HMMER executables.")
+                raise
 
 
 class HMMERParser():
