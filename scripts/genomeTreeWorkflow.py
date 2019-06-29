@@ -32,6 +32,8 @@ import os
 import sys
 import argparse
 
+from checkm.common import checkForTool
+
 from genometreeworkflow.phylogeneticInferenceGenes import PhylogeneticInferenceGenes
 from genometreeworkflow.makeTrees import MakeTrees
 from genometreeworkflow.paralogTest import ParalogTest
@@ -95,54 +97,24 @@ class GenomeTreeWorkflow(object):
     def __checkForHMMER(self):
         """Check to see if HMMER is on the system path."""
 
-        try:
-            exit_status = os.system('hmmfetch -h > /dev/null')
-        except:
-            print "Unexpected error!", sys.exc_info()[0]
-            raise
+        checkForTool('hmmsearch')
+        checkForTool('hmmfetch')
 
-        if exit_status != 0:
-            print "[Error] hmmfetch is not on the system path"
-            sys.exit()
 
     def __checkForFastTree(self):
         """Check to see if FastTree is on the system path."""
 
-        try:
-            exit_status = os.system('FastTree 2> /dev/null')
-        except:
-            print "Unexpected error!", sys.exc_info()[0]
-            raise
-
-        if exit_status != 0:
-            print "[Error] FastTree is not on the system path"
-            sys.exit()
+       checkForTool('FastTree')
 
     def __checkForSeqMagick(self):
         """Check to see if seqmagick is on the system path."""
 
-        try:
-            exit_status = os.system('seqmagick -h > /dev/null')
-        except:
-            print "Unexpected error!", sys.exc_info()[0]
-            raise
-
-        if exit_status != 0:
-            print "[Error] seqmagick is not on the system path"
-            sys.exit()
+        checkForTool('seqmagick')
 
     def __checkForTax2Tree(self):
         """Check to see if tax2tree is on the system path."""
 
-        try:
-            exit_status = os.system('t2t -h > /dev/null')
-        except:
-            print "Unexpected error!", sys.exc_info()[0]
-            raise
-
-        if exit_status != 0:
-            print "[Error] t2t is not on the system path"
-            sys.exit()
+        checkForTool('t2t')
 
     def run(self, numThreads):
         # identify genes suitable for phylogenetic inference

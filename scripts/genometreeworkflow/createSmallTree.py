@@ -52,15 +52,19 @@ class CreateSamllTree(object):
     def __checkForFastTree(self):
         """Check to see if FastTree is on the system path."""
 
+        # Assume that a successful FastTree -h returns 0 and anything
+        # else returns something non-zero
         try:
-            exit_status = os.system('FastTree 2> /dev/null')
-        except:
-            print "Unexpected error!", sys.exc_info()[0]
-            raise
+            subprocess.call(['FastTree'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+        except OSError as ose:
+            if ose.errno == 2 and ose.message == "No such file or directory":
+                self.logger.error("  [Error] Make sure `FastTree` is on your system path.")
+                sys.exit(1)
+            else:
+                self.logger.error("  [Error] unexpected exception while checking for `FastTree`.")
+                raise
 
-        if exit_status != 0:
-            print "[Error] FastTree is not on the system path"
-            sys.exit()
+
 
     def __nearlyIdentical(self, string1, string2, max_diff_perc=0.08):
         max_diff = int(max_diff_perc * len(string1))

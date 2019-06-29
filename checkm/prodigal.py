@@ -20,16 +20,14 @@
 ###############################################################################
 
 import os
-import sys
 import stat
-import subprocess
 import logging
 import shutil
 
 import numpy as np
 
 from checkm.defaultValues import DefaultValues
-from checkm.common import checkFileExists
+from checkm.common import checkFileExists, checkForTool
 from checkm.util.seqUtils import readFasta
 
 
@@ -128,13 +126,7 @@ class ProdigalRunner():
     def checkForProdigal(self):
         """Check to see if Prodigal is on the system before we try to run it."""
 
-        # Assume that a successful prodigal -h returns 0 and anything
-        # else returns something non-zero
-        try:
-            subprocess.call(['prodigal', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
-        except:
-            self.logger.error("  [Error] Make sure prodigal is on your system path.")
-            sys.exit(1)
+        checkForTool('prodigal')
 
 
 class ProdigalFastaParser():

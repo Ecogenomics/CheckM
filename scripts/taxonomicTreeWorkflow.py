@@ -35,6 +35,8 @@ from collections import defaultdict
 import multiprocessing as mp
 import random
 
+from checkm.common import checkForTool
+
 from checkm.lib.img import IMG
 
 from lib.markerSetBuilder import MarkerSetBuilder
@@ -102,28 +104,13 @@ class GenomeTreeWorkflow(object):
     def __checkForHMMER(self):
         """Check to see if HMMER is on the system path."""
 
-        try:
-            exit_status = os.system('hmmfetch -h > /dev/null')
-        except:
-            print "Unexpected error!", sys.exc_info()[0]
-            raise
-
-        if exit_status != 0:
-            print "[Error] hmmfetch is not on the system path"
-            sys.exit()
+        checkForTool('hmmsearch')
+        checkForTool('hmmfetch')
 
     def __checkForFastTree(self):
         """Check to see if FastTree is on the system path."""
 
-        try:
-            exit_status = os.system('FastTree 2> /dev/null')
-        except:
-            print "Unexpected error!", sys.exc_info()[0]
-            raise
-
-        if exit_status != 0:
-            print "[Error] FastTree is not on the system path"
-            sys.exit()
+        checkForTool('FastTree')
 
     def __genesInGenomes(self, genomeIds):
         genesInGenomes = {}

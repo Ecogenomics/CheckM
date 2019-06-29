@@ -20,16 +20,15 @@
 ###############################################################################
 
 import os
-import sys
 import stat
 import shutil
-import subprocess
 import logging
 from collections import defaultdict
 
 from checkm.defaultValues import DefaultValues
 
-from checkm.common import checkDirExists
+from checkm.common import checkDirExists, checkForTool
+
 from checkm.util.seqUtils import readFasta, writeFasta
 
 
@@ -128,21 +127,9 @@ class PplacerRunner():
     def __checkForPplacer(self):
         """Check to see if pplacer is on the system before we try to run it."""
 
-        # Assume that a successful pplacer -h returns 0 and anything
-        # else returns something non-zero
-        try:
-            subprocess.call(['pplacer', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
-        except:
-            self.logger.error("  [Error] Make sure pplacer is on your system path.")
-            sys.exit(1)
+        checkForTool('pplacer')
 
     def __checkForGuppy(self):
         """Check to see if guppy is on the system before we try to run it."""
 
-        # Assume that a successful pplacer -h returns 0 and anything
-        # else returns something non-zero
-        try:
-            subprocess.call(['guppy', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
-        except:
-            self.logger.error("  [Error] Make sure guppy, which is part of the pplacer package, is on your system path.")
-            sys.exit(1)
+       checkForTool('guppy')

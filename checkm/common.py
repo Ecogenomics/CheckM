@@ -21,6 +21,7 @@
 
 import os
 import errno
+import subprocess
 import sys
 import ast
 import logging
@@ -138,3 +139,16 @@ def restoreStdOut(outFile, oldStdOut):
             logger = logging.getLogger()
             logger.error("   [Error] Error restoring stdout ", outFile)
             sys.exit(1)
+
+def checkForTool(toolExecutableName):
+    """Check to see if a command line tool is on the current path."""
+    try:
+        subprocess.call([toolExecutableName, '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+    except OSError as ose:
+        logger = logging.getLogger()
+        if ose.errno == 2 and ose.message == "No such file or directory":
+            logger.error("  [Error] Make sure %s executable is on your system path." % toolExecutableName)
+            sys.exit(1)
+        else:
+            logger.error("  [Error] unexpected exception while checking for %s executable." % toolExecutableName)
+            raise
