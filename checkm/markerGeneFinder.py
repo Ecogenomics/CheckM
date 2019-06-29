@@ -87,6 +87,8 @@ class MarkerGeneFinder():
 
             writeProc.terminate()
 
+            raise
+
         # create a standard dictionary from the managed dictionary
         d = {}
         for binId in binIdToModels.keys():

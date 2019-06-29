@@ -96,6 +96,8 @@ class BinStatistics():
 
             writeProc.terminate()
 
+            raise
+
     def __processBin(self, outDir, queueIn, queueOut):
         """Thread safe bin processing."""
         while True:

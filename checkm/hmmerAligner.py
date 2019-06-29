@@ -177,6 +177,8 @@ class HmmerAligner:
 
             writeProc.terminate()
 
+            raise
+
     def __createMSA(self, resultsParser, binIdToBinMarkerSets, hmmModelFile, outDir, alignOutputDir, queueIn, queueOut):
         """Create multiple sequence alignment for markers with multiple hits in a bin."""
 
@@ -262,6 +264,8 @@ class HmmerAligner:
                 p.terminate()
 
             writeProc.terminate()
+
+            raise
 
     def __alignMarkerParallel(self, markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, bKeepUnmaskedAlign, queueIn, queueOut):
         while True:
@@ -489,6 +493,8 @@ class HmmerAligner:
                 p.terminate()
 
             writeProc.terminate()
+
+            raise
 
     def __extractModel(self, hmmModelFile, queueIn, queueOut):
         """Extract HMM."""

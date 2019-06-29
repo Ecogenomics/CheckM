@@ -186,6 +186,8 @@ class GenomicSignatures(object):
 
             writeProc.terminate()
 
+            raise
+
     def distance(self, sig1, sig2):
         return np.sum(np.abs(sig1 - sig2))
 

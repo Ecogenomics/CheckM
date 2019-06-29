@@ -207,7 +207,8 @@ def readFasta(fastaFile, trimHeader=True):
     except:
         logger = logging.getLogger()
         logger.error("  [Error] Failed to process sequence file: " + fastaFile)
-        sys.exit()
+
+        raise
 
     return seqs
 

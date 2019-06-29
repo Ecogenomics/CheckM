@@ -163,6 +163,8 @@ class CoverageWindows():
 
             writeProc.terminate()
 
+            raise
+
         return coverageInfo
 
     def __workerThread(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, queueIn, queueOut):
