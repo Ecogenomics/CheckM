@@ -1210,19 +1210,13 @@ class OptionsParser():
 
     def parseOptions(self, options):
         """Parse user options and call the correct pipeline(s)"""
-        try:
-            if hasattr(options, 'bQuiet') and options.bQuiet:
-                logging.basicConfig(format='', level=logging.ERROR)
-            else:
-                logging.basicConfig(format='', level=logging.INFO)
-        except:
+        if hasattr(options, 'bQuiet') and options.bQuiet:
+            logging.basicConfig(format='', level=logging.ERROR)
+        else:
             logging.basicConfig(format='', level=logging.INFO)
 
-        try:
-            if options.file == "stdout":
-                options.file = ''
-        except:
-            pass
+        if hasattr(options, 'file') and options.file == "stdout":
+            options.file = ''
 
         if(options.subparser_name == "data"):
             self.updateCheckM_DB(options)
