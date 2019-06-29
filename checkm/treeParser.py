@@ -567,7 +567,7 @@ class TreeParser():
                 d['taxonomy'] = lineSplit[2]
                 try:
                     d['bootstrap'] = float(lineSplit[3])
-                except:
+                except ValueError:
                     d['bootstrap'] = 'NA'
                 d['gc mean'] = float(lineSplit[4])
                 d['gc std'] = float(lineSplit[5])

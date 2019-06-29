@@ -387,7 +387,7 @@ class ResultsManager():
                             try:
                                 orfNumI = int(orfI[orfI.rfind('_') + 1:])
                                 orfNumJ = int(orfJ[orfJ.rfind('_') + 1:])
-                            except:
+                            except ValueError:
                                 # it appears called genes are not labeled
                                 # according to the prodigal format, so
                                 # it is not possible to perform this correction

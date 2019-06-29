@@ -68,7 +68,7 @@ class RerootTree(object):
                 genomeId = self.__genomeId(t.taxon.label)
                 genomeIds.add(genomeId)
                 domain = self.metadata[genomeId]['taxonomy'][0].lower()
-            except:
+            except KeyError:
                 print '[Error] Missing IMG metadata for: ' + t.taxon.label
                 sys.exit()
 

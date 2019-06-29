@@ -65,10 +65,9 @@ class GcPlots(AbstractPlot):
                 a, c, g, t = baseCount(seq[start:end])
                 try:
                     data.append(float(g + c) / (a + c + g + t))
-                except:
+                except ZeroDivisionError:
                     # it is possible to reach a long stretch of
                     # N's that causes a division by zero error
-
                     pass
 
                 start = end

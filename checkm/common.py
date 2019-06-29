@@ -120,7 +120,7 @@ def reassignStdOut(outFile):
         try:
             # redirect stdout to a file
             sys.stdout = open(outFile, 'w')
-        except:
+        except IOError:
             logger = logging.getLogger()
             logger.error("   [Error] Error diverting stdout to file: " + outFile)
             sys.exit(1)
@@ -135,7 +135,7 @@ def restoreStdOut(outFile, oldStdOut):
             # redirect stdout to a file
             sys.stdout.close()
             sys.stdout = oldStdOut
-        except:
+        except IOError:
             logger = logging.getLogger()
             logger.error("   [Error] Error restoring stdout ", outFile)
             sys.exit(1)

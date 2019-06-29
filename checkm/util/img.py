@@ -138,23 +138,23 @@ class IMG(object):
             try:
                 metadata[genomeId]['GC Count'] = int(lineSplit[gcIndex])
                 metadata[genomeId]['GC %'] = float(lineSplit[gcIndex]) / int(lineSplit[genomeSizeIndex])
-            except:
+            except ValueError:
                 metadata[genomeId]['GC Count'] = 'NA'
                 metadata[genomeId]['GC %'] = 'NA'
 
             try:
                 metadata[genomeId]['genome size'] = int(lineSplit[genomeSizeIndex])
-            except:
+            except ValueError:
                 metadata[genomeId]['genome size'] = 'NA'
 
             try:
                 metadata[genomeId]['gene count'] = int(lineSplit[geneCountIndex])
-            except:
+            except ValueError:
                 metadata[genomeId]['gene count'] = 'NA'
 
             try:
                 metadata[genomeId]['coding base count'] = int(lineSplit[codingBaseCountIndex])
-            except:
+            except ValueError:
                 metadata[genomeId]['coding base count'] = 'NA'
 
             metadata[genomeId]['biotic relationships'] = lineSplit[bioticRelationshipsIndex]
