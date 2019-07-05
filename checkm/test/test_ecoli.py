@@ -53,6 +53,7 @@ class VerifyEcoli():
         options.extension = 'fna'
         options.bQuiet = True
         options.out_folder = os.path.join(outputDir, 'results')
+        options.force_overwrite=False
         if os.path.exists(options.out_folder):
             shutil.rmtree(options.out_folder)
         makeSurePathExists(options.out_folder)
