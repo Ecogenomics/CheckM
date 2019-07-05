@@ -53,7 +53,7 @@ class ProdigalRunner():
         # gather statistics about query file
         seqs = readFasta(query)
         totalBases = 0
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in seqs.items():
             totalBases += len(seq)
 
         # call ORFs with different translation tables and select the one with the highest coding density
@@ -86,7 +86,7 @@ class ProdigalRunner():
             prodigalParser = ProdigalGeneFeatureParser(gffFile)
 
             codingBases = 0
-            for seqId, seq in seqs.iteritems():
+            for seqId, seq in seqs.items():
                 codingBases += prodigalParser.codingBases(seqId)
 
             if totalBases != 0:

@@ -23,7 +23,7 @@
 
 import sys
 import multiprocessing as mp
-from string import maketrans
+#from str import maketrans
 import logging
 
 import numpy as np
@@ -36,7 +36,7 @@ class GenomicSignatures(object):
         self.logger = logging.getLogger()
 
         self.K = K
-        self.compl = maketrans('ACGT', 'TGCA')
+        self.compl = str.maketrans('ACGT', 'TGCA')
         self.kmerCols, self.kmerToCanonicalIndex = self.__makeKmerColNames()
 
         self.totalThreads = threads
@@ -117,7 +117,7 @@ class GenomicSignatures(object):
                 sys.stderr.flush()
 
             fout.write(seqId)
-            fout.write('\t' + '\t'.join(map(str, sig)))
+            fout.write('\t' + '\t'.join(list(map(str, sig))))
             fout.write('\n')
 
         if self.logger.getEffectiveLevel() <= logging.INFO:
@@ -159,7 +159,7 @@ class GenomicSignatures(object):
 
         seqs = readFasta(seqFile)
 
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in seqs.items():
             workerQueue.put((seqId, seq))
 
         for _ in range(self.totalThreads):

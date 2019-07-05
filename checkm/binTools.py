@@ -26,7 +26,7 @@ import gzip
 
 import numpy as np
 
-from common import binIdFromFilename, checkFileExists, readDistribution, findNearest
+from checkm.common import binIdFromFilename, checkFileExists, readDistribution, findNearest
 from checkm.util.seqUtils import readFasta, writeFasta, baseCount
 from checkm.genomicSignatures import GenomicSignatures
 from checkm.prodigal import ProdigalGeneFeatureParser
@@ -123,7 +123,7 @@ class BinTools():
                     seqId = line[1:].split(None, 1)[0]
 
                     if seqId in seqIds:
-                        print '  [Warning] Sequence %s found multiple times in bin %s.' % (seqId, binId)
+                        print ('  [Warning] Sequence %s found multiple times in bin %s.' % (seqId, binId))
                     seqIds.add(seqId)
 
             binSeqs[binId] = seqIds
@@ -131,26 +131,26 @@ class BinTools():
         # check for sequences assigned to multiple bins
         bDuplicates = False
         binIds = binSeqs.keys()
-        for i in xrange(0, len(binIds)):
-            for j in xrange(i + 1, len(binIds)):
+        for i in range(0, len(binIds)):
+            for j in range(i + 1, len(binIds)):
                 seqInter = set(binSeqs[binIds[i]]).intersection(set(binSeqs[binIds[j]]))
 
                 if len(seqInter) > 0:
                     bDuplicates = True
-                    print '  Sequences shared between %s and %s: ' % (binIds[i], binIds[j])
+                    print ('  Sequences shared between %s and %s: ' % (binIds[i], binIds[j]))
                     for seqId in seqInter:
-                        print '    ' + seqId
-                    print ''
+                        print ('    ' + seqId)
+                    print ('')
 
         if not bDuplicates:
-            print '  No sequences assigned to multiple bins.'
+            print ('  No sequences assigned to multiple bins.')
 
     def gcDist(self, seqs):
         """GC statistics for bin."""
         GCs = []
         gcTotal = 0
         basesTotal = 0
-        for _, seq in seqs.iteritems():
+        for _, seq in seqs.items():
             a, c, g, t = baseCount(seq)
             gc = g + c
             bases = a + c + g + t
@@ -171,7 +171,7 @@ class BinTools():
 
         codingBasesTotal = 0
         basesTotal = 0
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in seqs.items():
             codingBases = prodigalParser.codingBases(seqId)
 
             CDs.append(float(codingBases) / len(seq))
@@ -186,11 +186,11 @@ class BinTools():
     def binTetraSig(self, seqs, tetraSigs):
         """Tetranucleotide signature for bin. """
         binSize = 0
-        for _, seq in seqs.iteritems():
+        for _, seq in seqs.items():
             binSize += len(seq)
 
         bInit = True
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in seqs.items():
             weightedTetraSig = tetraSigs[seqId] * (float(len(seq)) / binSize)
             if bInit:
                 binSig = weightedTetraSig
@@ -249,20 +249,20 @@ class BinTools():
 
             # find keys into GC and CD distributions
             closestGC = findNearest(np.array(gcBounds.keys()), meanGC)
-            sampleSeqLen = gcBounds[closestGC].keys()[0]
+            sampleSeqLen = list(gcBounds[closestGC].keys())[0]
             d = gcBounds[closestGC][sampleSeqLen]
             gcLowerBoundKey = findNearest(d.keys(), (100 - distribution) / 2.0)
             gcUpperBoundKey = findNearest(d.keys(), (100 + distribution) / 2.0)
 
             closestCD = findNearest(np.array(cdBounds.keys()), meanCD)
-            sampleSeqLen = cdBounds[closestCD].keys()[0]
+            sampleSeqLen = list(cdBounds[closestCD].keys())[0]
             d = cdBounds[closestCD][sampleSeqLen]
             cdLowerBoundKey = findNearest(d.keys(), (100 - distribution) / 2.0)
 
-            tdBoundKey = findNearest(tdBounds[tdBounds.keys()[0]].keys(), distribution)
+            tdBoundKey = findNearest(tdBounds[list(tdBounds.keys())[0]].keys(), distribution)
 
             index = 0
-            for seqId, seq in seqs.iteritems():
+            for seqId, seq in seqs.items():
                 seqLen = len(seq)
 
                 # find GC, CD, and TD bounds

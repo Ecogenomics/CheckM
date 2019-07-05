@@ -21,7 +21,7 @@
 
 import time
 import logging
-
+from functools import reduce
 
 class TimeKeeper:
     def __init__(self):

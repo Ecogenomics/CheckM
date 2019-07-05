@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 
 import os
 
@@ -25,5 +25,6 @@ setup(
         "scipy >= 0.9.0",
         "matplotlib >= 1.3.1",
         "pysam >= 0.8.3",
-        "dendropy >= 4.0.0"],
+        "dendropy >= 4.0.0"
+        ],
 )
