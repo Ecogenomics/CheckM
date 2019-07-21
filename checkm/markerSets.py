@@ -26,7 +26,7 @@ import uuid
 import tempfile
 import shutil
 import multiprocessing as mp
-import cPickle as pickle
+import pickle
 import gzip
 
 from checkm.defaultValues import DefaultValues
@@ -146,7 +146,7 @@ class BinMarkerSets():
         """Construct bin marker set data from line."""
         lineSplit = line.split('\t')
         numMarkerSets = int(lineSplit[1])
-        for i in xrange(0, numMarkerSets):
+        for i in range(0, numMarkerSets):
             uid = lineSplit[i * 4 + 2]
             lineageStr = lineSplit[i * 4 + 3]
             numGenomes = int(lineSplit[i * 4 + 4])
@@ -279,7 +279,7 @@ class MarkerSetParser():
             markersToExclude = self.readExcludeMarkersFile(excludeMarkersFile)
 
         markersToExclude.update(DefaultValues.MARKERS_TO_EXCLUDE)
-        for binId, binMarkerSet in binIdToBinMarkerSets.iteritems():
+        for binId, binMarkerSet in binIdToBinMarkerSets.items():
             binMarkerSet.removeMarkers(markersToExclude)
 
         return binIdToBinMarkerSets
@@ -305,7 +305,7 @@ class MarkerSetParser():
         # get HMM file for each bin
         binIdToModels = {}
         if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
-            hmmModelFile = self.createHmmModelFile(binIds.keys()[0], markerFile)
+            hmmModelFile = self.createHmmModelFile(list(binIds.keys())[0], markerFile)
 
             modelParser = HmmModelParser(hmmModelFile)
             models = modelParser.models()

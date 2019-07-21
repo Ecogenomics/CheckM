@@ -62,7 +62,7 @@ def isNucleotide(seq_file, req_perc=0.9, max_seqs_to_read=10):
         return True
 
     seq_count = 0
-    for _seq_id, seq in seqs.iteritems():
+    for _seq_id, seq in seqs.items():
         seq = seq.lower()
 
         nt_bases = 0
@@ -202,11 +202,12 @@ def readFasta(fastaFile, trimHeader=True):
             else:
                 seqs[seqId].append(line[0:-1])
 
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in seqs.items():
             seqs[seqId] = ''.join(seq)
     except:
         logger = logging.getLogger()
-        logger.error("  [Error] Failed to process sequence file: " + fastaFile)
+        logger.error("  [Error] Failed to process sequence file:" + fastaFile)
+        raise()
         sys.exit()
 
     return seqs
@@ -258,7 +259,7 @@ def readGenomicSeqsFromFasta(fastaFile, seqToIgnore=None):
         elif bRead:
             seqs[seqId].append(line[0:-1])
 
-    for seqId, seq in seqs.iteritems():
+    for seqId, seq in seqs.items():
         seqs[seqId] = ''.join(seq)
 
     return seqs
@@ -271,7 +272,7 @@ def writeFasta(seqs, outputFile):
     else:
         fout = open(outputFile, 'w')
 
-    for seqId, seq in seqs.iteritems():
+    for seqId, seq in seqs.items():
         fout.write('>' + seqId + '\n')
         fout.write(seq + '\n')
     fout.close()

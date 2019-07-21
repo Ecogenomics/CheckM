@@ -21,7 +21,7 @@
 
 import numpy as np
 
-from AbstractPlot import AbstractPlot
+from checkm.plot.AbstractPlot import AbstractPlot
 
 from matplotlib.ticker import MaxNLocator
 
@@ -79,7 +79,7 @@ class LengthHistogram(AbstractPlot):
         for line in axes.xaxis.get_ticklines():
             line.set_color(self.axesColour)
 
-        for loc, spine in axes.spines.iteritems():
+        for loc, spine in axes.spines.items():
             if loc in ['right', 'top']:
                 spine.set_color('none')
             else:

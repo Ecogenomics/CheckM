@@ -30,7 +30,7 @@ import logging
 import math
 import csv
 
-from common import binIdFromFilename
+from checkm.common import binIdFromFilename
 from checkm.util.seqUtils import readFasta
 
 
@@ -191,7 +191,7 @@ class BinUnion(object):
         # IPython.embed()
         numMultiplyBinnedContigs = 0
         multiplyBinnedContigsLength = 0
-        for contigName, binList in contigToBin.iteritems():
+        for contigName, binList in contigToBin.items():
             if len(binList) > 1:
                 numMultiplyBinnedContigs += 1
                 multiplyBinnedContigsLength += len(binList[0].seqs[contigName])
