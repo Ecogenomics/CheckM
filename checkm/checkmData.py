@@ -116,7 +116,7 @@ class DBManager(mm.ManifestManager):
 
     def runAction(self, action):
         """Main entry point for the updating code"""
-        
+
         if action[0] == "setRoot":
             if len(action) > 1:
                 path = self.setRoot(path=action[1])
@@ -156,11 +156,12 @@ class DBManager(mm.ManifestManager):
         minimal = False
         while not path_set:
             if not path:
-                if(minimal):
-                    path = raw_input("Please specify a location or type 'abort' to stop trying: \n")
-                else:
-                    path = raw_input("Where should CheckM store it's data?\n" \
-                                    "Please specify a location or type 'abort' to stop trying: \n")
+                path = os.path.join(os.path.expanduser("~"), ".checkm")
+                # if(minimal):
+                #     path = raw_input("Please specify a location or type 'abort' to stop trying: \n")
+                # else:
+                #     path = raw_input("Where should CheckM store it's data?\n" \
+                #                     "Please specify a location or type 'abort' to stop trying: \n")
 
             if path.upper() == "ABORT":
                 # user has given up
