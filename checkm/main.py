@@ -78,6 +78,13 @@ class OptionsParser():
         self.logger.info('*******************************************************************************')
         self.logger.info('')
 
+        action = options.action
+        if action and action[0] == 'setRoot' and len(action) > 1:
+            DBM = DBManager(set_path=action[1])
+            os._exit(0)
+        else:
+            DBM = DBManager()
+
         DBM = DBManager()
         DBM.runAction(options.action)
 
@@ -1226,7 +1233,10 @@ class OptionsParser():
 
         if(options.subparser_name == "data"):
             self.updateCheckM_DB(options)
-        elif(options.subparser_name == 'tree'):
+
+        DefaultValues.initValues()
+        
+        if(options.subparser_name == 'tree'):
             self.tree(options)
         elif(options.subparser_name == 'tree_qa'):
             self.treeQA(options)
