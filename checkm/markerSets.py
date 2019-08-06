@@ -112,6 +112,7 @@ class BinMarkerSets():
                 # this could be avoided by just forcing in the selected
                 # marker set.
                 selectedId = selectedMarkerSetMap[selectedId]
+                break
             else:
                 break
 
