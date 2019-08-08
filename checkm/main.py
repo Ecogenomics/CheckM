@@ -83,12 +83,8 @@ class OptionsParser():
         action = options.action
         if action and action[0] == 'setRoot' and len(action) > 1:
             DBM = DBManager(set_path=action[1])
-            os._exit(0)
         else:
-            DBM = DBManager()
-            
-        DBM = DBManager()
-        DBM.runAction(options.action)
+            self.logger.error('Path to the CheckM reference data must be specified.')
 
     def binFiles(self, binFolder, binExtension):
         binFiles = []

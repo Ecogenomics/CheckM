@@ -159,11 +159,7 @@ class DBManager(mm.ManifestManager):
         minimal = False
         while not path_set:
             if not path:
-                if(minimal):
-                    path = raw_input("Please specify a location or type 'abort' to stop trying: \n")
-                else:
-                    path = raw_input("Where should CheckM store its data?\n" \
-                                    "Please specify a location or type 'abort' to stop trying: \n")
+                path = os.path.join(os.path.expanduser("~"), ".checkm")
 
             if path.upper() == "ABORT":
                 # user has given up

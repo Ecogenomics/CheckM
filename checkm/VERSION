@@ -1,3 +1,7 @@
+1.0.16
+- made ~/.checkm the default directory for CheckM reference data
+- "checkm data setRoot <directory>" is no longer interactive and the directory must be given on the command line
+
 1.0.15
 - fixed CheckM data setRoot command to work from command line (thanks to cbt for PR)
 - added logging to files

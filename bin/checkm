@@ -114,7 +114,7 @@ def printHelp():
     join_tables  -> Join tab-separated value tables containing bin information
     ssu_finder   -> Identify SSU (16S/18S) rRNAs in sequences
 
-  Use 'checkm data setRoot' to specify the location of CheckM database files.
+  Use 'checkm data setRoot <checkm_data_dir>' to specify the location of CheckM database files.
 
   Usage: checkm <command> -h for command specific help
     '''
