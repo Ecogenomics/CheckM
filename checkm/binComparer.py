@@ -28,7 +28,7 @@ from checkm.util.seqUtils import readFasta, readFastaSeqIds
 
 class BinComparer(object):
     def __init__(self):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
     def __readBins(self, binFiles):
         bins = {}
@@ -62,7 +62,7 @@ class BinComparer(object):
 
     def report(self, binFiles1, binFiles2, seqFile, outputFile):
         # determine total number of sequences
-        self.logger.info('  Reading sequences.')
+        self.logger.info('Reading sequences.')
         seqs = readFasta(seqFile)
 
         seqLens = {}
@@ -95,19 +95,18 @@ class BinComparer(object):
         binStats2 = sorted(binStats2.iteritems(), key=lambda x: x[1][1], reverse=True)
 
         # report summary results
-        self.logger.info('    Total seqs = %d (%.2f Mbp)' % (len(seqs), float(totalBases) / 1e6))
-        self.logger.info('      # seqs > 1 kbp = %d (%.2f Mbp)' % (numSeq1K, float(totalBases1K) / 1e6))
-        self.logger.info('      # seqs > 5 kbp = %d (%.2f Mbp)' % (numSeq5K, float(totalBases5K) / 1e6))
-        self.logger.info('')
-        self.logger.info('  Binned seqs statistics:')
-        self.logger.info('    1) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbp (%.2f%%), # seqs in multiple bins: %d'
+        self.logger.info('Total seqs = %d (%.2f Mbp)' % (len(seqs), float(totalBases) / 1e6))
+        self.logger.info('  # seqs > 1 kbp = %d (%.2f Mbp)' % (numSeq1K, float(totalBases1K) / 1e6))
+        self.logger.info('  # seqs > 5 kbp = %d (%.2f Mbp)' % (numSeq5K, float(totalBases5K) / 1e6))
+        self.logger.info('Binned seqs statistics:')
+        self.logger.info('  1) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbp (%.2f%%), # seqs in multiple bins: %d'
                                 % (len(bins1),
                                    totalUniqueBinnedSeqs1,
                                    float(totalUniqueBinnedSeqs1) * 100 / len(seqs),
                                    float(totalUniqueBinnedBases1) / 1e6,
                                    float(totalUniqueBinnedBases1) * 100 / totalBases,
                                    numRepeats1))
-        self.logger.info('    2) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbp (%.2f%%), # seqs in multiple bins: %d'
+        self.logger.info('  2) # bins: %s, # binned seqs: %d (%.2f%%), # binned bases: %.2f Mbp (%.2f%%), # seqs in multiple bins: %d'
                                 % (len(bins2),
                                    totalUniqueBinnedSeqs2,
                                    float(totalUniqueBinnedSeqs2) * 100 / len(seqs),

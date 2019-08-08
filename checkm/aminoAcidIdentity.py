@@ -32,7 +32,7 @@ from checkm.util.seqUtils import readFasta
 class AminoAcidIdentity():
     """Calculate AAI between sequences aligned to an HMM."""
     def __init__(self):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
         self.aaiRawScores = defaultdict(dict)
         self.aaiHetero = defaultdict(dict)
         self.aaiMeanBinHetero = {}
@@ -40,7 +40,7 @@ class AminoAcidIdentity():
     def run(self, aaiStrainThreshold, outDir, alignmentOutputFile):
         """Calculate AAI between input alignments."""
 
-        self.logger.info('  Calculating AAI between multi-copy marker genes.')
+        self.logger.info('Calculating AAI between multi-copy marker genes.')
 
         if alignmentOutputFile:
             fout = open(alignmentOutputFile, 'w')

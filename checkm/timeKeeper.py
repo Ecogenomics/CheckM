@@ -25,7 +25,7 @@ import logging
 
 class TimeKeeper:
     def __init__(self):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
         self.startTime = time.time()
         self.lastLogTime = self.startTime
 
@@ -37,7 +37,7 @@ class TimeKeeper:
     def getTimeStamp(self):
         """Make a time stamp"""
         now = time.time()
-        ret_str = "\n  { Current stage: %s || Total: %s }" % (self.secondsToStr(now - self.lastLogTime), self.secondsToStr(now - self.startTime))
+        ret_str = "{ Current stage: %s || Total: %s }" % (self.secondsToStr(now - self.lastLogTime), self.secondsToStr(now - self.startTime))
         self.lastLogTime = now
         return ret_str
 

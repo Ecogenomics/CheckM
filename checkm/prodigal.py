@@ -40,7 +40,7 @@ class ProdigalError(BaseException):
 class ProdigalRunner():
     """Wrapper for running prodigal."""
     def __init__(self, outDir):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
         # make sure prodigal is installed
         self.checkForProdigal()

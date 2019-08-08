@@ -38,7 +38,7 @@ from checkm.hmmerModelParser import HmmModelParser
 class MarkerGeneFinder():
     """Identify marker genes within binned sequences using Prodigal and HMMER."""
     def __init__(self, threads):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
         self.totalThreads = threads
 
     def find(self, binFiles, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, bCalledGenes):
@@ -52,7 +52,7 @@ class MarkerGeneFinder():
 
         # process each fasta file
         self.threadsPerSearch = max(1, int(self.totalThreads / len(binFiles)))
-        self.logger.info("  Identifying marker genes in %d bins with %d threads:" % (len(binFiles), self.totalThreads))
+        self.logger.info("Identifying marker genes in %d bins with %d threads:" % (len(binFiles), self.totalThreads))
 
         # process each bin in parallel
         workerQueue = mp.Queue()

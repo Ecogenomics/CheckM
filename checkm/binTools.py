@@ -36,7 +36,7 @@ from checkm.defaultValues import DefaultValues
 class BinTools():
     """Functions for exploring and modifying bins."""
     def __init__(self, threads=1):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
     def __removeSeqs(self, seqs, seqsToRemove):
         """Remove sequences. """
@@ -211,7 +211,7 @@ class BinTools():
     def identifyOutliers(self, outDir, binFiles, tetraProfileFile, distribution, reportType, outputFile):
         """Identify sequences that are outliers."""
 
-        self.logger.info('  Reading reference distributions.')
+        self.logger.info('Reading reference distributions.')
         gcBounds = readDistribution('gc_dist')
         cdBounds = readDistribution('cd_dist')
         tdBounds = readDistribution('td_dist')
@@ -222,13 +222,12 @@ class BinTools():
         fout.write('\tSequence CD\tMean bin CD\tLower CD bound (%s%%)' % distribution)
         fout.write('\tSequence TD\tMean bin TD\tUpper TD bound (%s%%)\n' % distribution)
 
-        self.logger.info('')
         processedBins = 0
         for binFile in binFiles:
             binId = binIdFromFilename(binFile)
 
             processedBins += 1
-            self.logger.info('  Finding outliers in %s (%d of %d).' % (binId, processedBins, len(binFiles)))
+            self.logger.info('Finding outliers in %s (%d of %d).' % (binId, processedBins, len(binFiles)))
 
             seqs = readFasta(binFile)
 

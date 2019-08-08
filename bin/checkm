@@ -1,4 +1,4 @@
-#!/srv/sw/python/2.7.4/bin/python
+#!/usr/bin/env python
 
 ###############################################################################
 #
@@ -37,6 +37,7 @@ from checkm import main
 from checkm.defaultValues import DefaultValues
 from checkm.customHelpFormatter import CustomHelpFormatter
 from checkm.util.taxonomyUtils import taxonomicRanks
+from checkm.logger import logger_setup
 import tempfile
 
 
@@ -137,16 +138,15 @@ if __name__ == '__main__':
                                         formatter_class=CustomHelpFormatter,
                                         description='Place bins in the genome tree.',
                                         epilog='Example: checkm tree ./bins ./output')
-    tree_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    tree_parser.add_argument('out_folder', help="folder to write output files")
+    tree_parser.add_argument('bin_dir', help="directory containing bins (fasta format)")
+    tree_parser.add_argument('output_dir', help="directory to write output files")
     tree_parser.add_argument('-r', '--reduced_tree', dest='bReducedTree', action="store_true", help="use reduced tree (requires <16GB of memory) for determining lineage of each bin")
     tree_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
     tree_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
     tree_parser.add_argument('-g', '--genes', dest='bCalledGenes', action="store_true", default=False, help="bins contain genes as amino acids instead of nucleotide contigs")
-    tree_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    tree_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in directory are ignored)")
     tree_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     tree_parser.add_argument('--pplacer_threads', type=int, default=1, help="number of threads used by pplacer (memory usage increases linearly with additional threads)")
-    tree_parser.add_argument('--force_overwrite', action="store_true", default=False, help="force overwriting of output directory")
     tree_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     tree_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
@@ -155,7 +155,7 @@ if __name__ == '__main__':
                                         formatter_class=CustomHelpFormatter,
                                         description='Assess phylogenetic markers found in each bin.',
                                         epilog='Example: checkm tree_qa ./output')
-    tree_qa_parser.add_argument('tree_folder', help="folder specified during tree command")
+    tree_qa_parser.add_argument('tree_dir', help="directory specified during tree command")
     tree_qa_parser.add_argument('-o', '--out_format', type=int,
                                     help='''desired output:
   1. brief summary of genome tree placement
@@ -174,7 +174,7 @@ if __name__ == '__main__':
                                         formatter_class=CustomHelpFormatter,
                                         description='Infer lineage-specific marker sets for each bin.',
                                         epilog='Example: checkm lineage_set ./output lineage.ms')
-    lineage_set_parser.add_argument('tree_folder', help="folder specified during tree command")
+    lineage_set_parser.add_argument('tree_dir', help="directory specified during tree command")
     lineage_set_parser.add_argument('marker_file', help="output file describing marker set for each bin")
     lineage_set_parser.add_argument('-u', '--unique', type=int, default=10, help="minimum number of unique phylogenetic markers required to use lineage-specific marker set")
     lineage_set_parser.add_argument('-m', '--multi', type=int, default=10, help="maximum number of multi-copy phylogenetic markers before defaulting to domain-level marker set")
@@ -182,11 +182,6 @@ if __name__ == '__main__':
     lineage_set_parser.add_argument('--no_refinement', dest='bNoLineageSpecificRefinement', action="store_true", default=False, help="do not perform lineage-specific marker set refinement")
     lineage_set_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     lineage_set_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
-
-    # Note: these selection criteria are currently incompatible with how the selected lineage-specific marker set is defined
-    # lineage_set_parser.add_argument('-b', '--bootstrap', type=float, help="required bootstrap support for calculating marker set; percentage between 0 and 1", default=0)
-    # lineage_set_parser.add_argument('-m', '--num_genomes_markers', type=int, help="minimum reference genomes required to calculate initial marker set", default=2)
-    # lineage_set_parser.add_argument('--taxonomy', dest='bRequireTaxonomy', action="store_true", default=False, help="only consider nodes with defined taxonomy")
 
     # list of available taxonomic-specific marker set
     taxon_list_parser = subparsers.add_parser('taxon_list',
@@ -213,12 +208,12 @@ if __name__ == '__main__':
                                         description='Identify marker genes in bins and calculate genome statistics.',
                                         epilog='Example: checkm analyze lineage.ms ./bins ./output')
     analyze_parser.add_argument('marker_file', help="markers for assessing bins (marker set or HMM file)")
-    analyze_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    analyze_parser.add_argument('out_folder', help="folder to write output files")
+    analyze_parser.add_argument('bin_dir', help="directory containing bins (fasta format)")
+    analyze_parser.add_argument('output_dir', help="directory to write output files")
     analyze_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
     analyze_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
     analyze_parser.add_argument('-g', '--genes', dest='bCalledGenes', action="store_true", default=False, help="bins contain genes as amino acids instead of nucleotide contigs")
-    analyze_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    analyze_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in directory are ignored)")
     analyze_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     analyze_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
@@ -237,7 +232,7 @@ Note: lineage_wf and taxonomy_wf produce a marker file in the specified output d
 Example: checkm qa ./output/lineage.ms ./output
                                         ''')
     qa_parser.add_argument('marker_file', help="marker file specified during analyze command")
-    qa_parser.add_argument('analyze_folder', help="folder specified during analyze command")
+    qa_parser.add_argument('analyze_dir', help="directory specified during analyze command")
     qa_parser.add_argument('-o', '--out_format', type=int,
                                 help='''desired output:
   1. summary of bin completeness and contamination
@@ -272,8 +267,8 @@ Example: checkm qa ./output/lineage.ms ./output
                                         formatter_class=CustomHelpFormatter,
                                         description='Runs tree, lineage_set, analyze, qa',
                                         epilog='Example: checkm lineage_wf ./bins ./output')
-    lineage_wf_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    lineage_wf_parser.add_argument('out_folder', help="folder to write output files")
+    lineage_wf_parser.add_argument('bin_dir', help="directory containing bins (fasta format)")
+    lineage_wf_parser.add_argument('output_dir', help="directory to write output files")
     lineage_wf_parser.add_argument('-r', '--reduced_tree', dest='bReducedTree', action="store_true", help="use reduced tree (requires <16GB of memory) for determining lineage of each bin")
     lineage_wf_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
     lineage_wf_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
@@ -292,10 +287,9 @@ Example: checkm qa ./output/lineage.ms ./output
     lineage_wf_parser.add_argument('-l', '--length', type=float, default=DefaultValues.LENGTH, help="percent overlap between target and query")
     lineage_wf_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     lineage_wf_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
-    lineage_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    lineage_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in directory are ignored)")
     lineage_wf_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     lineage_wf_parser.add_argument('--pplacer_threads', type=int, default=1, help="number of threads used by pplacer (memory usage increases linearly with additional threads)")
-    lineage_wf_parser.add_argument('--force_overwrite', action="store_true", default=False, help="force overwriting of output directory")
     lineage_wf_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     lineage_wf_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
@@ -307,8 +301,8 @@ Example: checkm qa ./output/lineage.ms ./output
 
     taxonomy_wf_parser.add_argument('rank', help="taxonomic rank", choices=['life', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'])
     taxonomy_wf_parser.add_argument('taxon', help="taxon of interest")
-    taxonomy_wf_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    taxonomy_wf_parser.add_argument('out_folder', help="folder to write output files")
+    taxonomy_wf_parser.add_argument('bin_dir', help="directory containing bins (fasta format)")
+    taxonomy_wf_parser.add_argument('output_dir', help="directory to write output files")
     taxonomy_wf_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true", default=False, help="generate HMMER alignment file for each bin")
     taxonomy_wf_parser.add_argument('--nt', dest='bNucORFs', action="store_true", default=False, help="generate nucleotide gene sequences for each bin")
     taxonomy_wf_parser.add_argument('-g', '--genes', dest='bCalledGenes', action="store_true", default=False, help="bins contain genes as amino acids instead of nucleotide contigs")
@@ -323,23 +317,22 @@ Example: checkm qa ./output/lineage.ms ./output
     taxonomy_wf_parser.add_argument('-c', '--coverage_file', default=None, help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
     taxonomy_wf_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
     taxonomy_wf_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
-    taxonomy_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    taxonomy_wf_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in directory are ignored)")
     taxonomy_wf_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
-    taxonomy_wf_parser.add_argument('--force_overwrite', action="store_true", default=False, help="force overwriting of output directory")
     taxonomy_wf_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
     taxonomy_wf_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
     # generic arguments for plots
     plot_need_qa_results_parser = argparse.ArgumentParser(add_help=False)
-    plot_need_qa_results_parser.add_argument('out_folder', help="folder specified during qa command")
+    plot_need_qa_results_parser.add_argument('output_dir', help="directory specified during qa command")
 
     plot_parser = argparse.ArgumentParser(add_help=False)
-    plot_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
-    plot_parser.add_argument('plot_folder', help="folder to hold plots")
+    plot_parser.add_argument('bin_dir', help="directory containing bins to plot (fasta format)")
+    plot_parser.add_argument('output_dir', help="directory to hold plots")
     plot_parser.add_argument('--image_type', default='png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
     plot_parser.add_argument('--dpi', type=int, default=600, help='desired DPI of output image')
     plot_parser.add_argument('--font_size', type=int, default=8, help='Desired font size')
-    plot_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    plot_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in directory are ignored)")
 
     plot_single_parser = argparse.ArgumentParser('plot_single',
                                         parents=[plot_parser], add_help=False)
@@ -398,16 +391,16 @@ Example: checkm qa ./output/lineage.ms ./output
                                         formatter_class=CustomHelpFormatter,
                                         description='Create image with GC, CD, and TD distribution plots together.',
                                         epilog='Example: checkm dist_plot ./output ./bins ./plots tetra.tsv 95')
-    plot_dist_parser.add_argument('out_folder', help="folder specified during analyze command")
-    plot_dist_parser.add_argument('bin_folder', help="folder containing bins to plot (fasta format)")
-    plot_dist_parser.add_argument('plot_folder', help="folder to hold plots")
+    plot_dist_parser.add_argument('analyze_dir', help="directory specified during analyze command")
+    plot_dist_parser.add_argument('bin_dir', help="directory containing bins to plot (fasta format)")
+    plot_dist_parser.add_argument('plot_dir', help="directory to hold plots")
     plot_dist_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
     plot_dist_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
 
     plot_dist_parser.add_argument('--image_type', default='png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
     plot_dist_parser.add_argument('--dpi', type=int, default=600, help='desired DPI of output image')
     plot_dist_parser.add_argument('--font_size', type=int, default=8, help='Desired font size')
-    plot_dist_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    plot_dist_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in directory are ignored)")
     plot_dist_parser.add_argument('--width', type=float, default=6.5, help='width of output image')
     plot_dist_parser.add_argument('--height', type=float, default=8, help='height of output image')
 
@@ -517,11 +510,11 @@ Example: checkm qa ./output/lineage.ms ./output
                                             formatter_class=CustomHelpFormatter,
                                             description='Identify unbinned sequences.',
                                             epilog='Example: checkm unbinned ./bins seqs.fna unbinned.fna unbinned_stats.tsv')
-    unbinned_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
+    unbinned_parser.add_argument('bin_dir', help="directory containing bins (fasta format)")
     unbinned_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
     unbinned_parser.add_argument('output_seq_file', help="write unbinned sequences to file")
     unbinned_parser.add_argument('output_stats_file', help="write unbinned sequence statistics to file")
-    unbinned_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    unbinned_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in directory are ignored)")
     unbinned_parser.add_argument('-s', '--min_seq_len', type=int, default=0, help="required length of sequence")
     unbinned_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
@@ -531,10 +524,10 @@ Example: checkm qa ./output/lineage.ms ./output
                                             description='Calculate coverage of sequences.',
                                             epilog='Example: checkm coverage ./bins coverage.tsv example_1.bam example_2.bam')
 
-    coverage_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
+    coverage_parser.add_argument('bin_dir', help="directory containing bins (fasta format)")
     coverage_parser.add_argument('output_file', help="print results to file")
     coverage_parser.add_argument('bam_files', nargs='+', help="BAM files to parse")
-    coverage_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    coverage_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in directory are ignored)")
     coverage_parser.add_argument('-r', '--all_reads', action='store_true', help="use all reads to estimate coverage instead of just those in proper pairs")
     coverage_parser.add_argument('-a', '--min_align', help='minimum alignment length as percentage of read length', type=float, default=0.98)
     coverage_parser.add_argument('-e', '--max_edit_dist', help='maximum edit distance as percentage of read length', type=float, default=0.02)
@@ -578,10 +571,10 @@ Example: checkm qa ./output/lineage.ms ./output
                                               description='Identify SSU (16S/18S) rRNAs in sequences.',
                                               epilog='Example: checkm ssu_finder seqs.fna ./bins ./ssu_finder')
     ssu_finder_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
-    ssu_finder_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    ssu_finder_parser.add_argument('out_folder', help="folder to write output files")
+    ssu_finder_parser.add_argument('bin_dir', help="directory containing bins (fasta format)")
+    ssu_finder_parser.add_argument('output_dir', help="directory to write output files")
 
-    ssu_finder_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    ssu_finder_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in directory are ignored)")
     ssu_finder_parser.add_argument('-e', '--evalue', help='e-value threshold for identifying hits', type=float, default=1e-5)
     ssu_finder_parser.add_argument('-c', '--concatenate', help='concatenate hits that are within the specified number of base pairs', type=int, default=200)
     ssu_finder_parser.add_argument('-t', '--threads', help='number of threads', type=int, default=1)
@@ -593,12 +586,12 @@ Example: checkm qa ./output/lineage.ms ./output
                                                description='Compare two sets of bins.',
                                                epilog='Example: checkm bin_compare seqs.fna ./bins1 ./bins2 bin_comparison.tsv')
     bin_compare_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
-    bin_compare_parser.add_argument('bin_folder1', help="folder containing bins (fasta format)")
-    bin_compare_parser.add_argument('bin_folder2', help="folder containing bins (fasta format)")
+    bin_compare_parser.add_argument('bin_dir1', help="directory containing bins (fasta format)")
+    bin_compare_parser.add_argument('bin_dir2', help="directory containing bins (fasta format)")
     bin_compare_parser.add_argument('output_file', help="output file showing overlap between bins")
 
-    bin_compare_parser.add_argument('-x', '--extension1', default='fna', help="extension of bins in folder 1")
-    bin_compare_parser.add_argument('-y', '--extension2', default='fna', help="extension of bins in folder 2")
+    bin_compare_parser.add_argument('-x', '--extension1', default='fna', help="extension of bins in directory 1")
+    bin_compare_parser.add_argument('-y', '--extension2', default='fna', help="extension of bins in directory 2")
     bin_compare_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # Remove redundant bins from several binning attempts
@@ -612,9 +605,9 @@ checkm qa --tab_table ./output/lineage.ms ./output >checkm_qa_tab_table.tsv
 
 Also note that sequences can be assigned to multiple resulting bins.
 i.e. checkm unique will now fail''')
-    bin_union_parser.add_argument('output_dir', help="folder for outputting")
-    bin_union_parser.add_argument('bin_or_checkm_qa_table', nargs='+', help="bin folders and checkm_qa_table_tables (must have at least one of each)")
-    bin_union_parser.add_argument('-x', '--extension', default='fna', help="extension of bins in bin folders")
+    bin_union_parser.add_argument('output_dir', help="directory for outputting")
+    bin_union_parser.add_argument('bin_or_checkm_qa_table', nargs='+', help="bin directories and checkm_qa_table_tables (must have at least one of each)")
+    bin_union_parser.add_argument('-x', '--extension', default='fna', help="extension of bins in bin directories")
     bin_union_parser.add_argument('--min_completeness', help="ignore bins with less completeness than this, as a percentage e.g. '70'", type=float, default=70)
     bin_union_parser.add_argument('--max_contamination', help="ignore bins with more contamination than this, as a percentage e.g. '10'", type=float, default=10)
     bin_union_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -625,14 +618,14 @@ i.e. checkm unique will now fail''')
                                             description='Identify bins with complementary sets of marker genes.',
                                             epilog='Example: checkm merge bacteria.ms ./bins ./output')
     merge_parser.add_argument('marker_file', help="marker file to use for assessing potential bin mergers (marker set or HMM file)")
-    merge_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    merge_parser.add_argument('out_folder', help="folder to write output files")
+    merge_parser.add_argument('bin_dir', help="directory containing bins (fasta format)")
+    merge_parser.add_argument('output_dir', help="directory to write output files")
     merge_parser.add_argument('-g', '--genes', dest='bCalledGenes', action="store_true", default=False, help="bins contain genes as amino acids instead of nucleotide contigs")
     merge_parser.add_argument('--delta_comp', help="minimum increase in completeness to report pair", type=float, default=5.0)
     merge_parser.add_argument('--delta_cont', help="maximum increase in contamination to report pair", type=float, default=10.0)
     merge_parser.add_argument('--merged_comp', help="minimum merged completeness to report pair", type=float, default=50.0)
     merge_parser.add_argument('--merged_cont', help="maximum merged contamination to report pair", type=float, default=20.0)
-    merge_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    merge_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in directory are ignored)")
     merge_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     merge_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
@@ -642,12 +635,12 @@ i.e. checkm unique will now fail''')
                                             parents=[plot_need_qa_results_parser],
                                             description='Identify outliers in bins relative to reference distributions.',
                                             epilog='Example: checkm outliers ./output ./bins tetra.tsv outliers.tsv')
-    outlier_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
+    outlier_parser.add_argument('bin_dir', help="directory containing bins (fasta format)")
     outlier_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
     outlier_parser.add_argument('output_file', help="print results to file")
     outlier_parser.add_argument('-d', '--distributions', help='reference distribution used to identify outliers; integer between 0 and 100', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
     outlier_parser.add_argument('-r', '--report_type', help="report sequences that are outliers in 'all' or 'any' reference distribution", choices=['any', 'all'], default='any')
-    outlier_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in folder are ignored)")
+    outlier_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in directory are ignored)")
     outlier_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # Modify a bin
@@ -668,15 +661,15 @@ i.e. checkm unique will now fail''')
                                             formatter_class=CustomHelpFormatter,
                                             description='Ensure no sequences are assigned to multiple bins.',
                                             epilog='Example: checkm unique ./bins')
-    unique_parser.add_argument('bin_folder', help="folder containing bins (fasta format)")
-    unique_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (all other files in bin folder are ignored)")
+    unique_parser.add_argument('bin_dir', help="directory containing bins (fasta format)")
+    unique_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (all other files in bin directory are ignored)")
 
     # Quick test of CheckM
     test_parser = subparsers.add_parser('test',
                                             formatter_class=CustomHelpFormatter,
                                             description='Test CheckM on E. coli genome.',
                                             epilog='Example: checkm test ~/checkm_test')
-    test_parser.add_argument('output_dir', help="output folder for test data")
+    test_parser.add_argument('output_dir', help="output directory for test data")
     test_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
     # debug and development
@@ -693,7 +686,17 @@ i.e. checkm unique will now fail''')
         sys.exit(0)
     else:
         args = parser.parse_args()
-
+        
+    # setup logging
+    silent = False
+    if hasattr(args, 'bQuiet') and args.bQuiet:
+        silent = True
+        
+    try:
+        logger_setup(args.output_dir, "checkm.log", "CheckM", version(), silent)
+    except:
+        logger_setup(None, "checkm.log", "CheckM", version(), silent)
+        
     # do what we came here to do
     try:
         checkmParser = main.OptionsParser()

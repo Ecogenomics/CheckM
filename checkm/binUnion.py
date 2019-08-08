@@ -76,7 +76,7 @@ class UnionCheckmQaTsv:
 
 class BinUnion(object):
     def __init__(self):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
     def report(self, binFolders, binFileSets, checkmQaTsvs, unionBinOutputFile, multiplyBinnedContigsFile, minCompleteness=0, maxContamination=0):
         # Read QA files
@@ -87,14 +87,13 @@ class BinUnion(object):
         numBinsBinningWise = [0] * len(binFolders)
         for candidate in bestCandidates:
             numBinsBinningWise[candidate.binningIndex] += 1
-        self.logger.info("")
+
         for binIndex, numBins in enumerate(numBinsBinningWise):
-            self.logger.info("   Kept %i out of %i bins from %s" % (numBins,
+            self.logger.info("Kept %i out of %i bins from %s" % (numBins,
                                                                 len(binFileSets[binIndex]),
                                                                 binFolders[binIndex]
                                                                 ))
 
-        self.logger.info("")
         with open(multiplyBinnedContigsFile, 'w') as multiplyBinnedOutput:
             self.printMultiplyBinnedContigs(bestCandidates, multiplyBinnedOutput)
 
@@ -103,8 +102,7 @@ class BinUnion(object):
                 out.write(candidate.binFile)
                 out.write("\n")
 
-        self.logger.info("")
-        self.logger.info("   Wrote %i bins to %s" % (len(bestCandidates),
+        self.logger.info("Wrote %i bins to %s" % (len(bestCandidates),
                                                   unionBinOutputFile,
                                                   ))
 

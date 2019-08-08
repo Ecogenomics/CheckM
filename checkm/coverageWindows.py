@@ -85,7 +85,7 @@ class CoverageStruct():
 class CoverageWindows():
     """Calculate coverage of all sequences."""
     def __init__(self, threads):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
         self.totalThreads = threads
 
@@ -98,7 +98,7 @@ class CoverageWindows():
             sys.exit(1)
 
         # calculate coverage of each BAM file
-        self.logger.info('  Calculating coverage of windows.')
+        self.logger.info('Calculating coverage of windows.')
         coverageInfo = mp.Manager().dict()
         coverageInfo = self.__processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, coverageInfo)
 

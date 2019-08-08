@@ -37,7 +37,7 @@ from checkm.resultsParser import ResultsParser
 
 class HmmerAligner:
     def __init__(self, threads):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
         self.totalThreads = threads
 
         self.outputFormat = 'Pfam'
@@ -56,7 +56,7 @@ class HmmerAligner:
                                ):
         """Align top hits in each bin. Assumes all bins are using the same marker genes."""
 
-        self.logger.info("  Extracting marker genes to align.")
+        self.logger.info("Extracting marker genes to align.")
 
         # parse HMM information
         resultsParser = ResultsParser(binIdToModels)
@@ -96,7 +96,7 @@ class HmmerAligner:
                                        ):
         """Align hits to a set of common marker genes."""
 
-        self.logger.info("  Extracting marker genes to align.")
+        self.logger.info("Extracting marker genes to align.")
 
         # parse HMM information
         resultsParser = ResultsParser(binIdToModels)
@@ -144,7 +144,7 @@ class HmmerAligner:
         resultsParser.parseBinHits(outDir, hmmTableFile, False, bIgnoreThresholds, evalueThreshold, lengthThreshold)
 
         # align any markers with multiple hits in a bin
-        self.logger.info('  Aligning marker genes with multiple hits in a single bin:')
+        self.logger.info('Aligning marker genes with multiple hits in a single bin:')
 
         # process each bin in parallel
         workerQueue = mp.Queue()
@@ -230,7 +230,7 @@ class HmmerAligner:
         """Align marker genes with HMMs in parallel."""
 
         if bReportProgress:
-            self.logger.info("  Aligning %d marker genes with %d threads:" % (len(hmmModelFiles), self.totalThreads))
+            self.logger.info("Aligning %d marker genes with %d threads:" % (len(hmmModelFiles), self.totalThreads))
 
         # process each bin in parallel
         workerQueue = mp.Queue()
@@ -455,7 +455,7 @@ class HmmerAligner:
         """Make temporary HMM files used to create HMM alignments."""
 
         if bReportProgress:
-            self.logger.info("  Extracting %d HMMs with %d threads:" % (len(modelKeys), self.totalThreads))
+            self.logger.info("Extracting %d HMMs with %d threads:" % (len(modelKeys), self.totalThreads))
 
         # process each marker in parallel
         workerQueue = mp.Queue()

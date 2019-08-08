@@ -29,14 +29,13 @@ from common import checkFileExists, reassignStdOut, restoreStdOut
 
 class Profile():
     def __init__(self):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
     def run(self, coverageFile, outFile, bTabTable):
         checkFileExists(coverageFile)
 
         # get number of reads mapped to each bin
-        self.logger.info('  Determining number of reads mapped to each bin.')
-        self.logger.info('')
+        self.logger.info('Determining number of reads mapped to each bin.')
 
         readsMappedToBin = {}
         binSize = {}

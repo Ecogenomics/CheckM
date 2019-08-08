@@ -140,12 +140,9 @@ def checkNuclotideSeqs(seq_files):
             continue
             
         if not isNucleotide(seq_file):
-            print('Expected all files to contain sequences in nucleotide space.')
-            print('File %s appears to contain amino acids sequences.' % seq_file)
-
-            yes_response = queryYesNo('Do all files contain only nucleotide sequences?', default='no')
-            if not yes_response:
-                return False
+            logger = logging.getLogger('timestamp')
+            logger.warning('Expected all files to contain sequences in nucleotide space.')
+            logger.warning('File %s appears to contain amino acids sequences.' % seq_file)
 
     return True
 
@@ -169,12 +166,9 @@ def checkProteinSeqs(seq_files):
             continue
         
         if isNucleotide(seq_file):
-            print('Expected all files to contain sequences in amino acid space.')
-            print('File %s appears to contain nucleotide sequences.' % seq_file)
-
-            yes_response = queryYesNo('Do all files contain only amino acid sequences?', default='no')
-            if not yes_response:
-                return False
+            logger = logging.getLogger('timestamp')
+            logger.warning('Expected all files to contain sequences in amino acid space.')
+            logger.warning('File %s appears to contain nucleotide sequences.' % seq_file)
 
     return True
 

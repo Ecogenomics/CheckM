@@ -35,7 +35,7 @@ class DBConfig(object):
     the DATA_CONFIG file as an object.
     """
     def __init__(self):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
         self.configFile = os.path.abspath(resource_filename('checkm', 'DATA_CONFIG'))
         self.values = self.getConfig()
 
@@ -97,11 +97,14 @@ class DBConfig(object):
 class DBManager(mm.ManifestManager):
 
     """Manage all aspects of data location and version control."""
-    def __init__(self):
+    def __init__(self, set_path=None):
         mm.ManifestManager.__init__(self, timeout=15)
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
         self.config = DBConfig()  # load inbuilt configuration
         self.type = self.config.values["manifestType"]
+        
+        if set_path:
+            self.setRoot(set_path)
 
         # check that the data root is legit
         manifestFile = os.path.join(self.config.values["dataRoot"], mm.__MANIFEST__)
@@ -110,9 +113,9 @@ class DBManager(mm.ManifestManager):
 
         if self.config.values["dataRoot"] == "":
             # no data folder set.
-            print "It seems that the CheckM data folder has not been set yet or has been removed. Running: 'checkm data setRoot'."
+            print ("It seems that the CheckM data folder has not been set yet or has been removed. Please run 'checkm data setRoot'.")
             if not self.setRoot():
-                print "Sorry, CheckM cannot run without a valid data folder."
+                print("Sorry, CheckM cannot run without a valid data folder.")
 
     def runAction(self, action):
         """Main entry point for the updating code"""
@@ -159,7 +162,7 @@ class DBManager(mm.ManifestManager):
                 if(minimal):
                     path = raw_input("Please specify a location or type 'abort' to stop trying: \n")
                 else:
-                    path = raw_input("Where should CheckM store it's data?\n" \
+                    path = raw_input("Where should CheckM store its data?\n" \
                                     "Please specify a location or type 'abort' to stop trying: \n")
 
             if path.upper() == "ABORT":

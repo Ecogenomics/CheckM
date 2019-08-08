@@ -1,3 +1,9 @@
+1.0.15
+- fixed CheckM data setRoot command to work from command line (thanks to cbt for PR)
+- added logging to files
+- improved reporting of CheckM results to include timestamp
+- removed "--force-overwrite" option and now allow output directories to already exist
+
 1.0.14
 - fixed bug with test command missing "--force-overwrite" option
 

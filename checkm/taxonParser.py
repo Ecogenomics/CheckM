@@ -33,7 +33,7 @@ from checkm.defaultValues import DefaultValues
 class TaxonParser():
     """Parse taxonomic-specific marker sets."""
     def __init__(self):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
     def readMarkerSets(self):
         taxonMarkerSets = defaultdict(dict)
@@ -82,10 +82,10 @@ class TaxonParser():
         taxonMarkerSets = self.readMarkerSets()
 
         if rank not in taxonMarkerSets:
-            self.logger.error('  Unrecognized taxonomic rank: ' + rank)
+            self.logger.error('Unrecognized taxonomic rank: ' + rank)
             return False
         elif taxon not in taxonMarkerSets[rank]:
-            self.logger.error('  Unrecognized taxon: %s (in rank %s): ' % (taxon, rank))
+            self.logger.error('Unrecognized taxon: %s (in rank %s): ' % (taxon, rank))
             return False
 
         markerSet = taxonMarkerSets[rank][taxon]
@@ -101,8 +101,8 @@ class TaxonParser():
 
             markerSet = taxonMarkerSets[rank][taxon]
             numMarkers, numMarkerSets = markerSet.size()
-            self.logger.info('  Marker set for %s contains %d marker genes arranged in %d sets.' % (taxon, numMarkers, numMarkerSets))
-            self.logger.info('    Marker set inferred from %d reference genomes.' % markerSet.numGenomes)
+            self.logger.info('Marker set for %s contains %d marker genes arranged in %d sets.' % (taxon, numMarkers, numMarkerSets))
+            self.logger.info('Marker set inferred from %d reference genomes.' % markerSet.numGenomes)
 
             markerSet.lineageStr = taxon
             binMarkerSets.addMarkerSet(markerSet)

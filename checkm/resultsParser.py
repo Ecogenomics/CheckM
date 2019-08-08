@@ -41,7 +41,7 @@ from checkm.util.seqUtils import readFasta
 class ResultsParser():
     """Parse output of Prodigal+HMMER run and derived statistics."""
     def __init__(self, binIdToModels):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
         self.results = {}
         self.models = binIdToModels
@@ -84,7 +84,7 @@ class ResultsParser():
             self.logger.error('  [Error] Models must be parsed before identifying HMM hits.')
             raise
 
-        self.logger.info('  Parsing HMM hits to marker genes:')
+        self.logger.info('Parsing HMM hits to marker genes:')
 
         numBinsProcessed = 0
         for binId in self.models:

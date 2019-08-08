@@ -45,7 +45,7 @@ class BinMarkerSets():
     HMM_MODELS_SET = 3
 
     def __init__(self, binId, markerSetType):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
         self.markerSets = []
         self.binId = binId
         self.markerSetType = markerSetType
@@ -157,7 +157,7 @@ class BinMarkerSets():
 class MarkerSet():
     """A collection of marker genes organized into co-located sets."""
     def __init__(self, UID, lineageStr, numGenomes, markerSet):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
         self.UID = UID  # unique ID of marker set
         self.lineageStr = lineageStr  # taxonomic string associated with marker set
@@ -242,7 +242,7 @@ class MarkerSetParser():
     """Parse marker set file."""
 
     def __init__(self, threads=1):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
         self.numThreads = threads
 
     def getMarkerSets(self, outDir, binIds, markerFile, excludeMarkersFile=None):
@@ -345,7 +345,7 @@ class MarkerSetParser():
     def __createLineageHmmModels(self, binIds, markerFile):
         """Create lineage-specific HMMs for each bin."""
 
-        self.logger.info('  Extracting lineage-specific HMMs with %d threads:' % self.numThreads)
+        self.logger.info('Extracting lineage-specific HMMs with %d threads:' % self.numThreads)
 
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
@@ -454,7 +454,7 @@ class MarkerSetParser():
         allMarkers = markerGenes | genesInSameClan
 
         if bReportProgress:
-            self.logger.info("  There are %d genes in the marker set and %d genes from the same PFAM clan." % (len(markerGenes), len(genesInSameClan)))
+            self.logger.info("There are %d genes in the marker set and %d genes from the same PFAM clan." % (len(markerGenes), len(genesInSameClan)))
 
         # create file with all model accession numbers
         keyFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
@@ -524,7 +524,7 @@ class MarkerSetParser():
     def writeBinModels(self, binIdToModels, filename):
         """Save HMM model info for each bin to file."""
 
-        self.logger.info('  Saving HMM info to file.')
+        self.logger.info('Saving HMM info to file.')
 
         with gzip.open(filename, 'wb') as output:
             pickle.dump(binIdToModels, output, pickle.HIGHEST_PROTOCOL)
@@ -532,7 +532,7 @@ class MarkerSetParser():
     def loadBinModels(self, filename):
         """Read HMM model info for each bin from file."""
 
-        self.logger.info('  Reading HMM info from file.')
+        self.logger.info('Reading HMM info from file.')
 
         with gzip.open(filename, 'rb') as f:
             binIdToModels = pickle.load(f)
