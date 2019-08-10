@@ -1,3 +1,6 @@
+1.0.17
+- fixed bug with CLI of plotting methods introduced in 1.0.16
+
 1.0.16
 - made ~/.checkm the default directory for CheckM reference data
 - "checkm data setRoot <directory>" is no longer interactive and the directory must be given on the command line

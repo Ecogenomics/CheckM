@@ -411,7 +411,7 @@ class OptionsParser():
         self.logger.info('[CheckM - gc_plot] Creating GC histogram and delta-GC plot.')
 
         checkDirExists(options.bin_dir)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -424,7 +424,7 @@ class OptionsParser():
             plots.plot(f, options.distributions)
 
             binId = binIdFromFilename(f)
-            outputFile = os.path.join(options.plot_dir, binId) + '.gc_plots.' + options.image_type
+            outputFile = os.path.join(options.output_dir, binId) + '.gc_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -435,7 +435,7 @@ class OptionsParser():
         self.logger.info('[CheckM - coding_plot] Creating coding density histogram and delta-CD plot.')
 
         checkDirExists(options.bin_dir)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -448,7 +448,7 @@ class OptionsParser():
             plots.plot(f, options.distributions)
 
             binId = binIdFromFilename(f)
-            outputFile = os.path.join(options.plot_dir, binId) + '.coding_density_plots.' + options.image_type
+            outputFile = os.path.join(options.output_dir, binId) + '.coding_density_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -459,7 +459,7 @@ class OptionsParser():
         self.logger.info('[CheckM - tetra_plot] Creating tetra-distance histogram and delta-TD plot.')
 
         checkDirExists(options.bin_dir)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -475,7 +475,7 @@ class OptionsParser():
             binId = binIdFromFilename(f)
             plots.plot(f, tetraSigs, options.distributions)
 
-            outputFile = os.path.join(options.plot_dir, binId) + '.tetra_dist_plots.' + options.image_type
+            outputFile = os.path.join(options.output_dir, binId) + '.tetra_dist_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -486,7 +486,7 @@ class OptionsParser():
         self.logger.info('[CheckM - dist_plot] Creating GC, CD, and TD distribution plots.')
 
         checkDirExists(options.bin_dir)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -502,7 +502,7 @@ class OptionsParser():
             binId = binIdFromFilename(f)
             plots.plot(f, tetraSigs, options.distributions)
 
-            outputFile = os.path.join(options.plot_dir, binId) + '.ref_dist_plots.' + options.image_type
+            outputFile = os.path.join(options.output_dir, binId) + '.ref_dist_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -513,7 +513,7 @@ class OptionsParser():
         self.logger.info('[CheckM - tetra_pca] Creating PCA plot of tetranucleotide signatures.')
 
         checkDirExists(options.bin_dir)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -530,7 +530,7 @@ class OptionsParser():
             plots.plot(f, seqIds, pc, variance)
 
             binId = binIdFromFilename(f)
-            outputFile = os.path.join(options.plot_dir, binId) + '.tetra_pca_plots.' + options.image_type
+            outputFile = os.path.join(options.output_dir, binId) + '.tetra_pca_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -542,7 +542,7 @@ class OptionsParser():
 
         checkDirExists(options.bin_dir)
         checkFileExists(options.coverage_file)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -579,7 +579,7 @@ class OptionsParser():
             plots.plot(f, seqIds, pc, variance)
 
             binId = binIdFromFilename(f)
-            outputFile = os.path.join(options.plot_dir, binId) + '.cov_pca_plots.' + options.image_type
+            outputFile = os.path.join(options.output_dir, binId) + '.cov_pca_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -591,7 +591,7 @@ class OptionsParser():
         self.logger.info('[CheckM - gc_bias_plot] Plotting bin coverage as a function of GC.')
 
         checkDirExists(options.bin_dir)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -607,7 +607,7 @@ class OptionsParser():
             plots.plot(f, coverageProfile)
 
             binId = binIdFromFilename(f)
-            outputFile = os.path.join(options.plot_dir, binId) + '.gc_bias_plot.' + options.image_type
+            outputFile = os.path.join(options.output_dir, binId) + '.gc_bias_plot.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -619,7 +619,7 @@ class OptionsParser():
         self.logger.info('[CheckM - nx_plot] Creating Nx-plots.')
 
         checkDirExists(options.bin_dir)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -631,7 +631,7 @@ class OptionsParser():
             filesProcessed += 1
             nx.plot(f)
 
-            outputFile = os.path.join(options.plot_dir, binId) + '.nx_plot.' + options.image_type
+            outputFile = os.path.join(options.output_dir, binId) + '.nx_plot.' + options.image_type
             nx.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -643,7 +643,7 @@ class OptionsParser():
         self.logger.info('[CheckM - len_plot] Creating cumulative sequence length plot.')
 
         checkDirExists(options.bin_dir)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -655,7 +655,7 @@ class OptionsParser():
             filesProcessed += 1
             plot.plot(f)
 
-            outputFile = os.path.join(options.plot_dir, binId) + '.seq_len_plot.' + options.image_type
+            outputFile = os.path.join(options.output_dir, binId) + '.seq_len_plot.' + options.image_type
             plot.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -667,7 +667,7 @@ class OptionsParser():
         self.logger.info('[CheckM - len_hist] Creating sequence length histogram.')
 
         checkDirExists(options.bin_dir)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -679,7 +679,7 @@ class OptionsParser():
             filesProcessed += 1
             plot.plot(f)
 
-            outputFile = os.path.join(options.plot_dir, binId) + '.len_hist.' + options.image_type
+            outputFile = os.path.join(options.output_dir, binId) + '.len_hist.' + options.image_type
             plot.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -691,14 +691,14 @@ class OptionsParser():
         self.logger.info('[CheckM - marker_plot] Creating marker gene position plot.')
 
         checkDirExists(options.bin_dir)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
 
         # generate plot for each bin
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
         resultsParser = ResultsParser(None)
-        markerGeneStats = resultsParser.parseMarkerGeneStats(options.output_dir)
-        binStats = resultsParser.parseBinStatsExt(options.output_dir)
+        markerGeneStats = resultsParser.parseMarkerGeneStats(options.results_dir)
+        binStats = resultsParser.parseBinStatsExt(options.results_dir)
 
         plot = MarkerGenePosPlot(options)
         filesProcessed = 1
@@ -713,7 +713,7 @@ class OptionsParser():
             bPlotted = plot.plot(f, markerGeneStats[binId], binStats[binId])
 
             if bPlotted:
-                outputFile = os.path.join(options.plot_dir, binId) + '.marker_pos_plot.' + options.image_type
+                outputFile = os.path.join(options.output_dir, binId) + '.marker_pos_plot.' + options.image_type
                 plot.savePlot(outputFile, dpi=options.dpi)
                 self.logger.info('Plot written to: ' + outputFile)
             else:
@@ -727,7 +727,7 @@ class OptionsParser():
         self.logger.info('[CheckM - par_plot] Creating parallel coordinate plot of GC and coverage.')
 
         checkDirExists(options.bin_dir)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
         checkFileExists(options.coverage_file)
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
@@ -742,7 +742,7 @@ class OptionsParser():
         seqStats = {}
         for f in binFiles:
             binId = binIdFromFilename(f)
-            seqStats[binId] = binStats.sequenceStats(options.output_dir, f)
+            seqStats[binId] = binStats.sequenceStats(options.results_dir, f)
 
         # create plot for each bin
         
@@ -755,7 +755,7 @@ class OptionsParser():
 
             plot.plot(binId, seqStats, coverageStats)
 
-            outputFile = os.path.join(options.plot_dir, binId) + '.paralel_coord_plot.' + options.image_type
+            outputFile = os.path.join(options.output_dir, binId) + '.paralel_coord_plot.' + options.image_type
             plot.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -767,7 +767,7 @@ class OptionsParser():
         self.logger.info('[CheckM - bin_qa_plot] Creating bar plot of bin quality.')
 
         checkDirExists(options.bin_dir)
-        makeSurePathExists(options.plot_dir)
+        makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -790,7 +790,7 @@ class OptionsParser():
             bMakePlot = plot.plot(binFiles, binStatsExt, options.bIgnoreHetero, None)
 
         if bMakePlot:
-            outputFile = os.path.join(options.plot_dir, 'bin_qa_plot.' + options.image_type)
+            outputFile = os.path.join(options.output_dir, 'bin_qa_plot.' + options.image_type)
             plot.savePlot(outputFile, dpi=options.dpi)
             
             self.logger.info('Plot written to: ' + outputFile)

@@ -92,7 +92,7 @@ class MarkerGenePosPlot(AbstractPlot):
 
         # get position of genes in bin
         prodigalFastaParser = ProdigalFastaParser()
-        geneFile = os.path.join(self.options.out_folder, 'bins', binId, DefaultValues.PRODIGAL_AA)
+        geneFile = os.path.join(self.options.results_dir, 'bins', binId, DefaultValues.PRODIGAL_AA)
         genePos = prodigalFastaParser.genePositions(geneFile)
 
         # Set size of figure

@@ -324,7 +324,7 @@ Example: checkm qa ./output/lineage.ms ./output
 
     # generic arguments for plots
     plot_need_qa_results_parser = argparse.ArgumentParser(add_help=False)
-    plot_need_qa_results_parser.add_argument('output_dir', help="directory specified during qa command")
+    plot_need_qa_results_parser.add_argument('results_dir', help="directory specified during qa command")
 
     plot_parser = argparse.ArgumentParser(add_help=False)
     plot_parser.add_argument('bin_dir', help="directory containing bins to plot (fasta format)")
@@ -391,9 +391,9 @@ Example: checkm qa ./output/lineage.ms ./output
                                         formatter_class=CustomHelpFormatter,
                                         description='Create image with GC, CD, and TD distribution plots together.',
                                         epilog='Example: checkm dist_plot ./output ./bins ./plots tetra.tsv 95')
-    plot_dist_parser.add_argument('analyze_dir', help="directory specified during analyze command")
+    plot_dist_parser.add_argument('results_dir', help="directory specified during analyze command")
     plot_dist_parser.add_argument('bin_dir', help="directory containing bins to plot (fasta format)")
-    plot_dist_parser.add_argument('plot_dir', help="directory to hold plots")
+    plot_dist_parser.add_argument('output_dir', help="directory to hold plots")
     plot_dist_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
     plot_dist_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
 
