@@ -777,14 +777,14 @@ class OptionsParser():
 
         # read sequence stats file
         resultsParser = ResultsParser(None)
-        binStatsExt = resultsParser.parseBinStatsExt(options.output_dir)
+        binStatsExt = resultsParser.parseBinStatsExt(options.results_dir)
 
         # create plot for each bin
         plot = BinQAPlot(options)
         bMakePlot = True
         if not options.bIgnoreHetero:
             aai = AminoAcidIdentity()
-            aai.run(options.aai_strain, options.output_dir, None)
+            aai.run(options.aai_strain, options.results_dir, None)
             bMakePlot = plot.plot(binFiles, binStatsExt, options.bIgnoreHetero, aai.aaiHetero)
         else:
             bMakePlot = plot.plot(binFiles, binStatsExt, options.bIgnoreHetero, None)
