@@ -19,17 +19,11 @@ setup(
     url='http://pypi.python.org/pypi/checkm/',
     license='GPL3',
     description='Assess the quality of putative genome bins.',
-    #long_description=open('README.txt').read(),
     install_requires=[
         "numpy >= 1.8.0",
         "scipy >= 0.9.0",
         "matplotlib >= 1.3.1",
         "pysam >= 0.8.3",
-<<<<<<< HEAD
-        "dendropy >= 4.0.0"
-        ],
-=======
         "dendropy >= 4.0.0",
         "setuptools"],
->>>>>>> 22b9dd85985b842bf340761a8116e9ce42576080
 )
