@@ -28,13 +28,13 @@ from checkm.util.seqUtils import baseCount, readFasta
 
 class Unbinned():
     def __init__(self):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
     def run(self, binFiles, seqFile, outSeqFile, outStatsFile, minSeqLen):
         checkFileExists(seqFile)
 
         # get list of sequences in bins
-        self.logger.info('  Reading binned sequences.')
+        self.logger.info('Reading binned sequences.')
 
         binnedSeqs = {}
         totalBinnedBases = 0
@@ -44,18 +44,18 @@ class Unbinned():
             for seq in seqs.values():
                 totalBinnedBases += len(seq)
 
-        self.logger.info('    Read %d (%.2f Mbp) binned sequences.' % (len(binnedSeqs), float(totalBinnedBases) / 1e6))
+        self.logger.info('  Read %d (%.2f Mbp) binned sequences.' % (len(binnedSeqs), float(totalBinnedBases) / 1e6))
 
         # get list of all sequences
-        self.logger.info('  Reading all sequences.')
+        self.logger.info('Reading all sequences.')
         allSeqs = readFasta(seqFile)
         totalBases = 0
         for seq in allSeqs.values():
             totalBases += len(seq)
-        self.logger.info('    Read %d (%.2f Mbp) sequences.' % (len(allSeqs), float(totalBases) / 1e6))
+        self.logger.info('  Read %d (%.2f Mbp) sequences.' % (len(allSeqs), float(totalBases) / 1e6))
 
         # write all unbinned sequences
-        self.logger.info('  Identifying unbinned sequences >= %d bp.' % minSeqLen)
+        self.logger.info('Identifying unbinned sequences >= %d bp.' % minSeqLen)
         seqOut = open(outSeqFile, 'w')
 
         statsOut = open(outStatsFile, 'w')
@@ -79,8 +79,7 @@ class Unbinned():
         seqOut.close()
         statsOut.close()
 
-        self.logger.info('    Identified %d (%.2f Mbp) unbinned sequences.' % (unbinnedCount, float(unbinnedBases) / 1e6))
+        self.logger.info('  Identified %d (%.2f Mbp) unbinned sequences.' % (unbinnedCount, float(unbinnedBases) / 1e6))
 
-        self.logger.info('')
-        self.logger.info('  Percentage of unbinned sequences: %.2f%%' % (unbinnedCount * 100.0 / len(allSeqs)))
-        self.logger.info('  Percentage of unbinned bases: %.2f%%' % (unbinnedBases * 100.0 / totalBases))
+        self.logger.info('Percentage of unbinned sequences: %.2f%%' % (unbinnedCount * 100.0 / len(allSeqs)))
+        self.logger.info('Percentage of unbinned bases: %.2f%%' % (unbinnedBases * 100.0 / totalBases))

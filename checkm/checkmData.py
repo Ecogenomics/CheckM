@@ -35,7 +35,7 @@ class DBConfig(object):
     the DATA_CONFIG file as an object.
     """
     def __init__(self):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
         self.configFile = os.path.abspath(resource_filename('checkm', 'DATA_CONFIG'))
         self.values = self.getConfig()
 
@@ -99,9 +99,12 @@ class DBManager(mm.ManifestManager):
     """Manage all aspects of data location and version control."""
     def __init__(self, set_path=None):
         mm.ManifestManager.__init__(self, timeout=15)
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
         self.config = DBConfig()  # load inbuilt configuration
         self.type = self.config.values["manifestType"]
+        
+        if set_path:
+            self.setRoot(set_path)
 
         if set_path:
             self.setRoot(set_path)
@@ -115,7 +118,11 @@ class DBManager(mm.ManifestManager):
             # no data folder set.
             print ("It seems that the CheckM data folder has not been set yet or has been removed. Please run 'checkm data setRoot'.")
             if not self.setRoot():
+<<<<<<< HEAD
                 print ("Sorry, CheckM cannot run without a valid data folder.")
+=======
+                print("Sorry, CheckM cannot run without a valid data folder.")
+>>>>>>> 22b9dd85985b842bf340761a8116e9ce42576080
 
     def runAction(self, action):
         """Main entry point for the updating code"""
@@ -159,11 +166,15 @@ class DBManager(mm.ManifestManager):
         minimal = False
         while not path_set:
             if not path:
+<<<<<<< HEAD
                 if(minimal):
                     path = input("Please specify a location or type 'abort' to stop trying: \n")
                 else:
                     path = input("Where should CheckM store its data?\n" \
                                  "Please specify a location or type 'abort' to stop trying: \n")
+=======
+                path = os.path.join(os.path.expanduser("~"), ".checkm")
+>>>>>>> 22b9dd85985b842bf340761a8116e9ce42576080
 
             if path.upper() == "ABORT":
                 # user has given up

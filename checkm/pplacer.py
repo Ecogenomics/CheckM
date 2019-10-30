@@ -36,7 +36,7 @@ from checkm.util.seqUtils import readFasta, writeFasta
 class PplacerRunner():
     """Wrapper for running pplacer."""
     def __init__(self, threads):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
         self.numThreads = threads
 
         # make sure pplace and guppy are on the system path
@@ -63,12 +63,12 @@ class PplacerRunner():
         # check if concatenated alignment file is empty
         # (this can occur when all genomes have no phylogenetically informative marker genes)
         if os.stat(concatenatedAlignFile)[stat.ST_SIZE] == 0:
-            self.logger.info('  No genomes were identified that could be placed in the reference genome tree.')
+            self.logger.info('No genomes were identified that could be placed in the reference genome tree.')
             shutil.copyfile(os.path.join(pplacerRefPkg, DefaultValues.GENOME_TREE), treeFile)
             return
 
         # run pplacer to place bins in reference genome tree
-        self.logger.info('  Placing %d bins into the genome tree with pplacer (be patient).' % len(binFiles))
+        self.logger.info('Placing %d bins into the genome tree with pplacer (be patient).' % len(binFiles))
         cmd = 'pplacer -j %d -c %s -o %s %s > %s' % (self.numThreads,
                                                      pplacerRefPkg,
                                                      pplacerJsonOut,
@@ -84,7 +84,7 @@ class PplacerRunner():
         """Create a concatenated alignment of marker genes for each bin."""
 
         # read alignment files
-        self.logger.info('  Reading marker alignment files.')
+        self.logger.info('Reading marker alignment files.')
         alignments = defaultdict(dict)
         files = os.listdir(alignOutputDir)
         binIds = set()
@@ -106,7 +106,7 @@ class PplacerRunner():
             markerIdLens[markerId] = resultsParser.models[list(resultsParser.models.keys())[0]][markerId].leng
 
         # create concatenated alignment
-        self.logger.info('  Concatenating alignments.')
+        self.logger.info('Concatenating alignments.')
         concatenatedSeqs = {}
         for markerId in sorted(markerIds):
             seqs = alignments[markerId]

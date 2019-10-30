@@ -33,7 +33,7 @@ from checkm.util.seqUtils import readFasta
 
 class GenomicSignatures(object):
     def __init__(self, K, threads):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
         self.K = K
         self.compl = str.maketrans('ACGT', 'TGCA')
@@ -151,7 +151,7 @@ class GenomicSignatures(object):
     def calculate(self, seqFile, outputFile):
         """Calculate genomic signature of each sequence."""
 
-        self.logger.info('  Determining tetranucleotide signature of each sequence.')
+        self.logger.info('Determining tetranucleotide signature of each sequence.')
 
         # process each sequence in parallel
         workerQueue = mp.Queue()

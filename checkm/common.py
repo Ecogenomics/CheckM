@@ -69,24 +69,24 @@ def checkEmptyDir(inputDir):
         # check if directory is empty
         files = os.listdir(inputDir)
         if len(files) != 0:
-            logger = logging.getLogger()
-            logger.error('  [Error] Output directory must be empty: ' + inputDir + '\n')
+            logger = logging.getLogger('timestamp')
+            logger.error('Output directory must be empty: ' + inputDir + '\n')
             sys.exit(1)
 
 
 def checkFileExists(inputFile):
     """Check if file exists."""
     if not os.path.exists(inputFile):
-        logger = logging.getLogger()
-        logger.error('  [Error] Input file does not exists: ' + inputFile + '\n')
+        logger = logging.getLogger('timestamp')
+        logger.error('Input file does not exists: ' + inputFile + '\n')
         sys.exit(1)
 
 
 def checkDirExists(inputDir):
     """Check if directory exists."""
     if not os.path.exists(inputDir):
-        logger = logging.getLogger()
-        logger.error('  [Error] Input directory does not exists: ' + inputDir + '\n')
+        logger = logging.getLogger('timestamp')
+        logger.error('Input directory does not exists: ' + inputDir + '\n')
         sys.exit(1)
 
 
@@ -99,8 +99,8 @@ def makeSurePathExists(path):
         os.makedirs(path)
     except OSError as exception:
         if exception.errno != errno.EEXIST:
-            logger = logging.getLogger()
-            logger.error('  [Error] Specified path does not exist: ' + path + '\n')
+            logger = logging.getLogger('timestamp')
+            logger.error('Specified path does not exist: ' + path + '\n')
             sys.exit(1)
 
 
@@ -120,8 +120,8 @@ def reassignStdOut(outFile):
             # redirect stdout to a file
             sys.stdout = open(outFile, 'w')
         except:
-            logger = logging.getLogger()
-            logger.error("   [Error] Error diverting stdout to file: " + outFile)
+            logger = logging.getLogger('timestamp')
+            logger.error("Error diverting stdout to file: " + outFile)
             sys.exit(1)
 
     return oldStdOut
@@ -135,6 +135,6 @@ def restoreStdOut(outFile, oldStdOut):
             sys.stdout.close()
             sys.stdout = oldStdOut
         except:
-            logger = logging.getLogger()
-            logger.error("   [Error] Error restoring stdout ", outFile)
+            logger = logging.getLogger('timestamp')
+            logger.error("Error restoring stdout ", outFile)
             sys.exit(1)

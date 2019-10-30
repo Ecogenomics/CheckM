@@ -1,3 +1,26 @@
+1.1.0
+- code base ported to Python 3
+- functionality unchanged
+
+1.0.18
+- fix to CLI of bin_qa_plot (thanks to Finesim97 for PR)
+
+1.0.17
+- fixed bug with CLI of plotting methods introduced in 1.0.16
+
+1.0.16
+- made ~/.checkm the default directory for CheckM reference data
+- "checkm data setRoot <directory>" is no longer interactive and the directory must be given on the command line
+
+1.0.15
+- fixed CheckM data setRoot command to work from command line (thanks to cbt for PR)
+- added logging to files
+- improved reporting of CheckM results to include timestamp
+- removed "--force-overwrite" option and now allow output directories to already exist
+
+1.0.14
+- fixed bug with test command missing "--force-overwrite" option
+
 1.0.13
 - failed commands now exit with error code 1
 - added "--force-overwrite" option

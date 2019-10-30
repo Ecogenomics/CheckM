@@ -21,6 +21,7 @@
 
 import os
 import sys
+import logging
 
 import numpy as np
 
@@ -36,6 +37,8 @@ from checkm.defaultValues import DefaultValues
 class CodingDensityPlots(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
+        
+        self.logger = logging.getLogger('timestamp')
 
     def plot(self, fastaFile, distributionsToPlot):
         # Set size of figure
@@ -52,9 +55,9 @@ class CodingDensityPlots(AbstractPlot):
 
     def plotOnAxes(self, fastaFile, distributionsToPlot, axesHist, axesDeltaCD):
         # parse Prodigal output
-        gffFile = os.path.join(self.options.out_folder, 'bins', binIdFromFilename(fastaFile), DefaultValues.PRODIGAL_GFF)
+        gffFile = os.path.join(self.options.results_dir, 'bins', binIdFromFilename(fastaFile), DefaultValues.PRODIGAL_GFF)
         if not os.path.exists(gffFile):
-            print ('Missing gene feature file (%s). This plot if not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF)
+            self.logger.error('Missing gene feature file (%s). This plot if not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF)
             sys.exit()
 
         prodigalParser = ProdigalGeneFeatureParser(gffFile)

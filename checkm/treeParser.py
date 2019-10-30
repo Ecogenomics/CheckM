@@ -38,7 +38,7 @@ from checkm.util.taxonomyUtils import taxonomicPrefixes
 class TreeParser():
     """Parse genome tree and associated tree metadata."""
     def __init__(self):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
     def printSummary(self, outputFormat, outDir, resultsParser, bTabTable, outFile, binStats):
         if outputFormat == 1:
@@ -470,7 +470,7 @@ class TreeParser():
                                     resultsParser, minUnique, maxMulti):
         """Determine marker sets for each bin."""
 
-        self.logger.info('  Determining marker sets for each genome bin.')
+        self.logger.info('Determining marker sets for each genome bin.')
 
         # get all bin ids
         binIds = getBinIdsFromOutDir(outDir)

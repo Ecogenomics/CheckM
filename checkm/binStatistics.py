@@ -57,14 +57,14 @@ class BinStatistics():
             Number of cpus to use.
         """
 
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
         self.totalThreads = threads
 
     def calculate(self, binFiles, outDir, binStatsFile):
         """Calculate statistics for each putative genome bin."""
 
         # process each bin
-        self.logger.info("  Calculating genome statistics for %d bins with %d threads:" % (len(binFiles), self.totalThreads))
+        self.logger.info("Calculating genome statistics for %d bins with %d threads:" % (len(binFiles), self.totalThreads))
 
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()

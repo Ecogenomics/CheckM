@@ -22,7 +22,7 @@
 ###############################################################################
 
 import os
-import ast
+import logging
 import shutil
 
 from checkm.resultsParser import ResultsParser
@@ -39,7 +39,7 @@ class Options():
 
 class VerifyEcoli():
     def __init__(self):
-        pass
+        self.logger = logging.getLogger('timestamp')
 
     def run(self, parser, outputDir):
         """Run standard E. coli genome to verify operation of CheckM."""
@@ -52,35 +52,32 @@ class VerifyEcoli():
         options.pplacer_threads = 1
         options.extension = 'fna'
         options.bQuiet = True
-        options.out_folder = os.path.join(outputDir, 'results')
-        options.force_overwrite=False
-        if os.path.exists(options.out_folder):
-            shutil.rmtree(options.out_folder)
-        makeSurePathExists(options.out_folder)
+        options.output_dir = os.path.join(outputDir, 'results')
+        if os.path.exists(options.output_dir):
+            shutil.rmtree(options.output_dir)
+        makeSurePathExists(options.output_dir)
 
-        print ('[Step 1]: Verifying tree command.')
+        self.logger.info('[Step 1]: Verifying tree command.')
         options.bKeepAlignment = False
         options.bNucORFs = False
         options.bCalledGenes = False
         options.bReducedTree = True
-        options.bin_folder = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'test_data')
+        options.bin_dir = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'test_data')
         parser.tree(options)
-        self.verifyTree(options.out_folder)
-        print ('\n  [Passed]')
+        self.verifyTree(options.output_dir)
+        self.logger.info('[Passed]')
 
-        print ('\n')
-        print ('[Step 2]: Verifying tree_qa command.')
-        options.tree_folder = options.out_folder
+        self.logger.info('[Step 2]: Verifying tree_qa command.')
+        options.tree_dir = options.output_dir
         options.out_format = 1
-        options.file = os.path.join(options.out_folder, 'tree_qa_test.tsv')
+        options.file = os.path.join(options.output_dir, 'tree_qa_test.tsv')
         options.bTabTable = True
         parser.treeQA(options)
         self.verifyTreeQA(options.file)
-        print ('\n  [Passed]')
+        self.logger.info('[Passed]')
 
-        print ('\n')
-        print ('[Step 3]: Verifying lineage_set command.')
-        options.marker_file = os.path.join(options.out_folder, 'lineage_set_test.tsv')
+        self.logger.info('[Step 3]: Verifying lineage_set command.')
+        options.marker_file = os.path.join(options.output_dir, 'lineage_set_test.tsv')
         options.bForceDomain = False
         options.bootstrap = 0
         options.num_genomes_markers = 30
@@ -96,24 +93,22 @@ class VerifyEcoli():
         options.bRequireTaxonomy = True
         parser.lineageSet(options)
         self.verifyLineageSet(options.marker_file, options.bRequireTaxonomy)
-        print ('\n  [Passed]')
+        self.logger.info('[Passed]')
 
-        print ('\n')
-        print ('[Step 4]: Verifying analyze command.')
+        self.logger.info('[Step 4]: Verifying analyze command.')
         options.bAlignTopHit = False
         parser.analyze(options)
-        self.verifyAnalyze(options.out_folder)
-        print ('\n  [Passed]')
+        self.verifyAnalyze(options.output_dir)
+        self.logger.info('[Passed]')
 
-        print ('\n')
-        print ('[Step 5]: Verifying qa command.')
+        self.logger.info('[Step 5]: Verifying qa command.')
         options.alignment_file = None
-        options.analyze_folder = options.out_folder
+        options.analyze_dir = options.output_dir
         options.out_format = 1
         options.exclude_markers = None
         options.bSkipPseudoGeneCorrection = False
         options.bSkipAdjCorrection = False
-        options.file = os.path.join(options.out_folder, 'qa_test.tsv')
+        options.file = os.path.join(options.output_dir, 'qa_test.tsv')
         options.bIndividualMarkers = False
         options.bIgnoreThresholds = False
         options.aai_strain = 0.9
@@ -123,7 +118,7 @@ class VerifyEcoli():
         options.bTabTable = True
         parser.qa(options)
         self.verifyQA(options.file)
-        print ('\n  [Passed]')
+        self.logger.info('[Passed]')
 
     def verifyTree(self, outdir):
         """Verify output of tree command."""

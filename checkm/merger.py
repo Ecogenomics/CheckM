@@ -29,7 +29,7 @@ from checkm.resultsParser import ResultsParser
 
 class Merger():
     def __init__(self):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
     def run(self, binFiles, outDir, hmmTableFile,
                 binIdToModels, binIdToBinMarkerSets,
@@ -37,7 +37,7 @@ class Merger():
                 minMergedComp, maxMergedCont):
         checkDirExists(outDir)
 
-        self.logger.info('  Comparing marker sets between all pairs of bins.')
+        self.logger.info('Comparing marker sets between all pairs of bins.')
 
         # ensure all bins are using the same marker set
         markerGenesI = binIdToBinMarkerSets[list(binIdToBinMarkerSets.keys())[0]].mostSpecificMarkerSet().getMarkerGenes()

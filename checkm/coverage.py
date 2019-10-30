@@ -46,7 +46,7 @@ class CoverageStruct():
 class Coverage():
     """Calculate coverage of all sequences."""
     def __init__(self, threads):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
         self.totalThreads = threads
 
@@ -54,7 +54,7 @@ class Coverage():
         """Calculate coverage of sequences for each BAM file."""
 
         # determine bin assignment of each sequence
-        self.logger.info('  Determining bin assignment of each sequence.')
+        self.logger.info('Determining bin assignment of each sequence.')
 
         seqIdToBinId = {}
         seqIdToSeqLen = {}
@@ -67,7 +67,7 @@ class Coverage():
                 seqIdToSeqLen[seqId] = len(seq)
 
         # process each fasta file
-        self.logger.info("  Processing %d file(s) with %d threads.\n" % (len(bamFiles), self.totalThreads))
+        self.logger.info("Processing %d file(s) with %d threads.\n" % (len(bamFiles), self.totalThreads))
 
         # make sure all BAM files are sorted
         self.numFiles = len(bamFiles)
@@ -81,13 +81,13 @@ class Coverage():
         numFilesStarted = 0
         for bamFile in bamFiles:
             numFilesStarted += 1
-            self.logger.info('  Processing %s (%d of %d):' % (ntpath.basename(bamFile), numFilesStarted, len(bamFiles)))
+            self.logger.info('Processing %s (%d of %d):' % (ntpath.basename(bamFile), numFilesStarted, len(bamFiles)))
 
             coverageInfo[bamFile] = mp.Manager().dict()
             coverageInfo[bamFile] = self.__processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, coverageInfo[bamFile])
 
         # redirect output
-        self.logger.info('  Writing coverage information to file.')
+        self.logger.info('Writing coverage information to file.')
         oldStdOut = reassignStdOut(outFile)
 
         header = 'Sequence Id\tBin Id\tSequence length (bp)'

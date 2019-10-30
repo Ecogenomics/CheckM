@@ -29,7 +29,7 @@ from checkm.util.seqUtils import readFasta, readFastaSeqIds
 
 class SSU_Finder(object):
     def __init__(self, threads):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
         self.totalThreads = threads
 
@@ -43,13 +43,13 @@ class SSU_Finder(object):
         else:
             pipe = 'cat ' + seqFile + ' | '
 
-        self.logger.info('    Identifying bacterial 16S.')
+        self.logger.info('Identifying bacterial 16S.')
         os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.bacteria.txt --tblout ' + outputPrefix + '.bacteria.table.txt -E ' + str(evalue) + ' ' + self.bacteriaModelFile + ' -')
 
-        self.logger.info('    Identifying archaeal 16S.')
+        self.logger.info('Identifying archaeal 16S.')
         os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.archaea.txt --tblout ' + outputPrefix + '.archaea.table.txt -E ' + str(evalue) + ' ' + self.archaeaModelFile + ' -')
 
-        self.logger.info('    Identifying eukaryotic 18S.')
+        self.logger.info('Identifying eukaryotic 18S.')
         os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.euk.txt --tblout ' + outputPrefix + '.euk.table.txt -E ' + str(evalue) + ' ' + self.eukModelFile + ' -')
 
     def __readHits(self, resultsFile, domain, evalueThreshold):
@@ -196,7 +196,7 @@ class SSU_Finder(object):
             os.makedirs(outputDir)
 
         # get bin id of binned contigs
-        self.logger.info('  Determining bin assignment of sequences.')
+        self.logger.info('Determining bin assignment of sequences.')
         seqIdToBinId = {}
         for f in binFiles:
             binId = binIdFromFilename(f)
@@ -205,7 +205,7 @@ class SSU_Finder(object):
                 seqIdToBinId[seqId] = binId
 
         # identify 16S reads from contigs/scaffolds
-        self.logger.info('  Identifying SSU rRNAs on sequences.')
+        self.logger.info('Identifying SSU rRNAs on sequences.')
         self.__hmmSearch(contigFile, evalueThreshold, os.path.join(outputDir, 'ssu'))
 
         # read HMM hits
@@ -268,7 +268,6 @@ class SSU_Finder(object):
         summaryOut.close()
         seqOut.close()
 
-        self.logger.info('')
-        self.logger.info('  Identified ' + str(len(bestHits)) + ' putative SSU genes:')
-        self.logger.info('    Summary of identified hits written to: ' + summaryFile)
-        self.logger.info('    SSU sequences written to: ' + seqFile)
+        self.logger.info('Identified ' + str(len(bestHits)) + ' putative SSU genes.')
+        self.logger.info('Summary of identified hits written to: ' + summaryFile)
+        self.logger.info('SSU sequences written to: ' + seqFile)

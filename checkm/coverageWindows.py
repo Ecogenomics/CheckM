@@ -85,7 +85,7 @@ class CoverageStruct():
 class CoverageWindows():
     """Calculate coverage of all sequences."""
     def __init__(self, threads):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('timestamp')
 
         self.totalThreads = threads
 
@@ -94,11 +94,11 @@ class CoverageWindows():
 
         # make sure BAM file is sorted
         if not os.path.exists(bamFile + '.bai'):
-            self.logger.error('  [Error] BAM file is not sorted: ' + bamFile + '\n')
+            self.logger.error('BAM file is not sorted: ' + bamFile + '\n')
             sys.exit(1)
 
         # calculate coverage of each BAM file
-        self.logger.info('  Calculating coverage of windows.')
+        self.logger.info('Calculating coverage of windows.')
         coverageInfo = mp.Manager().dict()
         coverageInfo = self.__processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, coverageInfo)
 
