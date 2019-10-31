@@ -10,7 +10,7 @@ Porting of CheckM to Python 3 was validation on a set of 1,000 genomes randomly 
 
 ## Removed Functionality
 
-The following features will be removed from CheckM v1.1.x in order to simplify the code base and help focus the application and support requests on critical functionality:
+The following features have been removed from CheckM v1.1.x in order to simplify the code base and focus CheckM and support requests on critical functionality:
  * bin_qa_plot: non-critical, rarely used plot which does not scale to the large numbers of MAGs now being recovered
  * par_plot: non-critical plot and the same information is better presented in the reference distribution plots
  * cov_pca, tetra_pca: alternatives to these static plots exist in tools such as [Anvi'o](http://merenlab.org/software/anvio/)
