@@ -2,7 +2,7 @@
 
 This branch is the initial release of CheckM for Python 3. CheckM has been ported to Python 3 as Python 2 is reaching [end of life](https://pythonclock.org/) on January 1, 2020. CheckM will be updated from v1.0.18 to v1.1.x on Dec. 1, 2019. CheckM v1.1.x will require Python 3 and there are no plans to support Python 2 moving forward. Apologies for any issues this may cause.
 
-Massive thanks to baudrly, vinisalazar, and asafpr for initial Python 2 to 3 porting.
+Massive thanks to [baudrly](https://github.com/baudrly), [Vini Salazar](https://github.com/vinisalazar), and [Asaf Peer] (https://github.com/asafpr) for initial Python 2 to 3 porting.
 
 ## Python 2 to 3 Validation
 
