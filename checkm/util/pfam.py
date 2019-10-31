@@ -102,9 +102,9 @@ class PFAM(object):
                 filteredMarkers[markerId] = hits
 
         # for each gene, take only the best hit for each PFAM clan
-        for _, hits in hitsToORFs.items():
-            # sort in ascending order of e-value
-            hits.sort(key=lambda x: x.full_e_value)
+        for target_name, hits in hitsToORFs.items():
+            # sort in ascending order of e-value followed by score
+            hits.sort(key=lambda x: (x.full_e_value, x.i_evalue))
 
             filtered = set()
             for i in range(0, len(hits)):

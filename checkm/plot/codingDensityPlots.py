@@ -137,13 +137,13 @@ class CodingDensityPlots(AbstractPlot):
 
         # plot reference distributions
         for distToPlot in distributionsToPlot:
-            closestCD = findNearest(np.array(dist.keys()), meanCD)
+            closestCD = findNearest(np.array(list(dist.keys())), meanCD)
 
             # find closest distribution values
-            sampleSeqLen = dist[closestCD].keys()[0]
+            sampleSeqLen = list(dist[closestCD].keys())[0]
             d = dist[closestCD][sampleSeqLen]
-            cdLowerBoundKey = findNearest(d.keys(), (100 - distToPlot) / 2.0)
-            cdUpperBoundKey = findNearest(d.keys(), (100 + distToPlot) / 2.0)
+            cdLowerBoundKey = findNearest(list(d.keys()), (100 - distToPlot) / 2.0)
+            cdUpperBoundKey = findNearest(list(d.keys()), (100 + distToPlot) / 2.0)
 
             xL = []
             xU = []

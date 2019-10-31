@@ -50,7 +50,7 @@ class LengthHistogram(AbstractPlot):
         counts, _edges = np.histogram(seqLens, bins=bins)
 
         # create histogram
-        axes.bar(left=np.arange(0.1, len(counts)), height=counts, width=0.8, color=(0.5, 0.5, 0.5))
+        axes.bar(x=np.arange(0.1, len(counts)), height=counts, width=0.8, color=(0.5, 0.5, 0.5))
         axes.set_xlabel('Sequence length (kbp)')
         axes.set_ylabel('Number sequences (out of %d)' % len(seqs))
 

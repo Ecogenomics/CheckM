@@ -32,8 +32,6 @@ from checkm.pplacer import PplacerRunner
 from checkm.treeParser import TreeParser
 from checkm.taxonParser import TaxonParser
 from checkm.aminoAcidIdentity import AminoAcidIdentity
-from checkm.binComparer import BinComparer
-from checkm.binUnion import BinUnion
 from checkm.binStatistics import BinStatistics
 from checkm.coverage import Coverage
 from checkm.coverageWindows import CoverageWindows
@@ -43,7 +41,6 @@ from checkm.merger import Merger
 from checkm.profile import Profile
 from checkm.binTools import BinTools
 from checkm.ssuFinder import SSU_Finder
-from checkm.PCA import PCA
 from checkm.common import (makeSurePathExists, 
                             checkFileExists, 
                             binIdFromFilename, 
@@ -57,12 +54,8 @@ from checkm.plot.codingDensityPlots import CodingDensityPlots
 from checkm.plot.tetraDistPlots import TetraDistPlots
 from checkm.plot.distributionPlots import DistributionPlots
 from checkm.plot.nxPlot import NxPlot
-from checkm.plot.cumulativeLengthPlot import CumulativeLengthPlot
 from checkm.plot.lengthHistogram import LengthHistogram
 from checkm.plot.markerGenePosPlot import MarkerGenePosPlot
-from checkm.plot.parallelCoordPlot import ParallelCoordPlot
-from checkm.plot.binQAPlot import BinQAPlot
-from checkm.plot.pcaPlot import PcaPlot
 from checkm.plot.gcBiasPlots import GcBiasPlot
 
 from checkm.util.seqUtils import checkNuclotideSeqs, checkProteinSeqs
@@ -93,7 +86,7 @@ class OptionsParser():
                 if f.endswith(binExtension):
                     binFile = os.path.join(binFolder, f)
                     if os.stat(binFile).st_size == 0:
-                        self.logger.warning("  [Warning] Skipping bin %s as it has a size of 0 bytes." % f)
+                        self.logger.warning("Skipping bin %s as it has a size of 0 bytes." % f)
                     else:
                         binFiles.append(binFile)
 
@@ -298,7 +291,6 @@ class OptionsParser():
             markerFile = DefaultValues.HMM_MODELS
 
         # align marker genes with multiple hits within a bin
-        
         HA = HmmerAligner(options.threads)
         HA.makeAlignmentsOfMultipleHits(options.output_dir,
                                           markerFile,
@@ -314,7 +306,6 @@ class OptionsParser():
         self.timeKeeper.printTimeStamp()
 
         # calculate statistics for each genome bin
-        
         binStats = BinStatistics(options.threads)
         binStats.calculate(binFiles, options.output_dir, DefaultValues.BIN_STATS_OUT)
 
@@ -507,83 +498,6 @@ class OptionsParser():
 
         self.timeKeeper.printTimeStamp()
 
-    def tetraPcaPlot(self, options):
-        """PCA plot of tetranucleotide signatures"""
-        self.logger.info('[CheckM - tetra_pca] Creating PCA plot of tetranucleotide signatures.')
-
-        checkDirExists(options.bin_dir)
-        makeSurePathExists(options.output_dir)
-
-        binFiles = self.binFiles(options.bin_dir, options.extension)
-
-        self.logger.info('Computing PCA of tetranuclotide signatures.\n')
-        pca = PCA()
-        seqIds, pc, variance = pca.pcaFile(options.tetra_profile, fraction=1.0, bCenter=True, bScale=False)
-
-        plots = PcaPlot(options)
-        filesProcessed = 1
-        for f in binFiles:
-            self.logger.info('Plotting PCA of tetranuclotide signatures for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
-            filesProcessed += 1
-
-            plots.plot(f, seqIds, pc, variance)
-
-            binId = binIdFromFilename(f)
-            outputFile = os.path.join(options.output_dir, binId) + '.tetra_pca_plots.' + options.image_type
-            plots.savePlot(outputFile, dpi=options.dpi)
-            self.logger.info('Plot written to: ' + outputFile)
-
-        self.timeKeeper.printTimeStamp()
-
-    def coveragePcaPlot(self, options):
-        """PCA plot of coverage profiles"""
-        self.logger.info('[CheckM - cov_pca] Creating PCA plot of coverage profiles.')
-
-        checkDirExists(options.bin_dir)
-        checkFileExists(options.coverage_file)
-        makeSurePathExists(options.output_dir)
-
-        binFiles = self.binFiles(options.bin_dir, options.extension)
-
-        coverage = Coverage(threads=1)
-        coverageStats = coverage.parseCoverage(options.coverage_file)
-
-        seqIds = []
-        coverageProfiles = []
-        for binId, seqDict in coverageStats.items():
-            for seqId, bamDict in seqDict.items():
-                seqIds.append(seqId)
-
-                coverages = []
-                for _, coverage in bamDict.items():
-                    coverages.append(coverage)
-
-                coverageProfiles.append(coverages)
-
-        coverageProfiles = np.array(coverageProfiles)
-        if coverageProfiles.shape[1] < 2:
-            self.logger.error('Coverage profile is 1 dimensional. PCA requires at least 2 dimensions.')
-            sys.exit(1)
-
-        self.logger.info('Computing PCA of coverage profiles.\n')
-        pca = PCA()
-        pc, variance = pca.pcaMatrix(coverageProfiles, fraction=1.0, bCenter=True, bScale=False)
-
-        plots = PcaPlot(options)
-        filesProcessed = 1
-        for f in binFiles:
-            self.logger.info('Plotting PCA of coverage profiles for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
-            filesProcessed += 1
-
-            plots.plot(f, seqIds, pc, variance)
-
-            binId = binIdFromFilename(f)
-            outputFile = os.path.join(options.output_dir, binId) + '.cov_pca_plots.' + options.image_type
-            plots.savePlot(outputFile, dpi=options.dpi)
-            self.logger.info('Plot written to: ' + outputFile)
-
-        self.timeKeeper.printTimeStamp()
-
     def gcBiasPlot(self, options):
         """GC bias plot command"""
         
@@ -632,30 +546,6 @@ class OptionsParser():
 
             outputFile = os.path.join(options.output_dir, binId) + '.nx_plot.' + options.image_type
             nx.savePlot(outputFile, dpi=options.dpi)
-            self.logger.info('Plot written to: ' + outputFile)
-
-        self.timeKeeper.printTimeStamp()
-
-    def cumulativeLengthPlot(self, options):
-        """Cumulative sequence length plot command"""
-        
-        self.logger.info('[CheckM - len_plot] Creating cumulative sequence length plot.')
-
-        checkDirExists(options.bin_dir)
-        makeSurePathExists(options.output_dir)
-
-        binFiles = self.binFiles(options.bin_dir, options.extension)
-
-        plot = CumulativeLengthPlot(options)
-        filesProcessed = 1
-        for f in binFiles:
-            binId = binIdFromFilename(f)
-            self.logger.info('Plotting cumulative sequence length plot for %s (%d of %d)' % (binId, filesProcessed, len(binFiles)))
-            filesProcessed += 1
-            plot.plot(f)
-
-            outputFile = os.path.join(options.output_dir, binId) + '.seq_len_plot.' + options.image_type
-            plot.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
         self.timeKeeper.printTimeStamp()
@@ -717,82 +607,6 @@ class OptionsParser():
                 self.logger.info('Plot written to: ' + outputFile)
             else:
                 self.logger.info('No marker genes found in bin.')
-
-        self.timeKeeper.printTimeStamp()
-
-    def parallelCoordPlot(self, options):
-        """Parallel coordinate plot command"""
-        
-        self.logger.info('[CheckM - par_plot] Creating parallel coordinate plot of GC and coverage.')
-
-        checkDirExists(options.bin_dir)
-        makeSurePathExists(options.output_dir)
-        checkFileExists(options.coverage_file)
-
-        binFiles = self.binFiles(options.bin_dir, options.extension)
-
-        # read coverage stats file
-        coverage = Coverage(threads=1)
-        coverageStats = coverage.parseCoverage(options.coverage_file)
-
-        # calculate sequence stats for all bins
-        self.logger.info('Calculating sequence statistics for each bin.')
-        binStats = BinStatistics()
-        seqStats = {}
-        for f in binFiles:
-            binId = binIdFromFilename(f)
-            seqStats[binId] = binStats.sequenceStats(options.results_dir, f)
-
-        # create plot for each bin
-        
-        plot = ParallelCoordPlot(options)
-        filesProcessed = 1
-        for f in binFiles:
-            binId = binIdFromFilename(f)
-            self.logger.info('Plotting parallel coordinates for %s (%d of %d)' % (binId, filesProcessed, len(binFiles)))
-            filesProcessed += 1
-
-            plot.plot(binId, seqStats, coverageStats)
-
-            outputFile = os.path.join(options.output_dir, binId) + '.paralel_coord_plot.' + options.image_type
-            plot.savePlot(outputFile, dpi=options.dpi)
-            self.logger.info('Plot written to: ' + outputFile)
-
-        self.timeKeeper.printTimeStamp()
-
-    def binQAPlot(self, options):
-        """Bin QA plot command"""
-         
-        self.logger.info('[CheckM - bin_qa_plot] Creating bar plot of bin quality.')
-
-        checkDirExists(options.bin_dir)
-        makeSurePathExists(options.output_dir)
-
-        binFiles = self.binFiles(options.bin_dir, options.extension)
-
-        # read model info
-        # hmmModelInfoFile = os.path.join(options.analyze_dir, 'storage', DefaultValues.CHECKM_HMM_MODEL_INFO)
-        # binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
-
-        # read sequence stats file
-        resultsParser = ResultsParser(None)
-        binStatsExt = resultsParser.parseBinStatsExt(options.results_dir)
-
-        # create plot for each bin
-        plot = BinQAPlot(options)
-        bMakePlot = True
-        if not options.bIgnoreHetero:
-            aai = AminoAcidIdentity()
-            aai.run(options.aai_strain, options.results_dir, None)
-            bMakePlot = plot.plot(binFiles, binStatsExt, options.bIgnoreHetero, aai.aaiHetero)
-        else:
-            bMakePlot = plot.plot(binFiles, binStatsExt, options.bIgnoreHetero, None)
-
-        if bMakePlot:
-            outputFile = os.path.join(options.output_dir, 'bin_qa_plot.' + options.image_type)
-            plot.savePlot(outputFile, dpi=options.dpi)
-            
-            self.logger.info('Plot written to: ' + outputFile)
 
         self.timeKeeper.printTimeStamp()
 
@@ -931,55 +745,17 @@ class OptionsParser():
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
         binTools = BinTools()
-        binTools.identifyOutliers(options.output_dir, binFiles, options.tetra_profile, options.distributions, options.report_type, options.output_file)
+        binTools.identifyOutliers(options.results_dir, 
+                                    binFiles, 
+                                    options.tetra_profile, 
+                                    options.distributions, 
+                                    options.report_type, 
+                                    options.output_file)
 
         self.logger.info('Outlier information written to: ' + options.output_file)
 
         self.timeKeeper.printTimeStamp()
 
-    def joinTables(self, options):
-        """Join tables command"""
-        
-        self.logger.info('[CheckM - join_tables] Joining tables containing bin information.')
-
-        # read all tables
-        headers = {}
-        rows = defaultdict(dict)
-        binIds = set()
-        for f in options.tables:
-            with open(f) as fin:
-                headers[f] = [x.strip() for x in fin.readline().split('\t')][1:]
-
-                for line in fin:
-                    lineSplit = [x.strip() for x in line.split('\t')]
-
-                    binId = lineSplit[0]
-                    binIds.add(binId)
-
-                    for i, header in enumerate(headers[f]):
-                        rows[binId][header] = lineSplit[i + 1]
-
-        # write merge table
-        oldStdOut = reassignStdOut(options.file)
-
-        row = 'Bin Id'
-        for f in options.tables:
-            row += '\t' + '\t'.join(headers[f])
-        print(row)
-
-        for binId in binIds:
-            row = binId
-            for f in options.tables:
-                for header in headers[f]:
-                    row += '\t' + rows[binId].get(header, '')
-            print(row)
-
-        restoreStdOut(options.file, oldStdOut)
-
-        if options.file:
-            self.logger.info('Joined table written to: ' + options.file)
-
-        self.timeKeeper.printTimeStamp()
 
     def modify(self, options):
         """Modify command"""
@@ -1034,61 +810,6 @@ class OptionsParser():
 
         self.timeKeeper.printTimeStamp()
 
-    def binCompare(self, options):
-        """Bin compare command"""
-        
-        self.logger.info('[CheckM - bin_compare] Comparing two sets of bins.')
-
-        checkDirExists(options.bin_dir1)
-        checkDirExists(options.bin_dir2)
-
-        binFiles1 = self.binFiles(options.bin_dir1, options.extension1)
-        binFiles2 = self.binFiles(options.bin_dir2, options.extension2)
-
-        binComparer = BinComparer()
-        binComparer.report(binFiles1, binFiles2, options.seq_file, options.output_file)
-
-        
-        self.logger.info('Detailed bin comparison written to: ' + options.output_file)
-
-        self.timeKeeper.printTimeStamp()
-
-    def binUnion(self, options):
-        """Bin union command"""
-        
-        self.logger.info('[CheckM - bin_union] Redundancy reduce multiple sets of bins into a single set.')
-
-        output_dir = options.output_dir
-        makeSurePathExists(output_dir)
-
-        bin_dirs = []
-        checkmQaTsvs = []
-        for i, arg in enumerate(options.bin_or_checkm_qa_table):
-            if i % 2 == 0:
-                checkDirExists(arg)
-                bin_dirs.append(arg)
-            else:
-                checkFileExists(arg)
-                checkmQaTsvs.append(arg)
-
-        if len(bin_dirs) < 2:
-            self.logger.error("Need to specify at least two bin folders, found %i: " % len(bin_dirs))
-            sys.exit(1)
-        if len(bin_dirs) != len(checkmQaTsvs):
-            self.logger.error("Need to specify the same number of bin folders as checkm_qa_tsv files, found %i and %i, respectively: " % (len(bin_dirs), len(checkmQaTsvs)))
-            sys.exit(1)
-
-        binFileSets = []
-        for bin_dir in bin_dirs:
-            self.logger.info("Reading fasta files with extension %s from bin folder %s" % (options.extension, bin_dir))
-            binFileSets.append(self.binFiles(bin_dir, options.extension))
-
-        binUnion = BinUnion()
-
-        contigConflictsOutputFile = os.path.join(output_dir, 'contigConflicts.csv')
-        unionBinOutputFile = os.path.join(output_dir, 'union.txt')
-        binUnion.report(bin_dirs, binFileSets, checkmQaTsvs, unionBinOutputFile, contigConflictsOutputFile, options.min_completeness, options.max_contamination)
-
     def test(self, options):
         """Quick test of CheckM"""
  
@@ -1108,13 +829,9 @@ class OptionsParser():
         except:
             pass
             
-
         if(options.subparser_name == "data"):
             self.updateCheckM_DB(options)
-
-        DefaultValues.initValues()
-        
-        if(options.subparser_name == 'tree'):
+        elif(options.subparser_name == 'tree'):
             self.tree(options)
         elif(options.subparser_name == 'tree_qa'):
             self.treeQA(options)
@@ -1161,22 +878,12 @@ class OptionsParser():
             self.distributionPlots(options)
         elif(options.subparser_name == 'nx_plot'):
             self.nxPlot(options)
-        elif(options.subparser_name == 'len_plot'):
-            self.cumulativeLengthPlot(options)
         elif(options.subparser_name == 'len_hist'):
             self.lengthHistogram(options)
         elif(options.subparser_name == 'marker_plot'):
             self.markerPlot(options)
-        elif(options.subparser_name == 'par_plot'):
-            self.parallelCoordPlot(options)
-        elif(options.subparser_name == 'tetra_pca'):
-            self.tetraPcaPlot(options)
-        elif(options.subparser_name == 'cov_pca'):
-            self.coveragePcaPlot(options)
         elif(options.subparser_name == 'gc_bias_plot'):
             self.gcBiasPlot(options)
-        elif(options.subparser_name == 'bin_qa_plot'):
-            self.binQAPlot(options)
         elif(options.subparser_name == 'unbinned'):
             self.unbinned(options)
         elif(options.subparser_name == 'coverage'):
@@ -1189,18 +896,12 @@ class OptionsParser():
             self.merge(options)
         elif(options.subparser_name == 'outliers'):
             self.outliers(options)
-        elif(options.subparser_name == 'join_tables'):
-            self.joinTables(options)
         elif(options.subparser_name == 'modify'):
             self.modify(options)
         elif(options.subparser_name == 'unique'):
             self.unique(options)
         elif(options.subparser_name == 'ssu_finder'):
             self.ssuFinder(options)
-        elif(options.subparser_name == 'bin_compare'):
-            self.binCompare(options)
-        elif(options.subparser_name == 'bin_union'):
-            self.binUnion(options)
         elif(options.subparser_name == 'test'):
             options.bCalledGenes = False
             options.pplacer_threads = 1

@@ -355,7 +355,9 @@ class TreeParser():
                 nodeTaxonomy = selectedParentNode.label.split('|')[1]
 
                 stats = uniqueIdToLineageStatistics[trustedUniqueId]
-                if (stats['# genomes'] == 'NA' or int(stats['# genomes']) >= numGenomesMarkers) and (stats['bootstrap'] == 'NA' or int(stats['bootstrap']) >= bootstrap):
+                if ((stats['# genomes'] == 'NA' 
+                    or int(stats['# genomes']) >= numGenomesMarkers) 
+                    and (stats['bootstrap'] == 'NA' or int(stats['bootstrap']) >= bootstrap)):
                     if not bForceDomain or nodeTaxonomy in ['k__Bacteria', 'k__Archaea']:
                         if not bRequireTaxonomy or stats['taxonomy'] != '':
                             # get closest taxonomic label

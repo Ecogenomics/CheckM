@@ -20,10 +20,10 @@ setup(
     license='GPL3',
     description='Assess the quality of putative genome bins.',
     install_requires=[
-        "numpy >= 1.8.0",
-        "scipy >= 0.9.0",
-        "matplotlib >= 1.3.1",
-        "pysam >= 0.8.3",
-        "dendropy >= 4.0.0",
+        "numpy >= 1.13.1",
+        "scipy >= 0.19.1",
+        "matplotlib >= 2.1.0",
+        "pysam >= 0.12.0.1",
+        "dendropy >= 4.4.0",
         "setuptools"],
 )

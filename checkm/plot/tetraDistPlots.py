@@ -129,7 +129,7 @@ class TetraDistPlots(AbstractPlot):
 
         # plot reference distributions
         for distToPlot in distributionsToPlot:
-            boundKey = findNearest(dist[dist.keys()[0]].keys(), distToPlot)
+            boundKey = findNearest(list(dist[list(dist.keys())[0]].keys()), distToPlot)
 
             x = []
             y = []

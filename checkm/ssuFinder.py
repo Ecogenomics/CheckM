@@ -21,6 +21,7 @@
 
 import os
 import logging
+from collections import defaultdict
 
 from checkm.defaultValues import DefaultValues
 from checkm.common import binIdFromFilename
@@ -101,7 +102,7 @@ class SSU_Finder(object):
         index = 1
         bConcatenate = False
         concateSeqId = seqId
-        while(True):
+        while True:
             # if hits overlap then retain only the longest
             startNew = int(info[2])
             endNew = int(info[3])
@@ -146,49 +147,45 @@ class SSU_Finder(object):
                     hits[newSeqId] = info
                     break
 
-    def __addDomainHit(self, hits, seqId, info):
+    def __addDomainHit(self, hits, baseSeqId, info):
         """Add hits from different domain models and concatenate nearby hits."""
-        if seqId not in hits:
-            hits[seqId] = info
-            return
+        
+        startNew = int(info[2])
+        endNew = int(info[3])
+        lengthNew = int(info[4])
 
-        baseSeqId = seqId
-        overlapSeqId = seqId
+        # get all 16S hits for this contig
+        curSeqIds = set()
+        for curSeqId in hits:
+            if baseSeqId in curSeqId:
+                curSeqIds.add(curSeqId)
 
-        index = 1
-        bOverlap = False
-        while(True):
+        bNewHit = True
+        seqToRemove = set()
+        for curSeqId in curSeqIds:
             # if hits overlap then retain only the longest
-            startNew = int(info[2])
-            endNew = int(info[3])
-            lengthNew = int(info[4])
-
-            start = int(hits[seqId][2])
-            end = int(hits[seqId][3])
-            length = int(hits[seqId][4])
+            start = int(hits[curSeqId][2])
+            end = int(hits[curSeqId][3])
+            length = int(hits[curSeqId][4])
 
             if (startNew <= start and endNew >= start) or (start <= startNew and end >= startNew):
-                bOverlap = True
-
                 if lengthNew > length:
-                    hits[overlapSeqId] = info
+                    seqToRemove.add(curSeqId)
                 else:
-                    hits[overlapSeqId] = hits[seqId]
+                    bNewHit = False
+                    break
 
-                if overlapSeqId != seqId:
-                    del hits[seqId]
+        if bNewHit:
+            max_seq_num = 0
+            for curSeqId in curSeqIds:
+                if curSeqId in seqToRemove:
+                    del hits[curSeqId]
+                elif '-#' in curSeqId:
+                    seq_num = int(curSeqId.split('-#')[1])
+                    if seq_num > max_seq_num:
+                        max_seq_num = seq_num
 
-            index += 1
-            newSeqId = baseSeqId + '-#' + str(index)
-            if newSeqId in hits:
-                seqId = newSeqId  # see if the new hit overlaps with this
-                if not bOverlap:
-                    overlapSeqId = seqId
-            else:
-                break
-
-        if not bOverlap:
-            hits[newSeqId] = info
+            hits['{}-#{}'.format(baseSeqId, max_seq_num+1)] = info
 
     def run(self, contigFile, binFiles, outputDir, evalueThreshold, concatenateThreshold):
         # make sure output directory exists
@@ -229,6 +226,23 @@ class SSU_Finder(object):
                     seqId = seqId[0:seqId.rfind('-#')]
 
                 self.__addDomainHit(bestHits, seqId, info)
+                
+        # relabel hits
+        newBestHits = {}
+        num_hits = defaultdict(int)
+        for seqId, seqInfo in bestHits.items():
+            if '-#' in seqId:
+                seqId = seqId[0:seqId.rfind('-#')]
+            
+            if seqId not in num_hits:
+                newBestHits[seqId] = seqInfo
+            else:
+                hitNum = num_hits[seqId]
+                newBestHits['{}-#{}'.format(seqId, hitNum)] = seqInfo
+            
+            num_hits[seqId] += 1
+            
+        bestHits = newBestHits
 
         # write summary file and putative SSU rRNAs to file
         summaryFile = os.path.join(outputDir, 'ssu_summary.tsv')
@@ -263,7 +277,7 @@ class SSU_Finder(object):
                 seq = seqs[seqId]
                 summaryOut.write(binId + '\t' + '\t'.join(seqInfo) + '\t' + str(len(seq)) + '\n')
                 seqOut.write('>' + binId + DefaultValues.SEQ_CONCAT_CHAR + seqInfo[0] + '\n')
-                seqOut.write(seq[int(seqInfo[3]) + 1:int(seqInfo[4]) + 1] + '\n')
+                seqOut.write(seq[int(seqInfo[3]) - 1:int(seqInfo[4]) - 1] + '\n')
 
         summaryOut.close()
         seqOut.close()

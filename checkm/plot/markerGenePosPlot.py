@@ -22,6 +22,7 @@
 import os
 import math
 import operator
+import logging
 
 import numpy as np
 
@@ -40,6 +41,8 @@ import matplotlib as mpl
 class MarkerGenePosPlot(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
+        
+        self.logger = logging.getLogger('timestamp')
 
     def getMarkerGenesPerSeq(self, markerGeneStats):
         markerGenePos = {}
@@ -85,6 +88,14 @@ class MarkerGenePosPlot(AbstractPlot):
                 longestSeq = seqLen
 
         sortedSeqLens = sorted(seqLens.items(), key=operator.itemgetter(1), reverse=True)
+        
+        result_str = 'Markers reside on {:,} of {:,} sequences which span {:.2f} of {:.2f} ({:.1f}%) Mb'.format(
+                            len(seqLens),
+                            len(seqs),
+                            sum([s for s in seqLens.values()])/1e6,
+                            binSize/1e6,
+                            sum([s for s in seqLens.values()])*100.0/binSize)
+        self.logger.info(result_str)
 
         MAX_BINS = 100
         plotBinSize = self.roundUpToNearest100(float(longestSeq) / MAX_BINS)
@@ -117,7 +128,7 @@ class MarkerGenePosPlot(AbstractPlot):
 
         # set plot axis
         axes.set_xlim([0, MAX_BINS + 0.1])
-        axes.set_xlabel('Position (' + str(plotBinSize) + ' bp/bin)')
+        axes.set_xlabel('Position ({:,} bp/bin)'.format(plotBinSize))
 
         axes.set_ylim([0, len(sortedSeqLens)])
         axes.set_yticks(np.arange(0.5, len(sortedSeqLens) + 0.5, 1.0))
@@ -125,15 +136,17 @@ class MarkerGenePosPlot(AbstractPlot):
         axes.set_yticklabels(yLabels)
 
         # legend
-        colours = [(1.0, 1.0, 1.0), (127 / 255.0, 201 / 255.0, 127 / 255.0), (255 / 255.0, 192 / 255.0, 134 / 255.0), (190 / 255.0, 174 / 255.0, 212 / 255.0), (0.0, 0.0, 0.0)]
+        colours = [(1.0, 1.0, 1.0), 
+                    (127 / 255.0, 201 / 255.0, 127 / 255.0), 
+                    (255 / 255.0, 192 / 255.0, 134 / 255.0), 
+                    (190 / 255.0, 174 / 255.0, 212 / 255.0), 
+                    (0.0, 0.0, 0.0)]
         discreteColourMap = mpl.colors.ListedColormap(colours)
         axisColourMap = self.fig.add_axes([self.options.fig_padding / self.options.width, self.options.fig_padding / height, 0.15, 0.03 * (self.options.width / height)])
         colourBar = mpl.colorbar.ColorbarBase(axisColourMap, cmap=discreteColourMap, norm=mpl.colors.Normalize(vmin=0, vmax=1), orientation='horizontal', drawedges=True)
         colourBar.set_ticks([0.1, 0.3, 0.5, 0.7, 0.9])
         colourBar.set_ticklabels(['0', '1', '2', '3', '4+'])
-        # colourBar.outline.set_color(self.axesColour)
         colourBar.outline.set_linewidth(0.5)
-        # colourBar.dividers.set_color(self.axesColour)
         colourBar.dividers.set_linewidth(0.5)
 
         for a in axisColourMap.xaxis.majorTicks:
@@ -157,8 +170,13 @@ class MarkerGenePosPlot(AbstractPlot):
             binPosX += 1.0
 
         # set plot title
-        titleStr = binId + '\n'
-        titleStr += '(%.2f Mbp, %d seqs, %.2f%% complete, %.2f%% contamination)' % (float(binSize) / 1e6, len(seqs), binStats['Completeness'], binStats['Contamination'])
+        titleStr = binId
+        titleStr += '\n'
+        titleStr += '({:.1f}% complete, {:.1f}% contamination)'.format(
+                        binStats['Completeness'], 
+                        binStats['Contamination'])
+        titleStr += '\n'
+        titleStr += '({})'.format(result_str)
         axes.set_title(titleStr)
 
         # Prettify plot

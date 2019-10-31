@@ -80,9 +80,10 @@ class ResultsParser():
                      bSkipPseudoGeneCorrection=False,
                      binStats=None):
         """ Parse HMM hits for each bin."""
+        
         if not self.models:
-            self.logger.error('  [Error] Models must be parsed before identifying HMM hits.')
-            raise
+            self.logger.error('Models must be parsed before identifying HMM hits.')
+            sys.exit(-1)
 
         self.logger.info('Parsing HMM hits to marker genes:')
 
@@ -99,8 +100,8 @@ class ResultsParser():
             elif binStats == None:
                 resultsManager = ResultsManager(binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection)
             else:
-                self.logger.error('  [Error] Invalid parameter settings for binStats and seqStats.')
-                raise
+                self.logger.error('Invalid parameter settings for binStats and seqStats.')
+                sys.exit(-1)
 
             hmmerTableFile = os.path.join(outDir, 'bins', binId, hmmTableFile)
             self.parseHmmerResults(hmmerTableFile, resultsManager, bSkipAdjCorrection)
@@ -219,8 +220,8 @@ class ResultsParser():
                     header += ['Coverage (' + bamId + ')', 'Coverage std (' + bamId + ')']
 
             if DefaultValues.MIN_SEQ_LEN_GC_STD != 1000:
-                self.logger.error('  [Error] Labeling error: GC std (scaffolds > 1kbp)')
-                sys.exit(1)
+                self.logger.error('Labeling error: GC std (scaffolds > 1kbp)')
+                sys.exit(-1)
         elif outputFormat == 3:
             header = ['Bin Id', 'Node Id', 'Marker lineage', '# genomes', '# markers', '# marker sets', '0', '1', '2', '3', '4', '5+', 'Completeness', 'Contamination', 'Strain heterogeneity']
         elif outputFormat == 4:

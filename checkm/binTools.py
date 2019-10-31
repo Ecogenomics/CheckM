@@ -130,7 +130,7 @@ class BinTools():
 
         # check for sequences assigned to multiple bins
         bDuplicates = False
-        binIds = binSeqs.keys()
+        binIds = list(binSeqs.keys())
         for i in range(0, len(binIds)):
             for j in range(i + 1, len(binIds)):
                 seqInter = set(binSeqs[binIds[i]]).intersection(set(binSeqs[binIds[j]]))
@@ -247,32 +247,32 @@ class BinTools():
             meanCD, deltaCDs, CDs = self.codingDensityDist(seqs, prodigalParser)
 
             # find keys into GC and CD distributions
-            closestGC = findNearest(np.array(gcBounds.keys()), meanGC)
+            closestGC = findNearest(np.array(list(gcBounds.keys())), meanGC)
             sampleSeqLen = list(gcBounds[closestGC].keys())[0]
             d = gcBounds[closestGC][sampleSeqLen]
-            gcLowerBoundKey = findNearest(d.keys(), (100 - distribution) / 2.0)
-            gcUpperBoundKey = findNearest(d.keys(), (100 + distribution) / 2.0)
+            gcLowerBoundKey = findNearest(list(d.keys()), (100 - distribution) / 2.0)
+            gcUpperBoundKey = findNearest(list(d.keys()), (100 + distribution) / 2.0)
 
-            closestCD = findNearest(np.array(cdBounds.keys()), meanCD)
+            closestCD = findNearest(np.array(list(cdBounds.keys())), meanCD)
             sampleSeqLen = list(cdBounds[closestCD].keys())[0]
             d = cdBounds[closestCD][sampleSeqLen]
-            cdLowerBoundKey = findNearest(d.keys(), (100 - distribution) / 2.0)
+            cdLowerBoundKey = findNearest(list(d.keys()), (100 - distribution) / 2.0)
 
-            tdBoundKey = findNearest(tdBounds[list(tdBounds.keys())[0]].keys(), distribution)
+            tdBoundKey = findNearest(list(tdBounds[list(tdBounds.keys())[0]].keys()), distribution)
 
             index = 0
             for seqId, seq in seqs.items():
                 seqLen = len(seq)
 
                 # find GC, CD, and TD bounds
-                closestSeqLen = findNearest(gcBounds[closestGC].keys(), seqLen)
+                closestSeqLen = findNearest(list(gcBounds[closestGC].keys()), seqLen)
                 gcLowerBound = gcBounds[closestGC][closestSeqLen][gcLowerBoundKey]
                 gcUpperBound = gcBounds[closestGC][closestSeqLen][gcUpperBoundKey]
 
-                closestSeqLen = findNearest(cdBounds[closestCD].keys(), seqLen)
+                closestSeqLen = findNearest(list(cdBounds[closestCD].keys()), seqLen)
                 cdLowerBound = cdBounds[closestCD][closestSeqLen][cdLowerBoundKey]
 
-                closestSeqLen = findNearest(tdBounds.keys(), seqLen)
+                closestSeqLen = findNearest(list(tdBounds.keys()), seqLen)
                 tdBound = tdBounds[closestSeqLen][tdBoundKey]
 
                 outlyingDists = []

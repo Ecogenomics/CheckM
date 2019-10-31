@@ -125,13 +125,13 @@ class GcPlots(AbstractPlot):
 
         # plot reference distributions
         for distToPlot in distributionsToPlot:
-            closestGC = findNearest(np.array(dist.keys()), meanGC)
+            closestGC = findNearest(np.array(list(dist.keys())), meanGC)
 
             # find closest distribution values
-            sampleSeqLen = dist[closestGC].keys()[0]
+            sampleSeqLen = list(dist[closestGC].keys())[0]
             d = dist[closestGC][sampleSeqLen]
-            gcLowerBoundKey = findNearest(d.keys(), (100 - distToPlot) / 2.0)
-            gcUpperBoundKey = findNearest(d.keys(), (100 + distToPlot) / 2.0)
+            gcLowerBoundKey = findNearest(list(d.keys()), (100 - distToPlot) / 2.0)
+            gcUpperBoundKey = findNearest(list(d.keys()), (100 + distToPlot) / 2.0)
 
             xL = []
             xU = []

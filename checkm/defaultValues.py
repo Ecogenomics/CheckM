@@ -26,6 +26,8 @@ from checkm.checkmData import DBManager
 class DefaultValues():
     """Default values for filenames and common constants."""
 
+    __DBM = DBManager()
+
     # set of markers recognized to be unreliable. These are often
     # ubiquitous, single-copy genes, but ones which are challenging
     # to correctly annotate with the PFAM and TIGRFAM models.
@@ -40,64 +42,57 @@ class DefaultValues():
 
     SEQ_CONCAT_CHAR = '&&'
 
-    def initValues(self):
-        __DBM = DBManager()
-        self.__DBM = __DBM
+    CHECKM_DATA_DIR = __DBM.config.values["dataRoot"]
+    PHYLO_HMM_MODELS = phyloHMMs = os.path.join(CHECKM_DATA_DIR, 'hmms', 'phylo.hmm')
+    HMM_MODELS = os.path.join(CHECKM_DATA_DIR, 'hmms', 'checkm.hmm')
+    PFAM_CLAN_FILE = os.path.join(CHECKM_DATA_DIR, 'pfam', 'Pfam-A.hmm.dat')
 
-        CHECKM_DATA_DIR = __DBM.config.values["dataRoot"]
-        self.CHECKM_DATA_DIR = CHECKM_DATA_DIR
+    IMG_METADATA_FILE = os.path.join(CHECKM_DATA_DIR, 'img', 'img_metadata.tsv')
+    REDUNDANT_TIGRFAM_FILE = os.path.join(CHECKM_DATA_DIR, 'pfam', 'tigrfam2pfam.tsv')
 
-        self.PHYLO_HMM_MODELS = self.phyloHMMs = os.path.join(CHECKM_DATA_DIR, 'hmms', 'phylo.hmm')
-        self.HMM_MODELS = os.path.join(CHECKM_DATA_DIR, 'hmms', 'checkm.hmm')
-        self.PFAM_CLAN_FILE = os.path.join(CHECKM_DATA_DIR, 'pfam', 'Pfam-A.hmm.dat')
+    SELECTED_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'selected_marker_sets.tsv')
+    TAXON_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'taxon_marker_sets.tsv')
 
-        self.IMG_METADATA_FILE = os.path.join(CHECKM_DATA_DIR, 'img', 'img_metadata.tsv')
-        self.REDUNDANT_TIGRFAM_FILE = os.path.join(CHECKM_DATA_DIR, 'pfam', 'tigrfam2pfam.tsv')
+    GENOME_TREE_DIR = os.path.join(CHECKM_DATA_DIR, 'genome_tree')
+    PPLACER_REF_PACKAGE_FULL = os.path.join(GENOME_TREE_DIR, 'genome_tree_full.refpkg')
+    PPLACER_REF_PACKAGE_REDUCED = os.path.join(GENOME_TREE_DIR, 'genome_tree_reduced.refpkg')
+    GENOME_TREE = 'genome_tree.tre'
+    GENOME_TREE_FASTA = 'genome_tree.fasta'
+    GENOME_TREE_DEREP = 'genome_tree.derep.txt'
+    GENOME_TREE_TAXONOMY = 'genome_tree.taxonomy.tsv'
+    GENOME_TREE_METADATA = 'genome_tree.metadata.tsv'
+    GENOME_TREE_MISSING_DUPLICATE = 'missing_duplicate_genes_50.tsv'
+    DISTRIBUTION_DIR = os.path.join(CHECKM_DATA_DIR, 'distributions')
 
-        self.SELECTED_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'selected_marker_sets.tsv')
-        self.TAXON_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'taxon_marker_sets.tsv')
+    PHYLO_HMM_MODEL_INFO = 'phylo_hmm_info.pkl.gz'
+    CHECKM_HMM_MODEL_INFO = 'checkm_hmm_info.pkl.gz'
 
-        GENOME_TREE_DIR = os.path.join(CHECKM_DATA_DIR, 'genome_tree')
-        self.GENOME_TREE_DIR = GENOME_TREE_DIR
-        self.PPLACER_REF_PACKAGE_FULL = os.path.join(GENOME_TREE_DIR, 'genome_tree_full.refpkg')
-        self.PPLACER_REF_PACKAGE_REDUCED = os.path.join(GENOME_TREE_DIR, 'genome_tree_reduced.refpkg')
-        self.GENOME_TREE = 'genome_tree.tre'
-        self.GENOME_TREE_FASTA = 'genome_tree.fasta'
-        self.GENOME_TREE_DEREP = 'genome_tree.derep.txt'
-        self.GENOME_TREE_TAXONOMY = 'genome_tree.taxonomy.tsv'
-        self.GENOME_TREE_METADATA = 'genome_tree.metadata.tsv'
-        self.GENOME_TREE_MISSING_DUPLICATE = 'missing_duplicate_genes_50.tsv'
-        self.DISTRIBUTION_DIR = os.path.join(CHECKM_DATA_DIR, 'distributions')
+    HMMER_TABLE_PHYLO_OUT = 'hmmer.tree.txt'
+    HMMER_PHYLO_OUT = 'hmmer.tree.ali.txt'
 
-        self.PHYLO_HMM_MODEL_INFO = 'phylo_hmm_info.pkl.gz'
-        self.CHECKM_HMM_MODEL_INFO = 'checkm_hmm_info.pkl.gz'
+    HMMER_TABLE_OUT = 'hmmer.analyze.txt'
+    HMMER_OUT = 'hmmer.analyze.ali.txt'
 
-        self.HMMER_TABLE_PHYLO_OUT = 'hmmer.tree.txt'
-        self.HMMER_PHYLO_OUT = 'hmmer.tree.ali.txt'
+    PRODIGAL_AA = 'genes.faa'
+    PRODIGAL_NT = 'genes.fna'
+    PRODIGAL_GFF = 'genes.gff'
 
-        self.HMMER_TABLE_OUT = 'hmmer.analyze.txt'
-        self.HMMER_OUT = 'hmmer.analyze.ali.txt'
+    PPLACER_CONCAT_SEQ_OUT = 'concatenated.fasta'
+    PPLACER_JSON_OUT = 'concatenated.pplacer.json'
+    PPLACER_OUT = 'pplacer.out'
+    PPLACER_TREE_OUT = 'concatenated.tre'
 
-        self.PRODIGAL_AA = 'genes.faa'
-        self.PRODIGAL_NT = 'genes.fna'
-        self.PRODIGAL_GFF = 'genes.gff'
+    BIN_STATS_PHYLO_OUT = 'bin_stats.tree.tsv'
+    # SEQ_STATS_PHYLO_OUT = 'seq_stats.tree.tsv'
 
-        self.PPLACER_CONCAT_SEQ_OUT = 'concatenated.fasta'
-        self.PPLACER_JSON_OUT = 'concatenated.pplacer.json'
-        self.PPLACER_OUT = 'pplacer.out'
-        self.PPLACER_TREE_OUT = 'concatenated.tre'
+    BIN_STATS_OUT = 'bin_stats.analyze.tsv'
+    # SEQ_STATS_OUT = 'seq_stats.analyze.tsv'
 
-        self.BIN_STATS_PHYLO_OUT = 'bin_stats.tree.tsv'
-        # SEQ_STATS_PHYLO_OUT = 'seq_stats.tree.tsv'
+    BIN_STATS_EXT_OUT = 'bin_stats_ext.tsv'
+    MARKER_GENE_STATS = 'marker_gene_stats.tsv'
 
-        self.BIN_STATS_OUT = 'bin_stats.analyze.tsv'
-        # SEQ_STATS_OUT = 'seq_stats.analyze.tsv'
+    CONTIG_BREAK = 'NNNNNNNNNN'
 
-        self.BIN_STATS_EXT_OUT = 'bin_stats_ext.tsv'
-        self.MARKER_GENE_STATS = 'marker_gene_stats.tsv'
+    UNBINNED = 'unbinned'
 
-        self.CONTIG_BREAK = 'NNNNNNNNNN'
-
-        self.UNBINNED = 'unbinned'
-
-        self.MIN_SEQ_LEN_GC_STD = 1000
+    MIN_SEQ_LEN_GC_STD = 1000

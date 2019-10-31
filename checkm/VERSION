@@ -1,6 +1,10 @@
 1.1.0
 - code base ported to Python 3
-- functionality unchanged
+- massive thanks to baudrly, vinisalazar, and asafpr for initial Python 2 to 3 porting
+- bug in ssu_finder fixed that on rare occasions caused a SSU sequence to be reported more than once
+- now using i-Evalue to break ties in the rare cases when hits to a target sequence have the exact same full E-value; this makes the code more deterministic
+- improvements to information reported in marker_plot
+- fixed CLI issue with outliers method
 
 1.0.18
 - fix to CLI of bin_qa_plot (thanks to Finesim97 for PR)
