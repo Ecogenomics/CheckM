@@ -58,7 +58,7 @@ class CodingDensityPlots(AbstractPlot):
         gffFile = os.path.join(self.options.results_dir, 'bins', binIdFromFilename(fastaFile), DefaultValues.PRODIGAL_GFF)
         if not os.path.exists(gffFile):
             self.logger.error('Missing gene feature file (%s). This plot if not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF)
-            sys.exit()
+            sys.exit(1)
 
         prodigalParser = ProdigalGeneFeatureParser(gffFile)
 

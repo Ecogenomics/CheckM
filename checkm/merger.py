@@ -43,8 +43,8 @@ class Merger():
         markerGenesI = binIdToBinMarkerSets[list(binIdToBinMarkerSets.keys())[0]].mostSpecificMarkerSet().getMarkerGenes()
         for binIdJ in binIdToBinMarkerSets:
             if markerGenesI != binIdToBinMarkerSets[binIdJ].mostSpecificMarkerSet().getMarkerGenes():
-                self.logger.error('  [Error] All bins must use the same marker set to assess potential mergers.')
-                sys.exit(0)
+                self.logger.error('All bins must use the same marker set to assess potential mergers.')
+                sys.exit(1)
 
         # parse HMM information
         resultsParser = ResultsParser(binIdToModels)

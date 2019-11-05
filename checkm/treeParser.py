@@ -254,7 +254,7 @@ class TreeParser():
                 if child.is_internal():
                     queue.append(child)
 
-        self.logger.error('  [Error] Failed to associate bin with a domain. Please report this bug.')
+        self.logger.error('Failed to associate bin with a domain. Please report this bug.')
         sys.exit(1)
 
     def getBinSisterTaxonomy(self, outDir, binIds):
@@ -624,7 +624,7 @@ class TreeParser():
                 binIdToLineageStatistics[binId] = uniqueIdToLineageStatistics[uniqueId]
             else:
                 self.logger.error('Failed to find lineage-specific statistics for inserted bin: ' + node.taxon.label)
-                sys.exit(0)
+                sys.exit(1)
 
         return binIdToLineageStatistics
 

@@ -42,7 +42,7 @@ class BinTools():
         """Remove sequences. """
         missingSeqIds = set(seqsToRemove).difference(set(seqs.keys()))
         if len(missingSeqIds) > 0:
-            self.logger.error('  [Error] Missing sequence(s) specified for removal: ' + ', '.join(missingSeqIds) + '\n')
+            self.logger.error('Missing sequence(s) specified for removal: ' + ', '.join(missingSeqIds) + '\n')
             sys.exit(1)
 
         for seqId in seqsToRemove:
@@ -52,7 +52,7 @@ class BinTools():
         """Add sequences. """
         missingSeqIds = set(seqsToAdd).difference(set(refSeqs.keys()))
         if len(missingSeqIds) > 0:
-            self.logger.error('  [Error] Missing sequence(s) specified for addition: ' + ', '.join(missingSeqIds) + '\n')
+            self.logger.error('Missing sequence(s) specified for addition: ' + ', '.join(missingSeqIds) + '\n')
             sys.exit(1)
 
         for seqId in seqsToAdd:
@@ -240,7 +240,7 @@ class BinTools():
 
             gffFile = os.path.join(outDir, 'bins', binId, DefaultValues.PRODIGAL_GFF)
             if not os.path.exists(gffFile):
-                self.logger.error('  [Error] Missing gene feature file (%s). This plot if not compatible with the --genes option.\n' % DefaultValues.PRODIGAL_GFF)
+                self.logger.error('Missing gene feature file (%s). This plot if not compatible with the --genes option.\n' % DefaultValues.PRODIGAL_GFF)
                 sys.exit(1)
 
             prodigalParser = ProdigalGeneFeatureParser(gffFile)

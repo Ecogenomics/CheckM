@@ -89,7 +89,7 @@ class BinMarkerSets():
             if len(self.markerSets) == 1:
                 return self.markerSets[0]
 
-            self.logger.error('  [Error] Expect a single marker set to be associated with each bin.')
+            self.logger.error('Expect a single marker set to be associated with each bin.')
             sys.exit(1)
 
     def setLineageSpecificSelectedMarkerSet(self, selectedMarkerSetMap):
@@ -117,7 +117,7 @@ class BinMarkerSets():
 
         if self.selectedLinageSpecificMarkerSet == None:
             # something has gone wrong
-            self.logger.error('  [Error] Failed to set a selected lineage-specific marker set.')
+            self.logger.error('Failed to set a selected lineage-specific marker set.')
             sys.exit(1)
 
     def removeMarkers(self, markersToRemove):

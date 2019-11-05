@@ -365,7 +365,7 @@ class IMG(object):
             print '[BUG]: __genomeIdToClusterScaffold'
             print sys.exc_info()[0]
             print genomeId, geneId, tigrId, pfamId
-            sys.exit()
+            sys.exit(1)
 
         return familyIdToScaffoldIds
 
@@ -485,7 +485,7 @@ class IMG(object):
             print '[BUG]: __genomeFamilyPositions'
             print sys.exc_info()[0]
             print genomeId, geneId, tigrId, pfamId
-            sys.exit()
+            sys.exit(1)
 
         return familyIdToGenomePositions
 

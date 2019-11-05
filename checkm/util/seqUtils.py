@@ -199,10 +199,9 @@ def readFasta(fastaFile, trimHeader=True):
         for seqId, seq in seqs.items():
             seqs[seqId] = ''.join(seq)
     except:
-        logger = logging.getLogger()
-        logger.error("  [Error] Failed to process sequence file:" + fastaFile)
-        raise()
-        sys.exit()
+        logger = logging.getLogger('timestamp')
+        logger.error("Failed to process sequence file: {}".format(fastaFile))
+        sys.exit(1)
 
     return seqs
 
