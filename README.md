@@ -5,11 +5,14 @@
 [![Downloads](https://pepy.tech/badge/checkm-genome/month)](https://pepy.tech/project/checkm-genome)
 [![BioConda Install](https://img.shields.io/conda/dn/bioconda/checkm-genome.svg?style=flag&label=BioConda%20install)](https://anaconda.org/bioconda/checkm-genome)
 
+# Installing and using CheckM
+Please see the project home page for usage details and installation instructions: https://github.com/Ecogenomics/CheckM/wiki
+
+Note: we do not recommend installing CheckM from the master branch. This may be unstable. Please install an official release of CheckM or use pip.
+
 # Migration to Python 3
 
 CheckM has been ported to Python 3 to accomodate Python 2 reaching [end of life](https://pythonclock.org/) on January 1, 2020. CheckM >=1.1.0 requires Python 3. Python 2 will no longer be actively supported. Apologies for any issues this may cause.
-
-# Installing and using CheckM
 
 Massive thanks to [baudrly](https://github.com/baudrly), [Vini Salazar](https://github.com/vinisalazar), and [Asaf Peer](https://github.com/asafpr) for initial Python 2 to 3 porting.
 
@@ -28,6 +31,6 @@ The following features have been removed from CheckM v1.1.x in order to simplify
 
 ## Bug Reports
 
-Please report any bugs or observed discrpencies between this branch and CheckM v1.0.18 as a GitHub issue. 
+Please report bugs through the GitHub issues system. 
 
 Copyright © 2014 Donovan Parks, Connor Skennerton, Michael Imelfort. See LICENSE for further details.
