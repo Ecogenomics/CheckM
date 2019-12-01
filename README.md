@@ -7,7 +7,7 @@
 
 # Migration to Python 3
 
-CheckM has been ported to Python 3 to accomodate Python 2 reaching [end of life](https://pythonclock.org/) on January 1, 2020. CheckM >=1.1.0 require Python 3 and Python 2 is no longer supported. Apologies for any issues this may cause.
+CheckM has been ported to Python 3 to accomodate Python 2 reaching [end of life](https://pythonclock.org/) on January 1, 2020. CheckM >=1.1.0 requires Python 3. Python 2 will no longer be actively supported. Apologies for any issues this may cause.
 
 # Installing and using CheckM
 
