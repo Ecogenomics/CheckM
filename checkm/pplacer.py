@@ -93,17 +93,17 @@ class PplacerRunner():
                 markerId = f[0:f.find('.masked.faa')]
                 seqs = readFasta(os.path.join(alignOutputDir, f))
 
-                for seqId, seq in seqs.iteritems():
+                for seqId, seq in seqs.items():
                     binId = seqId[0:seqId.find(DefaultValues.SEQ_CONCAT_CHAR)]
 
                     alignments[markerId][binId] = seq
                     binIds.add(binId)
 
         # get all markers and their lengths
-        markerIds = resultsParser.models[resultsParser.models.keys()[0]].keys()
+        markerIds = resultsParser.models[list(resultsParser.models.keys())[0]].keys()
         markerIdLens = {}
         for markerId in markerIds:
-            markerIdLens[markerId] = resultsParser.models[resultsParser.models.keys()[0]][markerId].leng
+            markerIdLens[markerId] = resultsParser.models[list(resultsParser.models.keys())[0]][markerId].leng
 
         # create concatenated alignment
         self.logger.info('Concatenating alignments.')
@@ -133,7 +133,7 @@ class PplacerRunner():
         try:
             subprocess.call(['pplacer', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
         except:
-            self.logger.error("  [Error] Make sure pplacer is on your system path.")
+            self.logger.error("Make sure pplacer is on your system path.")
             sys.exit(1)
 
     def __checkForGuppy(self):
@@ -144,5 +144,5 @@ class PplacerRunner():
         try:
             subprocess.call(['guppy', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
         except:
-            self.logger.error("  [Error] Make sure guppy, which is part of the pplacer package, is on your system path.")
+            self.logger.error("Make sure guppy, which is part of the pplacer package, is on your system path.")
             sys.exit(1)

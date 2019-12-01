@@ -63,7 +63,7 @@ class Unbinned():
 
         unbinnedCount = 0
         unbinnedBases = 0
-        for seqId, seq in allSeqs.iteritems():
+        for seqId, seq in allSeqs.items():
             if seqId not in binnedSeqs:
                 if len(seq) >= minSeqLen:
                     unbinnedCount += 1

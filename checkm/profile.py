@@ -21,10 +21,10 @@
 
 import logging
 
-import prettytable
+import checkm.prettytable
 
 from checkm.defaultValues import DefaultValues
-from common import checkFileExists, reassignStdOut, restoreStdOut
+from checkm.common import checkFileExists, reassignStdOut, restoreStdOut
 
 
 class Profile():
@@ -57,7 +57,7 @@ class Profile():
             if binId not in readsMappedToBin:
                 readsMappedToBin[binId] = {}
 
-            for i in xrange(3, len(lineSplit), 3):
+            for i in range(3, len(lineSplit), 3):
                 bamId = lineSplit[i]
                 mappedReads = int(lineSplit[i + 2])
 
@@ -68,7 +68,7 @@ class Profile():
         perMappedReads = {}
         normBinCoverage = {}
         sumNormBinCoverage = {}
-        for binId, bamIds in readsMappedToBin.iteritems():
+        for binId, bamIds in readsMappedToBin.items():
             perMappedReads[binId] = {}
             normBinCoverage[binId] = {}
 
@@ -83,7 +83,7 @@ class Profile():
                 normBinCoverage[binId][bamId] = normCoverage
                 sumNormBinCoverage[bamId] = sumNormBinCoverage.get(bamId, 0) + normCoverage
 
-        for binId, bamIds in normBinCoverage.iteritems():
+        for binId, bamIds in normBinCoverage.items():
             for bamId in bamIds:
                 if sumNormBinCoverage[bamId] != 0:
                     normBinCoverage[binId][bamId] /= sumNormBinCoverage[bamId]
@@ -134,7 +134,7 @@ class Profile():
                     row += [normBinCoverage[binId][bamId] * 100.0 * (1.0 - unbinnedPercentage)]
 
             if bTabTable:
-                print('\t'.join(map(str, row)))
+                print('\t'.join(list(map(str, row))))
             else:
                 pTable.add_row(row)
 

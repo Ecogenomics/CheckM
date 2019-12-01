@@ -57,6 +57,7 @@ def readDistribution(prefix):
 
 def findNearest(array, value):
     '''Find nearest array element to a given value.'''
+
     idx = (np.abs(np.array(array) - value)).argmin()
     return array[idx]
 

@@ -85,11 +85,11 @@ class DBConfig(object):
         """Work out if we have permission to write to the CheckM config before attempting to make changes"""
         try:
             open(self.configFile, 'a')
-        except IOError, e:
-            print "You do not seem to have permission to edit the checkm config file"
-            print "located at %s" % self.configFile
-            print "Please try again with updated privileges. Error was:\n"
-            print e
+        except (IOError, e):
+            print ("You do not seem to have permission to edit the checkm config file")
+            print ("located at %s" % self.configFile)
+            print ("Please try again with updated privileges. Error was:\n")
+            print (e)
             return False
         return True
 
@@ -103,6 +103,9 @@ class DBManager(mm.ManifestManager):
         self.config = DBConfig()  # load inbuilt configuration
         self.type = self.config.values["manifestType"]
         
+        if set_path:
+            self.setRoot(set_path)
+
         if set_path:
             self.setRoot(set_path)
 
@@ -167,28 +170,28 @@ class DBManager(mm.ManifestManager):
             else:
                 path = os.path.abspath(os.path.expanduser(path))
 
-            print ""
+            print ("")
             if os.path.exists(path):
                 # path exists
                 if os.access(path, os.W_OK):
                     # path is writable
                     path_set = True
-                    print "Path [%s] exists and you have permission to write to this folder." % path
+                    print ("Path [%s] exists and you have permission to write to this folder." % path)
                 else:
-                    print "Path [%s] exists but you do not have permission to write to this folder." % path
+                    print ("Path [%s] exists but you do not have permission to write to this folder." % path)
             else:
                 # path does not exist, try to make it
-                "Path [%s] does not exist so I will attempt to create it" % path
+                print ("Path [%s] does not exist so I will attempt to create it" % path)
                 try:
                     self.makeSurePathExists(path)
-                    print "Path [%s] has been created and you have permission to write to this folder." % path
+                    print ("Path [%s] has been created and you have permission to write to this folder." % path)
                     path_set = True
                 except Exception:
-                    print "Unable to make the folder, Error was: %s" % sys.exc_info()[0]
+                    print ("Unable to make the folder, Error was: %s" % sys.exc_info()[0])
                 minimal = True
 
         # (re)make the manifest file
-        print "(re) creating manifest file (please be patient)."
+        print ("(re) creating manifest file (please be patient).")
         self.createManifest(path, self.config.values["localManifestName"])
 
         return path
@@ -196,8 +199,8 @@ class DBManager(mm.ManifestManager):
     def checkPermissions(self):
         """See if the user has permission to write to the data directory"""
         if not os.access(self.config.values["dataRoot"], os.W_OK):
-            print "You do not seem to have permission to edit the CheckM data folder"
-            print "located at %s" % self.config.values["dataRoot"]
+            print ("You do not seem to have permission to edit the CheckM data folder")
+            print ("located at %s" % self.config.values["dataRoot"])
             return False
 
         return True

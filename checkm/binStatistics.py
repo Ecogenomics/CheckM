@@ -172,7 +172,7 @@ class BinStatistics():
         totalGC = 0
         totalAT = 0
         gcPerSeq = []
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in seqs.items():
             a, c, g, t = baseCount(seq)
 
             gc = g + c
@@ -199,7 +199,7 @@ class BinStatistics():
 
         varGC = 0
         if len(gcPerSeq) > 1:
-            varGC = mean(map(lambda x: (x - GC) ** 2, gcPerSeq))
+            varGC = mean(list(map(lambda x: (x - GC) ** 2, gcPerSeq)))
 
         return GC, math.sqrt(varGC)
 
@@ -208,7 +208,7 @@ class BinStatistics():
         scaffoldLens = []
         contigLens = []
         numAmbiguousBases = 0
-        for scaffoldId, scaffold in scaffolds.iteritems():
+        for scaffoldId, scaffold in scaffolds.items():
             scaffoldLen = len(scaffold)
             scaffoldLens.append(scaffoldLen)
 
@@ -255,7 +255,7 @@ class BinStatistics():
     def __calculateCodingBases(self, aaGenes):
         """Calculate number of coding bases in a set of genes."""
         codingBasePairs = 0
-        for _geneId, gene in aaGenes.iteritems():
+        for _geneId, gene in aaGenes.items():
             codingBasePairs += len(gene) * 3
 
         return codingBasePairs
@@ -277,7 +277,7 @@ class BinStatistics():
         aaFile = os.path.join(outDir, 'bins', binId, DefaultValues.PRODIGAL_AA)
         if os.path.exists(aaFile):
             aaGenes = readFasta(aaFile)
-            for geneId, gene in aaGenes.iteritems():
+            for geneId, gene in aaGenes.items():
                 seqId = geneId[0:geneId.rfind('_')]
                 seqStats[seqId]['# ORFs'] = seqStats[seqId].get('# ORFs', 0) + 1
                 seqStats[seqId]['Coding bases'] = seqStats[seqId].get('Coding bases', 0) + len(gene) * 3

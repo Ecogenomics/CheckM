@@ -30,7 +30,7 @@ import numpy as np
 
 from checkm.defaultValues import DefaultValues
 from checkm.common import checkFileExists
-from checkm.util.seqUtils import readFasta
+from checkm.util.seqUtils import readFasta, writeFasta
 
 
 class ProdigalError(BaseException):
@@ -50,10 +50,19 @@ class ProdigalRunner():
         self.gffFile = os.path.join(outDir, DefaultValues.PRODIGAL_GFF)
 
     def run(self, query, bNucORFs=True):
+    
+        prodigal_input = query
+
+        # decompress gzip input files
+        if prodigal_input.endswith('.gz'):
+            tmp_dir = tempfile.mkdtemp()
+            prodigal_input = os.path.join(tmp_dir, os.path.basename(prodigal_input[0:-3]) + '.fna')
+            writeFasta(seqs, prodigal_input)
+            
         # gather statistics about query file
-        seqs = readFasta(query)
+        seqs = readFasta(prodigal_input)
         totalBases = 0
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in seqs.items():
             totalBases += len(seq)
 
         # call ORFs with different translation tables and select the one with the highest coding density
@@ -70,9 +79,18 @@ class ProdigalRunner():
                 procedureStr = 'single'  # estimate parameters from data
 
             if bNucORFs:
-                cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -d %s -i %s > %s 2> /dev/null' % (procedureStr, translationTable, aaGeneFile, ntGeneFile, query, gffFile))
+                cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -d %s -i %s > %s 2> /dev/null' % (procedureStr, 
+                                                                                                    translationTable, 
+                                                                                                    aaGeneFile, 
+                                                                                                    ntGeneFile, 
+                                                                                                    prodigal_input, 
+                                                                                                    gffFile))
             else:
-                cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -i %s > %s 2> /dev/null' % (procedureStr, translationTable, aaGeneFile, query, gffFile))
+                cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -i %s > %s 2> /dev/null' % (procedureStr, 
+                                                                                            translationTable, 
+                                                                                            aaGeneFile, 
+                                                                                            prodigal_input, 
+                                                                                            gffFile))
 
             os.system(cmd)
 
@@ -86,7 +104,7 @@ class ProdigalRunner():
             prodigalParser = ProdigalGeneFeatureParser(gffFile)
 
             codingBases = 0
-            for seqId, seq in seqs.iteritems():
+            for seqId, seq in seqs.items():
                 codingBases += prodigalParser.codingBases(seqId)
 
             if totalBases != 0:
@@ -111,6 +129,9 @@ class ProdigalRunner():
             os.remove(self.gffFile + '.' + str(translationTable))
             if bNucORFs:
                 os.remove(self.ntGeneFile + '.' + str(translationTable))
+                
+        if prodigal_input.endswith('.gz'):
+            shutil.rmtree(tmp_dir)
 
         return bestTranslationTable
 
@@ -133,7 +154,7 @@ class ProdigalRunner():
         try:
             subprocess.call(['prodigal', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
         except:
-            self.logger.error("  [Error] Make sure prodigal is on your system path.")
+            self.logger.error("Make sure prodigal is on your system path.")
             sys.exit(1)
 
 

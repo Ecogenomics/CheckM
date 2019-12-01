@@ -67,7 +67,7 @@ class TreeParser():
 
         # write reference alignments to file
         seqs = readFasta(os.path.join(DefaultValues.PPLACER_REF_PACKAGE_FULL, DefaultValues.GENOME_TREE_FASTA))
-        for seqId, seq in seqs.iteritems():
+        for seqId, seq in seqs.items():
             print('>' + seqId)
             print(seq)
 
@@ -254,7 +254,7 @@ class TreeParser():
                 if child.is_internal():
                     queue.append(child)
 
-        self.logger.error('  [Error] Failed to associate bin with a domain. Please report this bug.')
+        self.logger.error('Failed to associate bin with a domain. Please report this bug.')
         sys.exit(1)
 
     def getBinSisterTaxonomy(self, outDir, binIds):
@@ -355,7 +355,9 @@ class TreeParser():
                 nodeTaxonomy = selectedParentNode.label.split('|')[1]
 
                 stats = uniqueIdToLineageStatistics[trustedUniqueId]
-                if stats['# genomes'] >= numGenomesMarkers and stats['bootstrap'] >= bootstrap:
+                if ((stats['# genomes'] == 'NA' 
+                    or int(stats['# genomes']) >= numGenomesMarkers) 
+                    and (stats['bootstrap'] == 'NA' or int(stats['bootstrap']) >= bootstrap)):
                     if not bForceDomain or nodeTaxonomy in ['k__Bacteria', 'k__Archaea']:
                         if not bRequireTaxonomy or stats['taxonomy'] != '':
                             # get closest taxonomic label
@@ -622,7 +624,7 @@ class TreeParser():
                 binIdToLineageStatistics[binId] = uniqueIdToLineageStatistics[uniqueId]
             else:
                 self.logger.error('Failed to find lineage-specific statistics for inserted bin: ' + node.taxon.label)
-                sys.exit(0)
+                sys.exit(1)
 
         return binIdToLineageStatistics
 
@@ -653,7 +655,7 @@ class TreeParser():
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
-        arbitraryBinId = binIdToTaxonomy.keys()[0]
+        arbitraryBinId = list(binIdToTaxonomy.keys())[0]
         markerCountLabel = '# unique markers (of %d)' % len(resultsParser.models[arbitraryBinId])
         header = ['Bin Id', markerCountLabel, '# multi-copy', 'Taxonomy']
 
@@ -675,7 +677,7 @@ class TreeParser():
             row = [binId, uniqueHits, multiCopyHits, binIdToTaxonomy[binId]]
 
             if bTabTable:
-                print('\t'.join(map(str, row)))
+                print('\t'.join(list(map(str, row))))
             else:
                 pTable.add_row(row)
 
@@ -689,7 +691,7 @@ class TreeParser():
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
-        arbitraryBinId = binIdToTaxonomy.keys()[0]
+        arbitraryBinId = list(binIdToTaxonomy.keys())[0]
         markerCountLabel = '# unique markers (of %d)' % len(resultsParser.models[arbitraryBinId])
         header = ['Bin Id', markerCountLabel, "# multi-copy"]
         header += ['Insertion branch UID', 'Taxonomy (contained)', 'Taxonomy (sister lineage)']
@@ -745,7 +747,7 @@ class TreeParser():
             row += [binIdToLineageStatistics[binId]['gene count std']]
 
             if bTabTable:
-                print('\t'.join(map(str, row)))
+                print('\t'.join(list(map(str, row))))
             else:
                 pTable.add_row(row)
 

@@ -115,7 +115,7 @@ class HMMERRunner():
         try:
             subprocess.call(['hmmsearch', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
         except:
-            self.logger.error("  [Error] Make sure HMMER executables (e.g., hmmsearch, hmmfetch) are on your system path.")
+            self.logger.error("Make sure HMMER executables (e.g., hmmsearch, hmmfetch) are on your system path.")
             sys.exit(1)
 
 

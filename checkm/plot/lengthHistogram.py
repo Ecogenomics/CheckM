@@ -21,7 +21,7 @@
 
 import numpy as np
 
-from AbstractPlot import AbstractPlot
+from checkm.plot.AbstractPlot import AbstractPlot
 
 from matplotlib.ticker import MaxNLocator
 
@@ -50,7 +50,7 @@ class LengthHistogram(AbstractPlot):
         counts, _edges = np.histogram(seqLens, bins=bins)
 
         # create histogram
-        axes.bar(left=np.arange(0.1, len(counts)), height=counts, width=0.8, color=(0.5, 0.5, 0.5))
+        axes.bar(x=np.arange(0.1, len(counts)), height=counts, width=0.8, color=(0.5, 0.5, 0.5))
         axes.set_xlabel('Sequence length (kbp)')
         axes.set_ylabel('Number sequences (out of %d)' % len(seqs))
 
@@ -79,7 +79,7 @@ class LengthHistogram(AbstractPlot):
         for line in axes.xaxis.get_ticklines():
             line.set_color(self.axesColour)
 
-        for loc, spine in axes.spines.iteritems():
+        for loc, spine in axes.spines.items():
             if loc in ['right', 'top']:
                 spine.set_color('none')
             else:

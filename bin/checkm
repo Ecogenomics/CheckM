@@ -56,9 +56,9 @@ def version():
 
 
 def printHelp():
-    print ''
-    print '                ...::: CheckM v' + version() + ' :::...'''
-    print '''\
+    print ('')
+    print ('                ...::: CheckM v' + version() + ' :::...''')
+    print ('''\
 
   Lineage-specific marker set:
     tree         -> Place bins in the reference genome tree
@@ -77,9 +77,6 @@ def printHelp():
     lineage_wf   -> Runs tree, lineage_set, analyze, qa
     taxonomy_wf  -> Runs taxon_set, analyze, qa
 
-  Bin QA plots:
-    bin_qa_plot  -> Bar plot of bin completeness, contamination, and strain heterogeneity
-
   Reference distribution plots:
     gc_plot      -> Create GC histogram and delta-GC plot
     coding_plot  -> Create coding density (CD) histogram and delta-CD plot
@@ -88,36 +85,27 @@ def printHelp():
 
   General plots:
     nx_plot      -> Create Nx-plots
-    len_plot     -> Cumulative sequence length plot
     len_hist     -> Sequence length histogram
     marker_plot  -> Plot position of marker genes on sequences
-    par_plot     -> Parallel coordinate plot of GC and coverage
     gc_bias_plot -> Plot bin coverage as a function of GC
-
-  Sequence subspace plots:
-    cov_pca      -> PCA plot of coverage profiles
-    tetra_pca    -> PCA plot of tetranucleotide signatures
 
   Bin exploration and modification:
     unique       -> Ensure no sequences are assigned to multiple bins
     merge        -> Identify bins with complementary sets of marker genes
-    bin_compare  -> Compare two sets of bins (e.g., from alternative binning methods)
-    bin_union    -> [Experimental] Merge multiple binning efforts into a single bin set
-    modify       -> [Experimental] Modify sequences in a bin
     outliers     -> [Experimental] Identify outlier in bins relative to reference distributions
-
+    modify       -> [Experimental] Modify sequences in a bin
+    
   Utility functions:
     unbinned     -> Identify unbinned sequences
     coverage     -> Calculate coverage of sequences
     tetra        -> Calculate tetranucleotide signature of sequences
     profile      -> Calculate percentage of reads mapped to each bin
-    join_tables  -> Join tab-separated value tables containing bin information
     ssu_finder   -> Identify SSU (16S/18S) rRNAs in sequences
 
   Use 'checkm data setRoot <checkm_data_dir>' to specify the location of CheckM database files.
 
   Usage: checkm <command> -h for command specific help
-    '''
+    ''')
 
 if __name__ == '__main__':
     # initialize the options parser
@@ -357,7 +345,7 @@ Example: checkm qa ./output/lineage.ms ./output
                                         description='Create GC histogram and delta-GC plot.',
                                         epilog='Example: checkm gc_plot ./bins ./plots 95')
 
-    plot_gc_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
+    plot_gc_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=range(0, 101), default=95, metavar='dist_value')
     plot_gc_parser.add_argument('-w', '--gc_window_size', help="window size used to calculate GC histogram", type=int, default=5000)
     plot_gc_parser.add_argument('-b', '--gc_bin_width', help="width of GC bars in histogram", type=float, default=0.01)
     plot_gc_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -369,7 +357,7 @@ Example: checkm qa ./output/lineage.ms ./output
                                         description='Create coding density (CD) histogram and delta-CD plot.',
                                         epilog='Example: checkm coding_plot ./output ./bins ./plots 95')
 
-    plot_coding_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
+    plot_coding_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=range(0, 101), default=95, metavar='dist_value')
     plot_coding_parser.add_argument('-w', '--cd_window_size', help="window size used to calculate CD histogram", type=int, default=10000)
     plot_coding_parser.add_argument('-b', '--cd_bin_width', help="width of CD bars in histogram", type=float, default=0.01)
     plot_coding_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -381,7 +369,7 @@ Example: checkm qa ./output/lineage.ms ./output
                                         description='Create tetranucleotide distance (TD) histogram and delta-TD plot.',
                                         epilog='Example: checkm tetra_plot ./output ./bins ./plots tetra.tsv 95')
     plot_tetra_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each bin (see tetra command)')
-    plot_tetra_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
+    plot_tetra_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=range(0, 101), default=95, metavar='dist_value')
     plot_tetra_parser.add_argument('-w', '--td_window_size', help="window size used to calculate TD histogram", type=int, default=5000)
     plot_tetra_parser.add_argument('-b', '--td_bin_width', help="width of TD bars in histogram", type=float, default=0.01)
     plot_tetra_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -395,7 +383,7 @@ Example: checkm qa ./output/lineage.ms ./output
     plot_dist_parser.add_argument('bin_dir', help="directory containing bins to plot (fasta format)")
     plot_dist_parser.add_argument('output_dir', help="directory to hold plots")
     plot_dist_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
-    plot_dist_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
+    plot_dist_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100', nargs='+', type=int, choices=range(0, 101), default=95, metavar='dist_value')
 
     plot_dist_parser.add_argument('--image_type', default='png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
     plot_dist_parser.add_argument('--dpi', type=int, default=600, help='desired DPI of output image')
@@ -412,17 +400,6 @@ Example: checkm qa ./output/lineage.ms ./output
     plot_dist_parser.add_argument('-3', '--cd_bin_width', help="width of CD bars in histogram", type=float, default=0.01)
     plot_dist_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
-    # PCA plot of tetranucleotide signatures
-    plot_tetra_pca_parser = subparsers.add_parser('tetra_pca',
-                                        formatter_class=CustomHelpFormatter,
-                                        parents=[plot_parser],
-                                        description='PCA plot of tetranucleotide signatures.',
-                                        epilog='Example: checkm tetra_pca ./bins ./plots tetra.tsv')
-    plot_tetra_pca_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
-    plot_tetra_pca_parser.add_argument('--width', type=float, default=6.5, help='width of output image')
-    plot_tetra_pca_parser.add_argument('--height', type=float, default=6.5, help='height of output image')
-    plot_tetra_pca_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
-
     # GC bias plots
     plot_gc_bias_parser = subparsers.add_parser('gc_bias_plot',
                                         formatter_class=CustomHelpFormatter,
@@ -437,17 +414,6 @@ Example: checkm qa ./output/lineage.ms ./output
     plot_gc_bias_parser.add_argument('-t', '--threads', type=int, default=1, help="number of threads")
     plot_gc_bias_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
-    # PCA plot of coverage profiles
-    plot_cov_pca_parser = subparsers.add_parser('cov_pca',
-                                        formatter_class=CustomHelpFormatter,
-                                        parents=[plot_parser],
-                                        description='PCA plot of coverage profiles.',
-                                        epilog='Example: checkm cov_pca ./bins ./plots coverate.tsv')
-    plot_cov_pca_parser.add_argument('coverage_file', help="file indicating coverage of each sequence (see coverage command)")
-    plot_cov_pca_parser.add_argument('--width', type=float, default=6.5, help='width of output image')
-    plot_cov_pca_parser.add_argument('--height', type=float, default=6.5, help='height of output image')
-    plot_cov_pca_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
-
     # Nx-plot
     plot_nx_parser = subparsers.add_parser('nx_plot',
                                         formatter_class=CustomHelpFormatter,
@@ -457,15 +423,6 @@ Example: checkm qa ./output/lineage.ms ./output
 
     plot_nx_parser.add_argument('-s', '--step_size', help="x step size for calculating Nx", type=float, default=0.05)
     plot_nx_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
-
-    # Cumulative sequence length plot
-    plot_len_parser = subparsers.add_parser('len_plot',
-                                        formatter_class=CustomHelpFormatter,
-                                        parents=[plot_single_parser],
-                                        description='Cumulative sequence length plot.',
-                                        epilog='Example: checkm len_plot ./bins ./plots')
-
-    plot_len_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # Sequence length distribution plot
     hist_len_parser = subparsers.add_parser('len_hist',
@@ -485,25 +442,6 @@ Example: checkm qa ./output/lineage.ms ./output
 
     marker_plot_parser.add_argument('--fig_padding', type=float, default=0.2, help='white space to place around figure (in inches)')
     marker_plot_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
-
-    # Parallel coordinate plot
-    parallel_coord_plot_parser = subparsers.add_parser('par_plot',
-                                        formatter_class=CustomHelpFormatter,
-                                        parents=[plot_need_qa_results_parser, plot_single_parser],
-                                        description='Parallel coordinate plot of GC and coverage.',
-                                        epilog='Example: checkm par_plot ./output ./bins ./plots coverage.tsv')
-    parallel_coord_plot_parser.add_argument('coverage_file', help="file indicating coverage of each sequence (see coverage command)")
-    parallel_coord_plot_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
-
-    # Bin QA plot
-    bin_qa_plot_parser = subparsers.add_parser('bin_qa_plot',
-                                        formatter_class=CustomHelpFormatter,
-                                        parents=[plot_need_qa_results_parser, plot_rows_parser],
-                                        description='Bar plot of bin completeness, contamination, and strain heterogeneity.',
-                                        epilog='Example: checkm bin_qa_plot ./output ./bins ./plots')
-    bin_qa_plot_parser.add_argument('--ignore_hetero', dest='bIgnoreHetero', action="store_true", help="do not plot strain heterogeneity")
-    bin_qa_plot_parser.add_argument('--aai_strain', type=float, default=0.9, help="AAI threshold used to identify strain heterogeneity")
-    bin_qa_plot_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # Identify unbinned sequences
     unbinned_parser = subparsers.add_parser('unbinned',
@@ -556,15 +494,6 @@ Example: checkm qa ./output/lineage.ms ./output
     profile_parser.add_argument('--tab_table', dest='bTabTable', action="store_true", default=False, help="print tab-separated values table")
     profile_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
-    # Join tab-separated values file
-    join_parser = subparsers.add_parser('join_tables',
-                                            formatter_class=CustomHelpFormatter,
-                                            description='Join tab-separated value tables containing bin information.',
-                                            epilog='Example: checkm join_tables table1.tsv table2.tsv')
-    join_parser.add_argument('tables', nargs='+', help="tab-separated table files with bin ids as their primary key")
-    join_parser.add_argument('-f', '--file', default='stdout', help="print results to file")
-    join_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
-
     # Find SSU rRNAs in sequences
     ssu_finder_parser = subparsers.add_parser('ssu_finder',
                                               formatter_class=CustomHelpFormatter,
@@ -579,38 +508,6 @@ Example: checkm qa ./output/lineage.ms ./output
     ssu_finder_parser.add_argument('-c', '--concatenate', help='concatenate hits that are within the specified number of base pairs', type=int, default=200)
     ssu_finder_parser.add_argument('-t', '--threads', help='number of threads', type=int, default=1)
     ssu_finder_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
-
-    # Compare two sets of bins (e.g., from alternative binning methods)
-    bin_compare_parser = subparsers.add_parser('bin_compare',
-                                               formatter_class=CustomHelpFormatter,
-                                               description='Compare two sets of bins.',
-                                               epilog='Example: checkm bin_compare seqs.fna ./bins1 ./bins2 bin_comparison.tsv')
-    bin_compare_parser.add_argument('seq_file', help="sequences used to generate bins (fasta format)")
-    bin_compare_parser.add_argument('bin_dir1', help="directory containing bins (fasta format)")
-    bin_compare_parser.add_argument('bin_dir2', help="directory containing bins (fasta format)")
-    bin_compare_parser.add_argument('output_file', help="output file showing overlap between bins")
-
-    bin_compare_parser.add_argument('-x', '--extension1', default='fna', help="extension of bins in directory 1")
-    bin_compare_parser.add_argument('-y', '--extension2', default='fna', help="extension of bins in directory 2")
-    bin_compare_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
-
-    # Remove redundant bins from several binning attempts
-    bin_union_parser = subparsers.add_parser('bin_union',
-                                               formatter_class=argparse.RawDescriptionHelpFormatter,
-                                               description='Create a non-redundant set of bins from multiple sets of bins',
-                                               epilog='''Example: checkm bin_union_output bins1/ checkm_qa_tab_table1.tsv bins2/ checkm_qa_tab_table2.tsv
-
-The checkm_qa_tab_table.tsv files are generated through this process for each bin.
-checkm qa --tab_table ./output/lineage.ms ./output >checkm_qa_tab_table.tsv
-
-Also note that sequences can be assigned to multiple resulting bins.
-i.e. checkm unique will now fail''')
-    bin_union_parser.add_argument('output_dir', help="directory for outputting")
-    bin_union_parser.add_argument('bin_or_checkm_qa_table', nargs='+', help="bin directories and checkm_qa_table_tables (must have at least one of each)")
-    bin_union_parser.add_argument('-x', '--extension', default='fna', help="extension of bins in bin directories")
-    bin_union_parser.add_argument('--min_completeness', help="ignore bins with less completeness than this, as a percentage e.g. '70'", type=float, default=70)
-    bin_union_parser.add_argument('--max_contamination', help="ignore bins with more contamination than this, as a percentage e.g. '10'", type=float, default=10)
-    bin_union_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
     # Identify bins with complementary marker sets
     merge_parser = subparsers.add_parser('merge',
@@ -638,7 +535,7 @@ i.e. checkm unique will now fail''')
     outlier_parser.add_argument('bin_dir', help="directory containing bins (fasta format)")
     outlier_parser.add_argument('tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
     outlier_parser.add_argument('output_file', help="print results to file")
-    outlier_parser.add_argument('-d', '--distributions', help='reference distribution used to identify outliers; integer between 0 and 100', type=int, choices=xrange(0, 101), default=95, metavar='dist_value')
+    outlier_parser.add_argument('-d', '--distributions', help='reference distribution used to identify outliers; integer between 0 and 100', type=int, choices=range(0, 101), default=95, metavar='dist_value')
     outlier_parser.add_argument('-r', '--report_type', help="report sequences that are outliers in 'all' or 'any' reference distribution", choices=['any', 'all'], default='any')
     outlier_parser.add_argument('-x', '--extension', default='fna', help="extension of bins (other files in directory are ignored)")
     outlier_parser.add_argument('-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
@@ -713,7 +610,7 @@ i.e. checkm unique will now fail''')
         else:
             checkmParser.parseOptions(args)
     except SystemExit:
-        print "\n  Controlled exit resulting from an unrecoverable error or warning."
+        print ("\n  Controlled exit resulting from an unrecoverable error or warning.")
     except:
-        print "\nUnexpected error:", sys.exc_info()[0]
+        print ("\nUnexpected error: %s"%(sys.exc_info()[0]))
         raise
