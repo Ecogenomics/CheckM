@@ -1,6 +1,15 @@
-# CheckM for Python 3
+# CheckM
 
-This branch is the initial release of CheckM for Python 3. CheckM has been ported to Python 3 as Python 2 is reaching [end of life](https://pythonclock.org/) on January 1, 2020. CheckM will be updated from v1.0.18 to v1.1.x on Dec. 1, 2019. CheckM v1.1.x will require Python 3 and there are no plans to support Python 2 moving forward. Apologies for any issues this may cause.
+[![version status](https://img.shields.io/pypi/v/checkm-genome.svg)](https://pypi.python.org/pypi/checkm-genome)
+[![Bioconda](https://img.shields.io/conda/vn/bioconda/checkm-genome.svg?color=green)](https://anaconda.org/bioconda/checkm-genome)
+[![Downloads](https://pepy.tech/badge/checkm-genome/month)](https://pepy.tech/project/checkm-genome)
+[![BioConda Install](https://img.shields.io/conda/dn/bioconda/checkm-genome.svg?style=flag&label=BioConda%20install)](https://anaconda.org/bioconda/checkm-genome)
+
+# Migration to Python 3
+
+CheckM has been ported to Python 3 to accomodate Python 2 reaching [end of life](https://pythonclock.org/) on January 1, 2020. CheckM >=1.1.0 require Python 3 and Python 2 is no longer supported. Apologies for any issues this may cause.
+
+# Installing and using CheckM
 
 Massive thanks to [baudrly](https://github.com/baudrly), [Vini Salazar](https://github.com/vinisalazar), and [Asaf Peer](https://github.com/asafpr) for initial Python 2 to 3 porting.
 
