@@ -8,7 +8,7 @@
 # Installing and using CheckM
 Please see the project home page for usage details and installation instructions: https://github.com/Ecogenomics/CheckM/wiki
 
-Note: we do not recommend installing CheckM from the master branch. This may be unstable. Please install an official release of CheckM or use pip.
+We do not recommend installing CheckM from the master branch. This may be unstable. Please install an official release of CheckM or use pip.
 
 # Migration to Python 3
 
