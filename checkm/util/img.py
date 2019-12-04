@@ -362,9 +362,9 @@ class IMG(object):
                 if scaffold:
                     familyIdToScaffoldIds[tigrId] = scaffolds
         except:
-            print '[BUG]: __genomeIdToClusterScaffold'
-            print sys.exc_info()[0]
-            print genomeId, geneId, tigrId, pfamId
+            print ('[BUG]: __genomeIdToClusterScaffold')
+            print (sys.exc_info()[0])
+            print (genomeId, geneId, tigrId, pfamId)
             sys.exit(1)
 
         return familyIdToScaffoldIds
@@ -482,9 +482,9 @@ class IMG(object):
                 if positions:
                     familyIdToGenomePositions[tigrId] = positions
         except:
-            print '[BUG]: __genomeFamilyPositions'
-            print sys.exc_info()[0]
-            print genomeId, geneId, tigrId, pfamId
+            print ('[BUG]: __genomeFamilyPositions')
+            print (sys.exc_info()[0])
+            print (genomeId, geneId, tigrId, pfamId)
             sys.exit(1)
 
         return familyIdToGenomePositions
