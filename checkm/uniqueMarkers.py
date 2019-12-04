@@ -51,7 +51,7 @@ def getOppositeRankSpecificTaxonId(cursor, *args):
     query.append(' %s != \'%s\' ' % (ranks[len(args) - 1], args[-1]))
     query.append(' %s IS NULL' % ranks[len(args)])
     query_string = 'AND'.join(query)
-    print query_string
+    print (query_string)
     result = cursor.execute('SELECT Id, "Count" FROM taxons WHERE %s' % query_string)
     return result.fetchall()
 
@@ -135,7 +135,7 @@ def doWork(args):
             des_markers.append(getDescriptiveMarkers(cur, i))
 
         for des_acc, des_name in des_markers:
-            print des_acc, des_name
+            print (des_acc, des_name)
 
 if __name__ == '__main__':
 
