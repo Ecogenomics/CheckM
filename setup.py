@@ -33,4 +33,5 @@ setup(
         "pysam >= 0.12.0.1",
         "dendropy >= 4.4.0",
         "setuptools"],
+    zip_safe=False
 )
