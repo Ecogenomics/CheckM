@@ -1,3 +1,6 @@
+1.1.1
+- fixes legacy Python 2 syntax issues (thanks to Sebastian Jaenicke!)
+
 1.1.0
 - code base ported to Python 3
 - massive thanks to baudrly, vinisalazar, and asafpr for initial Python 2 to 3 porting
