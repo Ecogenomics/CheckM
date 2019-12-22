@@ -179,6 +179,7 @@ class DBManager(mm.ManifestManager):
                     print ("Path [%s] exists and you have permission to write to this folder." % path)
                 else:
                     print ("Path [%s] exists but you do not have permission to write to this folder." % path)
+                    sys.exit(-1)
             else:
                 # path does not exist, try to make it
                 print ("Path [%s] does not exist so I will attempt to create it" % path)
@@ -187,7 +188,7 @@ class DBManager(mm.ManifestManager):
                     print ("Path [%s] has been created and you have permission to write to this folder." % path)
                     path_set = True
                 except Exception:
-                    print ("Unable to make the folder, Error was: %s" % sys.exc_info()[0])
+                    print ("Unable to make the folder; error was: %s" % sys.exc_info()[0])
                 minimal = True
 
         # (re)make the manifest file

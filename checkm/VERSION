@@ -1,3 +1,7 @@
+1.1.2
+- removed erroneous error message when setting root to CheckM reference data
+- fixed infinit loop issue when trying to install CheckM reference data to directory without write permission
+
 1.1.1
 - fixes legacy Python 2 syntax issues (thanks to Sebastian Jaenicke!)
 
