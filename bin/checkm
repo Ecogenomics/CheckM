@@ -109,7 +109,7 @@ def printHelp():
 
 if __name__ == '__main__':
     # initialize the options parser
-    parser = argparse.ArgumentParser(add_help=False)
+    parser = argparse.ArgumentParser('checkm', add_help=False)
     subparsers = parser.add_subparsers(help="--", dest='subparser_name')
 
     data_parser = subparsers.add_parser('data',
@@ -311,10 +311,10 @@ Example: checkm qa ./output/lineage.ms ./output
     taxonomy_wf_parser.add_argument('--tmpdir', action=ChangeTempAction, help="specify an alternative directory for temporary files")
 
     # generic arguments for plots
-    plot_need_qa_results_parser = argparse.ArgumentParser(add_help=False)
+    plot_need_qa_results_parser = argparse.ArgumentParser('plot_need_qa_results', add_help=False)
     plot_need_qa_results_parser.add_argument('results_dir', help="directory specified during qa command")
 
-    plot_parser = argparse.ArgumentParser(add_help=False)
+    plot_parser = argparse.ArgumentParser('plot', add_help=False)
     plot_parser.add_argument('bin_dir', help="directory containing bins to plot (fasta format)")
     plot_parser.add_argument('output_dir', help="directory to hold plots")
     plot_parser.add_argument('--image_type', default='png', choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
