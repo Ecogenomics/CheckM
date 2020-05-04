@@ -93,8 +93,8 @@ class Histogram(AbstractPlot):
     def plotOnAxes(self, axes, beforeCorrection, afterCorrection, xMin, xMax, yMin, yMax, bXLabel):  
         numBins = 100
         
-        n, bins, patches = axes.hist(beforeCorrection, numBins, normed=1, facecolor='blue', alpha=0.25, label='before correction')
-        n, bins, patches = axes.hist(afterCorrection, numBins, normed=1, facecolor='green', alpha=0.25, label='after correction')
+        n, bins, patches = axes.hist(beforeCorrection, numBins, density=1, facecolor='blue', alpha=0.25, label='before correction')
+        n, bins, patches = axes.hist(afterCorrection, numBins, density=1, facecolor='green', alpha=0.25, label='after correction')
         
         y = mlab.normpdf(bins, np.mean(beforeCorrection), np.std(beforeCorrection))
         axes.plot(bins, y, 'b--')

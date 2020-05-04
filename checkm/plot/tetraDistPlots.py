@@ -91,7 +91,7 @@ class TetraDistPlots(AbstractPlot):
             bins.append(binEnd)
             binEnd += binWidth
 
-        axesHist.hist(data, bins=bins, normed=True, color=(0.5, 0.5, 0.5))
+        axesHist.hist(data, bins=bins, density=True, color=(0.5, 0.5, 0.5))
         axesHist.set_xlabel(r'$\Delta$ TD')
         axesHist.set_ylabel('% windows (' + str(self.options.td_window_size) + ' bp)')
 

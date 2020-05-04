@@ -86,7 +86,7 @@ class GcPlots(AbstractPlot):
             bins.append(binEnd)
             binEnd += binWidth
 
-        axesHist.hist(data, bins=bins, normed=True, color=(0.5, 0.5, 0.5))
+        axesHist.hist(data, bins=bins, density=True, color=(0.5, 0.5, 0.5))
         axesHist.set_xlabel('% GC')
         axesHist.set_ylabel('% windows (' + str(self.options.gc_window_size) + ' bp)')
 
