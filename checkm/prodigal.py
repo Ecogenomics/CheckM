@@ -204,7 +204,10 @@ class ProdigalGeneFeatureParser():
                     if 'transl_table' in token:
                         self.translationTable = int(token[token.find('=') + 1:])
 
-            if line[0] == '#':
+            if line[0] == '#' or line.strip() == '"': 
+                # work around for Prodigal having lines with just a
+                # quotation on it when FASTA files have Windows style
+                # line endings                
                 continue
 
             lineSplit = line.split('\t')
