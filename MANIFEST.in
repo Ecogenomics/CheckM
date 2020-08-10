@@ -3,3 +3,4 @@ recursive-include docs *.txt
 include README.md
 include LICENSE
 include ./checkm/VERSION
+recursive-include custom_marker_sets *

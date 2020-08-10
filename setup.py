@@ -16,6 +16,7 @@ setup(
     packages=['checkm', 'checkm.plot', 'checkm.test', 'checkm.util'],
     scripts=['bin/checkm'],
     package_data={'checkm': ['VERSION', 'DATA_CONFIG']},
+    include_package_data=True,
     url='http://pypi.python.org/pypi/checkm/',
     license='GPL3',
     description='Assess the quality of putative genome bins.',
