@@ -10,6 +10,11 @@ Please see the project home page for usage details and installation instructions
 
 We do not recommend installing CheckM from the master branch. This may be unstable. Please install an official release of CheckM or use pip.
 
+## Estimating quality of CPR genomes
+
+Information about obtaining improved quality estimates for CPR (Patescibacteria) genomes can be found here:
+https://github.com/Ecogenomics/CheckM/wiki/Workflows#using-cpr-marker-set
+
 ## Migration to Python 3
 
 CheckM has been ported to Python 3 to accomodate Python 2 reaching [end of life](https://pythonclock.org/) on January 1, 2020. CheckM >=1.1.0 requires Python 3. Python 2 will no longer be actively supported. Apologies for any issues this may cause.
