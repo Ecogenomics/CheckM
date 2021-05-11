@@ -39,6 +39,7 @@ class ProdigalError(BaseException):
 
 class ProdigalRunner():
     """Wrapper for running prodigal."""
+
     def __init__(self, outDir):
         self.logger = logging.getLogger('timestamp')
 
@@ -50,7 +51,7 @@ class ProdigalRunner():
         self.gffFile = os.path.join(outDir, DefaultValues.PRODIGAL_GFF)
 
     def run(self, query, bNucORFs=True):
-    
+
         prodigal_input = query
 
         # decompress gzip input files
@@ -58,7 +59,7 @@ class ProdigalRunner():
             tmp_dir = tempfile.mkdtemp()
             prodigal_input = os.path.join(tmp_dir, os.path.basename(prodigal_input[0:-3]) + '.fna')
             writeFasta(seqs, prodigal_input)
-            
+
         # gather statistics about query file
         seqs = readFasta(prodigal_input)
         totalBases = 0
@@ -79,17 +80,17 @@ class ProdigalRunner():
                 procedureStr = 'single'  # estimate parameters from data
 
             if bNucORFs:
-                cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -d %s -i %s > %s 2> /dev/null' % (procedureStr, 
-                                                                                                    translationTable, 
-                                                                                                    aaGeneFile, 
-                                                                                                    ntGeneFile, 
-                                                                                                    prodigal_input, 
-                                                                                                    gffFile))
+                cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -d %s -i %s > %s 2> /dev/null' % (procedureStr,
+                                                                                                  translationTable,
+                                                                                                  aaGeneFile,
+                                                                                                  ntGeneFile,
+                                                                                                  prodigal_input,
+                                                                                                  gffFile))
             else:
-                cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -i %s > %s 2> /dev/null' % (procedureStr, 
-                                                                                            translationTable, 
-                                                                                            aaGeneFile, 
-                                                                                            prodigal_input, 
+                cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -i %s > %s 2> /dev/null' % (procedureStr,
+                                                                                            translationTable,
+                                                                                            aaGeneFile,
+                                                                                            prodigal_input,
                                                                                             gffFile))
 
             os.system(cmd)
@@ -129,7 +130,7 @@ class ProdigalRunner():
             os.remove(self.gffFile + '.' + str(translationTable))
             if bNucORFs:
                 os.remove(self.ntGeneFile + '.' + str(translationTable))
-                
+
         if prodigal_input.endswith('.gz'):
             shutil.rmtree(tmp_dir)
 
@@ -160,6 +161,7 @@ class ProdigalRunner():
 
 class ProdigalFastaParser():
     """Parses prodigal FASTA output."""
+
     def __init__(self):
         pass
 
@@ -182,6 +184,7 @@ class ProdigalFastaParser():
 
 class ProdigalGeneFeatureParser():
     """Parses prodigal FASTA output."""
+
     def __init__(self, filename):
         checkFileExists(filename)
 
@@ -204,10 +207,10 @@ class ProdigalGeneFeatureParser():
                     if 'transl_table' in token:
                         self.translationTable = int(token[token.find('=') + 1:])
 
-            if line[0] == '#' or line.strip() == '"': 
+            if line[0] == '#' or line.strip() == '"':
                 # work around for Prodigal having lines with just a
                 # quotation on it when FASTA files have Windows style
-                # line endings                
+                # line endings
                 continue
 
             lineSplit = line.split('\t')
@@ -230,10 +233,11 @@ class ProdigalGeneFeatureParser():
         """Build mask indicating which bases in a sequences are coding."""
 
         # safe way to calculate coding bases as it accounts
-        # for the potential of overlapping genes
+        # for the potential of overlapping genes; indices adjusted
+        # to account for GFF file using 1-based indexing
         codingBaseMask = np.zeros(self.lastCodingBase[seqId])
         for pos in self.genes[seqId].values():
-            codingBaseMask[pos[0]:pos[1] + 1] = 1
+            codingBaseMask[pos[0]-1:pos[1]] = 1
 
         return codingBaseMask
 
