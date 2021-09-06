@@ -84,7 +84,7 @@ class OptionsParser():
         if binFolder is not None:
             all_files = os.listdir(binFolder)
             for f in all_files:
-                if f.endswith(binExtension):
+                if f.endswith("." + binExtension):
                     binFile = os.path.join(binFolder, f)
                     if os.stat(binFile).st_size == 0:
                         self.logger.warning("Skipping bin %s as it has a size of 0 bytes." % f)
