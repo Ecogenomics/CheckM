@@ -21,7 +21,7 @@
 
 import logging
 
-import checkm.prettytable
+import checkm.prettytable as prettytable
 
 from checkm.defaultValues import DefaultValues
 from checkm.common import checkFileExists, reassignStdOut, restoreStdOut
