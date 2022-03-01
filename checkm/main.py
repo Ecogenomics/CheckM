@@ -75,7 +75,7 @@ class OptionsParser():
 
         action = options.action
         if action and action[0] == 'setRoot' and len(action) > 1:
-            DBM = DBManager(set_path=action[1])
+            DBM = DBManager(configFile = action[1], set_path=action[2])
         else:
             self.logger.error('Path to the CheckM reference data must be specified.')
 

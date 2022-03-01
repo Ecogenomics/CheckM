@@ -118,7 +118,7 @@ if __name__ == '__main__':
                                         epilog='Example: checkm data setRoot')
     data_parser.add_argument('action', nargs="+",
             help='''
-  setRoot <PATH>  -> set the data directory to <PATH> (requires permissions)
+  setRoot <CONFIG_PATH> <DB_PATH>  -> set the checkM DATA_CONFIG FILE to CONFIG_PATH and the checkm data directory to <DB_PATH> (requires permissions)
             ''')
 
     # determine placement of each genome bin in the genome tree
