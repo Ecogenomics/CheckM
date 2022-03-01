@@ -125,7 +125,7 @@ class DBManager(mm.ManifestManager):
         
         if action[0] == "setRoot":
             if len(action) > 1:
-                path = self.setRoot(path=action[2])
+                path = self.setRoot(path=action[1])
             else:
                 path = self.setRoot()
 
