@@ -74,8 +74,11 @@ class OptionsParser():
         self.logger.info('[CheckM - data] Check for database updates. [%s]' % options.action[0])
 
         action = options.action
-        if action and action[0] == 'setRoot' and len(action) > 1:
-            DBM = DBManager(set_path=action[1])
+        if action and action[0] == 'setRoot':
+            if len(action) > 2:
+                DBM = DBManager(set_path=action[1], configFile = action[2])
+            elif len(action) > 1:
+                DBM = DBManager(set_path=action[1])
         else:
             self.logger.error('Path to the CheckM reference data must be specified.')
 

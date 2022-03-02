@@ -34,9 +34,9 @@ class DBConfig(object):
     stored locally and where to look for remote updates. This class essentially exposes
     the DATA_CONFIG file as an object.
     """
-    def __init__(self):
+    def __init__(self, configFile):
         self.logger = logging.getLogger('timestamp')
-        self.configFile = os.path.abspath(resource_filename('checkm', 'DATA_CONFIG'))
+        self.configFile = configFile
         self.values = self.getConfig()
 
 #-----------------------------------------------------------------------------
@@ -97,10 +97,10 @@ class DBConfig(object):
 class DBManager(mm.ManifestManager):
 
     """Manage all aspects of data location and version control."""
-    def __init__(self, set_path=None):
+    def __init__(self, set_path=None, configFile = os.path.abspath(resource_filename('checkm', 'DATA_CONFIG')):
         mm.ManifestManager.__init__(self, timeout=15)
         self.logger = logging.getLogger('timestamp')
-        self.config = DBConfig()  # load inbuilt configuration
+        self.config = DBConfig(configFile = configFile)  # load inbuilt configuration
         self.type = self.config.values["manifestType"]
         
         if set_path:
