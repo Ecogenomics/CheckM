@@ -97,12 +97,12 @@ class DBConfig(object):
 class DBManager(mm.ManifestManager):
 
     """Manage all aspects of data location and version control."""
-    def __init__(self, set_path=None, configFile = os.path.abspath(resource_filename('checkm', 'DATA_CONFIG')):
+    def __init__(self, set_path=None, configFile = os.path.abspath(resource_filename('checkm', 'DATA_CONFIG'))):
         mm.ManifestManager.__init__(self, timeout=15)
         self.logger = logging.getLogger('timestamp')
         self.config = DBConfig(configFile = configFile)  # load inbuilt configuration
         self.type = self.config.values["manifestType"]
-        
+
         if set_path:
             self.setRoot(set_path)
 
