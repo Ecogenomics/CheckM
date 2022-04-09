@@ -24,6 +24,7 @@ import sys
 import logging
 from pkg_resources import resource_filename
 import json
+from collections import namedtuple
 
 import checkm.manifestManager as mm
 
@@ -34,12 +35,13 @@ class DBConfig(object):
     stored locally and where to look for remote updates. This class essentially exposes
     the DATA_CONFIG file as an object.
     """
+
     def __init__(self, configFile):
         self.logger = logging.getLogger('timestamp')
         self.configFile = configFile
         self.values = self.getConfig()
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Read and write local config file
 
     def getConfig(self):
@@ -51,9 +53,9 @@ class DBConfig(object):
                     return json.loads(line)
 
         except Exception:
-            self.logger.error("There seems to be a problem with loading the CheckM config file")
-            self.logger.error("Please check the permissions / existence / contents of:")
-            self.logger.error(self.configFile)
+            print("There seems to be a problem with loading the CheckM config file")
+            print("Please check the permissions / existence / contents of:")
+            print(self.configFile)
             raise
 
         return {}
@@ -64,21 +66,27 @@ class DBConfig(object):
             with open(self.configFile, 'w') as config_fh:
                 config_fh.write(json.dumps(self.values))
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Display config
 
     def displayConfig(self):
         """Print out the contents of the CheckM config file"""
-        self.logger.info("Contents of the config located at:\n\n\t%s\n" % (self.configFile))
-        self.logger.info("-------------------------------------------------------------------------------")
+        self.logger.info(
+            "Contents of the config located at:\n\n\t%s\n" % (self.configFile))
+        self.logger.info(
+            "-------------------------------------------------------------------------------")
         self.logger.info("Data root: %s" % self.values["dataRoot"])
-        self.logger.info("Local manifest name: %s" % self.values["remoteManifestURL"])
-        self.logger.info("Manifest type: %s" % self.values["remoteManifestName"])
+        self.logger.info("Local manifest name: %s" %
+                         self.values["remoteManifestURL"])
+        self.logger.info("Manifest type: %s" %
+                         self.values["remoteManifestName"])
         self.logger.info("Remote URL: %s" % self.values["localManifestName"])
-        self.logger.info("Remote manifest name: %s" % self.values["manifestType"])
-        self.logger.info("-------------------------------------------------------------------------------")
+        self.logger.info("Remote manifest name: %s" %
+                         self.values["manifestType"])
+        self.logger.info(
+            "-------------------------------------------------------------------------------")
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Housekeeping
 
     def checkPermissions(self):
@@ -86,10 +94,10 @@ class DBConfig(object):
         try:
             open(self.configFile, 'a')
         except (IOError, e):
-            print ("You do not seem to have permission to edit the checkm config file")
-            print ("located at %s" % self.configFile)
-            print ("Please try again with updated privileges. Error was:\n")
-            print (e)
+            print("You do not seem to have permission to edit the checkm config file")
+            print("located at %s" % self.configFile)
+            print("Please try again with updated privileges. Error was:\n")
+            print(e)
             return False
         return True
 
@@ -97,32 +105,49 @@ class DBConfig(object):
 class DBManager(mm.ManifestManager):
 
     """Manage all aspects of data location and version control."""
-    def __init__(self, set_path=None, configFile = os.path.abspath(resource_filename('checkm', 'DATA_CONFIG'))):
+
+    def __init__(self, set_path=None, configFile=None):
         mm.ManifestManager.__init__(self, timeout=15)
+
         self.logger = logging.getLogger('timestamp')
-        self.config = DBConfig(configFile = configFile)  # load inbuilt configuration
-        self.type = self.config.values["manifestType"]
 
-        if set_path:
-            self.setRoot(set_path)
+        # check if CheckM data path is indicated by environmental variable
+        if 'CHECKM_DATA_PATH' in os.environ:
+            data_root = os.environ['CHECKM_DATA_PATH']
 
-        if set_path:
-            self.setRoot(set_path)
+            Config = namedtuple('Config', 'values')
+            self.config = Config(values={'dataRoot': data_root})
+            self.config.values['dataRoot'] = data_root
+        else:
+            # read data path from DATA_CONFIG file
+            if configFile is None:
+                configFile = os.path.abspath(
+                    resource_filename('checkm', 'DATA_CONFIG'))
 
-        # check that the data root is legit
-        manifestFile = os.path.join(self.config.values["dataRoot"], mm.__MANIFEST__)
-        if not os.path.exists(self.config.values["dataRoot"]) or not os.path.exists(manifestFile):
-            self.config.values["dataRoot"] = ""
+            self.config = DBConfig(configFile=configFile)
+            self.type = self.config.values["manifestType"]
 
-        if self.config.values["dataRoot"] == "":
-            # no data folder set.
-            print ("It seems that the CheckM data folder has not been set yet or has been removed. Please run 'checkm data setRoot'.")
-            if not self.setRoot():
-                print("Sorry, CheckM cannot run without a valid data folder.")
+            if set_path:
+                self.setRoot(set_path)
+
+            if set_path:
+                self.setRoot(set_path)
+
+            # check that the data root is legit
+            manifestFile = os.path.join(
+                self.config.values["dataRoot"], mm.__MANIFEST__)
+            if not os.path.exists(self.config.values["dataRoot"]) or not os.path.exists(manifestFile):
+                self.config.values["dataRoot"] = ""
+
+            if self.config.values["dataRoot"] == "":
+                # no data folder set.
+                print("It seems that the CheckM data folder has not been set yet or has been removed. Please run 'checkm data setRoot'.")
+                if not self.setRoot():
+                    print("CheckM cannot run without a valid data folder.")
 
     def runAction(self, action):
         """Main entry point for the updating code"""
-        
+
         if action[0] == "setRoot":
             if len(action) > 1:
                 path = self.setRoot(path=action[1])
@@ -132,7 +157,8 @@ class DBManager(mm.ManifestManager):
             if path is None:
                 self.logger.info("Data location not changed")
             else:
-                self.logger.info("Data location successfully changed to: %s" % path)
+                self.logger.info(
+                    "Data location successfully changed to: %s" % path)
         else:
             self.logger.error("Unknown action: %s" % action[0])
 
@@ -170,29 +196,34 @@ class DBManager(mm.ManifestManager):
             else:
                 path = os.path.abspath(os.path.expanduser(path))
 
-            print ("")
+            print("")
             if os.path.exists(path):
                 # path exists
                 if os.access(path, os.W_OK):
                     # path is writable
                     path_set = True
-                    print ("Path [%s] exists and you have permission to write to this folder." % path)
+                    print(
+                        "Path [%s] exists and you have permission to write to this folder." % path)
                 else:
-                    print ("Path [%s] exists but you do not have permission to write to this folder." % path)
+                    print(
+                        "Path [%s] exists but you do not have permission to write to this folder." % path)
                     sys.exit(-1)
             else:
                 # path does not exist, try to make it
-                print ("Path [%s] does not exist so I will attempt to create it" % path)
+                print(
+                    "Path [%s] does not exist so I will attempt to create it" % path)
                 try:
                     self.makeSurePathExists(path)
-                    print ("Path [%s] has been created and you have permission to write to this folder." % path)
+                    print(
+                        "Path [%s] has been created and you have permission to write to this folder." % path)
                     path_set = True
                 except Exception:
-                    print ("Unable to make the folder; error was: %s" % sys.exc_info()[0])
+                    print("Unable to make the folder; error was: %s" %
+                          sys.exc_info()[0])
                 minimal = True
 
         # (re)make the manifest file
-        print ("(re) creating manifest file (please be patient).")
+        print("(re) creating manifest file (please be patient).")
         self.createManifest(path, self.config.values["localManifestName"])
 
         return path
@@ -200,8 +231,8 @@ class DBManager(mm.ManifestManager):
     def checkPermissions(self):
         """See if the user has permission to write to the data directory"""
         if not os.access(self.config.values["dataRoot"], os.W_OK):
-            print ("You do not seem to have permission to edit the CheckM data folder")
-            print ("located at %s" % self.config.values["dataRoot"])
+            print("You do not seem to have permission to edit the CheckM data folder")
+            print("located at %s" % self.config.values["dataRoot"])
             return False
 
         return True

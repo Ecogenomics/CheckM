@@ -1,3 +1,6 @@
+1.1.6
+- allow CheckM data path to be set through a CHECKM_DATA_PATH environmental variable
+
 1.1.5
 - fixed small bug with maxibor's PR
 

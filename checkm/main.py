@@ -18,9 +18,6 @@
 import os
 import sys
 import logging
-from collections import defaultdict
-
-import numpy as np
 
 from checkm.defaultValues import DefaultValues
 from checkm.timeKeeper import TimeKeeper
@@ -41,13 +38,11 @@ from checkm.merger import Merger
 from checkm.profile import Profile
 from checkm.binTools import BinTools
 from checkm.ssuFinder import SSU_Finder
-from checkm.common import (makeSurePathExists, 
-                            checkFileExists, 
-                            binIdFromFilename, 
-                            reassignStdOut, 
-                            restoreStdOut, 
-                            getBinIdsFromOutDir, 
-                            checkDirExists)
+from checkm.common import (makeSurePathExists,
+                           checkFileExists,
+                           binIdFromFilename,
+                           getBinIdsFromOutDir,
+                           checkDirExists)
 
 from checkm.plot.gcPlots import GcPlots
 from checkm.plot.codingDensityPlots import CodingDensityPlots
@@ -71,16 +66,18 @@ class OptionsParser():
         self.timeKeeper = TimeKeeper()
 
     def updateCheckM_DB(self, options):
-        self.logger.info('[CheckM - data] Check for database updates. [%s]' % options.action[0])
+        self.logger.info(
+            '[CheckM - data] Check for database updates. [%s]' % options.action[0])
 
         action = options.action
         if action and action[0] == 'setRoot':
             if len(action) > 2:
-                DBM = DBManager(set_path=action[1], configFile = action[2])
+                DBM = DBManager(set_path=action[1], configFile=action[2])
             elif len(action) > 1:
                 DBM = DBManager(set_path=action[1])
         else:
-            self.logger.error('Path to the CheckM reference data must be specified.')
+            self.logger.error(
+                'Path to the CheckM reference data must be specified.')
 
     def binFiles(self, binFolder, binExtension):
         binFiles = []
@@ -90,19 +87,22 @@ class OptionsParser():
                 if f.endswith(binExtension):
                     binFile = os.path.join(binFolder, f)
                     if os.stat(binFile).st_size == 0:
-                        self.logger.warning("Skipping bin %s as it has a size of 0 bytes." % f)
+                        self.logger.warning(
+                            "Skipping bin %s as it has a size of 0 bytes." % f)
                     else:
                         binFiles.append(binFile)
 
         if not binFiles:
-            self.logger.error("No bins found. Check the extension (-x) used to identify bins.")
+            self.logger.error(
+                "No bins found. Check the extension (-x) used to identify bins.")
             sys.exit(1)
 
         return sorted(binFiles)
 
     def tree(self, options):
         """Tree command"""
-        self.logger.info('[CheckM - tree] Placing bins in reference genome tree.')
+        self.logger.info(
+            '[CheckM - tree] Placing bins in reference genome tree.')
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -130,56 +130,64 @@ class OptionsParser():
 
         # write model information to file
         markerSetParser = MarkerSetParser(options.threads)
-        hmmModelInfoFile = os.path.join(options.output_dir, 'storage', DefaultValues.PHYLO_HMM_MODEL_INFO)
+        hmmModelInfoFile = os.path.join(
+            options.output_dir, 'storage', DefaultValues.PHYLO_HMM_MODEL_INFO)
         markerSetParser.writeBinModels(binIdToModels, hmmModelInfoFile)
 
         # calculate statistics for each genome bin
-        
+
         binStats = BinStatistics(options.threads)
-        binStats.calculate(binFiles, options.output_dir, DefaultValues.BIN_STATS_PHYLO_OUT)
+        binStats.calculate(binFiles, options.output_dir,
+                           DefaultValues.BIN_STATS_PHYLO_OUT)
 
         # align identified marker genes
-        
+
         HA = HmmerAligner(options.threads)
         resultsParser = HA.makeAlignmentToPhyloMarkers(options.output_dir,
-                                                            DefaultValues.PHYLO_HMM_MODELS,
-                                                            DefaultValues.HMMER_TABLE_PHYLO_OUT,
-                                                            binIdToModels,
-                                                            False,
-                                                            DefaultValues.E_VAL,
-                                                            DefaultValues.LENGTH,
-                                                            False,
-                                                            os.path.join(options.output_dir, 'storage', 'tree')
-                                                            )
+                                                       DefaultValues.PHYLO_HMM_MODELS,
+                                                       DefaultValues.HMMER_TABLE_PHYLO_OUT,
+                                                       binIdToModels,
+                                                       False,
+                                                       DefaultValues.E_VAL,
+                                                       DefaultValues.LENGTH,
+                                                       False,
+                                                       os.path.join(
+                                                           options.output_dir, 'storage', 'tree')
+                                                       )
 
         # place bins into genome tree
-        
-        pplacer = PplacerRunner(threads=options.pplacer_threads)  # fix at one thread to keep memory requirements reasonable
-        pplacer.run(binFiles, resultsParser, options.output_dir, options.bReducedTree)
+
+        # fix at one thread to keep memory requirements reasonable
+        pplacer = PplacerRunner(threads=options.pplacer_threads)
+        pplacer.run(binFiles, resultsParser,
+                    options.output_dir, options.bReducedTree)
 
         self.timeKeeper.printTimeStamp()
 
     def treeQA(self, options):
         """QA command"""
-        self.logger.info('[CheckM - tree_qa] Assessing phylogenetic markers found in each bin.')
+        self.logger.info(
+            '[CheckM - tree_qa] Assessing phylogenetic markers found in each bin.')
 
         checkDirExists(options.tree_dir)
 
         # set HMM file for each bin
         markerSetParser = MarkerSetParser()
-        hmmModelInfoFile = os.path.join(options.tree_dir, 'storage', DefaultValues.PHYLO_HMM_MODEL_INFO)
+        hmmModelInfoFile = os.path.join(
+            options.tree_dir, 'storage', DefaultValues.PHYLO_HMM_MODEL_INFO)
         binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
 
         # calculate marker gene statistics
         RP = ResultsParser(binIdToModels)
         binStats = RP.analyseResults(options.tree_dir,
-                                          DefaultValues.BIN_STATS_PHYLO_OUT,
-                                          DefaultValues.HMMER_TABLE_PHYLO_OUT)
+                                     DefaultValues.BIN_STATS_PHYLO_OUT,
+                                     DefaultValues.HMMER_TABLE_PHYLO_OUT)
 
         # determine taxonomy of each bin
-        
+
         treeParser = TreeParser()
-        treeParser.printSummary(options.out_format, options.tree_dir, RP, options.bTabTable, options.file, binStats)
+        treeParser.printSummary(
+            options.out_format, options.tree_dir, RP, options.bTabTable, options.file, binStats)
 
         if options.file != '':
             self.logger.info('QA information written to: ' + options.file)
@@ -188,24 +196,26 @@ class OptionsParser():
 
     def lineageSet(self, options, db=None):
         """Lineage set command"""
-        self.logger.info('[CheckM - lineage_set] Inferring lineage-specific marker sets.')
+        self.logger.info(
+            '[CheckM - lineage_set] Inferring lineage-specific marker sets.')
 
         checkDirExists(options.tree_dir)
 
         # set HMM file for each bin
         markerSetParser = MarkerSetParser()
-        hmmModelInfoFile = os.path.join(options.tree_dir, 'storage', DefaultValues.PHYLO_HMM_MODEL_INFO)
+        hmmModelInfoFile = os.path.join(
+            options.tree_dir, 'storage', DefaultValues.PHYLO_HMM_MODEL_INFO)
         binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
 
         # calculate marker gene statistics
         resultsParser = ResultsParser(binIdToModels)
         resultsParser.analyseResults(options.tree_dir,
-                                      DefaultValues.BIN_STATS_PHYLO_OUT,
-                                      DefaultValues.HMMER_TABLE_PHYLO_OUT)
+                                     DefaultValues.BIN_STATS_PHYLO_OUT,
+                                     DefaultValues.HMMER_TABLE_PHYLO_OUT)
 
         # These options are incompatible with how the lineage-specific marker set is selected, so
         # the default values are currently hard-coded
-        
+
         options.num_genomes_markers = 2
         options.bootstrap = 0
         options.bRequireTaxonomy = False
@@ -217,14 +227,14 @@ class OptionsParser():
                                     options.bForceDomain, options.bRequireTaxonomy,
                                     resultsParser, options.unique, options.multi)
 
-        
         self.logger.info('Marker set written to: ' + options.marker_file)
 
         self.timeKeeper.printTimeStamp()
 
     def taxonList(self, options, db=None):
         """Lineage set command"""
-        self.logger.info('[CheckM - taxon_list] Listing available taxonomic-specific marker sets.')
+        self.logger.info(
+            '[CheckM - taxon_list] Listing available taxonomic-specific marker sets.')
 
         taxonParser = TaxonParser()
         taxonParser.list(options.rank)
@@ -233,24 +243,27 @@ class OptionsParser():
 
     def taxonSet(self, options, db=None):
         """Taxon set command"""
-        self.logger.info('[CheckM - taxon_set] Generate taxonomic-specific marker set.')
+        self.logger.info(
+            '[CheckM - taxon_set] Generate taxonomic-specific marker set.')
 
         path = os.path.split(options.marker_file)[0]
         if path:
             makeSurePathExists(path)
 
         taxonParser = TaxonParser()
-        bValidSet = taxonParser.markerSet(options.rank, options.taxon, options.marker_file)
+        bValidSet = taxonParser.markerSet(
+            options.rank, options.taxon, options.marker_file)
 
         if bValidSet:
-            
+
             self.logger.info('Marker set written to: ' + options.marker_file)
 
         self.timeKeeper.printTimeStamp()
 
     def analyze(self, options, db=None):
         """Analyze command"""
-        self.logger.info('[CheckM - analyze] Identifying marker genes in bins.')
+        self.logger.info(
+            '[CheckM - analyze] Identifying marker genes in bins.')
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -265,7 +278,8 @@ class OptionsParser():
         makeSurePathExists(options.output_dir)
         makeSurePathExists(os.path.join(options.output_dir, 'bins'))
         makeSurePathExists(os.path.join(options.output_dir, 'storage'))
-        makeSurePathExists(os.path.join(options.output_dir, 'storage', 'aai_qa'))
+        makeSurePathExists(os.path.join(
+            options.output_dir, 'storage', 'aai_qa'))
 
         # find marker genes in genome bins
         mgf = MarkerGeneFinder(options.threads)
@@ -280,10 +294,12 @@ class OptionsParser():
 
         markerSetParser = MarkerSetParser(options.threads)
         binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.output_dir,
-                                                             getBinIdsFromOutDir(options.output_dir),
+                                                             getBinIdsFromOutDir(
+                                                                 options.output_dir),
                                                              options.marker_file)
 
-        hmmModelInfoFile = os.path.join(options.output_dir, 'storage', DefaultValues.CHECKM_HMM_MODEL_INFO)
+        hmmModelInfoFile = os.path.join(
+            options.output_dir, 'storage', DefaultValues.CHECKM_HMM_MODEL_INFO)
         markerSetParser.writeBinModels(binIdToModels, hmmModelInfoFile)
 
         self.timeKeeper.printTimeStamp()
@@ -297,52 +313,57 @@ class OptionsParser():
         # align marker genes with multiple hits within a bin
         HA = HmmerAligner(options.threads)
         HA.makeAlignmentsOfMultipleHits(options.output_dir,
-                                          markerFile,
-                                          DefaultValues.HMMER_TABLE_OUT,
-                                          binIdToModels,
-                                          binIdToBinMarkerSets,
-                                          False,
-                                          DefaultValues.E_VAL,
-                                          DefaultValues.LENGTH,
-                                          os.path.join(options.output_dir, 'storage', 'aai_qa')
-                                          )
+                                        markerFile,
+                                        DefaultValues.HMMER_TABLE_OUT,
+                                        binIdToModels,
+                                        binIdToBinMarkerSets,
+                                        False,
+                                        DefaultValues.E_VAL,
+                                        DefaultValues.LENGTH,
+                                        os.path.join(
+                                            options.output_dir, 'storage', 'aai_qa')
+                                        )
 
         self.timeKeeper.printTimeStamp()
 
         # calculate statistics for each genome bin
         binStats = BinStatistics(options.threads)
-        binStats.calculate(binFiles, options.output_dir, DefaultValues.BIN_STATS_OUT)
+        binStats.calculate(binFiles, options.output_dir,
+                           DefaultValues.BIN_STATS_OUT)
 
         self.timeKeeper.printTimeStamp()
 
         # align top hit to each marker if requested
         if options.bAlignTopHit:
-            alignmentOutputFolder = os.path.join(options.output_dir, 'storage', 'alignments')
+            alignmentOutputFolder = os.path.join(
+                options.output_dir, 'storage', 'alignments')
             makeSurePathExists(alignmentOutputFolder)
 
-            
             HA = HmmerAligner(options.threads)
             resultsParser = HA.makeAlignmentTopHit(options.output_dir,
-                                                                options.marker_file,
-                                                                DefaultValues.HMMER_TABLE_OUT,
-                                                                binIdToModels,
-                                                                False,
-                                                                DefaultValues.E_VAL,
-                                                                DefaultValues.LENGTH,
-                                                                True,
-                                                                alignmentOutputFolder
-                                                                )
+                                                   options.marker_file,
+                                                   DefaultValues.HMMER_TABLE_OUT,
+                                                   binIdToModels,
+                                                   False,
+                                                   DefaultValues.E_VAL,
+                                                   DefaultValues.LENGTH,
+                                                   True,
+                                                   alignmentOutputFolder
+                                                   )
 
             # report marker gene data
-            fout = open(os.path.join(alignmentOutputFolder, 'alignment_info.tsv'), 'w')
+            fout = open(os.path.join(alignmentOutputFolder,
+                        'alignment_info.tsv'), 'w')
             fout.write('Marker Id\tLength (bp)\n')
-            markerIds = resultsParser.models[list(resultsParser.models.keys())[0]].keys()
+            markerIds = resultsParser.models[list(
+                resultsParser.models.keys())[0]].keys()
             for markerId in markerIds:
-                fout.write('%s\t%d\n' % (markerId, resultsParser.models[list(resultsParser.models.keys())[0]][markerId].leng))
+                fout.write('%s\t%d\n' % (markerId, resultsParser.models[list(
+                    resultsParser.models.keys())[0]][markerId].leng))
             fout.close()
 
-            
-            self.logger.info('Alignments to top hits stored in: ' + alignmentOutputFolder)
+            self.logger.info(
+                'Alignments to top hits stored in: ' + alignmentOutputFolder)
 
             self.timeKeeper.printTimeStamp()
 
@@ -360,14 +381,16 @@ class OptionsParser():
         aai.run(options.aai_strain, options.analyze_dir, options.alignment_file)
 
         # get HMM file for each bin
-        
+
         markerSetParser = MarkerSetParser(options.threads)
 
-        hmmModelInfoFile = os.path.join(options.analyze_dir, 'storage', DefaultValues.CHECKM_HMM_MODEL_INFO)
+        hmmModelInfoFile = os.path.join(
+            options.analyze_dir, 'storage', DefaultValues.CHECKM_HMM_MODEL_INFO)
         binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
 
         binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.analyze_dir,
-                                                             getBinIdsFromOutDir(options.analyze_dir),
+                                                             getBinIdsFromOutDir(
+                                                                 options.analyze_dir),
                                                              options.marker_file,
                                                              options.exclude_markers)
 
@@ -383,17 +406,16 @@ class OptionsParser():
                           bSkipAdjCorrection=options.bSkipAdjCorrection
                           )
 
-        
-        RP.printSummary(options.out_format, 
-                        aai, binIdToBinMarkerSets, 
-                        options.bIndividualMarkers, 
-                        options.coverage_file, 
-                        options.bTabTable, 
-                        options.file, 
+        RP.printSummary(options.out_format,
+                        aai, binIdToBinMarkerSets,
+                        options.bIndividualMarkers,
+                        options.coverage_file,
+                        options.bTabTable,
+                        options.file,
                         anaFolder=options.analyze_dir)
-        RP.cacheResults(options.analyze_dir, 
-                            binIdToBinMarkerSets, 
-                            options.bIndividualMarkers)
+        RP.cacheResults(options.analyze_dir,
+                        binIdToBinMarkerSets,
+                        options.bIndividualMarkers)
 
         if options.file != '':
             self.logger.info('QA information written to: ' + options.file)
@@ -402,7 +424,8 @@ class OptionsParser():
 
     def gcPlot(self, options):
         """GC plot command"""
-        self.logger.info('[CheckM - gc_plot] Creating GC histogram and delta-GC plot.')
+        self.logger.info(
+            '[CheckM - gc_plot] Creating GC histogram and delta-GC plot.')
 
         checkDirExists(options.bin_dir)
         makeSurePathExists(options.output_dir)
@@ -412,13 +435,15 @@ class OptionsParser():
         plots = GcPlots(options)
         filesProcessed = 1
         for f in binFiles:
-            self.logger.info('Plotting GC plots for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
+            self.logger.info('Plotting GC plots for %s (%d of %d)' %
+                             (f, filesProcessed, len(binFiles)))
             filesProcessed += 1
 
             plots.plot(f, options.distributions)
 
             binId = binIdFromFilename(f)
-            outputFile = os.path.join(options.output_dir, binId) + '.gc_plots.' + options.image_type
+            outputFile = os.path.join(
+                options.output_dir, binId) + '.gc_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -426,7 +451,8 @@ class OptionsParser():
 
     def codingDensityPlot(self, options):
         """Coding density plot command"""
-        self.logger.info('[CheckM - coding_plot] Creating coding density histogram and delta-CD plot.')
+        self.logger.info(
+            '[CheckM - coding_plot] Creating coding density histogram and delta-CD plot.')
 
         checkDirExists(options.bin_dir)
         makeSurePathExists(options.output_dir)
@@ -436,13 +462,15 @@ class OptionsParser():
         plots = CodingDensityPlots(options)
         filesProcessed = 1
         for f in binFiles:
-            self.logger.info('Plotting coding density plots for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
+            self.logger.info('Plotting coding density plots for %s (%d of %d)' % (
+                f, filesProcessed, len(binFiles)))
             filesProcessed += 1
 
             plots.plot(f, options.distributions)
 
             binId = binIdFromFilename(f)
-            outputFile = os.path.join(options.output_dir, binId) + '.coding_density_plots.' + options.image_type
+            outputFile = os.path.join(
+                options.output_dir, binId) + '.coding_density_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -450,7 +478,8 @@ class OptionsParser():
 
     def tetraDistPlot(self, options):
         """Tetranucleotide distance plot command"""
-        self.logger.info('[CheckM - tetra_plot] Creating tetra-distance histogram and delta-TD plot.')
+        self.logger.info(
+            '[CheckM - tetra_plot] Creating tetra-distance histogram and delta-TD plot.')
 
         checkDirExists(options.bin_dir)
         makeSurePathExists(options.output_dir)
@@ -463,13 +492,15 @@ class OptionsParser():
         plots = TetraDistPlots(options)
         filesProcessed = 1
         for f in binFiles:
-            self.logger.info('Plotting tetranuclotide distance plots for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
+            self.logger.info('Plotting tetranuclotide distance plots for %s (%d of %d)' % (
+                f, filesProcessed, len(binFiles)))
             filesProcessed += 1
 
             binId = binIdFromFilename(f)
             plots.plot(f, tetraSigs, options.distributions)
 
-            outputFile = os.path.join(options.output_dir, binId) + '.tetra_dist_plots.' + options.image_type
+            outputFile = os.path.join(
+                options.output_dir, binId) + '.tetra_dist_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -477,7 +508,8 @@ class OptionsParser():
 
     def distributionPlots(self, options):
         """Reference distribution plot command"""
-        self.logger.info('[CheckM - dist_plot] Creating GC, CD, and TD distribution plots.')
+        self.logger.info(
+            '[CheckM - dist_plot] Creating GC, CD, and TD distribution plots.')
 
         checkDirExists(options.bin_dir)
         makeSurePathExists(options.output_dir)
@@ -490,13 +522,15 @@ class OptionsParser():
         plots = DistributionPlots(options)
         filesProcessed = 1
         for f in binFiles:
-            self.logger.info('Plotting reference distribution plots for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
+            self.logger.info('Plotting reference distribution plots for %s (%d of %d)' % (
+                f, filesProcessed, len(binFiles)))
             filesProcessed += 1
 
             binId = binIdFromFilename(f)
             plots.plot(f, tetraSigs, options.distributions)
 
-            outputFile = os.path.join(options.output_dir, binId) + '.ref_dist_plots.' + options.image_type
+            outputFile = os.path.join(
+                options.output_dir, binId) + '.ref_dist_plots.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -504,8 +538,9 @@ class OptionsParser():
 
     def gcBiasPlot(self, options):
         """GC bias plot command"""
-        
-        self.logger.info('[CheckM - gc_bias_plot] Plotting bin coverage as a function of GC.')
+
+        self.logger.info(
+            '[CheckM - gc_bias_plot] Plotting bin coverage as a function of GC.')
 
         checkDirExists(options.bin_dir)
         makeSurePathExists(options.output_dir)
@@ -513,18 +548,21 @@ class OptionsParser():
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
         coverageWindows = CoverageWindows(options.threads)
-        coverageProfile = coverageWindows.run(binFiles, options.bam_file, options.all_reads, options.min_align, options.max_edit_dist, options.window_size)
+        coverageProfile = coverageWindows.run(
+            binFiles, options.bam_file, options.all_reads, options.min_align, options.max_edit_dist, options.window_size)
 
         plots = GcBiasPlot(options)
         filesProcessed = 1
         for f in binFiles:
-            self.logger.info('Plotting GC plots for %s (%d of %d)' % (f, filesProcessed, len(binFiles)))
+            self.logger.info('Plotting GC plots for %s (%d of %d)' %
+                             (f, filesProcessed, len(binFiles)))
             filesProcessed += 1
 
             plots.plot(f, coverageProfile)
 
             binId = binIdFromFilename(f)
-            outputFile = os.path.join(options.output_dir, binId) + '.gc_bias_plot.' + options.image_type
+            outputFile = os.path.join(
+                options.output_dir, binId) + '.gc_bias_plot.' + options.image_type
             plots.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -532,7 +570,7 @@ class OptionsParser():
 
     def nxPlot(self, options):
         """Nx-plot command"""
-        
+
         self.logger.info('[CheckM - nx_plot] Creating Nx-plots.')
 
         checkDirExists(options.bin_dir)
@@ -544,11 +582,13 @@ class OptionsParser():
         filesProcessed = 1
         for f in binFiles:
             binId = binIdFromFilename(f)
-            self.logger.info('Plotting Nx-plot for %s (%d of %d)' % (binId, filesProcessed, len(binFiles)))
+            self.logger.info('Plotting Nx-plot for %s (%d of %d)' %
+                             (binId, filesProcessed, len(binFiles)))
             filesProcessed += 1
             nx.plot(f)
 
-            outputFile = os.path.join(options.output_dir, binId) + '.nx_plot.' + options.image_type
+            outputFile = os.path.join(
+                options.output_dir, binId) + '.nx_plot.' + options.image_type
             nx.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -556,8 +596,9 @@ class OptionsParser():
 
     def lengthHistogram(self, options):
         """Sequence length histogram command"""
-        
-        self.logger.info('[CheckM - len_hist] Creating sequence length histogram.')
+
+        self.logger.info(
+            '[CheckM - len_hist] Creating sequence length histogram.')
 
         checkDirExists(options.bin_dir)
         makeSurePathExists(options.output_dir)
@@ -568,11 +609,13 @@ class OptionsParser():
         filesProcessed = 1
         for f in binFiles:
             binId = binIdFromFilename(f)
-            self.logger.info('Plotting sequence length histogram for %s (%d of %d)' % (binId, filesProcessed, len(binFiles)))
+            self.logger.info('Plotting sequence length histogram for %s (%d of %d)' % (
+                binId, filesProcessed, len(binFiles)))
             filesProcessed += 1
             plot.plot(f)
 
-            outputFile = os.path.join(options.output_dir, binId) + '.len_hist.' + options.image_type
+            outputFile = os.path.join(
+                options.output_dir, binId) + '.len_hist.' + options.image_type
             plot.savePlot(outputFile, dpi=options.dpi)
             self.logger.info('Plot written to: ' + outputFile)
 
@@ -581,7 +624,8 @@ class OptionsParser():
     def markerPlot(self, options):
         """Marker gene position plot command"""
 
-        self.logger.info('[CheckM - marker_plot] Creating marker gene position plot.')
+        self.logger.info(
+            '[CheckM - marker_plot] Creating marker gene position plot.')
 
         checkDirExists(options.bin_dir)
         makeSurePathExists(options.output_dir)
@@ -590,14 +634,16 @@ class OptionsParser():
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
         resultsParser = ResultsParser(None)
-        markerGeneStats = resultsParser.parseMarkerGeneStats(options.results_dir)
+        markerGeneStats = resultsParser.parseMarkerGeneStats(
+            options.results_dir)
         binStats = resultsParser.parseBinStatsExt(options.results_dir)
 
         plot = MarkerGenePosPlot(options)
         filesProcessed = 1
         for f in binFiles:
             binId = binIdFromFilename(f)
-            self.logger.info('Plotting marker gene position plot for %s (%d of %d)' % (binId, filesProcessed, len(binFiles)))
+            self.logger.info('Plotting marker gene position plot for %s (%d of %d)' % (
+                binId, filesProcessed, len(binFiles)))
             filesProcessed += 1
 
             if binId not in markerGeneStats or binId not in binStats:
@@ -606,7 +652,8 @@ class OptionsParser():
             bPlotted = plot.plot(f, markerGeneStats[binId], binStats[binId])
 
             if bPlotted:
-                outputFile = os.path.join(options.output_dir, binId) + '.marker_pos_plot.' + options.image_type
+                outputFile = os.path.join(
+                    options.output_dir, binId) + '.marker_pos_plot.' + options.image_type
                 plot.savePlot(outputFile, dpi=options.dpi)
                 self.logger.info('Plot written to: ' + outputFile)
             else:
@@ -616,7 +663,7 @@ class OptionsParser():
 
     def unbinned(self, options):
         """Unbinned Command"""
-        
+
         self.logger.info('[CheckM - unbinned] Identify unbinned sequences.')
 
         checkDirExists(options.bin_dir)
@@ -624,18 +671,21 @@ class OptionsParser():
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
         unbinned = Unbinned()
-        unbinned.run(binFiles, options.seq_file, options.output_seq_file, options.output_stats_file, options.min_seq_len)
+        unbinned.run(binFiles, options.seq_file, options.output_seq_file,
+                     options.output_stats_file, options.min_seq_len)
 
-        
-        self.logger.info('Unbinned sequences written to: ' + options.output_seq_file)
-        self.logger.info('Unbinned sequences statistics written to: ' + options.output_stats_file)
+        self.logger.info('Unbinned sequences written to: ' +
+                         options.output_seq_file)
+        self.logger.info(
+            'Unbinned sequences statistics written to: ' + options.output_stats_file)
 
         self.timeKeeper.printTimeStamp()
 
     def coverage(self, options):
         """Coverage command"""
-        
-        self.logger.info('[CheckM - coverage] Calculating coverage of sequences.')
+
+        self.logger.info(
+            '[CheckM - coverage] Calculating coverage of sequences.')
 
         checkDirExists(options.bin_dir)
         makeSurePathExists(os.path.dirname(options.output_file))
@@ -644,32 +694,35 @@ class OptionsParser():
 
         coverage = Coverage(options.threads)
         coverage.run(binFiles, options.bam_files, options.output_file, options.all_reads,
-                        options.min_align, options.max_edit_dist, options.min_qc)
+                     options.min_align, options.max_edit_dist, options.min_qc)
 
-        self.logger.info('Coverage information written to: ' + options.output_file)
+        self.logger.info(
+            'Coverage information written to: ' + options.output_file)
 
         self.timeKeeper.printTimeStamp()
 
     def tetraSignatures(self, options):
         """Tetranucleotide signature command"""
-        
-        self.logger.info('[CheckM - tetra] Calculating tetranucleotide signature of sequences.')
+
+        self.logger.info(
+            '[CheckM - tetra] Calculating tetranucleotide signature of sequences.')
 
         checkFileExists(options.seq_file)
         makeSurePathExists(os.path.dirname(options.output_file))
 
-        
         tetraSig = GenomicSignatures(4, options.threads)
         tetraSig.calculate(options.seq_file, options.output_file)
 
-        self.logger.info('Tetranucletoide signatures written to: ' + options.output_file)
+        self.logger.info(
+            'Tetranucletoide signatures written to: ' + options.output_file)
 
         self.timeKeeper.printTimeStamp()
 
     def profile(self, options):
         """Profile command"""
-        
-        self.logger.info('[CheckM - profile] Calculating percentage of reads mapped to each bin.')
+
+        self.logger.info(
+            '[CheckM - profile] Calculating percentage of reads mapped to each bin.')
 
         checkFileExists(options.coverage_file)
 
@@ -683,8 +736,9 @@ class OptionsParser():
 
     def merge(self, options):
         """Merge command"""
-        
-        self.logger.info('[CheckM - merge] Identifying bins with complementary sets of marker genes.')
+
+        self.logger.info(
+            '[CheckM - merge] Identifying bins with complementary sets of marker genes.')
 
         checkDirExists(options.bin_dir)
 
@@ -699,7 +753,8 @@ class OptionsParser():
 
         markerSetParser = MarkerSetParser()
         if markerSetParser.markerFileType(options.marker_file) == BinMarkerSets.TREE_MARKER_SET:
-            self.logger.error('Merge command requires a taxonomic-specific marker set or a user-defined HMM file.\n')
+            self.logger.error(
+                'Merge command requires a taxonomic-specific marker set or a user-defined HMM file.\n')
             return
 
         # setup directory structure
@@ -715,20 +770,21 @@ class OptionsParser():
         # find marker genes in genome bins
         mgf = MarkerGeneFinder(options.threads)
         binIdToModels = mgf.find(binFiles,
-                         options.output_dir,
-                         "merger.table.txt",
-                         "merger.hmmer3",
-                         options.marker_file,
-                         False,
-                         False,
-                         options.bCalledGenes)
+                                 options.output_dir,
+                                 "merger.table.txt",
+                                 "merger.hmmer3",
+                                 options.marker_file,
+                                 False,
+                                 False,
+                                 options.bCalledGenes)
 
         # get HMM file for each bin
         markerSetParser = MarkerSetParser()
-        binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.output_dir, binIds, options.marker_file)
+        binIdToBinMarkerSets = markerSetParser.getMarkerSets(
+            options.output_dir, binIds, options.marker_file)
 
         # compare markers found in each bin
-        
+
         merger = Merger()
         outputFile = merger.run(binFiles, options.output_dir, "merger.table.txt", binIdToModels, binIdToBinMarkerSets,
                                 options.delta_comp, options.delta_cont, options.merged_comp, options.merged_cont)
@@ -739,7 +795,7 @@ class OptionsParser():
 
     def outliers(self, options):
         """Outlier command"""
-        
+
         self.logger.info('[CheckM - outlier] Identifying outliers in bins.')
 
         checkDirExists(options.bin_dir)
@@ -749,21 +805,21 @@ class OptionsParser():
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
         binTools = BinTools()
-        binTools.identifyOutliers(options.results_dir, 
-                                    binFiles, 
-                                    options.tetra_profile, 
-                                    options.distributions, 
-                                    options.report_type, 
-                                    options.output_file)
+        binTools.identifyOutliers(options.results_dir,
+                                  binFiles,
+                                  options.tetra_profile,
+                                  options.distributions,
+                                  options.report_type,
+                                  options.output_file)
 
-        self.logger.info('Outlier information written to: ' + options.output_file)
+        self.logger.info('Outlier information written to: ' +
+                         options.output_file)
 
         self.timeKeeper.printTimeStamp()
 
-
     def modify(self, options):
         """Modify command"""
-        
+
         self.logger.info('[CheckM - modify] Modifying sequences in bin.')
 
         makeSurePathExists(os.path.dirname(options.output_file))
@@ -773,15 +829,18 @@ class OptionsParser():
             sys.exit(1)
 
         if (options.add or options.remove) and options.outlier_file:
-            self.logger.error("The 'outlier_file' option cannot be specified with 'add' or 'remove'.\n")
+            self.logger.error(
+                "The 'outlier_file' option cannot be specified with 'add' or 'remove'.\n")
             sys.exit(1)
 
         binTools = BinTools()
 
         if options.add or options.remove:
-            binTools.modify(options.bin_file, options.seq_file, options.add, options.remove, options.output_file)
+            binTools.modify(options.bin_file, options.seq_file,
+                            options.add, options.remove, options.output_file)
         elif options.outlier_file:
-            binTools.removeOutliers(options.bin_file, options.outlier_file, options.output_file)
+            binTools.removeOutliers(
+                options.bin_file, options.outlier_file, options.output_file)
 
         self.logger.info('Modified bin written to: ' + options.output_file)
 
@@ -789,8 +848,9 @@ class OptionsParser():
 
     def unique(self, options):
         """Unique command"""
-        
-        self.logger.info('[CheckM - unique] Ensuring no sequences are assigned to multiple bins.')
+
+        self.logger.info(
+            '[CheckM - unique] Ensuring no sequences are assigned to multiple bins.')
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -801,8 +861,9 @@ class OptionsParser():
 
     def ssuFinder(self, options):
         """SSU finder command"""
-        
-        self.logger.info('[CheckM - ssu_finder] Identifying SSU (16S/18S) rRNAs in sequences.')
+
+        self.logger.info(
+            '[CheckM - ssu_finder] Identifying SSU (16S/18S) rRNAs in sequences.')
 
         binFiles = self.binFiles(options.bin_dir, options.extension)
 
@@ -810,14 +871,16 @@ class OptionsParser():
         makeSurePathExists(options.output_dir)
 
         ssuFinder = SSU_Finder(options.threads)
-        ssuFinder.run(options.seq_file, binFiles, options.output_dir, options.evalue, options.concatenate)
+        ssuFinder.run(options.seq_file, binFiles, options.output_dir,
+                      options.evalue, options.concatenate)
 
         self.timeKeeper.printTimeStamp()
 
     def test(self, options):
         """Quick test of CheckM"""
- 
-        self.logger.info('[CheckM - Test] Processing E.coli K12-W3310 to verify operation of CheckM.')
+
+        self.logger.info(
+            '[CheckM - Test] Processing E.coli K12-W3310 to verify operation of CheckM.')
 
         verifyEcoli = VerifyEcoli()
         verifyEcoli.run(self, options.output_dir)
@@ -832,7 +895,7 @@ class OptionsParser():
                 options.file = ''
         except:
             pass
-            
+
         if(options.subparser_name == "data"):
             self.updateCheckM_DB(options)
         elif(options.subparser_name == 'tree'):
@@ -850,7 +913,8 @@ class OptionsParser():
         elif(options.subparser_name == 'qa'):
             self.qa(options)
         elif(options.subparser_name == 'lineage_wf'):
-            options.marker_file = os.path.join(options.output_dir, 'lineage.ms')
+            options.marker_file = os.path.join(
+                options.output_dir, 'lineage.ms')
             options.tree_dir = options.output_dir
             options.analyze_dir = options.output_dir
             options.out_format = 1
@@ -863,7 +927,8 @@ class OptionsParser():
             self.analyze(options)
             self.qa(options)
         elif(options.subparser_name == 'taxonomy_wf'):
-            options.marker_file = os.path.join(options.output_dir, options.taxon + '.ms')
+            options.marker_file = os.path.join(
+                options.output_dir, options.taxon + '.ms')
             options.analyze_dir = options.output_dir
             options.out_format = 1
             options.bAlignTopHit = False
@@ -911,7 +976,8 @@ class OptionsParser():
             options.pplacer_threads = 1
             self.test(options)
         else:
-            self.logger.error('Unknown CheckM command: ' + options.subparser_name + '\n')
+            self.logger.error('Unknown CheckM command: ' +
+                              options.subparser_name + '\n')
             sys.exit(1)
 
         return 0

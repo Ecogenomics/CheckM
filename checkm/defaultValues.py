@@ -43,19 +43,25 @@ class DefaultValues():
     SEQ_CONCAT_CHAR = '&&'
 
     CHECKM_DATA_DIR = __DBM.config.values["dataRoot"]
-    PHYLO_HMM_MODELS = phyloHMMs = os.path.join(CHECKM_DATA_DIR, 'hmms', 'phylo.hmm')
+    PHYLO_HMM_MODELS = phyloHMMs = os.path.join(
+        CHECKM_DATA_DIR, 'hmms', 'phylo.hmm')
     HMM_MODELS = os.path.join(CHECKM_DATA_DIR, 'hmms', 'checkm.hmm')
     PFAM_CLAN_FILE = os.path.join(CHECKM_DATA_DIR, 'pfam', 'Pfam-A.hmm.dat')
 
-    IMG_METADATA_FILE = os.path.join(CHECKM_DATA_DIR, 'img', 'img_metadata.tsv')
-    REDUNDANT_TIGRFAM_FILE = os.path.join(CHECKM_DATA_DIR, 'pfam', 'tigrfam2pfam.tsv')
+    IMG_METADATA_FILE = os.path.join(
+        CHECKM_DATA_DIR, 'img', 'img_metadata.tsv')
+    REDUNDANT_TIGRFAM_FILE = os.path.join(
+        CHECKM_DATA_DIR, 'pfam', 'tigrfam2pfam.tsv')
 
-    SELECTED_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'selected_marker_sets.tsv')
+    SELECTED_MARKER_SETS = os.path.join(
+        CHECKM_DATA_DIR, 'selected_marker_sets.tsv')
     TAXON_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'taxon_marker_sets.tsv')
 
     GENOME_TREE_DIR = os.path.join(CHECKM_DATA_DIR, 'genome_tree')
-    PPLACER_REF_PACKAGE_FULL = os.path.join(GENOME_TREE_DIR, 'genome_tree_full.refpkg')
-    PPLACER_REF_PACKAGE_REDUCED = os.path.join(GENOME_TREE_DIR, 'genome_tree_reduced.refpkg')
+    PPLACER_REF_PACKAGE_FULL = os.path.join(
+        GENOME_TREE_DIR, 'genome_tree_full.refpkg')
+    PPLACER_REF_PACKAGE_REDUCED = os.path.join(
+        GENOME_TREE_DIR, 'genome_tree_reduced.refpkg')
     GENOME_TREE = 'genome_tree.tre'
     GENOME_TREE_FASTA = 'genome_tree.fasta'
     GENOME_TREE_DEREP = 'genome_tree.derep.txt'
