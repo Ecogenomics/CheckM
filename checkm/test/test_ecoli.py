@@ -62,7 +62,7 @@ class VerifyEcoli():
         options.bNucORFs = False
         options.bCalledGenes = False
         options.bReducedTree = True
-        options.bin_dir = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'test_data')
+        options.bin_input = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'test_data')
         parser.tree(options)
         self.verifyTree(options.output_dir)
         self.logger.info('[Passed]')

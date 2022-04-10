@@ -132,7 +132,9 @@ if __name__ == '__main__':
                                         description='Place bins in the genome tree.',
                                         epilog='Example: checkm tree ./bins ./output')
     tree_parser.add_argument(
-        'bin_dir', help="directory containing bins (fasta format)")
+        'bin_input', help="directory containing bins (fasta format) or "
+                          "path to file describing genomes/genes - tab "
+                          "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     tree_parser.add_argument(
         'output_dir', help="directory to write output files")
     tree_parser.add_argument('-r', '--reduced_tree', dest='bReducedTree', action="store_true",
@@ -233,7 +235,9 @@ if __name__ == '__main__':
     analyze_parser.add_argument(
         'marker_file', help="markers for assessing bins (marker set or HMM file)")
     analyze_parser.add_argument(
-        'bin_dir', help="directory containing bins (fasta format)")
+        'bin_input', help="directory containing bins (fasta format) or "
+                          "path to file describing genomes/genes - tab "
+                          "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     analyze_parser.add_argument(
         'output_dir', help="directory to write output files")
     analyze_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true",
@@ -320,7 +324,9 @@ Example: checkm qa ./output/lineage.ms ./output
                                               description='Runs tree, lineage_set, analyze, qa',
                                               epilog='Example: checkm lineage_wf ./bins ./output')
     lineage_wf_parser.add_argument(
-        'bin_dir', help="directory containing bins (fasta format)")
+        'bin_input', help="directory containing bins (fasta format) or "
+                          "path to file describing genomes/genes - tab "
+                          "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     lineage_wf_parser.add_argument(
         'output_dir', help="directory to write output files")
     lineage_wf_parser.add_argument('-r', '--reduced_tree', dest='bReducedTree', action="store_true",
@@ -380,7 +386,9 @@ Example: checkm qa ./output/lineage.ms ./output
                                     'life', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'])
     taxonomy_wf_parser.add_argument('taxon', help="taxon of interest")
     taxonomy_wf_parser.add_argument(
-        'bin_dir', help="directory containing bins (fasta format)")
+        'bin_input', help="directory containing bins (fasta format) or "
+                          "path to file describing genomes/genes - tab "
+                          "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     taxonomy_wf_parser.add_argument(
         'output_dir', help="directory to write output files")
     taxonomy_wf_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true",
@@ -428,7 +436,9 @@ Example: checkm qa ./output/lineage.ms ./output
 
     plot_parser = argparse.ArgumentParser('plot', add_help=False)
     plot_parser.add_argument(
-        'bin_dir', help="directory containing bins to plot (fasta format)")
+        'bin_input', help="directory containing bins (fasta format) or "
+                          "path to file describing genomes/genes - tab "
+                          "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     plot_parser.add_argument('output_dir', help="directory to hold plots")
     plot_parser.add_argument('--image_type', default='png',
                              choices=['eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
@@ -520,7 +530,9 @@ Example: checkm qa ./output/lineage.ms ./output
     plot_dist_parser.add_argument(
         'results_dir', help="directory specified during analyze command")
     plot_dist_parser.add_argument(
-        'bin_dir', help="directory containing bins to plot (fasta format)")
+        'bin_input', help="directory containing bins (fasta format) or "
+                          "path to file describing genomes/genes - tab "
+                          "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     plot_dist_parser.add_argument('output_dir', help="directory to hold plots")
     plot_dist_parser.add_argument(
         'tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
@@ -617,7 +629,9 @@ Example: checkm qa ./output/lineage.ms ./output
                                             description='Identify unbinned sequences.',
                                             epilog='Example: checkm unbinned ./bins seqs.fna unbinned.fna unbinned_stats.tsv')
     unbinned_parser.add_argument(
-        'bin_dir', help="directory containing bins (fasta format)")
+        'bin_input', help="directory containing bins (fasta format) or "
+                          "path to file describing genomes/genes - tab "
+                          "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     unbinned_parser.add_argument(
         'seq_file', help="sequences used to generate bins (fasta format)")
     unbinned_parser.add_argument(
@@ -636,9 +650,10 @@ Example: checkm qa ./output/lineage.ms ./output
                                             formatter_class=CustomHelpFormatter,
                                             description='Calculate coverage of sequences.',
                                             epilog='Example: checkm coverage ./bins coverage.tsv example_1.bam example_2.bam')
-
     coverage_parser.add_argument(
-        'bin_dir', help="directory containing bins (fasta format)")
+        'bin_input', help="directory containing bins (fasta format) or "
+                          "path to file describing genomes/genes - tab "
+                          "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     coverage_parser.add_argument('output_file', help="print results to file")
     coverage_parser.add_argument(
         'bam_files', nargs='+', help="BAM files to parse")
@@ -693,7 +708,9 @@ Example: checkm qa ./output/lineage.ms ./output
     ssu_finder_parser.add_argument(
         'seq_file', help="sequences used to generate bins (fasta format)")
     ssu_finder_parser.add_argument(
-        'bin_dir', help="directory containing bins (fasta format)")
+        'bin_input', help="directory containing bins (fasta format) or "
+                          "path to file describing genomes/genes - tab "
+                          "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     ssu_finder_parser.add_argument(
         'output_dir', help="directory to write output files")
 
@@ -716,7 +733,9 @@ Example: checkm qa ./output/lineage.ms ./output
     merge_parser.add_argument(
         'marker_file', help="marker file to use for assessing potential bin mergers (marker set or HMM file)")
     merge_parser.add_argument(
-        'bin_dir', help="directory containing bins (fasta format)")
+        'bin_input', help="directory containing bins (fasta format) or "
+                          "path to file describing genomes/genes - tab "
+                          "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     merge_parser.add_argument(
         'output_dir', help="directory to write output files")
     merge_parser.add_argument('-g', '--genes', dest='bCalledGenes', action="store_true",
@@ -735,7 +754,6 @@ Example: checkm qa ./output/lineage.ms ./output
         '-t', '--threads', type=int, default=1, help="number of threads")
     merge_parser.add_argument('-q', '--quiet', dest='bQuiet',
                               action="store_true", default=False, help="suppress console output")
-
     # Identify outlier sequences
     outlier_parser = subparsers.add_parser('outliers',
                                            formatter_class=CustomHelpFormatter,
@@ -744,7 +762,9 @@ Example: checkm qa ./output/lineage.ms ./output
                                            description='Identify outliers in bins relative to reference distributions.',
                                            epilog='Example: checkm outliers ./output ./bins tetra.tsv outliers.tsv')
     outlier_parser.add_argument(
-        'bin_dir', help="directory containing bins (fasta format)")
+        'bin_input', help="directory containing bins (fasta format) or "
+                          "path to file describing genomes/genes - tab "
+                          "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     outlier_parser.add_argument(
         'tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
     outlier_parser.add_argument('output_file', help="print results to file")
@@ -781,7 +801,9 @@ Example: checkm qa ./output/lineage.ms ./output
                                           description='Ensure no sequences are assigned to multiple bins.',
                                           epilog='Example: checkm unique ./bins')
     unique_parser.add_argument(
-        'bin_dir', help="directory containing bins (fasta format)")
+        'bin_input', help="directory containing bins (fasta format) or "
+                          "path to file describing genomes/genes - tab "
+                          "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     unique_parser.add_argument('-x', '--extension', default='fna',
                                help="extension of bins (all other files in bin directory are ignored)")
 
