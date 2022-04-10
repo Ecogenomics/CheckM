@@ -75,6 +75,31 @@ def checkEmptyDir(inputDir):
             sys.exit(1)
 
 
+def checkBinInputExists(binInput, bCalledGenes):
+    """Check if bin input exists."""
+    if os.path.isdir(binInput):
+        checkDirExists(binInput)
+    else:
+        checkFileExists(binInput)
+
+        binInput_ih = open(binInput)
+        binInput_oneline = binInput_ih.readline().strip().split("\t")
+        binInput_ih.close()
+
+        have_error = False
+        if bCalledGenes:
+            if len(binInput_oneline) < 3:
+                have_error = True
+        else:
+            if len(binInput_oneline) < 2:
+                have_error = True
+        if have_error:
+            logger = logging.getLogger("timestamp")
+            logger.error('Input table format is not correct: ' + binInput + '\n')
+            logger.error('If input is nucleotide contigs, please supply 2 column at least: [genome_id, genome_contigs_file]')
+            logger.error('If input is gene, please supply 3 column at least: [genome_id, genome_contigs_file, genome_genes_file]')
+
+
 def checkFileExists(inputFile):
     """Check if file exists."""
     if not os.path.exists(inputFile):
