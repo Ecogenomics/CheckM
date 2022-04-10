@@ -1,3 +1,8 @@
+1.1.7
+- added Jie Zhu's (alienzj) PR to allow input files to be specified via a file
+- added Jeremy Jacobson's (jjacobson95) PR to fix prettytable import issue
+- added fix by Jie Li (jili6t) regarding more stringent matching of bin extensions
+
 1.1.6
 - allow CheckM data path to be set through a CHECKM_DATA_PATH environmental variable
 
@@ -5,7 +10,7 @@
 - fixed small bug with maxibor's PR
 
 1.1.4
-- added maxibor's PR to allow path to DATA_CONFIG file to be set 
+- added Maxime Borry's (maxibor) PR to allow path to DATA_CONFIG file to be set 
 
 1.1.3
 - fixed error resulting from incorrect GFF files produced by Prodigal on FASTA files with Windows style line endings

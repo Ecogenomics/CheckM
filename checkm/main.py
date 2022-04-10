@@ -86,6 +86,9 @@ class OptionsParser():
         isInputDir = True
         if binInput is not None:
             if os.path.isdir(binInput):
+                if binExtension[0] != '.':
+                    binExtension = '.' + binExtension
+
                 all_files = os.listdir(binInput)
                 for f in all_files:
                     if f.endswith(binExtension):
@@ -119,21 +122,24 @@ class OptionsParser():
                     "No bins found. Check the extension (-x) used to identify bins.")
             else:
                 self.logger.error(
-                    "No binsfound. Check the bins input table to identify bins turely exists")
+                    "No bins found. Check the bins input table to verify bins exists.")
             sys.exit(1)
 
         if len(binIDs) != len(binFiles):
-            self.logger.error("There are redundant bin ID, please check and update it")
+            self.logger.error(
+                "There are redundant bin IDs, please check and update.")
             sys.exit(1)
 
         return sorted(binFiles)
 
     def tree(self, options):
         """Tree command"""
+
         self.logger.info(
             '[CheckM - tree] Placing bins in reference genome tree.')
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         if not options.bCalledGenes:
             if not checkNuclotideSeqs(binFiles):
@@ -195,6 +201,7 @@ class OptionsParser():
 
     def treeQA(self, options):
         """QA command"""
+
         self.logger.info(
             '[CheckM - tree_qa] Assessing phylogenetic markers found in each bin.')
 
@@ -225,6 +232,7 @@ class OptionsParser():
 
     def lineageSet(self, options, db=None):
         """Lineage set command"""
+
         self.logger.info(
             '[CheckM - lineage_set] Inferring lineage-specific marker sets.')
 
@@ -262,6 +270,7 @@ class OptionsParser():
 
     def taxonList(self, options, db=None):
         """Lineage set command"""
+
         self.logger.info(
             '[CheckM - taxon_list] Listing available taxonomic-specific marker sets.')
 
@@ -272,6 +281,7 @@ class OptionsParser():
 
     def taxonSet(self, options, db=None):
         """Taxon set command"""
+
         self.logger.info(
             '[CheckM - taxon_set] Generate taxonomic-specific marker set.')
 
@@ -291,10 +301,12 @@ class OptionsParser():
 
     def analyze(self, options, db=None):
         """Analyze command"""
+
         self.logger.info(
             '[CheckM - analyze] Identifying marker genes in bins.')
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         if not options.bCalledGenes:
             if not checkNuclotideSeqs(binFiles):
@@ -459,7 +471,8 @@ class OptionsParser():
         checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         plots = GcPlots(options)
         filesProcessed = 1
@@ -486,7 +499,8 @@ class OptionsParser():
         checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         plots = CodingDensityPlots(options)
         filesProcessed = 1
@@ -513,7 +527,8 @@ class OptionsParser():
         checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         genomicSignatures = GenomicSignatures(K=4, threads=1)
         tetraSigs = genomicSignatures.read(options.tetra_profile)
@@ -543,7 +558,8 @@ class OptionsParser():
         checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         genomicSignatures = GenomicSignatures(K=4, threads=1)
         tetraSigs = genomicSignatures.read(options.tetra_profile)
@@ -574,7 +590,8 @@ class OptionsParser():
         checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         coverageWindows = CoverageWindows(options.threads)
         coverageProfile = coverageWindows.run(
@@ -605,7 +622,8 @@ class OptionsParser():
         checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         nx = NxPlot(options)
         filesProcessed = 1
@@ -632,7 +650,8 @@ class OptionsParser():
         checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         plot = LengthHistogram(options)
         filesProcessed = 1
@@ -660,7 +679,8 @@ class OptionsParser():
         makeSurePathExists(options.output_dir)
 
         # generate plot for each bin
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         resultsParser = ResultsParser(None)
         markerGeneStats = resultsParser.parseMarkerGeneStats(
@@ -697,7 +717,8 @@ class OptionsParser():
 
         checkBinInputExists(options.bin_input, options.bCalledGenes)
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         unbinned = Unbinned()
         unbinned.run(binFiles, options.seq_file, options.output_seq_file,
@@ -719,7 +740,8 @@ class OptionsParser():
         checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(os.path.dirname(options.output_file))
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         coverage = Coverage(options.threads)
         coverage.run(binFiles, options.bam_files, options.output_file, options.all_reads,
@@ -771,7 +793,8 @@ class OptionsParser():
 
         checkBinInputExists(options.bin_input, options.bCalledGenes)
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         if not options.bCalledGenes:
             if not checkNuclotideSeqs(binFiles):
@@ -831,7 +854,8 @@ class OptionsParser():
         checkFileExists(options.tetra_profile)
         makeSurePathExists(os.path.dirname(options.output_file))
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         binTools = BinTools()
         binTools.identifyOutliers(options.results_dir,
@@ -881,7 +905,8 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - unique] Ensuring no sequences are assigned to multiple bins.')
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         binTools = BinTools()
         binTools.unique(binFiles)
@@ -894,7 +919,8 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - ssu_finder] Identifying SSU (16S/18S) rRNAs in sequences.')
 
-        binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
+        binFiles = self.binFiles(
+            options.bin_input, options.extension, options.bCalledGenes)
 
         checkFileExists(options.seq_file)
         makeSurePathExists(options.output_dir)

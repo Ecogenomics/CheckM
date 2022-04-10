@@ -61,8 +61,10 @@ class Profile():
                 bamId = lineSplit[i]
                 mappedReads = int(lineSplit[i + 2])
 
-                totalMappedReads[bamId] = totalMappedReads.get(bamId, 0) + mappedReads
-                readsMappedToBin[binId][bamId] = readsMappedToBin[binId].get(bamId, 0) + mappedReads
+                totalMappedReads[bamId] = totalMappedReads.get(
+                    bamId, 0) + mappedReads
+                readsMappedToBin[binId][bamId] = readsMappedToBin[binId].get(
+                    bamId, 0) + mappedReads
 
         # calculate percentage of mapped reads to binned populations
         perMappedReads = {}
@@ -73,7 +75,8 @@ class Profile():
             normBinCoverage[binId] = {}
 
             for bamId in bamIds:
-                perMR = float(readsMappedToBin[binId][bamId]) / totalMappedReads[bamId]
+                perMR = float(
+                    readsMappedToBin[binId][bamId]) / totalMappedReads[bamId]
                 perMappedReads[binId][bamId] = perMR
 
                 if binId == DefaultValues.UNBINNED:
@@ -81,7 +84,8 @@ class Profile():
 
                 normCoverage = perMR / binSize[binId]
                 normBinCoverage[binId][bamId] = normCoverage
-                sumNormBinCoverage[bamId] = sumNormBinCoverage.get(bamId, 0) + normCoverage
+                sumNormBinCoverage[bamId] = sumNormBinCoverage.get(
+                    bamId, 0) + normCoverage
 
         for binId, bamIds in normBinCoverage.items():
             for bamId in bamIds:
@@ -131,7 +135,8 @@ class Profile():
                     row += [unbinnedPercentage * 100.0]
                 else:
                     row += [normBinCoverage[binId][bamId] * 100.0]
-                    row += [normBinCoverage[binId][bamId] * 100.0 * (1.0 - unbinnedPercentage)]
+                    row += [normBinCoverage[binId][bamId] *
+                            100.0 * (1.0 - unbinnedPercentage)]
 
             if bTabTable:
                 print('\t'.join(list(map(str, row))))
