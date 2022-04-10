@@ -456,7 +456,7 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - gc_plot] Creating GC histogram and delta-GC plot.')
 
-        checkBinInputExists(options.bin_input)
+        checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
@@ -483,7 +483,7 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - coding_plot] Creating coding density histogram and delta-CD plot.')
 
-        checkBinInputExists(options.bin_input)
+        checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
@@ -510,7 +510,7 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - tetra_plot] Creating tetra-distance histogram and delta-TD plot.')
 
-        checkBinInputExists(options.bin_input)
+        checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
@@ -540,7 +540,7 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - dist_plot] Creating GC, CD, and TD distribution plots.')
 
-        checkBinInputExists(options.bin_input)
+        checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
@@ -571,7 +571,7 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - gc_bias_plot] Plotting bin coverage as a function of GC.')
 
-        checkBinInputExists(options.bin_input)
+        checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
@@ -602,7 +602,7 @@ class OptionsParser():
 
         self.logger.info('[CheckM - nx_plot] Creating Nx-plots.')
 
-        checkBinInputExists(options.bin_input)
+        checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
@@ -629,7 +629,7 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - len_hist] Creating sequence length histogram.')
 
-        checkBinInputExists(options.bin_input)
+        checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
@@ -656,7 +656,7 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - marker_plot] Creating marker gene position plot.')
 
-        checkBinInputExists(options.bin_input)
+        checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(options.output_dir)
 
         # generate plot for each bin
@@ -695,7 +695,7 @@ class OptionsParser():
 
         self.logger.info('[CheckM - unbinned] Identify unbinned sequences.')
 
-        checkBinInputExists(options.bin_input)
+        checkBinInputExists(options.bin_input, options.bCalledGenes)
 
         binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
 
@@ -716,7 +716,7 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - coverage] Calculating coverage of sequences.')
 
-        checkBinInputExists(options.bin_input)
+        checkBinInputExists(options.bin_input, options.bCalledGenes)
         makeSurePathExists(os.path.dirname(options.output_file))
 
         binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
@@ -769,7 +769,7 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - merge] Identifying bins with complementary sets of marker genes.')
 
-        checkBinInputExists(options.bin_input)
+        checkBinInputExists(options.bin_input, options.bCalledGenes)
 
         binFiles = self.binFiles(options.bin_input, options.extension, options.bCalledGenes)
 
@@ -827,7 +827,7 @@ class OptionsParser():
 
         self.logger.info('[CheckM - outlier] Identifying outliers in bins.')
 
-        checkBinInputExists(options.bin_input)
+        checkBinInputExists(options.bin_input, options.bCalledGenes)
         checkFileExists(options.tetra_profile)
         makeSurePathExists(os.path.dirname(options.output_file))
 
