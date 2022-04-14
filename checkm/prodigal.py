@@ -25,6 +25,7 @@ import stat
 import subprocess
 import logging
 import shutil
+import tempfile
 
 import numpy as np
 
@@ -54,17 +55,19 @@ class ProdigalRunner():
 
         prodigal_input = query
 
-        # decompress gzip input files
-        if prodigal_input.endswith('.gz'):
-            tmp_dir = tempfile.mkdtemp()
-            prodigal_input = os.path.join(tmp_dir, os.path.basename(prodigal_input[0:-3]) + '.fna')
-            writeFasta(seqs, prodigal_input)
-
         # gather statistics about query file
         seqs = readFasta(prodigal_input)
         totalBases = 0
         for seqId, seq in seqs.items():
             totalBases += len(seq)
+
+        # decompress gzip input files
+        tmp_dir = None
+        if prodigal_input.endswith('.gz'):
+            tmp_dir = tempfile.mkdtemp()
+            prodigal_input = os.path.join(
+                tmp_dir, os.path.basename(prodigal_input[0:-3]))
+            writeFasta(seqs, prodigal_input)
 
         # call ORFs with different translation tables and select the one with the highest coding density
         tableCodingDensity = {}
@@ -119,10 +122,13 @@ class ProdigalRunner():
         if (tableCodingDensity[4] - tableCodingDensity[11] > 0.05) and tableCodingDensity[4] > 0.7:
             bestTranslationTable = 4
 
-        shutil.copyfile(self.aaGeneFile + '.' + str(bestTranslationTable), self.aaGeneFile)
-        shutil.copyfile(self.gffFile + '.' + str(bestTranslationTable), self.gffFile)
+        shutil.copyfile(self.aaGeneFile + '.' +
+                        str(bestTranslationTable), self.aaGeneFile)
+        shutil.copyfile(self.gffFile + '.' +
+                        str(bestTranslationTable), self.gffFile)
         if bNucORFs:
-            shutil.copyfile(self.ntGeneFile + '.' + str(bestTranslationTable), self.ntGeneFile)
+            shutil.copyfile(self.ntGeneFile + '.' +
+                            str(bestTranslationTable), self.ntGeneFile)
 
         # clean up redundant prodigal results
         for translationTable in [4, 11]:
@@ -131,7 +137,7 @@ class ProdigalRunner():
             if bNucORFs:
                 os.remove(self.ntGeneFile + '.' + str(translationTable))
 
-        if prodigal_input.endswith('.gz'):
+        if tmp_dir:
             shutil.rmtree(tmp_dir)
 
         return bestTranslationTable
@@ -153,7 +159,8 @@ class ProdigalRunner():
         # Assume that a successful prodigal -h returns 0 and anything
         # else returns something non-zero
         try:
-            subprocess.call(['prodigal', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+            subprocess.call(
+                ['prodigal', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
         except:
             self.logger.error("Make sure prodigal is on your system path.")
             sys.exit(1)
@@ -205,7 +212,8 @@ class ProdigalGeneFeatureParser():
                 lineSplit = line.split(';')
                 for token in lineSplit:
                     if 'transl_table' in token:
-                        self.translationTable = int(token[token.find('=') + 1:])
+                        self.translationTable = int(
+                            token[token.find('=') + 1:])
 
             if line[0] == '#' or line.strip() == '"':
                 # work around for Prodigal having lines with just a

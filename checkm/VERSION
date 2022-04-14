@@ -1,3 +1,9 @@
+1.1.9
+- fixed support for gzip input files
+
+1.1.8
+- updated setup.py to include long description and fixed PyPi URL
+
 1.1.7
 - added Jie Zhu's (alienzj) PR to allow input files to be specified via a file
 - added Jeremy Jacobson's (jjacobson95) PR to fix prettytable import issue

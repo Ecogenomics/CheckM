@@ -138,11 +138,13 @@ def checkNuclotideSeqs(seq_files):
     for seq_file in seq_files:
         if os.stat(seq_file).st_size == 0:
             continue
-            
+
         if not isNucleotide(seq_file):
             logger = logging.getLogger('timestamp')
-            logger.warning('Expected all files to contain sequences in nucleotide space.')
-            logger.warning('File %s appears to contain amino acids sequences.' % seq_file)
+            logger.warning(
+                'Expected all files to contain sequences in nucleotide space.')
+            logger.warning(
+                'File %s appears to contain amino acids sequences.' % seq_file)
 
     return True
 
@@ -164,11 +166,13 @@ def checkProteinSeqs(seq_files):
     for seq_file in seq_files:
         if os.stat(seq_file).st_size == 0:
             continue
-        
+
         if isNucleotide(seq_file):
             logger = logging.getLogger('timestamp')
-            logger.warning('Expected all files to contain sequences in amino acid space.')
-            logger.warning('File %s appears to contain nucleotide sequences.' % seq_file)
+            logger.warning(
+                'Expected all files to contain sequences in amino acid space.')
+            logger.warning(
+                'File %s appears to contain nucleotide sequences.' % seq_file)
 
     return True
 
@@ -182,7 +186,7 @@ def readFasta(fastaFile, trimHeader=True):
             openFile = open
 
         seqs = {}
-        for line in openFile(fastaFile):
+        for line in openFile(fastaFile, 'rt'):
             # skip blank lines
             if not line.strip():
                 continue
@@ -198,7 +202,8 @@ def readFasta(fastaFile, trimHeader=True):
 
         for seqId, seq in seqs.items():
             seqs[seqId] = ''.join(seq)
-    except:
+    except Exception as e:
+        print(e)
         logger = logging.getLogger('timestamp')
         logger.error("Failed to process sequence file: {}".format(fastaFile))
         sys.exit(1)
