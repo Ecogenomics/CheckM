@@ -468,11 +468,12 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - gc_plot] Creating GC histogram and delta-GC plot.')
 
-        checkBinInputExists(options.bin_input, options.bCalledGenes)
+        checkBinInputExists(options.bin_input, False)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input,
+            options.extension, False)
 
         plots = GcPlots(options)
         filesProcessed = 1
@@ -496,11 +497,11 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - coding_plot] Creating coding density histogram and delta-CD plot.')
 
-        checkBinInputExists(options.bin_input, options.bCalledGenes)
+        checkBinInputExists(options.bin_input, False)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input, options.extension, False)
 
         plots = CodingDensityPlots(options)
         filesProcessed = 1
@@ -524,11 +525,11 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - tetra_plot] Creating tetra-distance histogram and delta-TD plot.')
 
-        checkBinInputExists(options.bin_input, options.bCalledGenes)
+        checkBinInputExists(options.bin_input, False)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input, options.extension, False)
 
         genomicSignatures = GenomicSignatures(K=4, threads=1)
         tetraSigs = genomicSignatures.read(options.tetra_profile)
@@ -555,11 +556,11 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - dist_plot] Creating GC, CD, and TD distribution plots.')
 
-        checkBinInputExists(options.bin_input, options.bCalledGenes)
+        checkBinInputExists(options.bin_input, False)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input, options.extension, False)
 
         genomicSignatures = GenomicSignatures(K=4, threads=1)
         tetraSigs = genomicSignatures.read(options.tetra_profile)
@@ -587,11 +588,11 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - gc_bias_plot] Plotting bin coverage as a function of GC.')
 
-        checkBinInputExists(options.bin_input, options.bCalledGenes)
+        checkBinInputExists(options.bin_input, False)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input, options.extension, False)
 
         coverageWindows = CoverageWindows(options.threads)
         coverageProfile = coverageWindows.run(
@@ -619,11 +620,11 @@ class OptionsParser():
 
         self.logger.info('[CheckM - nx_plot] Creating Nx-plots.')
 
-        checkBinInputExists(options.bin_input, options.bCalledGenes)
+        checkBinInputExists(options.bin_input, False)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input, options.extension, False)
 
         nx = NxPlot(options)
         filesProcessed = 1
@@ -647,11 +648,11 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - len_hist] Creating sequence length histogram.')
 
-        checkBinInputExists(options.bin_input, options.bCalledGenes)
+        checkBinInputExists(options.bin_input, False)
         makeSurePathExists(options.output_dir)
 
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input, options.extension, False)
 
         plot = LengthHistogram(options)
         filesProcessed = 1
@@ -675,12 +676,12 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - marker_plot] Creating marker gene position plot.')
 
-        checkBinInputExists(options.bin_input, options.bCalledGenes)
+        checkBinInputExists(options.bin_input, False)
         makeSurePathExists(options.output_dir)
 
         # generate plot for each bin
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input, options.extension, False)
 
         resultsParser = ResultsParser(None)
         markerGeneStats = resultsParser.parseMarkerGeneStats(
@@ -715,10 +716,10 @@ class OptionsParser():
 
         self.logger.info('[CheckM - unbinned] Identify unbinned sequences.')
 
-        checkBinInputExists(options.bin_input, options.bCalledGenes)
+        checkBinInputExists(options.bin_input, False)
 
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input, options.extension, False)
 
         unbinned = Unbinned()
         unbinned.run(binFiles, options.seq_file, options.output_seq_file,
@@ -737,11 +738,11 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - coverage] Calculating coverage of sequences.')
 
-        checkBinInputExists(options.bin_input, options.bCalledGenes)
+        checkBinInputExists(options.bin_input, False)
         makeSurePathExists(os.path.dirname(options.output_file))
 
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input, options.extension, False)
 
         coverage = Coverage(options.threads)
         coverage.run(binFiles, options.bam_files, options.output_file, options.all_reads,
@@ -850,12 +851,12 @@ class OptionsParser():
 
         self.logger.info('[CheckM - outlier] Identifying outliers in bins.')
 
-        checkBinInputExists(options.bin_input, options.bCalledGenes)
+        checkBinInputExists(options.bin_input, False)
         checkFileExists(options.tetra_profile)
         makeSurePathExists(os.path.dirname(options.output_file))
 
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input, options.extension, False)
 
         binTools = BinTools()
         binTools.identifyOutliers(options.results_dir,
@@ -906,7 +907,7 @@ class OptionsParser():
             '[CheckM - unique] Ensuring no sequences are assigned to multiple bins.')
 
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input, options.extension, False)
 
         binTools = BinTools()
         binTools.unique(binFiles)
@@ -920,7 +921,7 @@ class OptionsParser():
             '[CheckM - ssu_finder] Identifying SSU (16S/18S) rRNAs in sequences.')
 
         binFiles = self.binFiles(
-            options.bin_input, options.extension, options.bCalledGenes)
+            options.bin_input, options.extension, False)
 
         checkFileExists(options.seq_file)
         makeSurePathExists(options.output_dir)

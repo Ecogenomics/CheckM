@@ -1,5 +1,8 @@
+1.1.10
+- fixed bug with missing bCalledGenes flag that was impacting a number of commands
+
 1.1.9
-- fixed support for gzip input files
+- fixed support for gzip input FASTA files
 
 1.1.8
 - updated setup.py to include long description and fixed PyPi URL
