@@ -108,10 +108,10 @@ class OptionsParser():
                             binFile = files[2]
                         if not os.path.exists(binFile):
                             self.logger.warning(
-                                "Skipping bin %s as it doesn't exists." % f)
+                                "Skipping bin %s as it doesn't exists." % binFile)
                         elif os.stat(binFile).st_size == 0:
                             self.logger.warning(
-                                "Skipping bin %s as it has a size of 0 bytes." % f)
+                                "Skipping bin %s as it has a size of 0 bytes." % binFile)
                         else:
                             binFiles.append(binFile)
                             binIDs.add(os.path.basename(binFile))
