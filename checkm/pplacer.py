@@ -40,8 +40,8 @@ class PplacerRunner():
         self.numThreads = threads
 
         # make sure pplace and guppy are on the system path
-        self.__checkForPplacer()
-        self.__checkForGuppy()
+        self._checkForPplacer()
+        self._checkForGuppy()
 
     def run(self, binFiles, resultsParser, outDir, bReducedTree):
         # make sure output and tree directories exist
@@ -54,7 +54,7 @@ class PplacerRunner():
         pplacerOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_OUT)
 
         # create concatenated alignment file for each bin
-        concatenatedAlignFile = self.__createConcatenatedAlignment(binFiles, resultsParser, alignOutputDir)
+        concatenatedAlignFile = self._createConcatenatedAlignment(binFiles, resultsParser, alignOutputDir)
 
         pplacerRefPkg = DefaultValues.PPLACER_REF_PACKAGE_FULL
         if bReducedTree:
@@ -80,7 +80,7 @@ class PplacerRunner():
         cmd = 'guppy tog -o %s %s' % (treeFile, pplacerJsonOut)
         os.system(cmd)
 
-    def __createConcatenatedAlignment(self, binFiles, resultsParser, alignOutputDir):
+    def _createConcatenatedAlignment(self, binFiles, resultsParser, alignOutputDir):
         """Create a concatenated alignment of marker genes for each bin."""
 
         # read alignment files
@@ -125,7 +125,7 @@ class PplacerRunner():
 
         return concatenatedAlignFile
 
-    def __checkForPplacer(self):
+    def _checkForPplacer(self):
         """Check to see if pplacer is on the system before we try to run it."""
 
         # Assume that a successful pplacer -h returns 0 and anything
@@ -136,7 +136,7 @@ class PplacerRunner():
             self.logger.error("Make sure pplacer is on your system path.")
             sys.exit(1)
 
-    def __checkForGuppy(self):
+    def _checkForGuppy(self):
         """Check to see if guppy is on the system before we try to run it."""
 
         # Assume that a successful pplacer -h returns 0 and anything

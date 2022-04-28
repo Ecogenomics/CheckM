@@ -84,7 +84,7 @@ class Coverage():
             self.logger.info('Processing %s (%d of %d):' % (ntpath.basename(bamFile), numFilesStarted, len(bamFiles)))
 
             coverageInfo[bamFile] = mp.Manager().dict()
-            coverageInfo[bamFile] = self.__processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, coverageInfo[bamFile])
+            coverageInfo[bamFile] = self._processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, coverageInfo[bamFile])
 
         # redirect output
         self.logger.info('Writing coverage information to file.')
@@ -117,7 +117,7 @@ class Coverage():
         # restore stdout
         restoreStdOut(outFile, oldStdOut)
 
-    def __processBam(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, coverageInfo):
+    def _processBam(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, coverageInfo):
         """Calculate coverage of sequences in BAM file."""
 
         # determine coverage for each reference sequence

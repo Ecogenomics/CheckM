@@ -57,7 +57,7 @@ def readTaxonomy(taxonomyFile):
     return taxonIdToTaxonomy
 
 
-def __parseTaxon(taxon):
+def _parseTaxon(taxon):
     if '(' in taxon:
         taxonSplit = taxon.split('(')
         taxonId = taxonSplit[0]
@@ -74,8 +74,8 @@ def LCA(taxonomy1, taxonomy2):
     """Find lowest-common ancestor between two taxa lists."""
     lca = []
     for i in range(0, min(len(taxonomy1), len(taxonomy2))):
-        t1, b1 = __parseTaxon(taxonomy1[i])
-        t2, b2 = __parseTaxon(taxonomy2[i])
+        t1, b1 = _parseTaxon(taxonomy1[i])
+        t2, b2 = _parseTaxon(taxonomy2[i])
 
         if t1 != t2:
             if 'unmapped' in t1 or 'unmapped' in t2:

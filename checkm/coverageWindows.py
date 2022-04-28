@@ -100,11 +100,11 @@ class CoverageWindows():
         # calculate coverage of each BAM file
         self.logger.info('Calculating coverage of windows.')
         coverageInfo = mp.Manager().dict()
-        coverageInfo = self.__processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, coverageInfo)
+        coverageInfo = self._processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, coverageInfo)
 
         return coverageInfo
 
-    def __processBam(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, coverageInfo):
+    def _processBam(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, coverageInfo):
         """Calculate coverage of sequences in BAM file."""
 
         # determine coverage for each reference sequence
@@ -143,8 +143,8 @@ class CoverageWindows():
             workerQueue.put((None, None))
 
         try:
-            workerProc = [mp.Process(target=self.__workerThread, args=(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target=self.__writerThread, args=(coverageInfo, len(refSeqIds), writerQueue))
+            workerProc = [mp.Process(target=self._workerThread, args=(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target=self._writerThread, args=(coverageInfo, len(refSeqIds), writerQueue))
 
             writeProc.start()
 
@@ -165,7 +165,7 @@ class CoverageWindows():
 
         return coverageInfo
 
-    def __workerThread(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, queueIn, queueOut):
+    def _workerThread(self, bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, queueIn, queueOut):
         """Process each data item in parallel."""
         while True:
             seqIds, seqLens = queueIn.get(block=True, timeout=None)
@@ -202,7 +202,7 @@ class CoverageWindows():
 
             bamfile.close()
 
-    def __writerThread(self, coverageInfo, numRefSeqs, writerQueue):
+    def _writerThread(self, coverageInfo, numRefSeqs, writerQueue):
         """Store or write results of worker threads in a single thread."""
         totalReads = 0
         totalDuplicates = 0

@@ -38,7 +38,7 @@ class BinTools():
     def __init__(self, threads=1):
         self.logger = logging.getLogger('timestamp')
 
-    def __removeSeqs(self, seqs, seqsToRemove):
+    def _removeSeqs(self, seqs, seqsToRemove):
         """Remove sequences. """
         missingSeqIds = set(seqsToRemove).difference(set(seqs.keys()))
         if len(missingSeqIds) > 0:
@@ -48,7 +48,7 @@ class BinTools():
         for seqId in seqsToRemove:
             seqs.pop(seqId)
 
-    def __addSeqs(self, seqs, refSeqs, seqsToAdd):
+    def _addSeqs(self, seqs, refSeqs, seqsToAdd):
         """Add sequences. """
         missingSeqIds = set(seqsToAdd).difference(set(refSeqs.keys()))
         if len(missingSeqIds) > 0:
@@ -65,11 +65,11 @@ class BinTools():
         # add sequences to bin
         if seqsToAdd != None:
             refSeqs = readFasta(seqFile)
-            self.__addSeqs(binSeqs, refSeqs, seqsToAdd)
+            self._addSeqs(binSeqs, refSeqs, seqsToAdd)
 
         # remove sequences from bin
         if seqsToRemove != None:
-            self.__removeSeqs(binSeqs, seqsToRemove)
+            self._removeSeqs(binSeqs, seqsToRemove)
 
         # save modified bin
         writeFasta(binSeqs, outputFile)
@@ -98,7 +98,7 @@ class BinTools():
 
         # remove sequences from bin
         if len(seqsToRemove) > 0:
-            self.__removeSeqs(binSeqs, seqsToRemove)
+            self._removeSeqs(binSeqs, seqsToRemove)
 
         # save modified bin
         writeFasta(binSeqs, outputFile)

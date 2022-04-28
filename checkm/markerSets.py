@@ -333,10 +333,10 @@ class MarkerSetParser():
         hmmModelFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
             binMarkerSets = self.parseTaxonomicMarkerSetFile(markerFile)
-            self.__createMarkerHMMs(binMarkerSets, hmmModelFile, bReportProgress=False)
+            self._createMarkerHMMs(binMarkerSets, hmmModelFile, bReportProgress=False)
         elif markerFileType == BinMarkerSets.TREE_MARKER_SET:
             binIdToBinMarkerSets = self.parseLineageMarkerSetFile(markerFile)
-            self.__createMarkerHMMs(binIdToBinMarkerSets[binId], hmmModelFile, bReportProgress=False)
+            self._createMarkerHMMs(binIdToBinMarkerSets[binId], hmmModelFile, bReportProgress=False)
         else:
             shutil.copyfile(markerFile, hmmModelFile)
 
@@ -359,8 +359,8 @@ class MarkerSetParser():
         binIdToModels = mp.Manager().dict()
 
         try:
-            calcProc = [mp.Process(target=self.__fetchModelInfo, args=(binIdToModels, markerFile, workerQueue, writerQueue)) for _ in range(self.numThreads)]
-            writeProc = mp.Process(target=self.__reportFetchProgress, args=(len(binIds), writerQueue))
+            calcProc = [mp.Process(target=self._fetchModelInfo, args=(binIdToModels, markerFile, workerQueue, writerQueue)) for _ in range(self.numThreads)]
+            writeProc = mp.Process(target=self._reportFetchProgress, args=(len(binIds), writerQueue))
 
             writeProc.start()
 
@@ -386,7 +386,7 @@ class MarkerSetParser():
 
         return d
 
-    def __fetchModelInfo(self, binIdToModels, markerFile, queueIn, queueOut):
+    def _fetchModelInfo(self, binIdToModels, markerFile, queueIn, queueOut):
         """Fetch HMM."""
         while True:
             binId = queueIn.get(block=True, timeout=None)
@@ -402,7 +402,7 @@ class MarkerSetParser():
 
             queueOut.put(binId)
 
-    def __reportFetchProgress(self, numBins, queueIn):
+    def _reportFetchProgress(self, numBins, queueIn):
         """Report progress of extracted HMMs."""
 
         numProcessedBins = 0
@@ -440,7 +440,7 @@ class MarkerSetParser():
             self.logger.error('Unrecognized file type: ' + markerFile)
             sys.exit(1)
 
-    def __createMarkerHMMs(self, binMarkerSet, outputFile, bReportProgress=True):
+    def _createMarkerHMMs(self, binMarkerSet, outputFile, bReportProgress=True):
         """Create HMM file for markers."""
 
         # get list of marker genes

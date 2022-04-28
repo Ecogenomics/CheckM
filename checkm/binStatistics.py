@@ -76,8 +76,8 @@ class BinStatistics():
             workerQueue.put(None)
 
         try:
-            calcProc = [mp.Process(target=self.__processBin, args=(outDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target=self.__reportProgress, args=(outDir, binStatsFile, len(binFiles), writerQueue))
+            calcProc = [mp.Process(target=self._processBin, args=(outDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target=self._reportProgress, args=(outDir, binStatsFile, len(binFiles), writerQueue))
 
             writeProc.start()
 
@@ -96,7 +96,7 @@ class BinStatistics():
 
             writeProc.terminate()
 
-    def __processBin(self, outDir, queueIn, queueOut):
+    def _processBin(self, outDir, queueIn, queueOut):
         """Thread safe bin processing."""
         while True:
             binFile = queueIn.get(block=True, timeout=None)
@@ -138,7 +138,7 @@ class BinStatistics():
 
             queueOut.put((binId, binStats))
 
-    def __reportProgress(self, outDir, binStatsFile, numBins, queueIn):
+    def _reportProgress(self, outDir, binStatsFile, numBins, queueIn):
         """Report number of processed bins and write statistics to file."""
 
         storagePath = os.path.join(outDir, 'storage')
@@ -242,7 +242,7 @@ class BinStatistics():
             aaFile = os.path.join(outDir, DefaultValues.PRODIGAL_AA)  # use AA file as nucleotide file is optional
             aaGenes = readFasta(aaFile)
 
-            codingBasePairs = 0  # self.__calculateCodingBases(aaGenes)
+            codingBasePairs = 0  # self._calculateCodingBases(aaGenes)
             for scaffold_id in scaffolds.keys():
                 codingBasePairs += prodigalParserGFF.codingBases(scaffold_id)
 
@@ -252,7 +252,7 @@ class BinStatistics():
             # so calculating the coding density is not possible
             return -1, -1, -1
 
-    def __calculateCodingBases(self, aaGenes):
+    def _calculateCodingBases(self, aaGenes):
         """Calculate number of coding bases in a set of genes."""
         codingBasePairs = 0
         for _geneId, gene in aaGenes.items():

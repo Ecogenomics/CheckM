@@ -68,8 +68,8 @@ class ResultsParser():
 
     def cacheResults(self, outDir, binIdToBinMarkerSets, bIndividualMarkers):
         # cache critical results to file
-        self.__writeBinStatsExt(outDir, binIdToBinMarkerSets, bIndividualMarkers)
-        self.__writeMarkerGeneStats(outDir, binIdToBinMarkerSets, bIndividualMarkers)
+        self._writeBinStatsExt(outDir, binIdToBinMarkerSets, bIndividualMarkers)
+        self._writeMarkerGeneStats(outDir, binIdToBinMarkerSets, bIndividualMarkers)
 
     def parseBinHits(self, outDir,
                      hmmTableFile,
@@ -110,7 +110,7 @@ class ResultsParser():
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
 
-    def __writeBinStatsExt(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
+    def _writeBinStatsExt(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
         binStatsExtFile = os.path.join(directory, 'storage', DefaultValues.BIN_STATS_EXT_OUT)
         fout = open(binStatsExtFile, 'w')
 
@@ -120,7 +120,7 @@ class ResultsParser():
             fout.write(binId + '\t' + str(binStatsExt) + '\n')
         fout.close()
 
-    def __writeMarkerGeneStats(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
+    def _writeMarkerGeneStats(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
         markerGenesFile = os.path.join(directory, 'storage', DefaultValues.MARKER_GENE_STATS)
         fout = open(markerGenesFile, 'w')
 
@@ -198,7 +198,7 @@ class ResultsParser():
         except IOError as detail:
             sys.stderr.write(str(detail) + "\n")
 
-    def __getHeader(self, outputFormat, binMarkerSets, coverageBinProfiles=None, table=None):
+    def _getHeader(self, outputFormat, binMarkerSets, coverageBinProfiles=None, table=None):
         """Get header for requested output table."""
 
         # keep count of single, double, triple genes etc...
@@ -255,7 +255,7 @@ class ResultsParser():
 
         prettyTableFormats = [1, 2, 3, 9]
 
-        header = self.__getHeader(outputFormat, binIdToBinMarkerSets[list(binIdToBinMarkerSets.keys())[0]], coverageBinProfiles, bTabTable)
+        header = self._getHeader(outputFormat, binIdToBinMarkerSets[list(binIdToBinMarkerSets.keys())[0]], coverageBinProfiles, bTabTable)
         if bTabTable or outputFormat not in prettyTableFormats:
             bTabTable = True
             pTable = None

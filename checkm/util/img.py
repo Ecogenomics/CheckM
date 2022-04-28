@@ -308,7 +308,7 @@ class IMG(object):
 
         return table
 
-    def __genomeIdToClusterScaffold(self, genomeId):
+    def _genomeIdToClusterScaffold(self, genomeId):
         """Determine position of PFAM and TIGRFAM genes in genome."""
 
         # determine mapping from gene ids to PFAM/TIGRFAM ids
@@ -362,7 +362,7 @@ class IMG(object):
                 if scaffold:
                     familyIdToScaffoldIds[tigrId] = scaffolds
         except:
-            print ('[BUG]: __genomeIdToClusterScaffold')
+            print ('[BUG]: _genomeIdToClusterScaffold')
             print (sys.exc_info()[0])
             print (genomeId, geneId, tigrId, pfamId)
             sys.exit(1)
@@ -376,7 +376,7 @@ class IMG(object):
         # that are called multiple times (typically during simulations)
         self.cachedGenomeFamilyScaffolds = {}
         for genomeId in genomeIds:
-            self.cachedGenomeFamilyScaffolds[genomeId] = self.__genomeIdToClusterScaffold(genomeId)
+            self.cachedGenomeFamilyScaffolds[genomeId] = self._genomeIdToClusterScaffold(genomeId)
 
         return self.cachedGenomeFamilyScaffolds
 
@@ -394,7 +394,7 @@ class IMG(object):
 
         return familyIdToGeneId
 
-    def __genomeSeqLens(self, genomeId):
+    def _genomeSeqLens(self, genomeId):
         """Determine length of contigs/scaffolds comprising genome."""
         genomeFile = os.path.join(self.genomeDir, genomeId, genomeId + '.fna')
         seqs = readFasta(genomeFile)
@@ -413,11 +413,11 @@ class IMG(object):
 
         self.cachedGenomeSeqLens = {}
         for genomeId in genomeIds:
-            self.cachedGenomeSeqLens[genomeId] = self.__genomeSeqLens(genomeId)
+            self.cachedGenomeSeqLens[genomeId] = self._genomeSeqLens(genomeId)
 
         return self.cachedGenomeSeqLens
 
-    def __genomeFamilyPositions(self, genomeId, seqLens, spacingBetweenContigs):
+    def _genomeFamilyPositions(self, genomeId, seqLens, spacingBetweenContigs):
         """Determine position of PFAM and TIGRFAM genes in genome."""
 
         # determine mapping from gene ids to PFAM/TIGRFAM ids
@@ -482,7 +482,7 @@ class IMG(object):
                 if positions:
                     familyIdToGenomePositions[tigrId] = positions
         except:
-            print ('[BUG]: __genomeFamilyPositions')
+            print ('[BUG]: _genomeFamilyPositions')
             print (sys.exc_info()[0])
             print (genomeId, geneId, tigrId, pfamId)
             sys.exit(1)
@@ -496,7 +496,7 @@ class IMG(object):
         # that are called multiple times (typically during simulations)
         self.cachedGenomeFamilyPositions = {}
         for genomeId in genomeIds:
-            self.cachedGenomeFamilyPositions[genomeId] = self.__genomeFamilyPositions(genomeId, self.cachedGenomeSeqLens[genomeId], spacingBetweenContigs)
+            self.cachedGenomeFamilyPositions[genomeId] = self._genomeFamilyPositions(genomeId, self.cachedGenomeSeqLens[genomeId], spacingBetweenContigs)
 
     def geneDistTable(self, genomeIds, markerGenes, spacingBetweenContigs=0):
         """Create table indicating position of each marker gene in a genome."""
@@ -510,13 +510,13 @@ class IMG(object):
             if self.cachedGenomeSeqLens:
                 seqLens = self.cachedGenomeSeqLens[genomeId]
             else:
-                seqLens = self.__genomeSeqLens(genomeId)
+                seqLens = self._genomeSeqLens(genomeId)
 
             # read position of protein families on genome
             if self.cachedGenomeFamilyPositions:
                 genomeFamilyPositions = self.cachedGenomeFamilyPositions[genomeId]
             else:
-                genomeFamilyPositions = self.__genomeFamilyPositions(genomeId, seqLens, spacingBetweenContigs)
+                genomeFamilyPositions = self._genomeFamilyPositions(genomeId, seqLens, spacingBetweenContigs)
 
             # create marker gene position table for genome
             clusterIdToGenomePositions = {}
