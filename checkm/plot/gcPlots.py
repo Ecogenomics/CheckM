@@ -75,7 +75,8 @@ class GcPlots(AbstractPlot):
                 end += self.options.gc_window_size
 
         if len(data) == 0:
-            axesHist.set_xlabel('[Error] No seqs >= %d, the specified window size' % self.options.gc_window_size)
+            axesHist.set_xlabel(
+                '[Error] No seqs >= %d, the specified window size' % self.options.gc_window_size)
             return
 
         # Histogram plot
@@ -88,7 +89,8 @@ class GcPlots(AbstractPlot):
 
         axesHist.hist(data, bins=bins, density=True, color=(0.5, 0.5, 0.5))
         axesHist.set_xlabel('% GC')
-        axesHist.set_ylabel('% windows (' + str(self.options.gc_window_size) + ' bp)')
+        axesHist.set_ylabel(
+            '% windows (' + str(self.options.gc_window_size) + ' bp)')
 
         # Prettify plot
         for a in axesHist.yaxis.majorTicks:
@@ -116,8 +118,10 @@ class GcPlots(AbstractPlot):
         meanGC, deltaGCs, _ = binTools.gcDist(seqs)
 
         # Delta-GC vs Sequence length plot
-        axesDeltaGC.scatter(deltaGCs, seqLens, c=abs(deltaGCs), s=10, lw=0.5, cmap='gray_r')
-        axesDeltaGC.set_xlabel(r'$\Delta$ GC (mean GC = %.1f%%)' % (meanGC * 100))
+        axesDeltaGC.scatter(deltaGCs, seqLens, c=abs(
+            deltaGCs), s=10, lw=0.5, ec='black', cmap='gray_r')
+        axesDeltaGC.set_xlabel(
+            r'$\Delta$ GC (mean GC = %.1f%%)' % (meanGC * 100))
         axesDeltaGC.set_ylabel('Sequence length (kbp)')
 
         _, yMaxSeqs = axesDeltaGC.get_ylim()
@@ -130,8 +134,10 @@ class GcPlots(AbstractPlot):
             # find closest distribution values
             sampleSeqLen = list(dist[closestGC].keys())[0]
             d = dist[closestGC][sampleSeqLen]
-            gcLowerBoundKey = findNearest(list(d.keys()), (100 - distToPlot) / 2.0)
-            gcUpperBoundKey = findNearest(list(d.keys()), (100 + distToPlot) / 2.0)
+            gcLowerBoundKey = findNearest(
+                list(d.keys()), (100 - distToPlot) / 2.0)
+            gcUpperBoundKey = findNearest(
+                list(d.keys()), (100 + distToPlot) / 2.0)
 
             xL = []
             xU = []
@@ -156,15 +162,17 @@ class GcPlots(AbstractPlot):
         axesDeltaGC.set_xlim([xMinSeqs, xMaxSeqs])
 
         # draw vertical line at x=0
-        axesDeltaGC.vlines(0, 0, yMaxSeqs, linestyle='dashed', color=self.axesColour, zorder=0)
+        yticks = axesDeltaGC.get_yticks()
+        axesDeltaGC.vlines(0, 0, yticks[-1], linestyle='dashed',
+                           color=self.axesColour, zorder=0)
 
         # Change sequence lengths from bp to kbp
-        yticks = axesDeltaGC.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
             label = '%.1f' % (float(seqLen) / 1000)
             label = label.replace('.0', '')  # remove trailing zero
             kbpLabels.append(label)
+        axesDeltaGC.set_yticks(yticks)
         axesDeltaGC.set_yticklabels(kbpLabels)
 
         # Prettify plot

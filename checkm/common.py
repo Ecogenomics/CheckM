@@ -95,9 +95,12 @@ def checkBinInputExists(binInput, bCalledGenes):
                 have_error = True
         if have_error:
             logger = logging.getLogger("timestamp")
-            logger.error('Input table format is not correct: ' + binInput + '\n')
-            logger.error('If input is nucleotide contigs, please supply 2 column at least: [genome_id, genome_contigs_file]')
-            logger.error('If input is gene, please supply 3 column at least: [genome_id, genome_contigs_file, genome_genes_file]')
+            logger.error('Input table format is not correct: ' +
+                         binInput + '\n')
+            logger.error(
+                'If input is nucleotide contigs, please supply 2 column at least: [genome_id, genome_contigs_file]')
+            logger.error(
+                'If input is gene, please supply 3 column at least: [genome_id, genome_contigs_file, genome_genes_file]')
 
 
 def checkFileExists(inputFile):
@@ -132,7 +135,16 @@ def makeSurePathExists(path):
 
 def binIdFromFilename(filename):
     """Extract bin id from bin filename."""
+
     binId = os.path.basename(filename)
+
+    # remove common compression extensions
+    compress_ext = ['.gz', '.bz2', '.rar', '.tgz', '.zip', '.7z']
+    for ext in compress_ext:
+        if binId.endswith(ext):
+            binId = binId[0:len(binId) - len(ext)]
+            break
+
     binId = os.path.splitext(binId)[0]
 
     return binId

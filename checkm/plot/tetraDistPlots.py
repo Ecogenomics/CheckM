@@ -41,7 +41,8 @@ class TetraDistPlots(AbstractPlot):
         axesHist = self.fig.add_subplot(121)
         axesDeltaTD = self.fig.add_subplot(122)
 
-        self.plotOnAxes(fastaFile, tetraSigs, distributionsToPlot, axesHist, axesDeltaTD)
+        self.plotOnAxes(fastaFile, tetraSigs,
+                        distributionsToPlot, axesHist, axesDeltaTD)
 
         self.fig.tight_layout(pad=1, w_pad=1)
         self.draw()
@@ -78,7 +79,8 @@ class TetraDistPlots(AbstractPlot):
                 end += self.options.td_window_size
 
         if len(data) == 0:
-            axesHist.set_xlabel('[Error] No seqs >= %d, the specified window size' % self.options.td_window_size)
+            axesHist.set_xlabel(
+                '[Error] No seqs >= %d, the specified window size' % self.options.td_window_size)
             return
 
         deltaTDs = np.array(deltaTDs)
@@ -93,7 +95,8 @@ class TetraDistPlots(AbstractPlot):
 
         axesHist.hist(data, bins=bins, density=True, color=(0.5, 0.5, 0.5))
         axesHist.set_xlabel(r'$\Delta$ TD')
-        axesHist.set_ylabel('% windows (' + str(self.options.td_window_size) + ' bp)')
+        axesHist.set_ylabel(
+            '% windows (' + str(self.options.td_window_size) + ' bp)')
 
         # Prettify plot
         for a in axesHist.yaxis.majorTicks:
@@ -117,10 +120,12 @@ class TetraDistPlots(AbstractPlot):
                 spine.set_color(self.axesColour)
 
         # get CD bin statistics
-        meanTD, deltaTDs = binTools.tetraDiffDist(seqs, genomicSig, tetraSigs, binSig)
+        meanTD, deltaTDs = binTools.tetraDiffDist(
+            seqs, genomicSig, tetraSigs, binSig)
 
         # Delta-TD vs Sequence length plot
-        axesDeltaTD.scatter(deltaTDs, seqLens, c=abs(deltaTDs), s=10, lw=0.5, cmap='gray_r')
+        axesDeltaTD.scatter(deltaTDs, seqLens, c=abs(
+            deltaTDs), s=10, lw=0.5, ec='black', cmap='gray_r')
         axesDeltaTD.set_xlabel(r'$\Delta$ TD (mean TD = %.2f)' % meanTD)
         axesDeltaTD.set_ylabel('Sequence length (kbp)')
 
@@ -129,7 +134,8 @@ class TetraDistPlots(AbstractPlot):
 
         # plot reference distributions
         for distToPlot in distributionsToPlot:
-            boundKey = findNearest(list(dist[list(dist.keys())[0]].keys()), distToPlot)
+            boundKey = findNearest(
+                list(dist[list(dist.keys())[0]].keys()), distToPlot)
 
             x = []
             y = []
@@ -150,7 +156,8 @@ class TetraDistPlots(AbstractPlot):
                         if j == len(x) - 1:
                             x[j] = x[i]
                         else:
-                            x[j] = (x[j - 1] + x[j + 1]) / 2  # interpolate values from neighbours
+                            # interpolate values from neighbours
+                            x[j] = (x[j - 1] + x[j + 1]) / 2
 
                         if x[j] > x[i]:
                             x[j] = x[i]
@@ -164,15 +171,17 @@ class TetraDistPlots(AbstractPlot):
         axesDeltaTD.set_xlim([xMinSeqs, xMaxSeqs])
 
         # draw vertical line at x=0
-        axesDeltaTD.vlines(0, 0, yMaxSeqs, linestyle='dashed', color=self.axesColour, zorder=0)
+        yticks = axesDeltaTD.get_yticks()
+        axesDeltaTD.vlines(0, 0, yticks[-1], linestyle='dashed',
+                           color=self.axesColour, zorder=0)
 
         # Change sequence lengths from bp to kbp
-        yticks = axesDeltaTD.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
             label = '%.1f' % (float(seqLen) / 1000)
             label = label.replace('.0', '')  # remove trailing zero
             kbpLabels.append(label)
+        axesDeltaTD.set_yticks(yticks)
         axesDeltaTD.set_yticklabels(kbpLabels)
 
         # Prettify plot

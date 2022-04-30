@@ -1,3 +1,9 @@
+1.2.0
+- modified how bin IDs are identified to improve output tables
+
+1.1.11
+- fixed error with inverse_transformed being deprecated in newer versions of Matplotlib
+
 1.1.10
 - fixed bug with missing bCalledGenes flag that was impacting a number of commands
 

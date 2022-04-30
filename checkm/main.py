@@ -294,7 +294,6 @@ class OptionsParser():
             options.rank, options.taxon, options.marker_file)
 
         if bValidSet:
-
             self.logger.info('Marker set written to: ' + options.marker_file)
 
         self.timeKeeper.printTimeStamp()
@@ -422,7 +421,6 @@ class OptionsParser():
         aai.run(options.aai_strain, options.analyze_dir, options.alignment_file)
 
         # get HMM file for each bin
-
         markerSetParser = MarkerSetParser(options.threads)
 
         hmmModelInfoFile = os.path.join(
