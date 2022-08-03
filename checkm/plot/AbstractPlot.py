@@ -34,6 +34,7 @@ class AbstractPlot(FigureCanvas):
     '''
     Abstract base class for plotting.
     '''
+
     def __init__(self, options):
         self.options = options
 
@@ -60,7 +61,8 @@ class AbstractPlot(FigureCanvas):
     def savePlot(self, filename, dpi=300):
         imgFormat = filename[filename.rfind('.') + 1:len(filename)]
         if imgFormat in ['png', 'pdf', 'ps', 'eps', 'svg']:
-            self.fig.savefig(filename, format=imgFormat, dpi=dpi, facecolor='white', edgecolor='white', bbox_inches='tight')
+            self.fig.savefig(filename, format=imgFormat, dpi=dpi,
+                             facecolor='white', edgecolor='white', bbox_inches='tight')
         else:
             pass
 
@@ -72,20 +74,22 @@ class AbstractPlot(FigureCanvas):
         tempAxes.set_xticks(np.arange(len(xLabels)))
         tempAxes.set_yticks(np.arange(len(yLabels)))
 
-        xText = tempAxes.set_xticklabels(xLabels, size=xFontSize, rotation=xRotation)
-        yText = tempAxes.set_yticklabels(yLabels, size=yFontSize, rotation=yRotation)
+        xText = tempAxes.set_xticklabels(
+            xLabels, size=xFontSize, rotation=xRotation)
+        yText = tempAxes.set_yticklabels(
+            yLabels, size=yFontSize, rotation=yRotation)
 
         bboxes = []
         for label in xText:
             bbox = label.get_window_extent(self.get_renderer())
-            bboxi = bbox.inverse_transformed(self.fig.transFigure)
+            bboxi = bbox.transformed(self.fig.transFigure.inverted())
             bboxes.append(bboxi)
         xLabelBounds = mtransforms.Bbox.union(bboxes)
 
         bboxes = []
         for label in yText:
             bbox = label.get_window_extent(self.get_renderer())
-            bboxi = bbox.inverse_transformed(self.fig.transFigure)
+            bboxi = bbox.transformed(self.fig.transFigure.inverted())
             bboxes.append(bboxi)
         yLabelBounds = mtransforms.Bbox.union(bboxes)
 
@@ -98,12 +102,14 @@ class AbstractPlot(FigureCanvas):
 
         tempAxes = self.fig.add_axes([0, 0, 1.0, 1.0])
         tempAxes.set_xticks(np.arange(len(labels)))
-        xLabels = tempAxes.set_xticklabels(labels, size=fontSize, rotation=rotation)
+        xLabels = tempAxes.set_xticklabels(
+            labels, size=fontSize, rotation=rotation)
 
         bboxes = []
         for label in xLabels:
             bbox = label.get_window_extent(self.get_renderer())
-            bboxi = bbox.inverse_transformed(self.fig.transFigure)
+
+            bboxi = bbox.transformed(self.fig.transFigure.inverted())
             bboxes.append(bboxi)
         xLabelBounds = mtransforms.Bbox.union(bboxes)
 
@@ -116,12 +122,13 @@ class AbstractPlot(FigureCanvas):
 
         tempAxes = self.fig.add_axes([0, 0, 1.0, 1.0])
         tempAxes.set_yticks(np.arange(len(labels)))
-        yLabels = tempAxes.set_yticklabels(labels, size=fontSize, rotation=rotation)
+        yLabels = tempAxes.set_yticklabels(
+            labels, size=fontSize, rotation=rotation)
 
         bboxes = []
         for label in yLabels:
             bbox = label.get_window_extent(self.get_renderer())
-            bboxi = bbox.inverse_transformed(self.fig.transFigure)
+            bboxi = bbox.transformed(self.fig.transFigure.inverted())
             bboxes.append(bboxi)
         yLabelBounds = mtransforms.Bbox.union(bboxes)
 
@@ -172,5 +179,5 @@ class AbstractPlot(FigureCanvas):
 
         if bLabels:
             ax.annotate(label, xy=(min(data[:, 0]), max(data[:, 1])), xytext=(0, 0),
-                            textcoords='offset points', ha='right', va='bottom',
-                            bbox=dict(boxstyle='round,pad=0.5', fc=(0.5, 0.5, 0.5), alpha=0.1))
+                        textcoords='offset points', ha='right', va='bottom',
+                        bbox=dict(boxstyle='round,pad=0.5', fc=(0.5, 0.5, 0.5), alpha=0.1))

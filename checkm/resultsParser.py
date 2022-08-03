@@ -40,6 +40,7 @@ from checkm.util.seqUtils import readFasta
 
 class ResultsParser():
     """Parse output of Prodigal+HMMER run and derived statistics."""
+
     def __init__(self, binIdToModels):
         self.logger = logging.getLogger('timestamp')
 
@@ -62,7 +63,8 @@ class ResultsParser():
         binStats = self.parseBinStats(outDir, binStatsFile)
 
         # get hits to each bin
-        self.parseBinHits(outDir, hmmTableFile, bSkipAdjCorrection, bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats)
+        self.parseBinHits(outDir, hmmTableFile, bSkipAdjCorrection, bIgnoreThresholds,
+                          evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats)
 
         return binStats
 
@@ -80,9 +82,10 @@ class ResultsParser():
                      bSkipPseudoGeneCorrection=False,
                      binStats=None):
         """ Parse HMM hits for each bin."""
-        
+
         if not self.models:
-            self.logger.error('Models must be parsed before identifying HMM hits.')
+            self.logger.error(
+                'Models must be parsed before identifying HMM hits.')
             sys.exit(1)
 
         self.logger.info('Parsing HMM hits to marker genes:')
@@ -91,20 +94,25 @@ class ResultsParser():
         for binId in self.models:
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numBinsProcessed += 1
-                statusStr = '    Finished parsing hits for %d of %d (%.2f%%) bins.' % (numBinsProcessed, len(self.models), float(numBinsProcessed) * 100 / len(self.models))
+                statusStr = '    Finished parsing hits for %d of %d (%.2f%%) bins.' % (
+                    numBinsProcessed, len(self.models), float(numBinsProcessed) * 100 / len(self.models))
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 
             if binStats != None:
-                resultsManager = ResultsManager(binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats[binId])
+                resultsManager = ResultsManager(
+                    binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats[binId])
             elif binStats == None:
-                resultsManager = ResultsManager(binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection)
+                resultsManager = ResultsManager(
+                    binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection)
             else:
-                self.logger.error('Invalid parameter settings for binStats and seqStats.')
+                self.logger.error(
+                    'Invalid parameter settings for binStats and seqStats.')
                 sys.exit(1)
 
             hmmerTableFile = os.path.join(outDir, 'bins', binId, hmmTableFile)
-            self.parseHmmerResults(hmmerTableFile, resultsManager, bSkipAdjCorrection)
+            self.parseHmmerResults(
+                hmmerTableFile, resultsManager, bSkipAdjCorrection)
             self.results[binId] = resultsManager
 
         if self.logger.getEffectiveLevel() <= logging.INFO:
@@ -112,20 +120,25 @@ class ResultsParser():
 
     def _writeBinStatsExt(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
         binStatsExtFile = os.path.join(directory, 'storage', DefaultValues.BIN_STATS_EXT_OUT)
+        
         fout = open(binStatsExtFile, 'w')
 
         for binId in self.results:
-            binStatsExt = self.results[binId].getSummary(binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=2)
-            binStatsExt.update(self.results[binId].geneCopyNumber(binIdToBinMarkerSets[binId]))
+            binStatsExt = self.results[binId].getSummary(
+                binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=2)
+            binStatsExt.update(self.results[binId].geneCopyNumber(
+                binIdToBinMarkerSets[binId]))
             fout.write(binId + '\t' + str(binStatsExt) + '\n')
         fout.close()
 
     def _writeMarkerGeneStats(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
         markerGenesFile = os.path.join(directory, 'storage', DefaultValues.MARKER_GENE_STATS)
+
         fout = open(markerGenesFile, 'w')
 
         for binId in self.results:
-            markerGenesHits = self.results[binId].getSummary(binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=8)
+            markerGenesHits = self.results[binId].getSummary(
+                binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=8)
             fout.write(binId + '\t' + str(markerGenesHits) + '\n')
         fout.close()
 
@@ -145,7 +158,8 @@ class ResultsParser():
 
     def parseBinStatsExt(self, resultsFolder):
         """Read bin statistics from file."""
-        binStatsExtFile = os.path.join(resultsFolder, 'storage', DefaultValues.BIN_STATS_EXT_OUT)
+        binStatsExtFile = os.path.join(
+            resultsFolder, 'storage', DefaultValues.BIN_STATS_EXT_OUT)
 
         checkFileExists(binStatsExtFile)
 
@@ -159,7 +173,8 @@ class ResultsParser():
 
     def parseMarkerGeneStats(self, resultsFolder):
         """Read bin statistics from file."""
-        markerGeneStatsFile = os.path.join(resultsFolder, 'storage', DefaultValues.MARKER_GENE_STATS)
+        markerGeneStatsFile = os.path.join(
+            resultsFolder, 'storage', DefaultValues.MARKER_GENE_STATS)
 
         checkFileExists(markerGeneStatsFile)
 
@@ -189,7 +204,8 @@ class ResultsParser():
 
             # retain only best hit to PFAM clan
             pfam = PFAM(DefaultValues.PFAM_CLAN_FILE)
-            resultsManager.markerHits = pfam.filterHitsFromSameClan(resultsManager.markerHits)
+            resultsManager.markerHits = pfam.filterHitsFromSameClan(
+                resultsManager.markerHits)
 
             # correct for errors in ORF calling
             if not bSkipAdjCorrection:
@@ -203,27 +219,34 @@ class ResultsParser():
 
         # keep count of single, double, triple genes etc...
         if outputFormat == 1:
-            header = ['Bin Id', 'Marker lineage', '# genomes', '# markers', '# marker sets', '0', '1', '2', '3', '4', '5+', 'Completeness', 'Contamination', 'Strain heterogeneity']
+            header = ['Bin Id', 'Marker lineage', '# genomes', '# markers', '# marker sets', '0',
+                      '1', '2', '3', '4', '5+', 'Completeness', 'Contamination', 'Strain heterogeneity']
         elif outputFormat == 2:
             header = ['Bin Id']
-            header += ['Marker lineage', '# genomes', '# markers', '# marker sets']
+            header += ['Marker lineage', '# genomes',
+                       '# markers', '# marker sets']
             header += ['Completeness', 'Contamination', 'Strain heterogeneity']
-            header += ['Genome size (bp)', '# ambiguous bases', '# scaffolds', '# contigs']
-            header += ['N50 (scaffolds)', 'N50 (contigs)', 'Mean scaffold length (bp)', 'Mean contig length (bp)']
+            header += ['Genome size (bp)', '# ambiguous bases',
+                       '# scaffolds', '# contigs']
+            header += ['N50 (scaffolds)', 'N50 (contigs)',
+                       'Mean scaffold length (bp)', 'Mean contig length (bp)']
             header += ['Longest scaffold (bp)', 'Longest contig (bp)']
             header += ['GC', 'GC std (scaffolds > 1kbp)']
-            header += ['Coding density', 'Translation table', '# predicted genes']
+            header += ['Coding density',
+                       'Translation table', '# predicted genes']
             header += ['0', '1', '2', '3', '4', '5+']
 
             if coverageBinProfiles != None:
                 for bamId in coverageBinProfiles[list(coverageBinProfiles.keys())[0]]:
-                    header += ['Coverage (' + bamId + ')', 'Coverage std (' + bamId + ')']
+                    header += ['Coverage (' + bamId + ')',
+                               'Coverage std (' + bamId + ')']
 
             if DefaultValues.MIN_SEQ_LEN_GC_STD != 1000:
                 self.logger.error('Labeling error: GC std (scaffolds > 1kbp)')
                 sys.exit(1)
         elif outputFormat == 3:
-            header = ['Bin Id', 'Node Id', 'Marker lineage', '# genomes', '# markers', '# marker sets', '0', '1', '2', '3', '4', '5+', 'Completeness', 'Contamination', 'Strain heterogeneity']
+            header = ['Bin Id', 'Node Id', 'Marker lineage', '# genomes', '# markers', '# marker sets',
+                      '0', '1', '2', '3', '4', '5+', 'Completeness', 'Contamination', 'Strain heterogeneity']
         elif outputFormat == 4:
             header = None
         elif outputFormat == 5:
@@ -233,14 +256,17 @@ class ResultsParser():
         elif outputFormat == 7:
             header = ['Bin Id', 'Marker Id', 'Gene Ids']
         elif outputFormat == 8:
-            header = ['Bin Id', 'Gene Id', '{Marker Id, Start position, End position}']
+            header = ['Bin Id', 'Gene Id',
+                      '{Marker Id, Start position, End position}']
         elif outputFormat == 9:
             if table is not None:
-                header = ['Bin Id', 'Contig', 'Gene Number', 'Gene Start', 'Gene End', 'Gene Strand', 'Prot Length', 'Marker Id', 'Align Start', 'Align End', 'Sequence']
+                header = ['Bin Id', 'Contig', 'Gene Number', 'Gene Start', 'Gene End',
+                          'Gene Strand', 'Prot Length', 'Marker Id', 'Align Start', 'Align End', 'Sequence']
             else:
                 header = " "
         elif outputFormat == 10:
-            header = ['Scaffold Id', 'Bin Id', 'Length', '# contigs', 'GC', '# ORFs', 'Coding density', 'Marker Ids']
+            header = ['Scaffold Id', 'Bin Id', 'Length', '# contigs',
+                      'GC', '# ORFs', 'Coding density', 'Marker Ids']
 
         return header
 
@@ -256,6 +282,7 @@ class ResultsParser():
         prettyTableFormats = [1, 2, 3, 9]
 
         header = self._getHeader(outputFormat, binIdToBinMarkerSets[list(binIdToBinMarkerSets.keys())[0]], coverageBinProfiles, bTabTable)
+
         if bTabTable or outputFormat not in prettyTableFormats:
             bTabTable = True
             pTable = None
@@ -272,7 +299,8 @@ class ResultsParser():
 
         seqsReported = 0
         for binId in sorted(self.results.keys()):
-            seqsReported += self.results[binId].printSummary(outputFormat, aai, binIdToBinMarkerSets[binId], bIndividualMarkers, coverageBinProfiles, pTable, anaFolder)
+            seqsReported += self.results[binId].printSummary(
+                outputFormat, aai, binIdToBinMarkerSets[binId], bIndividualMarkers, coverageBinProfiles, pTable, anaFolder)
 
         if outputFormat in [6, 7] and seqsReported == 0:
             print('[No marker genes satisfied the reporting criteria.]')
@@ -291,6 +319,7 @@ class ResultsParser():
 
 class ResultsManager():
     """Store all the results for a single bin"""
+
     def __init__(self, binId, models,
                  bIgnoreThresholds=False,
                  evalueThreshold=DefaultValues.E_VAL,
@@ -361,7 +390,8 @@ class ResultsManager():
                 else:
                     if previousHitToORF.dom_score < hit.dom_score:
                         self.markerHits[hit.query_accession].append(hit)
-                        self.markerHits[hit.query_accession].remove(previousHitToORF)
+                        self.markerHits[hit.query_accession].remove(
+                            previousHitToORF)
 
             else:
                 self.markerHits[hit.query_accession] = [hit]
@@ -420,16 +450,21 @@ class ResultsManager():
 
                         # produce concatenated label indicating the two genes being combined
                         orfA, orfB = sorted([orfI, orfJ])
-                        newHit.target_name = DefaultValues.SEQ_CONCAT_CHAR.join([orfA, orfB])
+                        newHit.target_name = DefaultValues.SEQ_CONCAT_CHAR.join([
+                                                                                orfA, orfB])
 
-                        newHit.target_length = hits[i].target_length + hits[j].target_length
-                        newHit.hmm_from = min(hits[i].hmm_from, hits[j].hmm_from)
+                        newHit.target_length = hits[i].target_length + \
+                            hits[j].target_length
+                        newHit.hmm_from = min(
+                            hits[i].hmm_from, hits[j].hmm_from)
                         newHit.hmm_to = min(hits[i].hmm_to, hits[j].hmm_to)
 
-                        newHit.ali_from = min(hits[i].ali_from, hits[j].ali_from)
+                        newHit.ali_from = min(
+                            hits[i].ali_from, hits[j].ali_from)
                         newHit.ali_to = min(hits[i].ali_to, hits[j].ali_to)
 
-                        newHit.env_from = min(hits[i].env_from, hits[j].env_from)
+                        newHit.env_from = min(
+                            hits[i].env_from, hits[j].env_from)
                         newHit.env_to = min(hits[i].env_to, hits[j].env_to)
 
                         hits.remove(hits[j])
@@ -468,7 +503,8 @@ class ResultsManager():
         """Report number of times each marker gene was found along with
            a completeness and contamination estimation for the selected marker
            set associated with a bin."""
-        geneCounts = self.geneCounts(binMarkerSets.selectedMarkerSet(), self.markerHits, bIndividualMarkers)
+        geneCounts = self.geneCounts(
+            binMarkerSets.selectedMarkerSet(), self.markerHits, bIndividualMarkers)
 
         return geneCounts
 
@@ -490,7 +526,8 @@ class ResultsManager():
 
             geneCounts[markerCount] += 1
 
-        percComp, percCont = markerSet.genomeCheck(markerHits, bIndividualMarkers)
+        percComp, percCont = markerSet.genomeCheck(
+            markerHits, bIndividualMarkers)
 
         geneCounts.append(percComp)
         geneCounts.append(percCont)
@@ -518,7 +555,8 @@ class ResultsManager():
                 if len(self.markerHits[marker]) >= 5:
                     geneCopyNumber['GCN5+'].append(markerId)
                 else:
-                    geneCopyNumber['GCN' + str(len(self.markerHits[marker]))].append(markerId)
+                    geneCopyNumber['GCN' +
+                                   str(len(self.markerHits[marker]))].append(markerId)
             else:
                 geneCopyNumber['GCN0'].append(markerId)
 
@@ -530,7 +568,8 @@ class ResultsManager():
 
         if outputFormat == 1:
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
-            data = self.geneCountsForSelectedMarkerSet(binMarkerSets, bIndividualMarkers)
+            data = self.geneCountsForSelectedMarkerSet(
+                binMarkerSets, bIndividualMarkers)
 
             summary['marker lineage'] = selectedMarkerSet.lineageStr
             summary['# genomes'] = selectedMarkerSet.numGenomes
@@ -546,7 +585,8 @@ class ResultsManager():
             summary['Contamination'] = data[7]
         elif outputFormat == 2:
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
-            data = self.geneCountsForSelectedMarkerSet(binMarkerSets, bIndividualMarkers)
+            data = self.geneCountsForSelectedMarkerSet(
+                binMarkerSets, bIndividualMarkers)
 
             summary['marker lineage'] = selectedMarkerSet.lineageStr
             summary['# genomes'] = selectedMarkerSet.numGenomes
@@ -620,19 +660,20 @@ class ResultsManager():
                     continue
 
                 for hit in hit_list:
-                    genesWithMarkers[hit.target_name] = genesWithMarkers.get(hit.target_name, []) + [hit]
+                    genesWithMarkers[hit.target_name] = genesWithMarkers.get(
+                        hit.target_name, []) + [hit]
 
             for geneId, hits in genesWithMarkers.items():
                 summary[geneId] = {}
                 for hit in hits:
-                    summary[geneId][hit.query_accession] = summary[geneId].get(hit.query_accession, []) + [[hit.ali_from, hit.ali_to]]
+                    summary[geneId][hit.query_accession] = summary[geneId].get(
+                        hit.query_accession, []) + [[hit.ali_from, hit.ali_to]]
         else:
             print("Unknown output format: ", outputFormat)
 
         return summary
 
     def printSummary(self, outputFormat, aai, binMarkerSets, bIndividualMarkers, coverageBinProfiles=None, table=None, anaFolder=None):
-
         """Print out information about bin."""
         if outputFormat == 1:
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
@@ -641,18 +682,22 @@ class ResultsManager():
             if selectedMarkerSet.UID != '0':
                 lineageStr += ' (' + str(selectedMarkerSet.UID) + ')'
 
-            data = self.geneCountsForSelectedMarkerSet(binMarkerSets, bIndividualMarkers)
+            data = self.geneCountsForSelectedMarkerSet(
+                binMarkerSets, bIndividualMarkers)
             row = "%s\t%s\t%d\t%d\t%d\t%s\t%0.2f\t%0.2f\t%0.2f" % (self.binId, lineageStr,
-                                                selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets(),
-                                                "\t".join([str(data[i]) for i in range(6)]),
-                                                data[6],
-                                                data[7],
-                                                aai.aaiMeanBinHetero.get(self.binId, 0.0)
-                                                )
+                                                                   selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets(),
+                                                                   "\t".join(
+                                                                       [str(data[i]) for i in range(6)]),
+                                                                   data[6],
+                                                                   data[7],
+                                                                   aai.aaiMeanBinHetero.get(
+                                                                       self.binId, 0.0)
+                                                                   )
             if table == None:
                 print(row)
             else:
-                table.add_row([self.binId, lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets()] + data + [aai.aaiMeanBinHetero.get(self.binId, 0.0)])
+                table.add_row([self.binId, lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(
+                ), selectedMarkerSet.numSets()] + data + [aai.aaiMeanBinHetero.get(self.binId, 0.0)])
         elif outputFormat == 2:
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
 
@@ -660,38 +705,50 @@ class ResultsManager():
             if selectedMarkerSet.UID != '0':
                 lineageStr += ' (' + str(selectedMarkerSet.UID) + ')'
 
-            data = self.geneCountsForSelectedMarkerSet(binMarkerSets, bIndividualMarkers)
+            data = self.geneCountsForSelectedMarkerSet(
+                binMarkerSets, bIndividualMarkers)
 
             if table == None:
                 row = self.binId
-                row += '\t%s\t%d\t%d\t%d' % (lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets())
-                row += '\t%0.2f\t%0.2f\t%0.2f' % (data[6], data[7], aai.aaiMeanBinHetero.get(self.binId, 0.0))
+                row += '\t%s\t%d\t%d\t%d' % (lineageStr, selectedMarkerSet.numGenomes,
+                                             selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets())
+                row += '\t%0.2f\t%0.2f\t%0.2f' % (
+                    data[6], data[7], aai.aaiMeanBinHetero.get(self.binId, 0.0))
                 row += '\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d' % (self.binStats['Genome size'], self.binStats['# ambiguous bases'],
-                                                                         self.binStats['# scaffolds'], self.binStats['# contigs'],
-                                                                         self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'],
-                                                                         self.binStats['Mean scaffold length'], self.binStats['Mean contig length'],
-                                                                         self.binStats['Longest scaffold'], self.binStats['Longest contig'])
-                row += '\t%.1f\t%.2f' % (self.binStats['GC'] * 100, self.binStats['GC std'] * 100)
-                row += '\t%.2f\t%d\t%d' % (self.binStats['Coding density'] * 100, self.binStats['Translation table'], self.binStats['# predicted genes'])
+                                                                     self.binStats['# scaffolds'], self.binStats['# contigs'],
+                                                                     self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'],
+                                                                     self.binStats['Mean scaffold length'], self.binStats['Mean contig length'],
+                                                                     self.binStats['Longest scaffold'], self.binStats['Longest contig'])
+                row += '\t%.1f\t%.2f' % (self.binStats['GC']
+                                         * 100, self.binStats['GC std'] * 100)
+                row += '\t%.2f\t%d\t%d' % (self.binStats['Coding density'] * 100,
+                                           self.binStats['Translation table'], self.binStats['# predicted genes'])
                 row += '\t' + '\t'.join([str(data[i]) for i in range(6)])
 
                 if coverageBinProfiles:
                     if self.binId in coverageBinProfiles:
                         for _, coverageStats in coverageBinProfiles[self.binId].items():
-                            row += '\t%.2f\t%.2f' % (coverageStats[0], coverageStats[1])
+                            row += '\t%.2f\t%.2f' % (
+                                coverageStats[0], coverageStats[1])
                     else:
                         for bamId in coverageBinProfiles[list(coverageBinProfiles.keys())[0]]:
                             row += '\t%.2f\t%.2f' % (0, 0)
                 print(row)
             else:
-                row = [self.binId, lineageStr, selectedMarkerSet.numGenomes, selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets()]
-                row.extend([data[6], data[7], aai.aaiMeanBinHetero.get(self.binId, 0.0)])
+                row = [self.binId, lineageStr, selectedMarkerSet.numGenomes,
+                       selectedMarkerSet.numMarkers(), selectedMarkerSet.numSets()]
+                row.extend(
+                    [data[6], data[7], aai.aaiMeanBinHetero.get(self.binId, 0.0)])
                 row.extend([self.binStats['Genome size'], self.binStats['# ambiguous bases'], self.binStats['# scaffolds'],
-                                                 self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats['N50 (contigs)'],
-                                                 int(self.binStats['Mean scaffold length']), int(self.binStats['Mean contig length']),
-                                                 self.binStats['Longest scaffold'], self.binStats['Longest contig']])
-                row.extend([self.binStats['GC'] * 100, self.binStats['GC std'] * 100])
-                row.extend([self.binStats['Coding density'] * 100, self.binStats['Translation table'], self.binStats['# predicted genes']])
+                            self.binStats['# contigs'], self.binStats['N50 (scaffolds)'], self.binStats[
+                    'N50 (contigs)'],
+                    int(self.binStats['Mean scaffold length']), int(
+                                self.binStats['Mean contig length']),
+                    self.binStats['Longest scaffold'], self.binStats['Longest contig']])
+                row.extend([self.binStats['GC'] * 100,
+                           self.binStats['GC std'] * 100])
+                row.extend([self.binStats['Coding density'] * 100,
+                           self.binStats['Translation table'], self.binStats['# predicted genes']])
                 row.extend(data[0:6])
 
                 if coverageBinProfiles:
@@ -700,28 +757,32 @@ class ResultsManager():
                             row.extend(coverageStats)
                     else:
                         for bamId in coverageBinProfiles[list(coverageBinProfiles.keys())[0]]:
-                            row.extend([0,0])
+                            row.extend([0, 0])
 
                 table.add_row(row)
         elif outputFormat == 3:
             for ms in binMarkerSets.markerSetIter():
                 data = self.geneCounts(ms, self.markerHits, bIndividualMarkers)
                 row = "%s\t%s\t%s\t%d\t%d\t%d\t%s\t%0.2f\t%0.2f\t%0.2f" % (self.binId, ms.UID, ms.lineageStr, ms.numGenomes,
-                                                    ms.numMarkers(), ms.numSets(),
-                                                    "\t".join([str(data[i]) for i in range(6)]),
-                                                    data[6],
-                                                    data[7],
-                                                    aai.aaiMeanBinHetero.get(self.binId, 0.0)
-                                                    )
+                                                                           ms.numMarkers(), ms.numSets(),
+                                                                           "\t".join(
+                                                                               [str(data[i]) for i in range(6)]),
+                                                                           data[6],
+                                                                           data[7],
+                                                                           aai.aaiMeanBinHetero.get(
+                                                                               self.binId, 0.0)
+                                                                           )
                 if table == None:
                     print(row)
                 else:
-                    table.add_row([self.binId, ms.UID, ms.lineageStr, ms.numGenomes, ms.numMarkers(), ms.numSets()] + data + [aai.aaiMeanBinHetero.get(self.binId, 0.0)])
+                    table.add_row([self.binId, ms.UID, ms.lineageStr, ms.numGenomes, ms.numMarkers(
+                    ), ms.numSets()] + data + [aai.aaiMeanBinHetero.get(self.binId, 0.0)])
 
         elif outputFormat == 4:
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
             data = self.hitsToMarkerGene(binMarkerSets.selectedMarkerSet())
-            row = "Node Id: %s; Marker lineage: %s" % (selectedMarkerSet.UID, selectedMarkerSet.lineageStr)
+            row = "Node Id: %s; Marker lineage: %s" % (
+                selectedMarkerSet.UID, selectedMarkerSet.lineageStr)
             for marker in data:
                 row += '\t' + marker
             print(row)
@@ -775,15 +836,19 @@ class ResultsManager():
                 if len(hitList) >= 2:
                     scaffoldsWithMultipleHits = set()
                     for i in range(0, len(hitList)):
-                        scaffoldId = hitList[i].target_name[0:hitList[i].target_name.rfind('_')]
+                        scaffoldId = hitList[i].target_name[0:hitList[i].target_name.rfind(
+                            '_')]
                         for j in range(i + 1, len(hitList)):
                             if scaffoldId == hitList[j].target_name[0:hitList[j].target_name.rfind('_')]:
-                                scaffoldsWithMultipleHits.add(hitList[i].target_name)
-                                scaffoldsWithMultipleHits.add(hitList[j].target_name)
+                                scaffoldsWithMultipleHits.add(
+                                    hitList[i].target_name)
+                                scaffoldsWithMultipleHits.add(
+                                    hitList[j].target_name)
 
                     if len(scaffoldsWithMultipleHits) >= 2:
                         print(self.binId, marker, sep='\t', end='\t')
-                        print(','.join(sorted(list(scaffoldsWithMultipleHits))), end='\n')
+                        print(
+                            ','.join(sorted(list(scaffoldsWithMultipleHits))), end='\n')
                         seqsReported += 1
 
             return seqsReported
@@ -798,12 +863,14 @@ class ResultsManager():
                     continue
 
                 for hit in hit_list:
-                    genesWithMarkers[hit.target_name] = genesWithMarkers.get(hit.target_name, []) + [hit]
+                    genesWithMarkers[hit.target_name] = genesWithMarkers.get(
+                        hit.target_name, []) + [hit]
 
             for geneId, hits in genesWithMarkers.items():
                 rowStr = self.binId + '\t' + geneId
                 for hit in hits:
-                    rowStr += '\t' + hit.query_accession + ',' + str(hit.ali_from) + ',' + str(hit.ali_to)
+                    rowStr += '\t' + hit.query_accession + ',' + \
+                        str(hit.ali_from) + ',' + str(hit.ali_to)
                 print(rowStr)
 
         # Hunter Cameron, May 29, 2015 - print a fasta of marker genes
@@ -812,7 +879,8 @@ class ResultsManager():
 
             # check for the analyze folder for later use
             if anaFolder is None:
-                raise ValueError("AnaFolder must not be None for outputFormat 9")
+                raise ValueError(
+                    "AnaFolder must not be None for outputFormat 9")
 
             # ## build a dict to link target_names with marker gene alignment information
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
@@ -824,13 +892,14 @@ class ResultsManager():
                 for hit in hit_list:
                     name = hit.target_name
                     hitInfo[name] = {
-                            "marker": marker,
-                            "ali_from": str(hit.ali_from),
-                            "ali_to": str(hit.ali_to)
-                            }
+                        "marker": marker,
+                        "ali_from": str(hit.ali_from),
+                        "ali_to": str(hit.ali_to)
+                    }
 
             # ## Open genes.faa and print the ones that were found with some descriptive info in the header
-            path_to_genes = "/".join([anaFolder, "bins", self.binId, "genes.faa"])
+            path_to_genes = "/".join([anaFolder, "bins",
+                                     self.binId, "genes.faa"])
 
             # get only the seqs we need and their information as a dict
             seqs = readFasta(path_to_genes, trimHeader=False)
@@ -863,32 +932,34 @@ class ResultsManager():
                 # if table output not specified, print FASTA
                 if table != None:
                     gene_info = "geneId={};start={};end={};strand={};protlen={}".format(
-                            gene_num, gene_start, gene_end, gene_strand, str(len(seqs[header])))
+                        gene_num, gene_start, gene_end, gene_strand, str(len(seqs[header])))
 
                     marker_info = "marker={};mstart={};mend={}".format(
-                            hitInfo[gene_name]["marker"],
-                            hitInfo[gene_name]["ali_from"],
-                            hitInfo[gene_name]["ali_to"])
+                        hitInfo[gene_name]["marker"],
+                        hitInfo[gene_name]["ali_from"],
+                        hitInfo[gene_name]["ali_to"])
 
                     # new header will be the bin name, contig name, gene info, and marker info separated by spaces
-                    new_header = ">" + " ".join([self.binId, contig_name, gene_info, marker_info])
+                    new_header = ">" + \
+                        " ".join([self.binId, contig_name,
+                                 gene_info, marker_info])
 
                     print(new_header, seqs[header], sep="\n")
                 # otherwise, print a table
                 else:
                     print("\t".join([
-                            self.binId,
-                            contig_name,
-                            gene_num,
-                            gene_start,
-                            gene_end,
-                            gene_strand,
-                            str(len(seqs[header])),
-                            hitInfo[gene_name]["marker"],
-                            hitInfo[gene_name]["ali_from"],
-                            hitInfo[gene_name]["ali_to"],
-                            seqs[header]
-                            ]))
+                        self.binId,
+                        contig_name,
+                        gene_num,
+                        gene_start,
+                        gene_end,
+                        gene_strand,
+                        str(len(seqs[header])),
+                        hitInfo[gene_name]["marker"],
+                        hitInfo[gene_name]["ali_from"],
+                        hitInfo[gene_name]["ali_to"],
+                        seqs[header]
+                    ]))
         else:
             self.logger.error("Unknown output format: %d", outputFormat)
 

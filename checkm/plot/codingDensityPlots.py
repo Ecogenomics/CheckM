@@ -37,7 +37,7 @@ from checkm.defaultValues import DefaultValues
 class CodingDensityPlots(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
-        
+
         self.logger = logging.getLogger('timestamp')
 
     def plot(self, fastaFile, distributionsToPlot):
@@ -55,9 +55,11 @@ class CodingDensityPlots(AbstractPlot):
 
     def plotOnAxes(self, fastaFile, distributionsToPlot, axesHist, axesDeltaCD):
         # parse Prodigal output
-        gffFile = os.path.join(self.options.results_dir, 'bins', binIdFromFilename(fastaFile), DefaultValues.PRODIGAL_GFF)
+        gffFile = os.path.join(self.options.results_dir, 'bins', binIdFromFilename(
+            fastaFile), DefaultValues.PRODIGAL_GFF)
         if not os.path.exists(gffFile):
-            self.logger.error('Missing gene feature file (%s). This plot if not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF)
+            self.logger.error(
+                'Missing gene feature file (%s). This plot if not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF)
             sys.exit(1)
 
         prodigalParser = ProdigalGeneFeatureParser(gffFile)
@@ -87,7 +89,8 @@ class CodingDensityPlots(AbstractPlot):
                 end += self.options.cd_window_size
 
         if len(data) == 0:
-            axesHist.set_xlabel('[Error] No seqs >= %d, the specified window size' % self.options.cd_window_size)
+            axesHist.set_xlabel(
+                '[Error] No seqs >= %d, the specified window size' % self.options.cd_window_size)
             return
 
         # Histogram plot
@@ -100,7 +103,8 @@ class CodingDensityPlots(AbstractPlot):
 
         axesHist.hist(data, bins=bins, density=True, color=(0.5, 0.5, 0.5))
         axesHist.set_xlabel('% coding density')
-        axesHist.set_ylabel('% windows (' + str(self.options.cd_window_size) + ' bp)')
+        axesHist.set_ylabel(
+            '% windows (' + str(self.options.cd_window_size) + ' bp)')
 
         # Prettify plot
         for a in axesHist.yaxis.majorTicks:
@@ -128,8 +132,10 @@ class CodingDensityPlots(AbstractPlot):
         meanCD, deltaCDs, _ = binTools.codingDensityDist(seqs, prodigalParser)
 
         # Delta-CD vs sequence length plot
-        axesDeltaCD.scatter(deltaCDs, seqLens, c=abs(deltaCDs), s=10, lw=0.5, cmap='gray_r')
-        axesDeltaCD.set_xlabel(r'$\Delta$ CD (mean coding density = %.1f%%)' % (meanCD * 100))
+        axesDeltaCD.scatter(deltaCDs, seqLens, c=abs(
+            deltaCDs), s=10, lw=0.5, ec='black', cmap='gray_r')
+        axesDeltaCD.set_xlabel(
+            r'$\Delta$ CD (mean coding density = %.1f%%)' % (meanCD * 100))
         axesDeltaCD.set_ylabel('Sequence length (kbp)')
 
         _, yMaxSeqs = axesDeltaCD.get_ylim()
@@ -142,8 +148,10 @@ class CodingDensityPlots(AbstractPlot):
             # find closest distribution values
             sampleSeqLen = list(dist[closestCD].keys())[0]
             d = dist[closestCD][sampleSeqLen]
-            cdLowerBoundKey = findNearest(list(d.keys()), (100 - distToPlot) / 2.0)
-            cdUpperBoundKey = findNearest(list(d.keys()), (100 + distToPlot) / 2.0)
+            cdLowerBoundKey = findNearest(
+                list(d.keys()), (100 - distToPlot) / 2.0)
+            cdUpperBoundKey = findNearest(
+                list(d.keys()), (100 + distToPlot) / 2.0)
 
             xL = []
             xU = []
@@ -168,15 +176,17 @@ class CodingDensityPlots(AbstractPlot):
         axesDeltaCD.set_xlim([xMinSeqs, xMaxSeqs])
 
         # draw vertical line at x=0
-        axesDeltaCD.vlines(0, 0, yMaxSeqs, linestyle='dashed', color=self.axesColour, zorder=0)
+        yticks = axesDeltaCD.get_yticks()
+        axesDeltaCD.vlines(0, 0, yticks[-1], linestyle='dashed',
+                           color=self.axesColour, zorder=0)
 
         # Change sequence lengths from bp to kbp
-        yticks = axesDeltaCD.get_yticks()
         kbpLabels = []
         for seqLen in yticks:
             label = '%.1f' % (float(seqLen) / 1000)
             label = label.replace('.0', '')  # remove trailing zero
             kbpLabels.append(label)
+        axesDeltaCD.set_yticks(yticks)
         axesDeltaCD.set_yticklabels(kbpLabels)
 
         # Prettify plot

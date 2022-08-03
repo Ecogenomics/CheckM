@@ -38,11 +38,11 @@ setup(
         'Topic :: Scientific/Engineering :: Bio-Informatics',
     ],
     install_requires=[
-        "numpy >= 1.13.1",
-        "scipy >= 0.19.1",
-        "matplotlib >= 2.1.0",
-        "pysam >= 0.12.0.1",
-        "dendropy >= 4.4.0",
+        "numpy >= 1.21.3",
+        "scipy >= 1.7.3",
+        "matplotlib >= 3.5.1",
+        "pysam >= 0.19.0",
+        "dendropy >= 4.5.2",
         "setuptools"],
     zip_safe=False
 )
