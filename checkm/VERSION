@@ -1,3 +1,6 @@
+1.2.1
+- renamed private classes (thanks to misialq for the PR)
+
 1.2.0
 - modified how bin IDs are identified to improve output tables
 
