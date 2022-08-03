@@ -37,11 +37,11 @@ class GenomicSignatures(object):
 
         self.K = K
         self.compl = str.maketrans('ACGT', 'TGCA')
-        self.kmerCols, self.kmerToCanonicalIndex = self.__makeKmerColNames()
+        self.kmerCols, self.kmerToCanonicalIndex = self._makeKmerColNames()
 
         self.totalThreads = threads
 
-    def __makeKmerColNames(self):
+    def _makeKmerColNames(self):
         """Work out unique kmers."""
 
         # determine all mers of a given length
@@ -57,7 +57,7 @@ class GenomicSignatures(object):
         # pare down kmers based on lexicographical ordering
         retList = []
         for mer in mers:
-            kmer = self.__lexicographicallyLowest(mer)
+            kmer = self._lexicographicallyLowest(mer)
             if kmer not in retList:
                 retList.append(kmer)
 
@@ -67,23 +67,23 @@ class GenomicSignatures(object):
         kmerToCanonicalIndex = {}
         for index, kmer in enumerate(retList):
             kmerToCanonicalIndex[kmer] = index
-            kmerToCanonicalIndex[self.__revComp(kmer)] = index
+            kmerToCanonicalIndex[self._revComp(kmer)] = index
 
         return retList, kmerToCanonicalIndex
 
-    def __lexicographicallyLowest(self, seq):
+    def _lexicographicallyLowest(self, seq):
         """Return the lexicographically lowest form of this sequence."""
-        rseq = self.__revComp(seq)
+        rseq = self._revComp(seq)
         if(seq < rseq):
             return seq
         return rseq
 
-    def __revComp(self, seq):
+    def _revComp(self, seq):
         """Return the reverse complement of a sequence."""
         # build a dictionary to know what letter to switch to
         return seq.translate(self.compl)[::-1]
 
-    def __calculateResults(self, queueIn, queueOut):
+    def _calculateResults(self, queueIn, queueOut):
         """Calculate genomic signature of sequences in parallel."""
         while True:
             seqId, seq = queueIn.get(block=True, timeout=None)
@@ -94,7 +94,7 @@ class GenomicSignatures(object):
 
             queueOut.put((seqId, sig))
 
-    def __storeResults(self, seqFile, outputFile, totalSeqs, writerQueue):
+    def _storeResults(self, seqFile, outputFile, totalSeqs, writerQueue):
         """Store genomic signatures to file."""
 
         # write header
@@ -166,8 +166,8 @@ class GenomicSignatures(object):
             workerQueue.put((None, None))
 
         try:
-            calcProc = [mp.Process(target=self.__calculateResults, args=(workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target=self.__storeResults, args=(seqFile, outputFile, len(seqs), writerQueue))
+            calcProc = [mp.Process(target=self._calculateResults, args=(workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target=self._storeResults, args=(seqFile, outputFile, len(seqs), writerQueue))
 
             writeProc.start()
 

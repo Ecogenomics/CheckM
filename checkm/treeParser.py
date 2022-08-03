@@ -63,7 +63,7 @@ class TreeParser():
             print(line.rstrip())
 
         # read duplicate seqs
-        duplicateNodes = self.__readDuplicateSeqs()
+        duplicateNodes = self._readDuplicateSeqs()
 
         # write reference alignments to file
         seqs = readFasta(os.path.join(DefaultValues.PPLACER_REF_PACKAGE_FULL, DefaultValues.GENOME_TREE_FASTA))
@@ -100,7 +100,7 @@ class TreeParser():
 
     def reportNewickTree(self, outDir, outFile, leafLabels=None):
         # read duplicate nodes
-        duplicateSeqs = self.__readDuplicateSeqs()
+        duplicateSeqs = self._readDuplicateSeqs()
 
         # read tree
         treeFile = os.path.join(outDir, 'storage', 'tree', DefaultValues.PPLACER_TREE_OUT)
@@ -213,14 +213,14 @@ class TreeParser():
                 parentNode = parentNode.parent_node
 
             if not taxaStr:
-                domainNode = self.__findDomainNode(node)
+                domainNode = self._findDomainNode(node)
                 taxaStr = domainNode.label.split('|')[1] + ' (root)'
 
             binIdToTaxonomy[node.taxon.label] = taxaStr
 
         return binIdToTaxonomy
 
-    def __findDomainNode(self, binNode):
+    def _findDomainNode(self, binNode):
         """Find node defining the domain. Assumes 'binNode' is the leaf node of a bin on either the archaeal or bacterial branch."""
 
         # bin is either on the bacterial or archaeal branch descendant from the root,
@@ -324,7 +324,7 @@ class TreeParser():
 
         return binIdToSisterTaxonomy
 
-    def __getNextNamedNode(self, node, uniqueIdToLineageStatistics):
+    def _getNextNamedNode(self, node, uniqueIdToLineageStatistics):
         """Get first parent node with taxonomy information."""
         parentNode = node.parent_node
         while True:
@@ -341,9 +341,9 @@ class TreeParser():
 
         return 'root'
 
-    def __getMarkerSet(self, parentNode, tree, uniqueIdToLineageStatistics,
-                                    numGenomesMarkers, bootstrap,
-                                    bForceDomain, bRequireTaxonomy):
+    def _getMarkerSet(self, parentNode, tree, uniqueIdToLineageStatistics,
+                      numGenomesMarkers, bootstrap,
+                      bForceDomain, bRequireTaxonomy):
         """Get marker set for next parent node meeting selection criteria."""
 
         # ascend tree to root finding first node meeting all selection criteria
@@ -363,7 +363,7 @@ class TreeParser():
                             # get closest taxonomic label
                             taxonomyStr = stats['taxonomy']
                             if not bRequireTaxonomy and stats['taxonomy'] == '':
-                                taxonomyStr = self.__getNextNamedNode(selectedParentNode, uniqueIdToLineageStatistics)
+                                taxonomyStr = self._getNextNamedNode(selectedParentNode, uniqueIdToLineageStatistics)
 
                             # all criteria meet, so use marker set from this node
                             break
@@ -379,7 +379,7 @@ class TreeParser():
 
         return selectedParentNode, markerSet
 
-    def __refineMarkerSet(self, markerSet, binNode, tree, uniqueIdToLineageStatistics, numGenomesRefine):
+    def _refineMarkerSet(self, markerSet, binNode, tree, uniqueIdToLineageStatistics, numGenomesRefine):
         """Refine marker set to account for lineage-specific gene loss and duplication."""
 
         # lineage-specific refine is done with the sister lineage to where the bin is inserted
@@ -427,7 +427,7 @@ class TreeParser():
 
         return refinedMarkerSet
 
-    def __readLineageSpecificGenesToRemove(self):
+    def _readLineageSpecificGenesToRemove(self):
         """Get set of genes subject to lineage-specific gene loss and duplication."""
 
         self.lineageSpecificGenesToRemove = {}
@@ -438,7 +438,7 @@ class TreeParser():
             duplicateGenes = eval(lineSplit[2])
             self.lineageSpecificGenesToRemove[uid] = missingGenes.union(duplicateGenes)
 
-    def __removeInvalidLineageMarkerGenes(self, markerSet, lineageSpecificMarkersToRemove):
+    def _removeInvalidLineageMarkerGenes(self, markerSet, lineageSpecificMarkersToRemove):
         """Refine marker set to account for lineage-specific gene loss and duplication."""
 
         # refine marker set by removing marker genes subject to lineage-specific
@@ -502,9 +502,9 @@ class TreeParser():
             binMarkerSets = BinMarkerSets(binId, BinMarkerSets.TREE_MARKER_SET)
             if node == None:
                 # bin is not in tree
-                node, markerSet = self.__getMarkerSet(rootNode, tree, uniqueIdToLineageStatistics,
-                                                        numGenomesMarkers, bootstrap,
-                                                        bForceDomain, bRequireTaxonomy)
+                node, markerSet = self._getMarkerSet(rootNode, tree, uniqueIdToLineageStatistics,
+                                                     numGenomesMarkers, bootstrap,
+                                                     bForceDomain, bRequireTaxonomy)
                 binMarkerSets.addMarkerSet(markerSet)
             else:
                 # special case: if node is on the bacterial or archaeal branch descendant from the root,
@@ -520,7 +520,7 @@ class TreeParser():
                 if bRoot:
                     # since the root is the first labeled node, we need to descend the
                     # tree to incorporate the domain-specific marker set
-                    domainNode = self.__findDomainNode(node)
+                    domainNode = self._findDomainNode(node)
                     curNode = domainNode.child_nodes()[0]
                 else:
                     curNode = node
@@ -528,7 +528,7 @@ class TreeParser():
                 # get lineage specific refinement for first node with an id
                 if not bNoLineageSpecificRefinement:
                     uniqueId = parentNode.label.split('|')[0]
-                    self.__readLineageSpecificGenesToRemove()
+                    self._readLineageSpecificGenesToRemove()
                     lineageSpecificRefinement = self.lineageSpecificGenesToRemove[uniqueId]
 
                 # ascend tree to root, recording all marker sets meeting selection criteria
@@ -536,12 +536,12 @@ class TreeParser():
                     uniqueHits, multiCopyHits = resultsParser.results[binId].countUniqueHits()
                     tempForceDomain = bForceDomain or (uniqueHits < minUnique) or (multiCopyHits > maxMulti)
 
-                    curNode, markerSet = self.__getMarkerSet(curNode.parent_node, tree, uniqueIdToLineageStatistics,
-                                                                numGenomesMarkers, bootstrap,
-                                                                tempForceDomain, bRequireTaxonomy)
+                    curNode, markerSet = self._getMarkerSet(curNode.parent_node, tree, uniqueIdToLineageStatistics,
+                                                            numGenomesMarkers, bootstrap,
+                                                            tempForceDomain, bRequireTaxonomy)
 
                     if not bNoLineageSpecificRefinement:
-                        markerSet = self.__removeInvalidLineageMarkerGenes(markerSet, lineageSpecificRefinement)
+                        markerSet = self._removeInvalidLineageMarkerGenes(markerSet, lineageSpecificRefinement)
 
                     binMarkerSets.addMarkerSet(markerSet)
 
@@ -642,16 +642,16 @@ class TreeParser():
 
         # write table
         if not bLineageStatistics:
-            self.__printSimpleSummaryTable(binIdToTaxonomy, resultsParser, bTabTable, outFile)
+            self._printSimpleSummaryTable(binIdToTaxonomy, resultsParser, bTabTable, outFile)
         else:
             # get taxonomy of sister lineage for each bin
             binIdToSisterTaxonomy = self.getBinSisterTaxonomy(outDir, binIds)
             binIdToUID = self.getInsertionBranchId(outDir, binIds)
 
             binIdToLineageStatistics = self.readLineageMetadata(outDir, binIds)
-            self.__printFullTable(binIdToUID, binIdToTaxonomy, binIdToSisterTaxonomy, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile)
+            self._printFullTable(binIdToUID, binIdToTaxonomy, binIdToSisterTaxonomy, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile)
 
-    def __printSimpleSummaryTable(self, binIdToTaxonomy, resultsParser, bTabTable, outFile):
+    def _printSimpleSummaryTable(self, binIdToTaxonomy, resultsParser, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
@@ -687,7 +687,7 @@ class TreeParser():
         # restore stdout
         restoreStdOut(outFile, oldStdOut)
 
-    def __printFullTable(self, binIdToUID, binIdToTaxonomy, binIdToSisterTaxonomy, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile):
+    def _printFullTable(self, binIdToUID, binIdToTaxonomy, binIdToSisterTaxonomy, binIdToLineageStatistics, resultsParser, binStats, bTabTable, outFile):
         # redirect output
         oldStdOut = reassignStdOut(outFile)
 
@@ -757,7 +757,7 @@ class TreeParser():
         # restore stdout
         restoreStdOut(outFile, oldStdOut)
 
-    def __readDuplicateSeqs(self):
+    def _readDuplicateSeqs(self):
         """Parse file indicating duplicate sequence alignments."""
         duplicateSeqs = {}
         for line in open(os.path.join(DefaultValues.GENOME_TREE_DIR, DefaultValues.GENOME_TREE_DEREP)):

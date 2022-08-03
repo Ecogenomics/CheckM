@@ -98,7 +98,7 @@ class ProdigalRunner():
 
             os.system(cmd)
 
-            if not self.__areORFsCalled(aaGeneFile) and procedureStr == 'single':
+            if not self._areORFsCalled(aaGeneFile) and procedureStr == 'single':
                 # prodigal will fail to learn a model if the input genome has a large number of N's
                 # so try gene prediction with 'meta'
                 cmd = cmd.replace('-p single', '-p meta')
@@ -142,7 +142,7 @@ class ProdigalRunner():
 
         return bestTranslationTable
 
-    def __areORFsCalled(self, aaGeneFile):
+    def _areORFsCalled(self, aaGeneFile):
         return os.path.exists(aaGeneFile) and os.stat(aaGeneFile)[stat.ST_SIZE] != 0
 
     def areORFsCalled(self, bNucORFs):
@@ -198,13 +198,13 @@ class ProdigalGeneFeatureParser():
         self.genes = {}
         self.lastCodingBase = {}
 
-        self.__parseGFF(filename)
+        self._parseGFF(filename)
 
         self.codingBaseMasks = {}
         for seqId in self.genes:
-            self.codingBaseMasks[seqId] = self.__buildCodingBaseMask(seqId)
+            self.codingBaseMasks[seqId] = self._buildCodingBaseMask(seqId)
 
-    def __parseGFF(self, filename):
+    def _parseGFF(self, filename):
         """Parse genes from GFF file."""
         self.translationTable = None
         for line in open(filename):
@@ -237,7 +237,7 @@ class ProdigalGeneFeatureParser():
             self.genes[seqId][geneId] = [start, end]
             self.lastCodingBase[seqId] = max(self.lastCodingBase[seqId], end)
 
-    def __buildCodingBaseMask(self, seqId):
+    def _buildCodingBaseMask(self, seqId):
         """Build mask indicating which bases in a sequences are coding."""
 
         # safe way to calculate coding bases as it accounts

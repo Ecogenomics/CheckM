@@ -38,7 +38,7 @@ class SSU_Finder(object):
         self.archaeaModelFile = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'hmms_ssu', 'SSU_archaea.hmm')
         self.eukModelFile = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'hmms_ssu', 'SSU_euk.hmm')
 
-    def __hmmSearch(self, seqFile, evalue, outputPrefix):
+    def _hmmSearch(self, seqFile, evalue, outputPrefix):
         if seqFile.endswith('gz'):
             pipe = 'zcat ' + seqFile + ' | '
         else:
@@ -53,7 +53,7 @@ class SSU_Finder(object):
         self.logger.info('Identifying eukaryotic 18S.')
         os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.euk.txt --tblout ' + outputPrefix + '.euk.table.txt -E ' + str(evalue) + ' ' + self.eukModelFile + ' -')
 
-    def __readHits(self, resultsFile, domain, evalueThreshold):
+    def _readHits(self, resultsFile, domain, evalueThreshold):
         """Parse hits from nhmmer output."""
         seqInfo = {}
 
@@ -88,7 +88,7 @@ class SSU_Finder(object):
 
         return seqInfo
 
-    def __addHit(self, hits, seqId, info, concatenateThreshold):
+    def _addHit(self, hits, seqId, info, concatenateThreshold):
         """Add hits from individual HMMs and concatenate nearby hits."""
 
         # check if this is the first hit to this sequence
@@ -147,7 +147,7 @@ class SSU_Finder(object):
                     hits[newSeqId] = info
                     break
 
-    def __addDomainHit(self, hits, baseSeqId, info):
+    def _addDomainHit(self, hits, baseSeqId, info):
         """Add hits from different domain models and concatenate nearby hits."""
         
         startNew = int(info[2])
@@ -203,18 +203,18 @@ class SSU_Finder(object):
 
         # identify 16S reads from contigs/scaffolds
         self.logger.info('Identifying SSU rRNAs on sequences.')
-        self.__hmmSearch(contigFile, evalueThreshold, os.path.join(outputDir, 'ssu'))
+        self._hmmSearch(contigFile, evalueThreshold, os.path.join(outputDir, 'ssu'))
 
         # read HMM hits
         hitsPerDomain = {}
         for domain in ['archaea', 'bacteria', 'euk']:
             hits = {}
 
-            seqInfo = self.__readHits(os.path.join(outputDir, 'ssu' + '.' + domain + '.txt'), domain, evalueThreshold)
+            seqInfo = self._readHits(os.path.join(outputDir, 'ssu' + '.' + domain + '.txt'), domain, evalueThreshold)
             if len(seqInfo) > 0:
                 for seqId, seqHits in seqInfo.items():
                     for hit in seqHits:
-                        self.__addHit(hits, seqId, hit, concatenateThreshold)
+                        self._addHit(hits, seqId, hit, concatenateThreshold)
 
             hitsPerDomain[domain] = hits
 
@@ -225,7 +225,7 @@ class SSU_Finder(object):
                 if '-#' in seqId:
                     seqId = seqId[0:seqId.rfind('-#')]
 
-                self.__addDomainHit(bestHits, seqId, info)
+                self._addDomainHit(bestHits, seqId, info)
                 
         # relabel hits
         newBestHits = {}

@@ -67,8 +67,8 @@ class MarkerGeneFinder():
         binIdToModels = mp.Manager().dict()
 
         try:
-            calcProc = [mp.Process(target=self.__processBin, args=(outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, bCalledGenes, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target=self.__reportProgress, args=(len(binFiles), binIdToModels, writerQueue))
+            calcProc = [mp.Process(target=self._processBin, args=(outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, bCalledGenes, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            writeProc = mp.Process(target=self._reportProgress, args=(len(binFiles), binIdToModels, writerQueue))
 
             writeProc.start()
 
@@ -94,7 +94,7 @@ class MarkerGeneFinder():
 
         return d
 
-    def __processBin(self, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, bCalledGenes, queueIn, queueOut):
+    def _processBin(self, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, bCalledGenes, queueIn, queueOut):
         """Thread safe bin processing."""
 
         markerSetParser = MarkerSetParser(self.threadsPerSearch)
@@ -135,7 +135,7 @@ class MarkerGeneFinder():
 
             queueOut.put((binId, hmmModelFile))
 
-    def __reportProgress(self, numBins, binIdToModels, queueIn):
+    def _reportProgress(self, numBins, binIdToModels, queueIn):
         """Report number of processed bins."""
 
         numProcessedBins = 0
