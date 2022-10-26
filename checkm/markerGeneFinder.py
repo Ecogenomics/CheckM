@@ -19,6 +19,7 @@
 #                                                                             #
 ###############################################################################
 
+import gzip
 import os
 import sys
 import shutil
@@ -116,7 +117,14 @@ class MarkerGeneFinder():
                 aaGeneFile = prodigal.aaGeneFile
             else:
                 aaGeneFile = binFile
-                shutil.copyfile(aaGeneFile, os.path.join(binDir, DefaultValues.PRODIGAL_AA))
+                aaGeneFileSave = os.path.join(binDir, DefaultValues.PRODIGAL_AA)
+                if not aaGeneFile.endswith(".gz"):
+                    shutil.copyfile(aaGeneFile, aaGeneFileSave)
+                else:
+                    with gzip.open(aaGeneFile, 'rt') as f_in:
+                        with open(aaGeneFileSave, 'w') as f_out:
+                            shutil.copyfileobj(f_in, f_out)
+                aaGeneFile = aaGeneFileSave
 
             # extract HMMs into temporary file
             hmmModelFile = markerSetParser.createHmmModelFile(binId, markerFile)
