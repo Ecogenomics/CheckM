@@ -27,8 +27,6 @@ import ntpath
 import traceback
 from collections import defaultdict
 
-import pysam
-
 from checkm.defaultValues import DefaultValues
 from checkm.common import reassignStdOut, restoreStdOut, binIdFromFilename
 from checkm.util.seqUtils import readFasta
@@ -45,9 +43,15 @@ class CoverageStruct():
 
 class Coverage():
     """Calculate coverage of all sequences."""
-    def __init__(self, threads):
-        self.logger = logging.getLogger('timestamp')
 
+    def __init__(self, threads):
+        """Initialization."""
+
+        # pysam can be a challenge to install and most users
+        # will not use this functionality so importing pysam here
+        import pysam
+
+        self.logger = logging.getLogger('timestamp')
         self.totalThreads = threads
 
     def run(self, binFiles, bamFiles, outFile, bAllReads, minAlignPer, maxEditDistPer, minQC):

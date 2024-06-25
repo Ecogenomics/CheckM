@@ -74,11 +74,17 @@ class PplacerRunner():
                                                      pplacerJsonOut,
                                                      concatenatedAlignFile,
                                                      pplacerOut)
-        os.system(cmd)
+        rtn = os.system(cmd)
+        if rtn != 0:
+            self.logger.error(f'pplacer exited with code: {rtn}')
+            sys.exit(rtn)
 
         # extract tree
         cmd = 'guppy tog -o %s %s' % (treeFile, pplacerJsonOut)
-        os.system(cmd)
+        rtn = os.system(cmd)
+        if rtn != 0:
+            self.logger.error(f'guppy exited with code: {rtn}')
+            sys.exit(rtn)
 
     def _createConcatenatedAlignment(self, binFiles, resultsParser, alignOutputDir):
         """Create a concatenated alignment of marker genes for each bin."""

@@ -1,3 +1,7 @@
+1.2.3
+- changes to support numpy 2.0
+- better handling of non-zero return codes from external programs
+
 1.2.2
 - support gzipped protein files as input (thanks to alienzj for the PR)
 

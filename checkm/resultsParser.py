@@ -152,7 +152,9 @@ class ResultsParser():
         with open(binStatsFile, 'r') as f:
             for line in f:
                 lineSplit = line.split('\t')
-                binStats[lineSplit[0]] = ast.literal_eval(lineSplit[1])
+                gid = lineSplit[0]
+                data = lineSplit[1]
+                binStats[gid] = ast.literal_eval(data)
 
         return binStats
 

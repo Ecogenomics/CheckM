@@ -127,8 +127,8 @@ class BinStatistics():
             binStats['Longest contig'] = maxContigLen
             binStats['N50 (scaffolds)'] = scaffold_N50
             binStats['N50 (contigs)'] = contig_N50
-            binStats['Mean scaffold length'] = scaffoldAvgLen
-            binStats['Mean contig length'] = contigAvgLen
+            binStats['Mean scaffold length'] = float(scaffoldAvgLen)
+            binStats['Mean contig length'] = float(contigAvgLen)
 
             # calculate coding density statistics
             codingDensity, translationTable, numORFs = self.calculateCodingDensity(binDir, scaffolds, genomeSize)

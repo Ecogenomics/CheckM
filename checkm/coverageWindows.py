@@ -24,8 +24,6 @@ import os
 import multiprocessing as mp
 import logging
 
-import pysam
-
 from numpy import zeros
 
 
@@ -33,6 +31,12 @@ class ReadLoader:
     """Callback for counting aligned reads with pysam.fetch"""
 
     def __init__(self, refLength, bAllReads, minAlignPer, maxEditDistPer):
+        """Initialization."""
+
+        # pysam can be a challenge to install and most users
+        # will not use this functionality so importing pysam here
+        import pysam
+        
         self.bAllReads = bAllReads
         self.minAlignPer = minAlignPer
         self.maxEditDistPer = maxEditDistPer

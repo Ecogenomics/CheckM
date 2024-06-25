@@ -20,6 +20,7 @@
 ###############################################################################
 
 import os
+import sys
 import logging
 from collections import defaultdict
 
@@ -45,13 +46,22 @@ class SSU_Finder(object):
             pipe = 'cat ' + seqFile + ' | '
 
         self.logger.info('Identifying bacterial 16S.')
-        os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.bacteria.txt --tblout ' + outputPrefix + '.bacteria.table.txt -E ' + str(evalue) + ' ' + self.bacteriaModelFile + ' -')
+        rtn = os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.bacteria.txt --tblout ' + outputPrefix + '.bacteria.table.txt -E ' + str(evalue) + ' ' + self.bacteriaModelFile + ' -')
+        if rtn != 0:
+            self.logger.error(f'nhmmer exited with code: {rtn}')
+            sys.exit(rtn)
 
         self.logger.info('Identifying archaeal 16S.')
-        os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.archaea.txt --tblout ' + outputPrefix + '.archaea.table.txt -E ' + str(evalue) + ' ' + self.archaeaModelFile + ' -')
+        rtn = os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.archaea.txt --tblout ' + outputPrefix + '.archaea.table.txt -E ' + str(evalue) + ' ' + self.archaeaModelFile + ' -')
+        if rtn != 0:
+            self.logger.error(f'nhmmer exited with code: {rtn}')
+            sys.exit(rtn)
 
         self.logger.info('Identifying eukaryotic 18S.')
-        os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.euk.txt --tblout ' + outputPrefix + '.euk.table.txt -E ' + str(evalue) + ' ' + self.eukModelFile + ' -')
+        rtn = os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.euk.txt --tblout ' + outputPrefix + '.euk.table.txt -E ' + str(evalue) + ' ' + self.eukModelFile + ' -')
+        if rtn != 0:
+            self.logger.error(f'nhmmer exited with code: {rtn}')
+            sys.exit(rtn)
 
     def _readHits(self, resultsFile, domain, evalueThreshold):
         """Parse hits from nhmmer output."""

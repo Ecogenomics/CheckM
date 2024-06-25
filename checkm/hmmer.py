@@ -68,7 +68,10 @@ class HMMERRunner():
             hmmerOut = '/dev/null'
 
         cmd = ('hmmsearch --%s %s %s %s %s > %s' % (self.mode, tableOut, cmdlineOptions, db, query, hmmerOut))
-        os.system(cmd)
+        rtn = os.system(cmd)
+        if rtn != 0:
+            self.logger.error(f'hmmsearch exited with code: {rtn}')
+            sys.exit(rtn)
 
     def align(self, db, query, outputFile, writeMode='>', outputFormat='PSIBLAST', trim=True):
         """Run hmmalign"""
@@ -86,7 +89,11 @@ class HMMERRunner():
         if rtn == 256:
             # assume user has a newer version of HMMER (>= 3.1b1) and the allcol parameter is no longer valid
             cmd = cmd.replace('--allcol', '')
-            os.system(cmd)
+            rtn = os.system(cmd)
+
+            if rtn != 0:
+                self.logger.error(f'hmmalign exited with code: {rtn}')
+                sys.exit(rtn)
 
     def fetch(self, db, key, fetchFileName, bKeyFile=False):
         """Run hmmfetch"""
@@ -97,18 +104,29 @@ class HMMERRunner():
         if bKeyFile:
             keyFileOpt = '-f'
 
-        os.system('hmmfetch ' + keyFileOpt + ' %s %s > %s' % (db, key, fetchFileName))
+        rtn = os.system('hmmfetch ' + keyFileOpt + ' %s %s > %s' % (db, key, fetchFileName))
+        if rtn != 0:
+            self.logger.error(f'hmmfetch exited with code: {rtn}')
+            sys.exit(rtn)
+
 
     def press(self, hmmModelFile):
         """Press a HMM file."""
-        os.system('hmmpress %s > /dev/null' % hmmModelFile)
+
+        rtn = os.system('hmmpress %s > /dev/null' % hmmModelFile)
+        if rtn != 0:
+            self.logger.error(f'hmmpress exited with code: {rtn}')
+            sys.exit(rtn)
 
     def index(self, hmmModelFile):
         """Index a HMM file."""
         if self.mode != 'fetch':
             raise HMMMERModeError("Mode %s not compatible with fetch" % self.mode)
 
-        os.system('hmmfetch --index %s > /dev/null' % hmmModelFile)
+        rtn = os.system('hmmfetch --index %s > /dev/null' % hmmModelFile)
+        if rtn != 0:
+            self.logger.error(f'hmmfetch exited with code: {rtn}')
+            sys.exit(rtn)
 
     def checkForHMMER(self):
         """Check to see if HMMER is on the system path."""
