@@ -1,5 +1,6 @@
 # CheckM
 
+[![Unmaintained](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)   
 [![version status](https://img.shields.io/pypi/v/checkm-genome.svg)](https://pypi.python.org/pypi/checkm-genome)
 [![Bioconda](https://img.shields.io/conda/vn/bioconda/checkm-genome.svg?color=green)](https://anaconda.org/bioconda/checkm-genome)
 [![Downloads](https://pepy.tech/badge/checkm-genome/month)](https://pepy.tech/project/checkm-genome)
