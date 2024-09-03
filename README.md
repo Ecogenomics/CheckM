@@ -10,6 +10,8 @@
 
 CheckM v2 has been released and can be found [here](https://github.com/chklovski/CheckM2). CheckM v1 (this repository) estimates genome completeness and contamination based on the presence or absence of marker genes, i.e., genes that are typically ubiquitous and single copy. In contrast, [CheckM v2](https://github.com/chklovski/CheckM2) uses machine learning models to estimate completeness and contamination. Our [assessment](https://www.nature.com/articles/s41592-023-01940-w) indicates CheckM v2 will be more accurate in general. However, you may consider running both CheckM v1 and v2 in some cases since these are independent methodologies for estimating genome quality. It can also be insightful to explore the marker genes that are missing in your genomes, especially if you have multiple related genomes and are interested in systematic loss of an otherwise ubiquitious gene. 
 
+Outside of minor updates to fix compatibility issues with external dependencies no maintanence is intended for CheckM v1.
+
 ## Installing and using CheckM
 Please see the project home page for usage details and installation instructions: https://github.com/Ecogenomics/CheckM/wiki
 
