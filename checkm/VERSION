@@ -1,3 +1,7 @@
+1.2.4
+- fixed issue with prodigal not trying the -meta model for failed genomes (fix provided by noelle-haddad) 
+- added Dockerfile provided by Louis-MG
+
 1.2.3
 - changes to support numpy 2.0
 - better handling of non-zero return codes from external programs
