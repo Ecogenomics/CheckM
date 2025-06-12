@@ -96,18 +96,22 @@ class ProdigalRunner():
                                                                                             prodigal_input,
                                                                                             gffFile))
 
-            rtn = os.system(cmd)
-            if rtn != 0:
-                self.logger.error(f'prodigal exited with code: {rtn}')
-                sys.exit(rtn)
 
-            if not self._areORFsCalled(aaGeneFile) and procedureStr == 'single':
+            rtn = os.system(cmd)
+            if rtn != 0 or not self._areORFsCalled(aaGeneFile):
                 # prodigal will fail to learn a model if the input genome has a large number of N's
                 # so try gene prediction with 'meta'
-                cmd = cmd.replace('-p single', '-p meta')
-                rtn = os.system(cmd)
-                if rtn != 0:
-                    self.logger.error(f'prodigal exited with code: {rtn}')
+                msg = f"Prodigal failed or returned no output (code: {rtn})."
+                if procedureStr == 'single':
+                    msg += " Retrying with '-p meta' due to possible high N content in the genome."
+                    self.logger.warning(msg)
+                    cmd = cmd.replace('-p single', '-p meta')
+                    rtn = os.system(cmd)
+                    if rtn != 0 or not self._areORFsCalled(aaGeneFile):
+                        self.logger.error(f"Prodigal failed again with '-p meta' (code: {rtn}).")
+                        sys.exit(rtn)
+                else:
+                    self.logger.error(msg)
                     sys.exit(rtn)
 
             # determine coding density
