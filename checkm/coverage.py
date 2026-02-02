@@ -50,6 +50,7 @@ class Coverage():
         # pysam can be a challenge to install and most users
         # will not use this functionality so importing pysam here
         import pysam
+        self.pysam = pysam
 
         self.logger = logging.getLogger('timestamp')
         self.totalThreads = threads
@@ -128,7 +129,7 @@ class Coverage():
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
 
-        bamfile = pysam.Samfile(bamFile, 'rb')
+        bamfile = self.pysam.Samfile(bamFile, 'rb')
         refSeqIds = bamfile.references
         refSeqLens = bamfile.lengths
 
@@ -190,7 +191,7 @@ class Coverage():
             if seqIds == None:
                 break
 
-            bamfile = pysam.Samfile(bamFile, 'rb')
+            bamfile = self.pysam.Samfile(bamFile, 'rb')
 
             for seqId, seqLen in zip(seqIds, seqLens):
                 numReads = 0
