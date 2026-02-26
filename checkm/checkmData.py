@@ -22,7 +22,18 @@
 import os
 import sys
 import logging
-from pkg_resources import resource_filename
+
+try: # setuptools<81
+    from pkg_resources import resource_filename
+    def get_resource(resource, pkg='checkm'):
+        return os.path.abspath(resource_filename(pkg, resource))
+
+except(ModuleNotFoundError): # setuptools>=81
+    import importlib_resources
+    def get_resource(resource, pkg='checkm'):
+        with importlib_resources.as_file(pkg) / resource as f:
+            return str(f)
+
 import json
 from collections import namedtuple
 
@@ -121,8 +132,7 @@ class DBManager(mm.ManifestManager):
         else:
             # read data path from DATA_CONFIG file
             if configFile is None:
-                configFile = os.path.abspath(
-                    resource_filename('checkm', 'DATA_CONFIG'))
+                configFile = get_resource('DATA_CONFIG')
 
             self.config = DBConfig(configFile=configFile)
             self.type = self.config.values["manifestType"]
