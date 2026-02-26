@@ -31,7 +31,7 @@ try: # setuptools<81
 except(ModuleNotFoundError): # setuptools>=81
     from importlib import resources
     def get_resource(resource, pkg='checkm'):
-        return resources.files('checkm') / 'DATA_CONFIG'
+        return resources.files('checkm') / resource
 
 import json
 from collections import namedtuple
