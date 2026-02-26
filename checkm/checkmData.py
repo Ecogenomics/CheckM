@@ -29,10 +29,9 @@ try: # setuptools<81
         return os.path.abspath(resource_filename(pkg, resource))
 
 except(ModuleNotFoundError): # setuptools>=81
-    import importlib_resources
+    from importlib import resources
     def get_resource(resource, pkg='checkm'):
-        with importlib_resources.as_file(pkg) / resource as f:
-            return str(f)
+        return resources.files('checkm') / 'DATA_CONFIG'
 
 import json
 from collections import namedtuple
