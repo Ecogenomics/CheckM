@@ -43,6 +43,6 @@ setup(
         "matplotlib >= 3.5.1",
         "pysam >= 0.19.0",
         "dendropy >= 4.5.2",
-        "setuptools"],
+        "setuptools >= 81"],
     zip_safe=False
 )

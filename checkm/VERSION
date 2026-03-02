@@ -1,3 +1,8 @@
+1.2.5
+- fix to regular expression syntax warnings in prettytable.py
+- fix to use of setuptools in checkmData.py thanks to meereeum
+- fix to pysam import in coverage.py thanks to baptwr
+
 1.2.4
 - fixed issue with prodigal not trying the -meta model for failed genomes (fix provided by noelle-haddad) 
 - added Dockerfile provided by Louis-MG
