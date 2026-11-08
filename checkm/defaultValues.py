@@ -43,15 +43,10 @@ class DefaultValues():
     SEQ_CONCAT_CHAR = '&&'
 
     CHECKM_DATA_DIR = __DBM.config.values["dataRoot"]
-    PHYLO_HMM_MODELS = phyloHMMs = os.path.join(
+    PHYLO_HMM_MODELS = os.path.join(
         CHECKM_DATA_DIR, 'hmms', 'phylo.hmm')
     HMM_MODELS = os.path.join(CHECKM_DATA_DIR, 'hmms', 'checkm.hmm')
     PFAM_CLAN_FILE = os.path.join(CHECKM_DATA_DIR, 'pfam', 'Pfam-A.hmm.dat')
-
-    IMG_METADATA_FILE = os.path.join(
-        CHECKM_DATA_DIR, 'img', 'img_metadata.tsv')
-    REDUNDANT_TIGRFAM_FILE = os.path.join(
-        CHECKM_DATA_DIR, 'pfam', 'tigrfam2pfam.tsv')
 
     SELECTED_MARKER_SETS = os.path.join(
         CHECKM_DATA_DIR, 'selected_marker_sets.tsv')
@@ -89,10 +84,7 @@ class DefaultValues():
     PPLACER_TREE_OUT = 'concatenated.tre'
 
     BIN_STATS_PHYLO_OUT = 'bin_stats.tree.tsv'
-    # SEQ_STATS_PHYLO_OUT = 'seq_stats.tree.tsv'
-
     BIN_STATS_OUT = 'bin_stats.analyze.tsv'
-    # SEQ_STATS_OUT = 'seq_stats.analyze.tsv'
 
     BIN_STATS_EXT_OUT = 'bin_stats_ext.tsv'
     MARKER_GENE_STATS = 'marker_gene_stats.tsv'

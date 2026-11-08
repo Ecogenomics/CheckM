@@ -20,21 +20,16 @@ import sys
 import logging
 import ntpath
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
 
 def logger_setup(log_dir, log_file, program_name, version, silent):
-    """Setup loggers.
-    
-    Two logger are setup which both print to the stdout and a 
-    log file when the log_dir is not None. The first logger is
-    named 'timestamp' and provides a timestamp with each call,
-    while the other is named 'no_timestamp' and does not prepend
-    any information. The attribution 'is_silent' is also added
-    to each logger to indicate if the silent flag is thrown.
+    """Set up the 'timestamp' logger.
+
+    The 'timestamp' logger prefixes each message with a timestamp and
+    writes to stdout and, when log_dir is not None, to a log file in
+    log_dir. If the log file cannot be created, a warning is reported
+    and messages are only written to stdout. Calling this function
+    again replaces any handlers added by a previous call, so messages
+    are never reported twice.
 
     Parameters
     ----------
@@ -50,41 +45,34 @@ def logger_setup(log_dir, log_file, program_name, version, silent):
         Flag indicating if output to stdout should be suppressed.
     """
 
-    # setup general properties of loggers
+    # set up general properties of logger
     timestamp_logger = logging.getLogger('timestamp')
     timestamp_logger.setLevel(logging.DEBUG)
     log_format = logging.Formatter(fmt="[%(asctime)s] %(levelname)s: %(message)s",
                                    datefmt="%Y-%m-%d %H:%M:%S")
-                                   
-    no_timestamp_logger = logging.getLogger('no_timestamp')
-    no_timestamp_logger.setLevel(logging.DEBUG)
 
-    # setup logging to console
+    # remove handlers from any previous call
+    for handler in list(timestamp_logger.handlers):
+        timestamp_logger.removeHandler(handler)
+        handler.close()
+
+    # set up logging to console
     timestamp_stream_logger = logging.StreamHandler(sys.stdout)
     timestamp_stream_logger.setFormatter(log_format)
     timestamp_logger.addHandler(timestamp_stream_logger)
-    
-    no_timestamp_stream_logger = logging.StreamHandler(sys.stdout)
-    no_timestamp_stream_logger.setFormatter(None)
-    no_timestamp_logger.addHandler(no_timestamp_stream_logger)
-    
-    timestamp_logger.is_silent = False
-    no_timestamp_stream_logger.is_silent = False
+
     if silent:
-        timestamp_logger.is_silent = True
         timestamp_stream_logger.setLevel(logging.ERROR)
-        no_timestamp_stream_logger.is_silent = True
 
     if log_dir:
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        timestamp_file_logger = logging.FileHandler(os.path.join(log_dir, log_file), 'a')
-        timestamp_file_logger.setFormatter(log_format)
-        timestamp_logger.addHandler(timestamp_file_logger)
-        
-        no_timestamp_file_logger = logging.FileHandler(os.path.join(log_dir, log_file), 'a')
-        no_timestamp_file_logger.setFormatter(None)
-        no_timestamp_logger.addHandler(no_timestamp_file_logger)
+        try:
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+            timestamp_file_logger = logging.FileHandler(os.path.join(log_dir, log_file), 'a')
+            timestamp_file_logger.setFormatter(log_format)
+            timestamp_logger.addHandler(timestamp_file_logger)
+        except OSError as e:
+            timestamp_logger.warning('Unable to write log file to %s: %s' % (log_dir, e))
 
     timestamp_logger.info('%s v%s' % (program_name, version))
     timestamp_logger.info(ntpath.basename(sys.argv[0]) + ' ' + ' '.join(sys.argv[1:]))
