@@ -456,10 +456,11 @@ class MarkerSetParser():
         if bReportProgress:
             self.logger.info("There are %d genes in the marker set and %d genes from the same PFAM clan." % (len(markerGenes), len(genesInSameClan)))
 
-        # create file with all model accession numbers
+        # create file with all model accession numbers; accessions are sorted so the
+        # order of models in the HMM file (and hence downstream output) is deterministic
         keyFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         fout = open(keyFile, 'w')
-        for modelAcc in allMarkers:
+        for modelAcc in sorted(allMarkers):
             fout.write(modelAcc + '\n')
         fout.close()
 
