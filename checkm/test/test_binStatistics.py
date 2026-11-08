@@ -16,6 +16,8 @@
 ###############################################################################
 
 
+import os
+import tempfile
 import unittest
 
 from collections import defaultdict
@@ -77,6 +79,48 @@ class VerifyBinStatistics(unittest.TestCase):
         codingBasePairs = binStats._calculateCodingBases(aaGenes)
 
         self.assertAlmostEqual(codingBasePairs, len(aaGenes['S1_C1']) * 3 + len(aaGenes['S1_C2']) * 3 + len(aaGenes['S3_C1']) * 3)
+
+    def _writeBin(self, tmpDir):
+        binFile = os.path.join(tmpDir, 'bin1.fna')
+        with open(binFile, 'w') as f:
+            f.write('>S1\nACGTACGTAC\n>S2\nGGGGCCCC\n')
+
+        return binFile
+
+    def testSequenceStatsWithGenes(self):
+        """Verify per-sequence ORF and coding base counts from called genes."""
+        binStats = BinStatistics(threads=1)
+
+        with tempfile.TemporaryDirectory() as tmpDir:
+            binFile = self._writeBin(tmpDir)
+
+            geneDir = os.path.join(tmpDir, 'bins', 'bin1')
+            os.makedirs(geneDir)
+            with open(os.path.join(geneDir, DefaultValues.PRODIGAL_AA), 'w') as f:
+                f.write('>S1_1\nMK\n>S1_2\nMKV\n')
+
+            seqStats = binStats.sequenceStats(tmpDir, binFile)
+
+        self.assertEqual(seqStats['S1']['# ORFs'], 2)
+        self.assertEqual(seqStats['S1']['Coding bases'], (2 + 3) * 3)
+        self.assertNotIn('# ORFs', seqStats['S2'])
+        self.assertAlmostEqual(seqStats['S2']['GC'], 1.0)
+        self.assertEqual(seqStats['S2']['Length'], 8)
+
+    def testSequenceStatsWithoutGenes(self):
+        """Verify per-sequence statistics when no called genes are available."""
+        binStats = BinStatistics(threads=1)
+
+        with tempfile.TemporaryDirectory() as tmpDir:
+            binFile = self._writeBin(tmpDir)
+            seqStats = binStats.sequenceStats(tmpDir, binFile)
+
+        for seqId in ['S1', 'S2']:
+            self.assertEqual(seqStats[seqId]['# ORFs'], 0)
+            self.assertEqual(seqStats[seqId]['Coding bases'], 0)
+
+        self.assertEqual(seqStats['S1']['Length'], 10)
+        self.assertAlmostEqual(seqStats['S1']['GC'], 0.5)
 
 if __name__ == "__main__":
     unittest.main()
