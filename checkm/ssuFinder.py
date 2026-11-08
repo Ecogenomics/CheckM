@@ -40,6 +40,9 @@ class SSU_Finder(object):
         self.archaeaModelFile = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'hmms_ssu', 'SSU_archaea.hmm')
         self.eukModelFile = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'hmms_ssu', 'SSU_euk.hmm')
 
+        # complement of IUPAC nucleotide codes
+        self.compl = str.maketrans('ACGTURYKMBDHVNacgturykmbdhvn', 'TGCAAYRMKVHDBNtgcaayrmkvhdbn')
+
     def _nhmmer(self, seqFile, evalue, outputPrefix, domain, modelFile):
         """Run nhmmer on a (possibly gzipped) sequence file passed via standard input."""
         cmd = ['nhmmer', '--noali', '--cpu', str(self.totalThreads),
@@ -99,7 +102,8 @@ class SSU_Finder(object):
                         revComp = True
                         aliFrom, aliTo = aliTo, aliFrom
 
-                    alignLen = int(aliTo) - int(aliFrom)
+                    # nhmmer coordinates are 1-based and inclusive
+                    alignLen = aliTo - aliFrom + 1
 
                     if float(iEvalue) <= evalueThreshold:
                         seqInfo[seqId] = seqInfo.get(seqId, []) + [[domain, iEvalue, str(aliFrom), str(aliTo), str(alignLen), str(revComp)]]
@@ -124,11 +128,11 @@ class SSU_Finder(object):
             # if hits overlap then retain only the longest
             startNew = int(info[2])
             endNew = int(info[3])
-            bRevNew = bool(info[5])
+            bRevNew = (info[5] == 'True')
 
             start = int(hits[seqId][2])
             end = int(hits[seqId][3])
-            bRev = bool(info[5])
+            bRev = (hits[seqId][5] == 'True')
 
             # check if hits should be concatenated
             if abs(start - endNew) < concatenateThreshold and bRevNew == bRev:
@@ -136,7 +140,7 @@ class SSU_Finder(object):
                 del hits[seqId]
                 info[2] = str(startNew)
                 info[3] = str(end)
-                info[4] = str(end - startNew)
+                info[4] = str(end - startNew + 1)
                 hits[concateSeqId] = info
                 bConcatenate = True
 
@@ -145,7 +149,7 @@ class SSU_Finder(object):
                 del hits[seqId]
                 info[2] = str(start)
                 info[3] = str(endNew)
-                info[4] = str(endNew - start)
+                info[4] = str(endNew - start + 1)
                 hits[concateSeqId] = info
                 bConcatenate = True
 
@@ -165,6 +169,21 @@ class SSU_Finder(object):
                     hits[newSeqId] = info
                     break
 
+    def _baseSeqId(self, seqId):
+        """Get sequence ID without the '-#<n>' suffix used to distinguish multiple hits to a sequence."""
+        if '-#' in seqId:
+            return seqId[0:seqId.rfind('-#')]
+
+        return seqId
+
+    def _ssuSeq(self, seq, start, end, bRevComp):
+        """Extract hit from a sequence given 1-based, inclusive coordinates, reverse complementing hits on the reverse strand."""
+        ssuSeq = seq[start - 1:end]
+        if bRevComp:
+            ssuSeq = ssuSeq.translate(self.compl)[::-1]
+
+        return ssuSeq
+
     def _addDomainHit(self, hits, baseSeqId, info):
         """Add hits from different domain models and concatenate nearby hits."""
         
@@ -175,7 +194,7 @@ class SSU_Finder(object):
         # get all 16S hits for this contig
         curSeqIds = set()
         for curSeqId in hits:
-            if baseSeqId in curSeqId:
+            if self._baseSeqId(curSeqId) == baseSeqId:
                 curSeqIds.add(curSeqId)
 
         bNewHit = True
@@ -199,7 +218,7 @@ class SSU_Finder(object):
                 if curSeqId in seqToRemove:
                     del hits[curSeqId]
                 elif '-#' in curSeqId:
-                    seq_num = int(curSeqId.split('-#')[1])
+                    seq_num = int(curSeqId[curSeqId.rfind('-#') + 2:])
                     if seq_num > max_seq_num:
                         max_seq_num = seq_num
 
@@ -295,7 +314,7 @@ class SSU_Finder(object):
                 seq = seqs[seqId]
                 summaryOut.write(binId + '\t' + '\t'.join(seqInfo) + '\t' + str(len(seq)) + '\n')
                 seqOut.write('>' + binId + DefaultValues.SEQ_CONCAT_CHAR + seqInfo[0] + '\n')
-                seqOut.write(seq[int(seqInfo[3]) - 1:int(seqInfo[4]) - 1] + '\n')
+                seqOut.write(self._ssuSeq(seq, int(seqInfo[3]), int(seqInfo[4]), seqInfo[6] == 'True') + '\n')
 
         summaryOut.close()
         seqOut.close()
