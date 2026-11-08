@@ -396,14 +396,16 @@ class HmmerAligner:
                 markerSeqs[markerId][binId] = {}
                 markerStats[markerId][binId] = {}
 
-                # sort hits from highest to lowest e-value in order to ensure only the best hit
-                # to a given target is retained
-                hits.sort(key=lambda x: x.full_e_value, reverse=True)
-                topHit = hits[0]
+                # align only the best hit to the marker
+                topHit = self._topHit(hits)
                 markerSeqs[markerId][binId][topHit.target_name] = self._extractSeq(topHit.target_name, binORFs)
                 markerStats[markerId][binId][topHit.target_name] = [topHit.full_e_value, topHit.full_score]
 
         return markerSeqs, markerStats
+
+    def _topHit(self, hits):
+        """Get best hit: the hit with the lowest e-value, with ties broken by the highest bit score."""
+        return min(hits, key=lambda x: (x.full_e_value, -x.full_score))
 
     def _extractMarkerSeqsUnique(self, outDir, resultsParser):
         """Extract marker sequences with a single unique hit."""
@@ -464,8 +466,9 @@ class HmmerAligner:
             if markerId not in markerGenes or len(hits) < 2:
                 continue
 
-            # sort hits from highest to lowest e-value in order to ensure only the best hit
-            # to a given target is retained
+            # sort hits from highest to lowest e-value; all hits are retained (each
+            # target has at most one hit to a marker), so this only sets the order
+            # in which sequences are written for alignment
             hits.sort(key=lambda x: x.full_e_value, reverse=True)
 
             # Note: this data structure is used to mimic that used by _extractMarkerSeqsTopHits()
