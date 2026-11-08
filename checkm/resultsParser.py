@@ -24,6 +24,7 @@ from __future__ import print_function
 import sys
 import os
 import ast
+import copy
 from collections import defaultdict
 import logging
 
@@ -440,7 +441,11 @@ class ResultsManager():
                                 break
 
                     if bCombined:
-                        newHit = hits[i]
+                        # copy the hit so the original hit to each ORF is retained
+                        # (used to report the position of each gene, e.g. qa -o 9)
+                        newHit = copy.copy(hits[i])
+                        newHit.component_hits = (getattr(hits[i], 'component_hits', [hits[i]])
+                                                 + getattr(hits[j], 'component_hits', [hits[j]]))
 
                         # produce concatenated label indicating the two genes being combined
                         orfA, orfB = sorted([orfI, orfJ])
@@ -486,10 +491,8 @@ class ResultsManager():
         """Determine number of times each marker gene is hit."""
         ret = dict()
         for marker in markerSet.getMarkerGenes():
-            try:
-                ret[marker] = len(self.markerHits[marker])
-            except KeyError:
-                ret[marker] = 0
+            # use get() so absent markers are not inserted into the hit dictionary
+            ret[marker] = len(self.markerHits.get(marker, []))
 
         return ret
 
@@ -876,84 +879,102 @@ class ResultsManager():
                 raise ValueError(
                     "AnaFolder must not be None for outputFormat 9")
 
-            # ## build a dict to link target_names with marker gene alignment information
+            # ## build a dict to link genes with marker gene alignment information
+            # (a gene may be hit by several markers, and hits to adjacent genes
+            # may have been combined into a single hit, e.g. 'geneA&&geneB')
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
-            hitInfo = {}
-            for marker, hit_list in self.markerHits.items():
+            hitInfo = defaultdict(list)
+            for marker in sorted(self.markerHits):
                 if marker not in markerGenes:
                     continue
 
-                for hit in hit_list:
-                    name = hit.target_name
-                    hitInfo[name] = {
-                        "marker": marker,
-                        "ali_from": str(hit.ali_from),
-                        "ali_to": str(hit.ali_to)
-                    }
+                for hit in self.markerHits[marker]:
+                    for geneHit in getattr(hit, 'component_hits', [hit]):
+                        for geneId in geneHit.target_name.split(DefaultValues.SEQ_CONCAT_CHAR):
+                            hitInfo[geneId].append({
+                                "marker": marker,
+                                "ali_from": str(geneHit.ali_from),
+                                "ali_to": str(geneHit.ali_to)
+                            })
 
             # ## Open genes.faa and print the ones that were found with some descriptive info in the header
-            path_to_genes = "/".join([anaFolder, "bins",
-                                     self.binId, "genes.faa"])
+            path_to_genes = os.path.join(anaFolder, "bins", self.binId, DefaultValues.PRODIGAL_AA)
 
             # get only the seqs we need and their information as a dict
             seqs = readFasta(path_to_genes, trimHeader=False)
 
-            filt_seqs = []
-            # remove seqs without markers
-            for header in seqs.keys():
-                gene_name = header.split(" # ")[0]
-                if gene_name in hitInfo:
-                    filt_seqs.append(header)
+            def parse_header(header):
+                """Parse gene information from a Prodigal header.
 
-            def sort_header(header):
-                """ sorts headers by contig and gene number """
-                name = header.split(" # ")[0]
-                ctg_name, gene_num = name.rsplit("_", 1)
-                return ctg_name, int(gene_num)
-
-            for header in sorted(filt_seqs, key=sort_header):
+                Headers of user-supplied protein files (--genes) may not follow the
+                Prodigal format, in which case 'NA' is reported for unknown fields.
+                """
                 elems = header.split(" # ")
-                gene_name = elems[0]
+                fields = elems[0].split(None, 1)
+                gene_name = fields[0] if fields else ''
 
                 # remove the gene number from Prodigal to get the original contig name
-                contig_name, gene_num = gene_name.rsplit("_", 1)
+                contig_name = gene_name
+                gene_num = 'NA'
+                if '_' in gene_name:
+                    ctg_name, num = gene_name.rsplit("_", 1)
+                    if num.isdigit():
+                        contig_name, gene_num = ctg_name, num
 
-                # parse some info about the gene from the header line
-                gene_start = elems[1]
-                gene_end = elems[2]
-                gene_strand = elems[3]
-
-                # if table output not specified, print FASTA
-                if table != None:
-                    gene_info = "geneId={};start={};end={};strand={};protlen={}".format(
-                        gene_num, gene_start, gene_end, gene_strand, str(len(seqs[header])))
-
-                    marker_info = "marker={};mstart={};mend={}".format(
-                        hitInfo[gene_name]["marker"],
-                        hitInfo[gene_name]["ali_from"],
-                        hitInfo[gene_name]["ali_to"])
-
-                    # new header will be the bin name, contig name, gene info, and marker info separated by spaces
-                    new_header = ">" + \
-                        " ".join([self.binId, contig_name,
-                                 gene_info, marker_info])
-
-                    print(new_header, seqs[header], sep="\n")
-                # otherwise, print a table
+                if len(elems) >= 4:
+                    gene_start, gene_end, gene_strand = [e.strip() for e in elems[1:4]]
                 else:
-                    print("\t".join([
-                        self.binId,
-                        contig_name,
-                        gene_num,
-                        gene_start,
-                        gene_end,
-                        gene_strand,
-                        str(len(seqs[header])),
-                        hitInfo[gene_name]["marker"],
-                        hitInfo[gene_name]["ali_from"],
-                        hitInfo[gene_name]["ali_to"],
-                        seqs[header]
-                    ]))
+                    gene_start, gene_end, gene_strand = 'NA', 'NA', 'NA'
+
+                return gene_name, contig_name, gene_num, gene_start, gene_end, gene_strand
+
+            genes = []
+            for header in seqs.keys():
+                gene_info = parse_header(header)
+                if gene_info[0] in hitInfo:
+                    genes.append((header, gene_info))
+
+            def sort_genes(gene):
+                """ sorts genes by contig and gene number """
+                gene_name, contig_name, gene_num = gene[1][0:3]
+                if gene_num.isdigit():
+                    return contig_name, int(gene_num), gene_name
+                return contig_name, -1, gene_name
+
+            for header, (gene_name, contig_name, gene_num, gene_start, gene_end, gene_strand) in sorted(genes, key=sort_genes):
+                seq = seqs[header]
+                for marker_hit in hitInfo[gene_name]:
+                    # if table output not specified, print FASTA
+                    if table != None:
+                        gene_info = "geneId={};start={};end={};strand={};protlen={}".format(
+                            gene_num, gene_start, gene_end, gene_strand, str(len(seq)))
+
+                        marker_info = "marker={};mstart={};mend={}".format(
+                            marker_hit["marker"],
+                            marker_hit["ali_from"],
+                            marker_hit["ali_to"])
+
+                        # new header will be the bin name, contig name, gene info, and marker info separated by spaces
+                        new_header = ">" + \
+                            " ".join([self.binId, contig_name,
+                                     gene_info, marker_info])
+
+                        print(new_header, seq, sep="\n")
+                    # otherwise, print a table
+                    else:
+                        print("\t".join([
+                            self.binId,
+                            contig_name,
+                            gene_num,
+                            gene_start,
+                            gene_end,
+                            gene_strand,
+                            str(len(seq)),
+                            marker_hit["marker"],
+                            marker_hit["ali_from"],
+                            marker_hit["ali_to"],
+                            seq
+                        ]))
         else:
             self.logger.error("Unknown output format: %d", outputFormat)
 

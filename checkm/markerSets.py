@@ -205,20 +205,33 @@ class MarkerSet():
 
     def genomeCheck(self, hits, bIndividualMarkers):
         """Calculate genome completeness and contamination."""
+        if self.numMarkers() == 0:
+            # e.g., all markers were removed with --exclude_markers
+            if not getattr(self, 'bWarnedNoMarkers', False):
+                self.logger.warning('Marker set %s (%s) contains no marker genes; reporting 0%% completeness and contamination.' % (str(self.UID), self.lineageStr))
+                self.bWarnedNoMarkers = True
+            return 0.0, 0.0
+
         if bIndividualMarkers:
             present = 0
             multiCopyCount = 0
             for marker in self.getMarkerGenes():
-                if marker in hits:
+                count = len(hits.get(marker, []))
+                if count > 0:
                     present += 1
-                    multiCopyCount += (len(hits[marker]) - 1)
+                    multiCopyCount += (count - 1)
 
             percComp = 100 * float(present) / self.numMarkers()
             percCont = 100 * float(multiCopyCount) / self.numMarkers()
         else:
             comp = 0.0
             cont = 0.0
+            numSets = 0
             for ms in self.markerSet:
+                if len(ms) == 0:
+                    continue
+
+                numSets += 1
                 present = 0
                 multiCopy = 0
                 for marker in ms:
@@ -232,8 +245,8 @@ class MarkerSet():
                 comp += float(present) / len(ms)
                 cont += float(multiCopy) / len(ms)
 
-            percComp = 100 * comp / len(self.markerSet)
-            percCont = 100 * cont / len(self.markerSet)
+            percComp = 100 * comp / numSets
+            percCont = 100 * cont / numSets
 
         return percComp, percCont
 
