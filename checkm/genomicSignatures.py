@@ -117,8 +117,8 @@ class GenomicSignatures(object):
 
             queueOut.put((seqId, sig))
 
-    def _storeResults(self, seqFile, outputFile, totalSeqs, writerQueue):
-        """Store genomic signatures to file."""
+    def _storeResults(self, seqIds, outputFile, writerQueue):
+        """Store genomic signatures to file in the order given by seqIds."""
 
         # write header
         fout = open(outputFile, 'w')
@@ -127,6 +127,9 @@ class GenomicSignatures(object):
             fout.write('\t' + kmer)
         fout.write('\n')
 
+        totalSeqs = len(seqIds)
+        pendingSigs = {}
+        nextSeqIndex = 0
         numProcessedSeq = 0
         while True:
             seqId, sig = writerQueue.get(block=True, timeout=None)
@@ -139,9 +142,15 @@ class GenomicSignatures(object):
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 
-            fout.write(seqId)
-            fout.write('\t' + '\t'.join(list(map(str, sig))))
-            fout.write('\n')
+            # results arrive in the order workers finish, so
+            # write them out in the order of the input sequences
+            pendingSigs[seqId] = sig
+            while nextSeqIndex < totalSeqs and seqIds[nextSeqIndex] in pendingSigs:
+                nextSeqId = seqIds[nextSeqIndex]
+                fout.write(nextSeqId)
+                fout.write('\t' + '\t'.join(list(map(str, pendingSigs.pop(nextSeqId)))))
+                fout.write('\n')
+                nextSeqIndex += 1
 
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
@@ -189,7 +198,7 @@ class GenomicSignatures(object):
             workerQueue.put((None, None))
 
         calcProc = [mp.Process(target=self._calculateResults, args=(workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-        writeProc = mp.Process(target=self._storeResults, args=(seqFile, outputFile, len(seqs), writerQueue))
+        writeProc = mp.Process(target=self._storeResults, args=(list(seqs.keys()), outputFile, writerQueue))
 
         try:
             writeProc.start()
