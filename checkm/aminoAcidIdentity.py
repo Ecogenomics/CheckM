@@ -48,12 +48,12 @@ class AminoAcidIdentity():
         # calculate AAI for duplicate marker genes
         binIds = getBinIdsFromOutDir(outDir)
         aaiOutputDir = os.path.join(outDir, 'storage', 'aai_qa')
-        for binId in binIds:
+        for binId in sorted(binIds):
             binPath = os.path.join(aaiOutputDir, binId)
             if not os.path.exists(binPath):
                 continue
 
-            for f in os.listdir(binPath):
+            for f in sorted(os.listdir(binPath)):
                 if not f.endswith('.masked.faa'):
                     continue
 
@@ -129,7 +129,7 @@ class AminoAcidIdentity():
         assert len(seq1) == len(seq2)
 
         # calculation of AAI should ignore missing data at
-        # the start of end of each sequence
+        # the start or end of each sequence
         startIndex = 0
         for i in range(0, len(seq1)):
             if seq1[i] == '-' or seq2[i] == '-':
