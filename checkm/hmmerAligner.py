@@ -24,7 +24,6 @@ import sys
 import uuid
 import logging
 import tempfile
-import shutil
 import multiprocessing as mp
 from collections import defaultdict
 

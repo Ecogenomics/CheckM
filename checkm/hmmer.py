@@ -49,8 +49,6 @@ class HMMERRunner():
         # set the mode
         if mode == "dom":
             self.mode = 'domtblout'
-        elif mode == "tbl":
-            self.mode = 'tblout'
         elif mode == 'align':
             self.mode = 'align'
         elif mode == 'fetch':
@@ -61,7 +59,7 @@ class HMMERRunner():
     def search(self, db, query, tableOut, hmmerOut, cmdlineOptions='', bKeepOutput=True):
         """Run hmmsearch"""
         # make the output dir and files
-        if self.mode != 'domtblout' and self.mode != 'tblout':
+        if self.mode != 'domtblout':
             raise HMMMERModeError("Mode %s not compatible with search" % self.mode)
 
         if not bKeepOutput:
@@ -109,15 +107,6 @@ class HMMERRunner():
             self.logger.error(f'hmmfetch exited with code: {rtn}')
             sys.exit(rtn)
 
-
-    def press(self, hmmModelFile):
-        """Press a HMM file."""
-
-        rtn = os.system('hmmpress %s > /dev/null' % hmmModelFile)
-        if rtn != 0:
-            self.logger.error(f'hmmpress exited with code: {rtn}')
-            sys.exit(rtn)
-
     def index(self, hmmModelFile):
         """Index a HMM file."""
         if self.mode != 'fetch':
@@ -138,48 +127,21 @@ class HMMERRunner():
 
 
 class HMMERParser():
-    """Parses tabular output."""
+    """Parses tabular output in domtblout format."""
     def __init__(self, fileHandle, mode='dom'):
         self.handle = fileHandle
         if mode == 'dom':
             self.mode = 'domtblout'
-        elif mode == 'tbl':
-            self.mode = 'tblout'
         else:
-            raise HMMERError("Mode %s not understood, please use 'dom' or 'tbl'" % mode)
+            raise HMMERError("Mode %s not understood, please use 'dom'" % mode)
 
     def next(self):
-        """Process each hit in the file."""
-        while 1:
-            if self.mode == 'domtblout':
-                hit = self.readHitsDOM()
-            elif self.mode == 'tblout':
-                hit = self.readHitsTBL()
-            else:
-                raise HMMERError("Mode %s not understood" % self.mode)
+        """Process the next hit in the file, returning None if there are no more hits."""
+        hit = self.readHitsDOM()
+        if hit == {}:
+            return None
 
-            if hit == {}:
-                return None
-            else:
-                return hit
-
-    def readHitsTBL(self):
-        """Process single hit in tblout format."""
-        """
-We expect line to look like:
-NODE_110054_length_1926_cov_24.692627_41_3 -          Ribosomal_S9         PF00380.14   5.9e-48  158.7   0.0   6.7e-48  158.5   0.0   1.0   1   0   0   1   1   1   1 # 1370 # 1756 # 1 # ID=41_3;partial=00;start_type=ATG;rbs_motif=None;rbs_spacer=None
-        """
-        while (1):
-            line = self.handle.readline().rstrip()
-            try:
-                if line[0] != '#' and len(line) != 0:
-                    dMatch = re_split(r'\s+', line.rstrip())
-                    if len(dMatch) < 19:
-                        raise FormatError("Error processing line:\n%s" % (line))
-                    refined_match = dMatch[0:18] + [" ".join([str(i) for i in dMatch[18:]])]
-                    return HmmerHitTBL(refined_match)
-            except IndexError:
-                return {}
+        return hit
 
     def readHitsDOM(self):
         """Process single hit in domtblout format."""
@@ -198,58 +160,6 @@ NODE_925902_length_6780_cov_18.428171_754_2 -            399 PGK                
                     return HmmerHitDOM(refined_match)
             except IndexError:
                 return {}
-
-
-class HmmerHitTBL():
-    """Encapsulate a HMMER hit given in tblout format."""
-    def __init__(self, values):
-        if len(values) == 19:
-            self.target_name = values[0]
-            self.target_accession = values[1]
-            self.query_name = values[2]
-
-            self.query_accession = values[3]
-            if self.query_accession == '-':
-                self.query_accession = self.query_name
-
-            self.full_e_value = float(values[4])
-            self.full_score = float(values[5])
-            self.full_bias = float(values[6])
-            self.best_e_value = float(values[7])
-            self.best_score = float(values[8])
-            self.best_bias = float(values[9])
-            self.exp = float(values[10])
-            self.reg = int(values[11])
-            self.clu = int(values[12])
-            self.ov = int(values[13])
-            self.env = int(values[14])
-            self.dom = int(values[15])
-            self.rep = int(values[16])
-            self.inc = int(values[17])
-            self.target_description = values[18]
-
-    def __str__(self):
-        return "\t".join([self.target_name,
-                          self.target_accession,
-                          self.query_name,
-                          self.query_accession,
-                          str(self.full_e_value),
-                          str(self.full_score),
-                          str(self.full_bias),
-                          str(self.best_e_value),
-                          str(self.best_score),
-                          str(self.best_bias),
-                          str(self.exp),
-                          str(self.reg),
-                          str(self.clu),
-                          str(self.ov),
-                          str(self.env),
-                          str(self.dom),
-                          str(self.rep),
-                          str(self.inc),
-                          self.target_description
-                          ]
-                         )
 
 
 class HmmerHitDOM():
