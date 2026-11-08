@@ -676,7 +676,8 @@ class ResultsManager():
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
 
             lineageStr = selectedMarkerSet.lineageStr
-            if selectedMarkerSet.UID != '0':
+            if str(selectedMarkerSet.UID) != '0':
+                # marker sets from a file of HMMs have the UID 0
                 lineageStr += ' (' + str(selectedMarkerSet.UID) + ')'
 
             data = self.geneCountsForSelectedMarkerSet(
@@ -699,7 +700,8 @@ class ResultsManager():
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
 
             lineageStr = selectedMarkerSet.lineageStr
-            if selectedMarkerSet.UID != '0':
+            if str(selectedMarkerSet.UID) != '0':
+                # marker sets from a file of HMMs have the UID 0
                 lineageStr += ' (' + str(selectedMarkerSet.UID) + ')'
 
             data = self.geneCountsForSelectedMarkerSet(
