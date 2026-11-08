@@ -23,12 +23,35 @@
 
 import sys
 import multiprocessing as mp
+from multiprocessing.connection import wait
 #from str import maketrans
 import logging
 
 import numpy as np
 
 from checkm.util.seqUtils import readFasta
+
+
+def _waitForWorkers(workerProcs, writerProc):
+    """Wait for worker processes to finish.
+
+    Workers are terminated if the writer process exits
+    early, since workers can block on exit until the
+    data they put on the writer queue has been consumed.
+    """
+    pending = list(workerProcs)
+    while pending:
+        wait([p.sentinel for p in pending] + [writerProc.sentinel])
+        pending = [p for p in pending if p.is_alive()]
+        if pending and not writerProc.is_alive():
+            for p in pending:
+                p.terminate()
+            for p in pending:
+                p.join()
+            break
+
+    for p in workerProcs:
+        p.join()
 
 
 class GenomicSignatures(object):
@@ -165,26 +188,29 @@ class GenomicSignatures(object):
         for _ in range(self.totalThreads):
             workerQueue.put((None, None))
 
-        try:
-            calcProc = [mp.Process(target=self._calculateResults, args=(workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target=self._storeResults, args=(seqFile, outputFile, len(seqs), writerQueue))
+        calcProc = [mp.Process(target=self._calculateResults, args=(workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        writeProc = mp.Process(target=self._storeResults, args=(seqFile, outputFile, len(seqs), writerQueue))
 
+        try:
             writeProc.start()
 
             for p in calcProc:
                 p.start()
 
-            for p in calcProc:
-                p.join()
+            _waitForWorkers(calcProc, writeProc)
 
             writerQueue.put((None, None))
             writeProc.join()
-        except:
+        except BaseException:
             # make sure all processes are terminated
-            for p in calcProc:
-                p.terminate()
+            for p in calcProc + [writeProc]:
+                if p.is_alive():
+                    p.terminate()
+            raise
 
-            writeProc.terminate()
+        if any(p.exitcode != 0 for p in calcProc) or writeProc.exitcode != 0:
+            self.logger.error('Failed to calculate tetranucleotide signatures for: %s' % seqFile)
+            sys.exit(1)
 
     def distance(self, sig1, sig2):
         return np.sum(np.abs(sig1 - sig2))

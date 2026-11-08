@@ -22,9 +22,9 @@
 import sys
 import os
 import multiprocessing as mp
+from multiprocessing.connection import wait
 import logging
 import ntpath
-import traceback
 from collections import defaultdict
 
 from checkm.defaultValues import DefaultValues
@@ -32,6 +32,28 @@ from checkm.common import reassignStdOut, restoreStdOut, binIdFromFilename
 from checkm.util.seqUtils import readFasta
 
 from numpy import mean, sqrt
+
+
+def _waitForWorkers(workerProcs, writerProc):
+    """Wait for worker processes to finish.
+
+    Workers are terminated if the writer process exits
+    early, since workers can block on exit until the
+    data they put on the writer queue has been consumed.
+    """
+    pending = list(workerProcs)
+    while pending:
+        wait([p.sentinel for p in pending] + [writerProc.sentinel])
+        pending = [p for p in pending if p.is_alive()]
+        if pending and not writerProc.is_alive():
+            for p in pending:
+                p.terminate()
+            for p in pending:
+                p.join()
+            break
+
+    for p in workerProcs:
+        p.join()
 
 
 class CoverageStruct():
@@ -85,6 +107,19 @@ class Coverage():
         # process each fasta file
         self.logger.info("Processing %d file(s) with %d threads.\n" % (len(bamFiles), self.totalThreads))
 
+        # BAM files are identified in the output by their filename without
+        # path or extension so these must be unique
+        bamIdToFiles = defaultdict(list)
+        for bamFile in bamFiles:
+            bamIdToFiles[binIdFromFilename(bamFile)].append(bamFile)
+
+        dupBamIds = [bamId for bamId, files in bamIdToFiles.items() if len(files) > 1]
+        if dupBamIds:
+            self.logger.error('BAM files must have unique filenames (ignoring path and extension) as these are used to identify them in the output.')
+            for bamId in dupBamIds:
+                self.logger.error('BAM ID %s is shared by: %s' % (bamId, ', '.join(bamIdToFiles[bamId])))
+            sys.exit(1)
+
         # make sure all BAM files are sorted
         self.numFiles = len(bamFiles)
         for bamFile in bamFiles:
@@ -94,13 +129,17 @@ class Coverage():
 
         # calculate coverage of each BAM file
         coverageInfo = {}
+        refSeqOrder = []
         numFilesStarted = 0
         for bamFile in bamFiles:
             numFilesStarted += 1
             self.logger.info('Processing %s (%d of %d):' % (ntpath.basename(bamFile), numFilesStarted, len(bamFiles)))
 
-            coverageInfo[bamFile] = mp.Manager().dict()
-            coverageInfo[bamFile] = dict(self._processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, coverageInfo[bamFile]))
+            with self.pysam.AlignmentFile(bamFile, 'rb') as bam:
+                refSeqOrder.extend(bam.references)
+
+            with mp.Manager() as manager:
+                coverageInfo[bamFile] = dict(self._processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, manager.dict()))
 
         # redirect output
         self.logger.info('Writing coverage information to file.')
@@ -132,12 +171,18 @@ class Coverage():
 
             print(rowStr)
 
-        # write coverage stats for unbinned sequences in the BAM files to file
+        # write coverage stats for unbinned sequences in the BAM files to file,
+        # with sequences in the order they appear in the BAM headers
         unbinnedSeqLens = {}
-        for bamFile, seqIds in coverageInfo.items():
-            for seqId, covInfo in seqIds.items():
-                if seqId not in seqIdToBinIds:
+        for seqId in refSeqOrder:
+            if seqId in seqIdToBinIds or seqId in unbinnedSeqLens:
+                continue
+
+            for bamFile in bamFiles:
+                covInfo = coverageInfo[bamFile].get(seqId)
+                if covInfo is not None:
                     unbinnedSeqLens[seqId] = covInfo.seqLen
+                    break
 
         for seqId, seqLen in unbinnedSeqLens.items():
             rowStr = seqId + '\t' + DefaultValues.UNBINNED + '\t' + str(seqLen)
@@ -193,27 +238,31 @@ class Coverage():
         for _ in range(self.totalThreads):
             workerQueue.put((None, None))
 
-        try:
-            workerProc = [mp.Process(target=self.__workerThread, args=(bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target=self.__writerThread, args=(coverageInfo, len(refSeqIds), writerQueue))
+        bamfile.close()
 
+        workerProc = [mp.Process(target=self.__workerThread, args=(bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        writeProc = mp.Process(target=self.__writerThread, args=(coverageInfo, len(refSeqIds), writerQueue))
+
+        try:
             writeProc.start()
 
             for p in workerProc:
                 p.start()
 
-            for p in workerProc:
-                p.join()
+            _waitForWorkers(workerProc, writeProc)
 
             writerQueue.put((None, None, None, None, None, None, None, None, None, None, None))
             writeProc.join()
-        except:
+        except BaseException:
             # make sure all processes are terminated
-            print (traceback.format_exc())
-            for p in workerProc:
-                p.terminate()
+            for p in workerProc + [writeProc]:
+                if p.is_alive():
+                    p.terminate()
+            raise
 
-            writeProc.terminate()
+        if any(p.exitcode != 0 for p in workerProc) or writeProc.exitcode != 0:
+            self.logger.error('Failed to calculate coverage for BAM file: %s' % bamFile)
+            sys.exit(1)
 
         return coverageInfo
 
@@ -250,6 +299,11 @@ class Coverage():
                         numFailedQC += 1
                     elif read.query_alignment_length < minAlignPer * read.query_length:
                         numFailedAlignLen += 1
+                    elif not read.has_tag('NM'):
+                        self.logger.error('Read %s in BAM file %s has no NM (edit distance) tag. '
+                                          'CheckM requires BAM files with NM tags (e.g., from BWA or Bowtie2, '
+                                          'or added with samtools calmd).' % (read.query_name, bamFile))
+                        sys.exit(1)
                     elif read.get_tag('NM') > maxEditDistPer * read.query_length:
                         numFailedEditDist += 1
                     elif not bAllReads and not read.is_proper_pair:
@@ -263,7 +317,10 @@ class Coverage():
                         # alignment length and edit distance thresholds are zero).
                         coverage += read.query_alignment_length
 
-                coverage = float(coverage) / seqLen
+                if seqLen > 0:
+                    coverage = float(coverage) / seqLen
+                else:
+                    coverage = 0.0
 
                 queueOut.put((seqId, seqLen, coverage, numReads,
                                 numDuplicates, numSecondary, numFailedQC,
@@ -309,15 +366,18 @@ class Coverage():
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
 
+            def perc(count):
+                return float(count) * 100 / totalReads if totalReads > 0 else 0.0
+
             print ('')
             print ('    # total reads: %d' % totalReads)
-            print ('      # properly mapped reads: %d (%.1f%%)' % (totalMappedReads, float(totalMappedReads) * 100 / totalReads))
-            print ('      # duplicate reads: %d (%.1f%%)' % (totalDuplicates, float(totalDuplicates) * 100 / totalReads))
-            print ('      # secondary reads: %d (%.1f%%)' % (totalSecondary, float(totalSecondary) * 100 / totalReads))
-            print ('      # reads failing QC: %d (%.1f%%)' % (totalFailedQC, float(totalFailedQC) * 100 / totalReads))
-            print ('      # reads failing alignment length: %d (%.1f%%)' % (totalFailedAlignLen, float(totalFailedAlignLen) * 100 / totalReads))
-            print ('      # reads failing edit distance: %d (%.1f%%)' % (totalFailedEditDist, float(totalFailedEditDist) * 100 / totalReads))
-            print ('      # reads not properly paired: %d (%.1f%%)' % (totalFailedProperPair, float(totalFailedProperPair) * 100 / totalReads))
+            print ('      # properly mapped reads: %d (%.1f%%)' % (totalMappedReads, perc(totalMappedReads)))
+            print ('      # duplicate reads: %d (%.1f%%)' % (totalDuplicates, perc(totalDuplicates)))
+            print ('      # secondary reads: %d (%.1f%%)' % (totalSecondary, perc(totalSecondary)))
+            print ('      # reads failing QC: %d (%.1f%%)' % (totalFailedQC, perc(totalFailedQC)))
+            print ('      # reads failing alignment length: %d (%.1f%%)' % (totalFailedAlignLen, perc(totalFailedAlignLen)))
+            print ('      # reads failing edit distance: %d (%.1f%%)' % (totalFailedEditDist, perc(totalFailedEditDist)))
+            print ('      # reads not properly paired: %d (%.1f%%)' % (totalFailedProperPair, perc(totalFailedProperPair)))
             print ('')
 
     def parseCoverage(self, coverageFile):
