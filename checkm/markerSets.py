@@ -22,9 +22,6 @@
 import os
 import sys
 import logging
-import uuid
-import tempfile
-import shutil
 import pickle
 import gzip
 
@@ -319,25 +316,6 @@ class MarkerSetParser():
 
         return markersToExclude
 
-    def createHmmModelFile(self, binId, markerFile):
-        """Create HMM file from a bin's marker set."""
-
-        # determine type of marker set file
-        markerFileType = self.markerFileType(markerFile)
-
-        # create HMM file
-        hmmModelFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-        if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
-            binMarkerSets = self.parseTaxonomicMarkerSetFile(markerFile)
-            self._createMarkerHMMs(binMarkerSets, hmmModelFile, bReportProgress=False)
-        elif markerFileType == BinMarkerSets.TREE_MARKER_SET:
-            binIdToBinMarkerSets = self.parseLineageMarkerSetFile(markerFile)
-            self._createMarkerHMMs(binIdToBinMarkerSets[binId], hmmModelFile, bReportProgress=False)
-        else:
-            shutil.copyfile(markerFile, hmmModelFile)
-
-        return hmmModelFile
-
     def markerFileType(self, markerFile):
         """Determine type of marker file."""
         with open(markerFile, 'r') as f:
@@ -353,41 +331,29 @@ class MarkerSetParser():
             self.logger.error('Unrecognized file type: ' + markerFile)
             sys.exit(1)
 
-    def _createMarkerHMMs(self, binMarkerSet, outputFile, bReportProgress=True):
-        """Create HMM file for markers."""
+    def hmmAccessions(self, binMarkerSet, pfam):
+        """Get accessions of the HMMs to search for a marker set.
 
-        # get list of marker genes
+        These are the marker genes in the marker set along with all genes
+        from the same Pfam clan as any marker gene.
+        """
         markerGenes = binMarkerSet.getMarkerGenes()
+        return markerGenes | pfam.genesInSameClan(markerGenes)
 
-        # get all genes from the same clan as any marker gene
-        pfam = PFAM(DefaultValues.PFAM_CLAN_FILE)
-        genesInSameClan = pfam.genesInSameClan(markerGenes)
+    def fetchHmms(self, accessions, outputFile):
+        """Create a HMM file containing the specified models from the CheckM HMM file."""
 
-        # extract marker genes along with all genes from the same clan
-        allMarkers = markerGenes | genesInSameClan
+        # accessions are sorted so the order of models in the HMM file
+        # (and hence downstream output) is deterministic
+        keyFile = outputFile + '.keys'
+        with open(keyFile, 'w') as fout:
+            for modelAcc in sorted(accessions):
+                fout.write(modelAcc + '\n')
 
-        if bReportProgress:
-            self.logger.info("There are %d genes in the marker set and %d genes from the same PFAM clan." % (len(markerGenes), len(genesInSameClan)))
-
-        # create file with all model accession numbers; accessions are sorted so the
-        # order of models in the HMM file (and hence downstream output) is deterministic
-        keyFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-        fout = open(keyFile, 'w')
-        for modelAcc in sorted(allMarkers):
-            fout.write(modelAcc + '\n')
-        fout.close()
-
-        # fetch specified models
-        HF = HMMERRunner(mode='fetch')
-        HF.fetch(DefaultValues.HMM_MODELS, keyFile, outputFile, bKeyFile=True)
-
-        # index the HMM file
-        if os.path.exists(outputFile + '.ssi'):
-            os.remove(outputFile + '.ssi')
-        HF.index(outputFile)
-
-        # remove key file
-        os.remove(keyFile)
+        try:
+            HMMERRunner(mode='fetch').fetch(DefaultValues.HMM_MODELS, keyFile, outputFile, bKeyFile=True)
+        finally:
+            os.remove(keyFile)
 
     def parseTaxonomicMarkerSetFile(self, markerSetFile):
         """Parse marker set from a taxonomic-specific marker set file."""
