@@ -22,9 +22,11 @@ data are skipped if these are not available.
 """
 
 import os
+import sys
 import shutil
 import logging
 import tempfile
+import subprocess
 import unittest
 from collections import defaultdict
 
@@ -122,6 +124,29 @@ class VerifyReturnCodes(unittest.TestCase):
         self.assertEqual(cm.exception.code, 1)
 
         HA._removeFiles(hmmModelFiles.values())
+
+    @unittest.skipUnless(haveProgram('hmmfetch') and haveProgram('hmmsearch'), 'HMMER is not installed')
+    def testWorkerFailureDoesNotHang(self):
+        """Verify the run exits, rather than hanging, when workers fail with many unprocessed items queued."""
+        script = (
+            "import logging, os, tempfile\n"
+            "from checkm.hmmerAligner import HmmerAligner\n"
+            "logging.getLogger('timestamp').addHandler(logging.NullHandler())\n"
+            "hmmModelFiles = {}\n"
+            "try:\n"
+            "    HmmerAligner(threads=2)._makeAlignmentModels(os.path.join(tempfile.gettempdir(), 'missing.hmm'),\n"
+            "                                                 ['MODEL_%d' % i for i in range(5000)], hmmModelFiles, False)\n"
+            "finally:\n"
+            "    HmmerAligner(threads=1)._removeFiles(hmmModelFiles.values())\n"
+        )
+
+        env = dict(os.environ)
+        env['PYTHONPATH'] = os.pathsep.join([os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))] +
+                                            ([env['PYTHONPATH']] if env.get('PYTHONPATH') else []))
+        env['TMPDIR'] = self.tmpDir
+        proc = subprocess.run([sys.executable, '-c', script], env=env, timeout=300,
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.assertEqual(proc.returncode, 1)
 
 
 class VerifyTopHit(unittest.TestCase):

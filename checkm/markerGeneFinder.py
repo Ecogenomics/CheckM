@@ -104,6 +104,11 @@ class MarkerGeneFinder():
         numFailed = sum(1 for p in procs if p.exitcode != 0)
         if numFailed:
             self.logger.error(f'{numFailed} of {len(procs)} processes failed while identifying marker genes. See the error messages above.')
+
+            # items left unread in a queue would otherwise block the exit
+            workerQueue.cancel_join_thread()
+            writerQueue.cancel_join_thread()
+
             sys.exit(1)
 
         for binId in sorted(skippedBinIds):

@@ -176,7 +176,7 @@ class HmmerAligner:
 
             writeProc.terminate()
 
-        self._checkWorkerExitCodes(calcProc, 'aligning markers with multiple hits')
+        self._checkWorkerExitCodes(calcProc, 'aligning markers with multiple hits', [workerQueue, writerQueue])
 
     def _createMSA(self, resultsParser, binIdToBinMarkerSets, hmmModelFile, outDir, alignOutputDir, queueIn, queueOut):
         """Create multiple sequence alignment for markers with multiple hits in a bin."""
@@ -265,7 +265,7 @@ class HmmerAligner:
 
             writeProc.terminate()
 
-        self._checkWorkerExitCodes(calcProc, 'aligning marker genes')
+        self._checkWorkerExitCodes(calcProc, 'aligning marker genes', [workerQueue, writerQueue])
 
     def _removeFiles(self, files):
         """Remove files that exist."""
@@ -273,11 +273,16 @@ class HmmerAligner:
             if os.path.exists(f):
                 os.remove(f)
 
-    def _checkWorkerExitCodes(self, procs, task):
+    def _checkWorkerExitCodes(self, procs, task, queues=()):
         """Exit if any worker process failed, rather than continuing with missing alignments."""
         numFailed = sum(1 for p in procs if p.exitcode != 0)
         if numFailed:
             self.logger.error(f'{numFailed} of {len(procs)} worker processes failed while {task}. See the error messages above.')
+
+            # items left unread in a queue would otherwise block the exit
+            for q in queues:
+                q.cancel_join_thread()
+
             sys.exit(1)
 
     def _alignMarkerParallel(self, markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, bKeepUnmaskedAlign, queueIn, queueOut):
@@ -520,7 +525,7 @@ class HmmerAligner:
             if writeProc is not None:
                 writeProc.terminate()
 
-        self._checkWorkerExitCodes(calcProc, 'extracting HMMs')
+        self._checkWorkerExitCodes(calcProc, 'extracting HMMs', [workerQueue, writerQueue])
 
     def _extractModel(self, hmmModelFile, queueIn, queueOut):
         """Extract HMM."""
