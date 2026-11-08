@@ -15,13 +15,17 @@
 #                                                                             #
 ###############################################################################
 
+import io
 import os
 import shutil
 import logging
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 
 from checkm.resultsParser import ResultsParser, ResultsManager
+from checkm.markerSets import MarkerSet, BinMarkerSets
+from checkm.aminoAcidIdentity import AminoAcidIdentity
 
 
 class Hit(object):
@@ -99,6 +103,127 @@ class VerifyAdjacentMarkerGenes(unittest.TestCase):
         rm.identifyAdjacentMarkerGenes()
         self.assertEqual(rm.markerHits['PF00001.1'], [a, b])
         self.assertEqual(rm.markerHits['PF00002.1'], [])
+
+
+def hmmMarkerSets(binId, markers):
+    """Bin marker sets as created for a marker file of HMMs."""
+    bms = BinMarkerSets(binId, BinMarkerSets.HMM_MODELS_SET)
+    bms.addMarkerSet(MarkerSet(0, 'N/A', -1, [set(markers)]))
+    return bms
+
+
+def capture(func, *args, **kwargs):
+    out = io.StringIO()
+    with redirect_stdout(out):
+        rtn = func(*args, **kwargs)
+    return out.getvalue(), rtn
+
+
+class VerifyMarkerCounts(unittest.TestCase):
+    def setUp(self):
+        self.rm = ResultsManager('bin1', {})
+        self.a = Hit('c_1', 'PF00001.1', 1, 100, 1, 100, 1, 100)
+        self.b = Hit('c_5', 'PF00001.1', 1, 100, 1, 100, 1, 100)
+        self.c = Hit('c_9', 'TIGR00002', 1, 100, 1, 100, 1, 100)
+        self.rm.markerHits = {'PF00001.1': [self.a, self.b], 'TIGR00002': [self.c]}
+        self.bms = hmmMarkerSets('bin1', ['PF00001.1', 'TIGR00002', 'TIGR00003', 'PF00004.1', 'A0001'])
+
+    def testHitsToMarkerGeneDoesNotModifyHits(self):
+        counts = self.rm.hitsToMarkerGene(self.bms.selectedMarkerSet())
+        self.assertEqual(counts, {'PF00001.1': 2, 'TIGR00002': 1, 'TIGR00003': 0, 'PF00004.1': 0, 'A0001': 0})
+        self.assertEqual(sorted(self.rm.markerHits), ['PF00001.1', 'TIGR00002'])
+
+    def testIndividualMarkersAfterOutputFormat4(self):
+        """qa -o 4 --individual_markers must not change completeness/contamination."""
+        before = self.rm.geneCountsForSelectedMarkerSet(self.bms, True)
+        capture(self.rm.printSummary, 4, None, self.bms, True)
+        after = self.rm.geneCountsForSelectedMarkerSet(self.bms, True)
+        self.assertEqual(before, after)
+        self.assertEqual(after[0:6], [3, 1, 1, 0, 0, 0])
+        self.assertAlmostEqual(after[6], 40.0)
+        self.assertAlmostEqual(after[7], 20.0)
+
+    def testOutputFormat4Sorted(self):
+        out, _ = capture(self.rm.printSummary, 4, None, self.bms, False)
+        lines = out.split('\n')
+        self.assertEqual(lines[0], 'Node Id: 0; Marker lineage: N/A\tA0001\tPF00001.1\tPF00004.1\tTIGR00002\tTIGR00003')
+        self.assertEqual(lines[1], 'bin1\t0\t2\t0\t1\t0')
+
+    def testLineageOfHmmMarkerFile(self):
+        """Marker sets from an HMM file have no UID, so none is appended to the lineage."""
+        aai = AminoAcidIdentity()
+        out, _ = capture(self.rm.printSummary, 1, aai, self.bms, False)
+        self.assertTrue(out.startswith('bin1\tN/A\t-1\t5\t1\t'), out)
+
+        # a lineage-specific set reports its UID
+        bms = BinMarkerSets('bin1', BinMarkerSets.TAXONOMIC_MARKER_SET)
+        bms.addMarkerSet(MarkerSet('UID1', 'k__Bacteria', 10, [set(['PF00001.1'])]))
+        out, _ = capture(self.rm.printSummary, 1, aai, bms, False)
+        self.assertTrue(out.startswith('bin1\tk__Bacteria (UID1)\t10\t1\t1\t'), out)
+
+
+class VerifyOutputFormat9(unittest.TestCase):
+    def setUp(self):
+        self.tmpDir = tempfile.mkdtemp()
+        os.makedirs(os.path.join(self.tmpDir, 'bins', 'bin1'))
+        self.genesFile = os.path.join(self.tmpDir, 'bins', 'bin1', 'genes.faa')
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpDir)
+
+    def _rows(self, rm, bms, table=None):
+        out, _ = capture(rm.printSummary, 9, None, bms, False, None, table, self.tmpDir)
+        return out
+
+    def testMergedAndMultipleMarkers(self):
+        with open(self.genesFile, 'w') as f:
+            f.write('>c_1 # 1 # 300 # 1 # ID=1_1\nMAAA*\n')
+            f.write('>c_2 # 400 # 900 # -1 # ID=1_2\nMCCCC*\n')
+            f.write('>c_10 # 1000 # 1300 # 1 # ID=1_10\nMDD*\n')
+            f.write('>c_3 # 950 # 990 # 1 # ID=1_3\nME*\n')
+
+        # adjacent hits to c_1 and c_2 are combined; c_10 is hit by two markers
+        a = Hit('c_1', 'PF00001.1', 1, 100, 5, 95, 1, 100)
+        b = Hit('c_2', 'PF00001.1', 90, 250, 3, 160, 1, 165)
+        c = Hit('c_10', 'PF00001.1', 1, 100, 2, 99, 1, 100)
+        d = Hit('c_10', 'TIGR00002', 1, 100, 7, 80, 1, 100)
+        e = Hit('c_3', 'TIGR00003', 1, 100, 7, 80, 1, 100)  # not in marker set
+
+        rm = ResultsManager('bin1', {})
+        rm.markerHits = {'TIGR00002': [d], 'PF00001.1': [a, b, c], 'TIGR00003': [e]}
+        rm.identifyAdjacentMarkerGenes()
+        bms = hmmMarkerSets('bin1', ['PF00001.1', 'TIGR00002'])
+
+        rows = [r.split('\t') for r in self._rows(rm, bms).strip().split('\n')]
+        self.assertEqual(rows, [
+            ['bin1', 'c', '1', '1', '300', '1', '5', 'PF00001.1', '5', '95', 'MAAA*'],
+            ['bin1', 'c', '2', '400', '900', '-1', '6', 'PF00001.1', '3', '160', 'MCCCC*'],
+            ['bin1', 'c', '10', '1000', '1300', '1', '4', 'PF00001.1', '2', '99', 'MDD*'],
+            ['bin1', 'c', '10', '1000', '1300', '1', '4', 'TIGR00002', '7', '80', 'MDD*'],
+        ])
+
+        fasta = self._rows(rm, bms, table=True).strip().split('\n')
+        self.assertEqual(fasta[0], '>bin1 c geneId=1;start=1;end=300;strand=1;protlen=5 marker=PF00001.1;mstart=5;mend=95')
+        self.assertEqual(fasta[1], 'MAAA*')
+        self.assertEqual(len(fasta), 8)
+
+    def testNonProdigalHeaders(self):
+        """User-supplied protein files (--genes) need not use Prodigal headers."""
+        with open(self.genesFile, 'w') as f:
+            f.write('>geneA some description\nMAAA\n')
+            f.write('>WP_000001.1 another protein\nMCC\n')
+            f.write('>geneC\nMDD\n')
+
+        rm = ResultsManager('bin1', {})
+        rm.markerHits = {'PF00001.1': [Hit('geneA', 'PF00001.1', 1, 100, 5, 95, 1, 100)],
+                         'TIGR00002': [Hit('WP_000001.1', 'TIGR00002', 1, 100, 2, 50, 1, 100)]}
+        bms = hmmMarkerSets('bin1', ['PF00001.1', 'TIGR00002'])
+
+        rows = [r.split('\t') for r in self._rows(rm, bms).strip().split('\n')]
+        self.assertEqual(rows, [
+            ['bin1', 'WP_000001.1', 'NA', 'NA', 'NA', 'NA', '3', 'TIGR00002', '2', '50', 'MCC'],
+            ['bin1', 'geneA', 'NA', 'NA', 'NA', 'NA', '4', 'PF00001.1', '5', '95', 'MAAA'],
+        ])
 
 
 class VerifyParseHmmerResults(unittest.TestCase):

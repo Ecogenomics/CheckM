@@ -124,7 +124,7 @@ class ResultsParser():
         
         fout = open(binStatsExtFile, 'w')
 
-        for binId in self.results:
+        for binId in sorted(self.results):
             binStatsExt = self.results[binId].getSummary(
                 binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=2)
             binStatsExt.update(self.results[binId].geneCopyNumber(
@@ -137,7 +137,7 @@ class ResultsParser():
 
         fout = open(markerGenesFile, 'w')
 
-        for binId in self.results:
+        for binId in sorted(self.results):
             markerGenesHits = self.results[binId].getSummary(
                 binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=8)
             fout.write(binId + '\t' + str(markerGenesHits) + '\n')
@@ -490,7 +490,7 @@ class ResultsManager():
     def hitsToMarkerGene(self, markerSet):
         """Determine number of times each marker gene is hit."""
         ret = dict()
-        for marker in markerSet.getMarkerGenes():
+        for marker in sorted(markerSet.getMarkerGenes()):
             # use get() so absent markers are not inserted into the hit dictionary
             ret[marker] = len(self.markerHits.get(marker, []))
 
@@ -543,7 +543,7 @@ class ResultsManager():
 
         markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
-        for marker in self.models:
+        for marker in sorted(self.models):
             if marker not in markerGenes:
                 continue
 
@@ -652,7 +652,7 @@ class ResultsManager():
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             genesWithMarkers = {}
-            for marker, hit_list in self.markerHits.items():
+            for marker, hit_list in sorted(self.markerHits.items()):
                 if marker not in markerGenes:
                     continue
 
@@ -660,7 +660,7 @@ class ResultsManager():
                     genesWithMarkers[hit.target_name] = genesWithMarkers.get(
                         hit.target_name, []) + [hit]
 
-            for geneId, hits in genesWithMarkers.items():
+            for geneId, hits in sorted(genesWithMarkers.items()):
                 summary[geneId] = {}
                 for hit in hits:
                     summary[geneId][hit.query_accession] = summary[geneId].get(
@@ -796,18 +796,18 @@ class ResultsManager():
             # tabular of bin_id, marker, contig_id
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
-            for marker, hit_list in self.markerHits.items():
+            for marker, hit_list in sorted(self.markerHits.items()):
                 if marker not in markerGenes:
                     continue
 
-                for hit in hit_list:
-                    print(self.binId, marker, hit.target_name, sep='\t', end='\n')
+                for geneId in sorted(hit.target_name for hit in hit_list):
+                    print(self.binId, marker, geneId, sep='\t', end='\n')
 
         elif outputFormat == 6:
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             seqsReported = 0
-            for marker, hitList in self.markerHits.items():
+            for marker, hitList in sorted(self.markerHits.items()):
                 if marker not in markerGenes:
                     continue
 
@@ -828,7 +828,7 @@ class ResultsManager():
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             seqsReported = 0
-            for marker, hitList in self.markerHits.items():
+            for marker, hitList in sorted(self.markerHits.items()):
                 if marker not in markerGenes:
                     continue
 
@@ -857,7 +857,7 @@ class ResultsManager():
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             genesWithMarkers = {}
-            for marker, hit_list in self.markerHits.items():
+            for marker, hit_list in sorted(self.markerHits.items()):
                 if marker not in markerGenes:
                     continue
 
@@ -865,7 +865,7 @@ class ResultsManager():
                     genesWithMarkers[hit.target_name] = genesWithMarkers.get(
                         hit.target_name, []) + [hit]
 
-            for geneId, hits in genesWithMarkers.items():
+            for geneId, hits in sorted(genesWithMarkers.items()):
                 rowStr = self.binId + '\t' + geneId
                 for hit in hits:
                     rowStr += '\t' + hit.query_accession + ',' + \

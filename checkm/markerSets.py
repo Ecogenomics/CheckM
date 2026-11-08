@@ -165,7 +165,18 @@ class MarkerSet():
         self.markerSet = markerSet  # marker genes organized into co-located sets
 
     def __repr__(self):
-        return str(self.UID) + '\t' + self.lineageStr + '\t' + str(self.numGenomes) + '\t' + str(self.markerSet)
+        # marker genes are written in sorted order so marker files are reproducible
+        # (the string is parsed with eval() so must remain a valid list of sets)
+        markerSetStr = '[' + ', '.join([self._setStr(m) for m in self.markerSet]) + ']'
+        return str(self.UID) + '\t' + self.lineageStr + '\t' + str(self.numGenomes) + '\t' + markerSetStr
+
+    @staticmethod
+    def _setStr(markers):
+        """String representation of a set with its elements in sorted order."""
+        if len(markers) == 0:
+            return 'set()'
+
+        return '{' + ', '.join([repr(m) for m in sorted(markers)]) + '}'
 
     def size(self):
         """Number of marker genes and marker gene sets."""
@@ -472,7 +483,7 @@ class MarkerSetParser():
         # create file with all model accession numbers
         keyFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
         fout = open(keyFile, 'w')
-        for modelAcc in allMarkers:
+        for modelAcc in sorted(allMarkers):  # sorted so the HMM file (and HMMER output) is reproducible
             fout.write(modelAcc + '\n')
         fout.close()
 

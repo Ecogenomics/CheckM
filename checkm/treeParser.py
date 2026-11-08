@@ -474,8 +474,8 @@ class TreeParser():
 
         self.logger.info('Determining marker sets for each genome bin.')
 
-        # get all bin ids
-        binIds = getBinIdsFromOutDir(outDir)
+        # get all bin ids (sorted so bins are written to the marker file in a reproducible order)
+        binIds = sorted(getBinIdsFromOutDir(outDir))
 
         # get statistics for internal nodes
         uniqueIdToLineageStatistics = self.readNodeMetadata()
