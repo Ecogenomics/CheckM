@@ -194,19 +194,20 @@ def readFasta(fastaFile, trimHeader=True):
             openFile = open
 
         seqs = {}
-        for line in openFile(fastaFile, 'rt'):
-            # skip blank lines
-            if not line.strip():
-                continue
+        with openFile(fastaFile, 'rt') as f:
+            for line in f:
+                # skip blank lines
+                if not line.strip():
+                    continue
 
-            if line[0] == '>':
-                if trimHeader:
-                    seqId = line[1:].split(None, 1)[0]
+                if line[0] == '>':
+                    if trimHeader:
+                        seqId = line[1:].split(None, 1)[0]
+                    else:
+                        seqId = line[1:].rstrip()
+                    seqs[seqId] = []
                 else:
-                    seqId = line[1:].rstrip()
-                seqs[seqId] = []
-            else:
-                seqs[seqId].append(line.rstrip())
+                    seqs[seqId].append(line.rstrip())
 
         for seqId, seq in seqs.items():
             seqs[seqId] = ''.join(seq)

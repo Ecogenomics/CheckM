@@ -73,13 +73,19 @@ class Unbinned():
                     unbinnedBases += len(seq)
 
                     a, c, g, t = baseCount(seq)
+                    if a + c + g + t > 0:
+                        gcStr = '%.2f' % (float(g + c) * 100 / (a + c + g + t))
+                    else:
+                        gcStr = 'NA'
 
-                    statsOut.write('%s\t%d\t%.2f\n' % (seqId, len(seq), float(g + c) * 100 / (a + c + g + t)))
+                    statsOut.write('%s\t%d\t%s\n' % (seqId, len(seq), gcStr))
 
         seqOut.close()
         statsOut.close()
 
         self.logger.info('  Identified %d (%.2f Mbp) unbinned sequences.' % (unbinnedCount, float(unbinnedBases) / 1e6))
 
-        self.logger.info('Percentage of unbinned sequences: %.2f%%' % (unbinnedCount * 100.0 / len(allSeqs)))
-        self.logger.info('Percentage of unbinned bases: %.2f%%' % (unbinnedBases * 100.0 / totalBases))
+        perUnbinnedSeqs = unbinnedCount * 100.0 / len(allSeqs) if len(allSeqs) > 0 else 0.0
+        perUnbinnedBases = unbinnedBases * 100.0 / totalBases if totalBases > 0 else 0.0
+        self.logger.info('Percentage of unbinned sequences: %.2f%%' % perUnbinnedSeqs)
+        self.logger.info('Percentage of unbinned bases: %.2f%%' % perUnbinnedBases)

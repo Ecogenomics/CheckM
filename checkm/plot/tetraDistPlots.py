@@ -73,7 +73,9 @@ class TetraDistPlots(AbstractPlot):
 
             while(end < seqLen):
                 windowSig = genomicSig.seqSignature(seq[start:end])
-                data.append(genomicSig.distance(windowSig, binSig))
+                if np.sum(windowSig) > 0:
+                    # skip windows without any valid tetranucleotides (e.g., all N)
+                    data.append(genomicSig.distance(windowSig, binSig))
 
                 start = end
                 end += self.options.td_window_size

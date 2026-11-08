@@ -174,9 +174,12 @@ class GenomicSignatures(object):
                 # unknown kmer (e.g., contains a N)
                 pass
 
-        # normalize
+        # normalize; a sequence without any valid kmers (e.g., shorter
+        # than K or all N) has a signature of all zeros
         sig = np.array(sig, dtype=float)
-        sig /= np.sum(sig)
+        sigSum = np.sum(sig)
+        if sigSum > 0:
+            sig /= sigSum
 
         return sig
 
