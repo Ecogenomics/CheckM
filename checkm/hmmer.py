@@ -21,6 +21,8 @@
 
 import os
 import sys
+import shlex
+import signal
 import logging
 import subprocess
 from re import split as re_split
@@ -36,6 +38,39 @@ class HMMERError(BaseException):
 
 class HMMMERModeError(BaseException):
     pass
+
+
+def returnCodeStr(returnCode):
+    """Describe the return code of a subprocess (e.g., 'exit code 1' or 'signal 9 (SIGKILL)').
+
+    Return codes are those reported by the subprocess module, where a
+    negative value -N indicates the program was terminated by signal N.
+    """
+    if returnCode < 0:
+        try:
+            signalName = signal.Signals(-returnCode).name
+        except ValueError:
+            signalName = 'unknown signal'
+        return f'signal {-returnCode} ({signalName})'
+
+    return f'exit code {returnCode}'
+
+
+def exitOnFailure(logger, program, returnCode):
+    """Log an error and exit with status 1 if an external program failed."""
+    if returnCode != 0:
+        logger.error(f'{program} failed ({returnCodeStr(returnCode)}).')
+        sys.exit(1)
+
+
+def runWithStdout(cmd, outputFile, append=False):
+    """Run a command, given as a list of arguments, writing its standard output to a file.
+
+    Arguments are passed directly to the program without a shell, so
+    file paths do not need to be quoted. Returns the subprocess return code.
+    """
+    with open(outputFile, 'a' if append else 'w') as fout:
+        return subprocess.call(cmd, stdout=fout)
 
 
 class HMMERRunner():
@@ -63,64 +98,59 @@ class HMMERRunner():
             raise HMMMERModeError("Mode %s not compatible with search" % self.mode)
 
         if not bKeepOutput:
-            hmmerOut = '/dev/null'
+            hmmerOut = os.devnull
 
-        cmd = ('hmmsearch --%s %s %s %s %s > %s' % (self.mode, tableOut, cmdlineOptions, db, query, hmmerOut))
-        rtn = os.system(cmd)
-        if rtn != 0:
-            self.logger.error(f'hmmsearch exited with code: {rtn}')
-            sys.exit(rtn)
+        cmd = ['hmmsearch', '--' + self.mode, tableOut] + shlex.split(cmdlineOptions) + [db, query]
+        rtn = runWithStdout(cmd, hmmerOut)
+        exitOnFailure(self.logger, 'hmmsearch', rtn)
 
     def align(self, db, query, outputFile, writeMode='>', outputFormat='PSIBLAST', trim=True):
         """Run hmmalign"""
         if self.mode != 'align':
             raise HMMMERModeError("Mode %s not compatible with align" % self.mode)
 
-        # build up the option string
-        opts = ''
+        # build up the option list
+        opts = []
         if trim:
-            opts += ' --trim '
+            opts.append('--trim')
+
+        bAppend = (writeMode == '>>')
 
         # run hmmer
-        cmd = 'hmmalign --allcol %s --outformat %s %s %s %s %s' % (opts, outputFormat, db, query, writeMode, outputFile)
-        rtn = os.system(cmd)
-        if rtn == 256:
+        cmd = ['hmmalign', '--allcol'] + opts + ['--outformat', outputFormat, db, query]
+        rtn = runWithStdout(cmd, outputFile, bAppend)
+        if rtn == 1:
             # assume user has a newer version of HMMER (>= 3.1b1) and the allcol parameter is no longer valid
-            cmd = cmd.replace('--allcol', '')
-            rtn = os.system(cmd)
+            cmd.remove('--allcol')
+            rtn = runWithStdout(cmd, outputFile, bAppend)
 
-        if rtn != 0:
-            self.logger.error(f'hmmalign exited with code: {rtn}')
-            sys.exit(1)
+        exitOnFailure(self.logger, 'hmmalign', rtn)
 
     def fetch(self, db, key, fetchFileName, bKeyFile=False):
         """Run hmmfetch"""
         if self.mode != 'fetch':
             raise HMMMERModeError("Mode %s not compatible with fetch" % self.mode)
 
-        keyFileOpt = ''
+        cmd = ['hmmfetch']
         if bKeyFile:
-            keyFileOpt = '-f'
+            cmd.append('-f')
+        cmd += [db, key]
 
-        rtn = os.system('hmmfetch ' + keyFileOpt + ' %s %s > %s' % (db, key, fetchFileName))
-        if rtn != 0:
-            self.logger.error(f'hmmfetch exited with code: {rtn}')
-            sys.exit(rtn)
+        rtn = runWithStdout(cmd, fetchFileName)
+        exitOnFailure(self.logger, 'hmmfetch', rtn)
 
     def index(self, hmmModelFile):
         """Index a HMM file."""
         if self.mode != 'fetch':
             raise HMMMERModeError("Mode %s not compatible with fetch" % self.mode)
 
-        rtn = os.system('hmmfetch --index %s > /dev/null' % hmmModelFile)
-        if rtn != 0:
-            self.logger.error(f'hmmfetch exited with code: {rtn}')
-            sys.exit(rtn)
+        rtn = runWithStdout(['hmmfetch', '--index', hmmModelFile], os.devnull)
+        exitOnFailure(self.logger, 'hmmfetch', rtn)
 
     def checkForHMMER(self):
         """Check to see if HMMER is on the system path."""
         try:
-            subprocess.call(['hmmsearch', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+            subprocess.call(['hmmsearch', '-h'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         except:
             self.logger.error("Make sure HMMER executables (e.g., hmmsearch, hmmfetch) are on your system path.")
             sys.exit(1)

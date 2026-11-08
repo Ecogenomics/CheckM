@@ -32,6 +32,7 @@ import numpy as np
 from checkm.defaultValues import DefaultValues
 from checkm.common import checkFileExists
 from checkm.util.seqUtils import readFasta, writeFasta
+from checkm.hmmer import returnCodeStr
 
 
 class ProdigalError(BaseException):
@@ -52,6 +53,14 @@ class ProdigalRunner():
         self.gffFile = os.path.join(outDir, DefaultValues.PRODIGAL_GFF)
 
     def run(self, query, bNucORFs=True):
+        """Call genes with Prodigal.
+
+        Genes are called with translation tables 4 and 11, and the
+        table giving the highest coding density is selected. A bin
+        in which Prodigal identifies no genes is not considered an
+        error: the output files are created but contain no genes
+        (see areORFsCalled). The run is aborted if Prodigal fails.
+        """
 
         prodigal_input = query
 
@@ -61,60 +70,73 @@ class ProdigalRunner():
         for seqId, seq in seqs.items():
             totalBases += len(seq)
 
+        if totalBases == 0:
+            # Prodigal exits with an error when given no sequence data,
+            # so create empty output files indicating that no genes were found
+            outputFiles = [self.aaGeneFile, self.gffFile]
+            if bNucORFs:
+                outputFiles.append(self.ntGeneFile)
+            for outputFile in outputFiles:
+                open(outputFile, 'w').close()
+            return 11
+
         # decompress gzip input files
         tmp_dir = None
-        if prodigal_input.endswith('.gz'):
-            tmp_dir = tempfile.mkdtemp()
-            prodigal_input = os.path.join(
-                tmp_dir, os.path.basename(prodigal_input[0:-3]))
-            writeFasta(seqs, prodigal_input)
+        try:
+            if prodigal_input.endswith('.gz'):
+                tmp_dir = tempfile.mkdtemp()
+                prodigal_input = os.path.join(
+                    tmp_dir, os.path.basename(prodigal_input[0:-3]))
+                writeFasta(seqs, prodigal_input)
+
+            bestTranslationTable = self._run(query, prodigal_input, seqs, totalBases, bNucORFs)
+        finally:
+            if tmp_dir:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+
+        return bestTranslationTable
+
+    def _runProdigal(self, procedureStr, translationTable, aaGeneFile, ntGeneFile, gffFile, prodigal_input):
+        """Run Prodigal, returning its return code."""
+        cmd = ['prodigal', '-p', procedureStr, '-q', '-m', '-f', 'gff',
+               '-g', str(translationTable), '-a', aaGeneFile]
+        if ntGeneFile:
+            cmd += ['-d', ntGeneFile]
+        cmd += ['-i', prodigal_input]
+
+        with open(gffFile, 'w') as fout:
+            return subprocess.call(cmd, stdout=fout, stderr=subprocess.DEVNULL)
+
+    def _run(self, query, prodigal_input, seqs, totalBases, bNucORFs):
+        """Call genes with translation tables 4 and 11 and select the best table."""
 
         # call ORFs with different translation tables and select the one with the highest coding density
         tableCodingDensity = {}
         for translationTable in [4, 11]:
             aaGeneFile = self.aaGeneFile + '.' + str(translationTable)
-            ntGeneFile = self.ntGeneFile + '.' + str(translationTable)
+            ntGeneFile = self.ntGeneFile + '.' + str(translationTable) if bNucORFs else None
             gffFile = self.gffFile + '.' + str(translationTable)
 
-            # check if there is sufficient bases to calculate prodigal parameters
+            # check if there are sufficient bases to calculate prodigal parameters
             if totalBases < 100000:
                 procedureStr = 'meta'  # use best precalculated parameters
             else:
                 procedureStr = 'single'  # estimate parameters from data
 
-            if bNucORFs:
-                cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -d %s -i %s > %s 2> /dev/null' % (procedureStr,
-                                                                                                  translationTable,
-                                                                                                  aaGeneFile,
-                                                                                                  ntGeneFile,
-                                                                                                  prodigal_input,
-                                                                                                  gffFile))
-            else:
-                cmd = ('prodigal -p %s -q -m -f gff -g %d -a %s -i %s > %s 2> /dev/null' % (procedureStr,
-                                                                                            translationTable,
-                                                                                            aaGeneFile,
-                                                                                            prodigal_input,
-                                                                                            gffFile))
-
-
-            rtn = os.system(cmd)
-            if rtn != 0 or not self._areORFsCalled(aaGeneFile):
+            rtn = self._runProdigal(procedureStr, translationTable, aaGeneFile, ntGeneFile, gffFile, prodigal_input)
+            if procedureStr == 'single' and (rtn != 0 or not self._areORFsCalled(aaGeneFile)):
                 # prodigal will fail to learn a model if the input genome has a large number of N's
                 # so try gene prediction with 'meta'
-                msg = f"Prodigal failed or returned no output (code: {rtn})."
-                if procedureStr == 'single':
-                    msg += " Retrying with '-p meta' due to possible high N content in the genome."
-                    self.logger.warning(msg)
-                    cmd = cmd.replace('-p single', '-p meta')
-                    rtn = os.system(cmd)
-                    if rtn != 0 or not self._areORFsCalled(aaGeneFile):
-                        self.logger.error(f"Prodigal failed again with '-p meta' (code: {rtn}).")
-                        sys.exit(rtn)
-                else:
-                    self.logger.error(msg)
-                    sys.exit(rtn)
+                self.logger.warning(f"Prodigal failed or returned no output ({returnCodeStr(rtn)}). "
+                                    "Retrying with '-p meta' due to possible high N content in the genome.")
+                procedureStr = 'meta'
+                rtn = self._runProdigal(procedureStr, translationTable, aaGeneFile, ntGeneFile, gffFile, prodigal_input)
 
-            # determine coding density
+            if rtn != 0:
+                self.logger.error(f"Prodigal failed with '-p {procedureStr}' ({returnCodeStr(rtn)}) on: {query}")
+                sys.exit(1)
+
+            # determine coding density (0 if no genes were identified)
             prodigalParser = ProdigalGeneFeatureParser(gffFile)
 
             codingBases = 0
@@ -147,9 +169,6 @@ class ProdigalRunner():
             if bNucORFs:
                 os.remove(self.ntGeneFile + '.' + str(translationTable))
 
-        if tmp_dir:
-            shutil.rmtree(tmp_dir)
-
         return bestTranslationTable
 
     def _areORFsCalled(self, aaGeneFile):
@@ -170,7 +189,7 @@ class ProdigalRunner():
         # else returns something non-zero
         try:
             subprocess.call(
-                ['prodigal', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+                ['prodigal', '-h'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         except:
             self.logger.error("Make sure prodigal is on your system path.")
             sys.exit(1)

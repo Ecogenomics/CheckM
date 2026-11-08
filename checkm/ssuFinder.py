@@ -20,13 +20,14 @@
 ###############################################################################
 
 import os
-import sys
 import logging
+import subprocess
 from collections import defaultdict
 
 from checkm.defaultValues import DefaultValues
 from checkm.common import binIdFromFilename
 from checkm.util.seqUtils import readFasta, readFastaSeqIds
+from checkm.hmmer import exitOnFailure
 
 
 class SSU_Finder(object):
@@ -39,29 +40,36 @@ class SSU_Finder(object):
         self.archaeaModelFile = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'hmms_ssu', 'SSU_archaea.hmm')
         self.eukModelFile = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'hmms_ssu', 'SSU_euk.hmm')
 
-    def _hmmSearch(self, seqFile, evalue, outputPrefix):
-        if seqFile.endswith('gz'):
-            pipe = 'zcat ' + seqFile + ' | '
-        else:
-            pipe = 'cat ' + seqFile + ' | '
+    def _nhmmer(self, seqFile, evalue, outputPrefix, domain, modelFile):
+        """Run nhmmer on a (possibly gzipped) sequence file passed via standard input."""
+        cmd = ['nhmmer', '--noali', '--cpu', str(self.totalThreads),
+               '-o', outputPrefix + '.' + domain + '.txt',
+               '--tblout', outputPrefix + '.' + domain + '.table.txt',
+               '-E', str(evalue),
+               modelFile, '-']
 
+        if seqFile.endswith('gz'):
+            decompress = subprocess.Popen(['gzip', '-dc', seqFile], stdout=subprocess.PIPE)
+            rtn = subprocess.call(cmd, stdin=decompress.stdout)
+            decompress.stdout.close()
+            decompressRtn = decompress.wait()
+            if rtn == 0:
+                exitOnFailure(self.logger, f'Decompressing {seqFile} with gzip', decompressRtn)
+        else:
+            with open(seqFile) as fin:
+                rtn = subprocess.call(cmd, stdin=fin)
+
+        exitOnFailure(self.logger, 'nhmmer', rtn)
+
+    def _hmmSearch(self, seqFile, evalue, outputPrefix):
         self.logger.info('Identifying bacterial 16S.')
-        rtn = os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.bacteria.txt --tblout ' + outputPrefix + '.bacteria.table.txt -E ' + str(evalue) + ' ' + self.bacteriaModelFile + ' -')
-        if rtn != 0:
-            self.logger.error(f'nhmmer exited with code: {rtn}')
-            sys.exit(rtn)
+        self._nhmmer(seqFile, evalue, outputPrefix, 'bacteria', self.bacteriaModelFile)
 
         self.logger.info('Identifying archaeal 16S.')
-        rtn = os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.archaea.txt --tblout ' + outputPrefix + '.archaea.table.txt -E ' + str(evalue) + ' ' + self.archaeaModelFile + ' -')
-        if rtn != 0:
-            self.logger.error(f'nhmmer exited with code: {rtn}')
-            sys.exit(rtn)
+        self._nhmmer(seqFile, evalue, outputPrefix, 'archaea', self.archaeaModelFile)
 
         self.logger.info('Identifying eukaryotic 18S.')
-        rtn = os.system(pipe + 'nhmmer --noali --cpu ' + str(self.totalThreads) + ' -o ' + outputPrefix + '.euk.txt --tblout ' + outputPrefix + '.euk.table.txt -E ' + str(evalue) + ' ' + self.eukModelFile + ' -')
-        if rtn != 0:
-            self.logger.error(f'nhmmer exited with code: {rtn}')
-            sys.exit(rtn)
+        self._nhmmer(seqFile, evalue, outputPrefix, 'euk', self.eukModelFile)
 
     def _readHits(self, resultsFile, domain, evalueThreshold):
         """Parse hits from nhmmer output."""
