@@ -161,6 +161,36 @@ class VerifyCoverage(unittest.TestCase):
             self._run(bamFiles)
         self.assertEqual(cm.exception.code, 1)
 
+    def testCoverageWindows(self):
+        """Coverage of windows (gc_bias_plot) includes a final window ending at the sequence end."""
+        from checkm.coverageWindows import CoverageWindows
+
+        bamFile = os.path.join(self.tmpDir, 'sample.bam')
+        makeBam(bamFile, self.allSeqs, 10)
+
+        with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            profile = CoverageWindows(2).run([self.binFile], bamFile, False, 0.98, 0.02, 100)
+
+        self.assertEqual(sorted(profile.keys()), sorted(seqId for seqId, _ in self.allSeqs))
+        self.assertEqual(len(profile['c1'][1]), 10)  # 1000 bp / 100 bp windows
+        self.assertEqual(len(profile['c2'][1]), 8)
+        self.assertEqual(len(profile['u1'][1]), 5)
+        for seqId, seq in self.allSeqs:
+            coverage, windowCoverages = profile[seqId]
+            self.assertAlmostEqual(coverage, 20 * 50.0 / len(seq))
+            self.assertAlmostEqual(sum(windowCoverages) * 100, coverage * len(seq))
+
+    def testCoverageWindowsMissingNMTag(self):
+        from checkm.coverageWindows import CoverageWindows
+
+        bamFile = os.path.join(self.tmpDir, 'noNM.bam')
+        makeBam(bamFile, self.allSeqs, 5, bNM=False)
+
+        with self.assertRaises(SystemExit) as cm:
+            with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+                CoverageWindows(2).run([self.binFile], bamFile, False, 0.98, 0.02, 100)
+        self.assertEqual(cm.exception.code, 1)
+
 
 if __name__ == "__main__":
     unittest.main()
