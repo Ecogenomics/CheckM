@@ -25,7 +25,6 @@ import logging
 import uuid
 import tempfile
 import shutil
-import multiprocessing as mp
 import pickle
 import gzip
 
@@ -51,10 +50,6 @@ class BinMarkerSets():
         self.markerSetType = markerSetType
         self.selectedLinageSpecificMarkerSet = None
 
-    def numMarkerSets(self):
-        """Number of marker sets associated with bin."""
-        return len(self.markerSets)
-
     def addMarkerSet(self, markerSet):
         """Add marker set to bin."""
         self.markerSets.append(markerSet)
@@ -74,9 +69,6 @@ class BinMarkerSets():
 
     def mostSpecificMarkerSet(self):
         return self.markerSets[0]
-
-    def treeMarkerSet(self):
-        pass
 
     def selectedMarkerSet(self):
         """Return the 'selected' marker set for this bin."""
@@ -327,33 +319,6 @@ class MarkerSetParser():
 
         return markersToExclude
 
-    def createHmmModels(self, outDir, binIds, markerFile):
-        """Create HMM model for each bins marker set."""
-
-        # determine type of marker set file
-        markerFileType = self.markerFileType(markerFile)
-
-        # get HMM file for each bin
-        binIdToModels = {}
-        if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
-            hmmModelFile = self.createHmmModelFile(list(binIds.keys())[0], markerFile)
-
-            modelParser = HmmModelParser(hmmModelFile)
-            models = modelParser.models()
-            for binId in binIds:
-                binIdToModels[binId] = models
-
-            os.remove(hmmModelFile)
-        elif markerFileType == BinMarkerSets.TREE_MARKER_SET:
-            binIdToModels = self.__createLineageHmmModels(binIds, markerFile)
-        else:
-            modelParser = HmmModelParser(markerFile)
-            models = modelParser.models()
-            for binId in binIds:
-                binIdToModels[binId] = models
-
-        return binIdToModels
-
     def createHmmModelFile(self, binId, markerFile):
         """Create HMM file for from a bin's marker set."""
 
@@ -372,89 +337,6 @@ class MarkerSetParser():
             shutil.copyfile(markerFile, hmmModelFile)
 
         return hmmModelFile
-
-    def __createLineageHmmModels(self, binIds, markerFile):
-        """Create lineage-specific HMMs for each bin."""
-
-        self.logger.info('Extracting lineage-specific HMMs with %d threads:' % self.numThreads)
-
-        workerQueue = mp.Queue()
-        writerQueue = mp.Queue()
-
-        for binId in binIds:
-            workerQueue.put(binId)
-
-        for _ in range(self.numThreads):
-            workerQueue.put(None)
-
-        binIdToModels = mp.Manager().dict()
-
-        try:
-            calcProc = [mp.Process(target=self._fetchModelInfo, args=(binIdToModels, markerFile, workerQueue, writerQueue)) for _ in range(self.numThreads)]
-            writeProc = mp.Process(target=self._reportFetchProgress, args=(len(binIds), writerQueue))
-
-            writeProc.start()
-
-            for p in calcProc:
-                p.start()
-
-            for p in calcProc:
-                p.join()
-
-            writerQueue.put(None)
-            writeProc.join()
-        except:
-            # make sure all processes are terminated
-            for p in calcProc:
-                p.terminate()
-
-            writeProc.terminate()
-
-        # create a standard dictionary from the managed dictionary
-        d = {}
-        for binId in binIdToModels.keys():
-            d[binId] = binIdToModels[binId]
-
-        return d
-
-    def _fetchModelInfo(self, binIdToModels, markerFile, queueIn, queueOut):
-        """Fetch HMM."""
-        while True:
-            binId = queueIn.get(block=True, timeout=None)
-            if binId == None:
-                break
-
-            hmmModelFile = self.createHmmModelFile(binId, markerFile)
-
-            modelParser = HmmModelParser(hmmModelFile)
-            binIdToModels[binId] = modelParser.models()
-
-            os.remove(hmmModelFile)
-
-            queueOut.put(binId)
-
-    def _reportFetchProgress(self, numBins, queueIn):
-        """Report progress of extracted HMMs."""
-
-        numProcessedBins = 0
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-                statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
-
-        while True:
-            binId = queueIn.get(block=True, timeout=None)
-            if binId == None:
-                break
-
-            if self.logger.getEffectiveLevel() <= logging.INFO:
-                numProcessedBins += 1
-                statusStr = '    Finished extracting HMMs for %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
-
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
 
     def markerFileType(self, markerFile):
         """Determine type of marker file."""

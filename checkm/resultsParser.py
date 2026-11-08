@@ -19,8 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-from __future__ import print_function
-
 import sys
 import os
 import ast
@@ -103,13 +101,9 @@ class ResultsParser():
             if binStats != None:
                 resultsManager = ResultsManager(
                     binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats[binId])
-            elif binStats == None:
+            else:
                 resultsManager = ResultsManager(
                     binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection)
-            else:
-                self.logger.error(
-                    'Invalid parameter settings for binStats and seqStats.')
-                sys.exit(1)
 
             hmmerTableFile = os.path.join(outDir, 'bins', binId, hmmTableFile)
             self.parseHmmerResults(
@@ -263,14 +257,8 @@ class ResultsParser():
             header = ['Bin Id', 'Gene Id',
                       '{Marker Id, Start position, End position}']
         elif outputFormat == 9:
-            if table is not None:
-                header = ['Bin Id', 'Contig', 'Gene Number', 'Gene Start', 'Gene End',
-                          'Gene Strand', 'Prot Length', 'Marker Id', 'Align Start', 'Align End', 'Sequence']
-            else:
-                header = " "
-        elif outputFormat == 10:
-            header = ['Scaffold Id', 'Bin Id', 'Length', '# contigs',
-                      'GC', '# ORFs', 'Coding density', 'Marker Ids']
+            header = ['Bin Id', 'Contig', 'Gene Number', 'Gene Start', 'Gene End',
+                      'Gene Strand', 'Prot Length', 'Marker Id', 'Align Start', 'Align End', 'Sequence']
 
         return header
 
@@ -509,15 +497,12 @@ class ResultsManager():
         """ Determine number of marker genes with 0-5 hits
             as well as the total completeness and contamination."""
         geneCounts = [0] * 6
-        multiCopyCount = 0
         for marker in markerSet.getMarkerGenes():
             if marker in markerHits:
                 if len(markerHits[marker]) > 5:
                     markerCount = 5
                 else:
                     markerCount = len(markerHits[marker])
-
-                multiCopyCount += (len(markerHits[marker]) - 1)
             else:
                 markerCount = 0
 
@@ -559,28 +544,15 @@ class ResultsManager():
 
         return geneCopyNumber
 
-    def getSummary(self, binMarkerSets, bIndividualMarkers, outputFormat=1):
-        """Get dictionary containing information about bin."""
+    def getSummary(self, binMarkerSets, bIndividualMarkers, outputFormat):
+        """Get dictionary containing information about bin.
+
+        Output format 2 gives the extended bin statistics (bin_stats_ext.tsv) and
+        output format 8 the position of marker genes (marker_gene_stats.tsv).
+        """
         summary = {}
 
-        if outputFormat == 1:
-            selectedMarkerSet = binMarkerSets.selectedMarkerSet()
-            data = self.geneCountsForSelectedMarkerSet(
-                binMarkerSets, bIndividualMarkers)
-
-            summary['marker lineage'] = selectedMarkerSet.lineageStr
-            summary['# genomes'] = selectedMarkerSet.numGenomes
-            summary['# markers'] = selectedMarkerSet.numMarkers()
-            summary['# marker sets'] = selectedMarkerSet.numSets()
-            summary['0'] = data[0]
-            summary['1'] = data[1]
-            summary['2'] = data[2]
-            summary['3'] = data[3]
-            summary['4'] = data[4]
-            summary['5+'] = data[5]
-            summary['Completeness'] = data[6]
-            summary['Contamination'] = data[7]
-        elif outputFormat == 2:
+        if outputFormat == 2:
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
             data = self.geneCountsForSelectedMarkerSet(
                 binMarkerSets, bIndividualMarkers)
@@ -598,54 +570,6 @@ class ResultsManager():
             summary['Completeness'] = data[6]
             summary['Contamination'] = data[7]
             summary.update(self.binStats)
-
-        elif outputFormat == 5:
-            # tabular of bin_id, marker, contig_id
-            markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
-
-            for marker, hit_list in self.markerHits.items():
-                if marker not in markerGenes:
-                    continue
-
-                summary[marker] = []
-                for hit in hit_list:
-                    summary[marker].append(hit.target_name)
-
-        elif outputFormat == 6:
-            markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
-
-            for marker, hit_list in self.markerHits.items():
-                if marker not in markerGenes:
-                    continue
-
-                if len(hit_list) >= 2:
-                    summary[marker] = []
-                    for hit in hit_list:
-                        summary[marker].append(hit.target_name)
-
-        elif outputFormat == 7:
-            # tabular - print only contigs that have more than one copy
-            # of the same marker on them
-            markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
-
-            contigs = defaultdict(dict)
-            for marker, hit_list in self.markerHits.items():
-                if marker not in markerGenes:
-                    continue
-
-                for hit in hit_list:
-                    try:
-                        contigs[hit.target_name][marker] += 1
-                    except KeyError:
-                        contigs[hit.target_name][marker] = 1
-
-            for contig_name, marker_counts in contigs.items():
-                for marker_name, marker_count in marker_counts.items():
-                    if marker_count > 1:
-                        if contig_name not in summary:
-                            summary[contig_name] = {}
-
-                        summary[contig_name][marker_name] = marker_count
 
         elif outputFormat == 8:
             # tabular - print only position of marker genes
@@ -665,8 +589,6 @@ class ResultsManager():
                 for hit in hits:
                     summary[geneId][hit.query_accession] = summary[geneId].get(
                         hit.query_accession, []) + [[hit.ali_from, hit.ali_to]]
-        else:
-            print("Unknown output format: ", outputFormat)
 
         return summary
 
@@ -977,33 +899,5 @@ class ResultsManager():
                             marker_hit["ali_to"],
                             seq
                         ]))
-        else:
-            self.logger.error("Unknown output format: %d", outputFormat)
 
         return 0
-
-        '''
-        elif outputFormat == 10:
-            markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
-
-            markersInScaffold = {}
-            for marker, hit_list in self.markerHits.items():
-                if marker not in markerGenes:
-                    continue
-
-                for hit in hit_list:
-                    scaffoldId = hit.target_name[0:hit.target_name.rfind('_')]
-                    markersInScaffold[scaffoldId] = markersInScaffold.get(scaffoldId, []) + [marker]
-
-            for scaffoldId, data in self.scaffoldStats.items():
-                print(scaffoldId, self.binId, str(data['Length']), str(data['# contigs']),
-                      '%.3f' % (data['GC']), str(data.get('# ORFs', 0)),
-                      '%.3f' % (float(data.get('Coding bases', 0)) / data['Total contig length']),
-                      sep='\t', end='\t')
-
-                if scaffoldId in markersInScaffold:
-                    markerStr = ','.join(sorted(markersInScaffold[scaffoldId]))
-                    print(markerStr, end='\n')
-                else:
-                    print()
-        '''
