@@ -117,6 +117,10 @@ class MarkerGeneFinder():
             else:
                 self.logger.warning(f'Skipping bin {binId}: no genes were identified by Prodigal.')
 
+            # remove the bin's (empty) output directory so commands that identify
+            # bins from the output directory (e.g., tree_qa, lineage_set, qa) skip it too
+            shutil.rmtree(os.path.join(outDir, 'bins', binId), ignore_errors=True)
+
         # create a standard dictionary from the managed dictionary,
         # with bins in a deterministic order
         d = {}
