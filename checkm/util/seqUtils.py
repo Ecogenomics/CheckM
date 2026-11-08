@@ -63,6 +63,10 @@ def isNucleotide(seq_file, req_perc=0.9, max_seqs_to_read=10):
 
     seq_count = 0
     for _seq_id, seq in seqs.items():
+        if len(seq) == 0:
+            # skip empty records
+            continue
+
         seq = seq.lower()
 
         nt_bases = 0
@@ -75,6 +79,10 @@ def isNucleotide(seq_file, req_perc=0.9, max_seqs_to_read=10):
         seq_count += 1
         if seq_count == max_seqs_to_read:
             break
+
+    if seq_count == 0:
+        # all records are empty so treat as file with no sequences
+        return True
 
     return False
 
@@ -198,7 +206,7 @@ def readFasta(fastaFile, trimHeader=True):
                     seqId = line[1:].rstrip()
                 seqs[seqId] = []
             else:
-                seqs[seqId].append(line[0:-1])
+                seqs[seqId].append(line.rstrip())
 
         for seqId, seq in seqs.items():
             seqs[seqId] = ''.join(seq)
@@ -287,15 +295,16 @@ def baseCount(seq):
 
 
 def calculateN50(seqLens):
+    """Calculate N50 of a list of sequence lengths (0 if the list is empty)."""
+    if len(seqLens) == 0:
+        return 0
+
     thresholdN50 = sum(seqLens) / 2.0
 
-    seqLens.sort(reverse=True)
-
     testSum = 0
-    for seqLen in seqLens:
+    for seqLen in sorted(seqLens, reverse=True):
         testSum += seqLen
         if testSum >= thresholdN50:
-            N50 = seqLen
-            break
+            return seqLen
 
-    return N50
+    return 0
