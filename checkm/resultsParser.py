@@ -406,11 +406,11 @@ class ResultsManager():
 
             bCombined = True
             while bCombined:
+                bCombined = False
                 for i in range(0, len(hits)):
                     orfI = hits[i].target_name
                     scaffoldIdI = orfI[0:orfI.rfind('_')]
 
-                    bCombined = False
                     for j in range(i + 1, len(hits)):
                         orfJ = hits[j].target_name
                         scaffoldIdJ = orfJ[0:orfJ.rfind('_')]
@@ -427,25 +427,16 @@ class ResultsManager():
                                 break
 
                             if abs(orfNumI - orfNumJ) == 1:
-                                # check if hits are to different parts of the HMM
-                                sI = hits[i].hmm_from
-                                eI = hits[i].hmm_to
-
-                                sJ = hits[j].hmm_from
-                                eJ = hits[j].hmm_to
-
-                                if (sI <= sJ and eI > sJ) or (sJ <= sI and eJ > sI):
-                                    # models overlap so this could represent contamination,
-                                    # but it seems more likely that adjacent genes hitting
-                                    # the same marker represent legitimate gene duplication,
-                                    # a gene calling error, or an assembly error and thus
-                                    # should not be treated as contamination
-                                    bCombined = True
-                                    break
-                                else:
-                                    # combine the two hits
-                                    bCombined = True
-                                    break
+                                # Hits to adjacent ORFs are combined. If the hits are to
+                                # different parts of the HMM, the marker gene was most likely
+                                # split by a gene calling or assembly error. If the hits
+                                # overlap on the HMM this could represent contamination,
+                                # but it seems more likely that adjacent genes hitting
+                                # the same marker represent legitimate gene duplication,
+                                # a gene calling error, or an assembly error and thus
+                                # should not be treated as contamination.
+                                bCombined = True
+                                break
 
                     if bCombined:
                         newHit = hits[i]
@@ -459,15 +450,15 @@ class ResultsManager():
                             hits[j].target_length
                         newHit.hmm_from = min(
                             hits[i].hmm_from, hits[j].hmm_from)
-                        newHit.hmm_to = min(hits[i].hmm_to, hits[j].hmm_to)
+                        newHit.hmm_to = max(hits[i].hmm_to, hits[j].hmm_to)
 
                         newHit.ali_from = min(
                             hits[i].ali_from, hits[j].ali_from)
-                        newHit.ali_to = min(hits[i].ali_to, hits[j].ali_to)
+                        newHit.ali_to = max(hits[i].ali_to, hits[j].ali_to)
 
                         newHit.env_from = min(
                             hits[i].env_from, hits[j].env_from)
-                        newHit.env_to = min(hits[i].env_to, hits[j].env_to)
+                        newHit.env_to = max(hits[i].env_to, hits[j].env_to)
 
                         hits.remove(hits[j])
                         hits.remove(hits[i])
