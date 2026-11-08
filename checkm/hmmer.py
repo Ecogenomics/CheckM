@@ -93,7 +93,6 @@ class HMMERRunner():
 
     def search(self, db, query, tableOut, hmmerOut, cmdlineOptions='', bKeepOutput=True):
         """Run hmmsearch"""
-        # make the output dir and files
         if self.mode != 'domtblout':
             raise HMMMERModeError("Mode %s not compatible with search" % self.mode)
 

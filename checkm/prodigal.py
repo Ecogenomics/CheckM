@@ -219,7 +219,7 @@ class ProdigalFastaParser():
 
 
 class ProdigalGeneFeatureParser():
-    """Parses prodigal FASTA output."""
+    """Parses prodigal GFF output."""
 
     def __init__(self, filename):
         checkFileExists(filename)
@@ -267,7 +267,7 @@ class ProdigalGeneFeatureParser():
             self.lastCodingBase[seqId] = max(self.lastCodingBase[seqId], end)
 
     def _buildCodingBaseMask(self, seqId):
-        """Build mask indicating which bases in a sequences are coding."""
+        """Build mask indicating which bases in a sequence are coding."""
 
         # safe way to calculate coding bases as it accounts
         # for the potential of overlapping genes; indices adjusted

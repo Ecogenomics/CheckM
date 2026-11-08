@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# hmmerAlign.py - runs HMMER and provides functions for parsing output
+# hmmerAligner.py - aligns marker genes to their HMMs with HMMER
 #
 ###############################################################################
 #                                                                             #
@@ -234,7 +234,7 @@ class HmmerAligner:
         if bReportProgress:
             self.logger.info("Aligning %d marker genes with %d threads:" % (len(hmmModelFiles), self.totalThreads))
 
-        # process each bin in parallel
+        # process each marker in parallel
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
 
@@ -353,7 +353,7 @@ class HmmerAligner:
                 if 'GC RF' in line:
                     mask = line.split('GC RF')[1].strip()
                 elif '=GS' in line:
-                    # read additional sequence informations
+                    # read additional sequence information
                     lineSplit = line.split()
                     seqId = lineSplit[1]
                     stats = lineSplit[3].strip()

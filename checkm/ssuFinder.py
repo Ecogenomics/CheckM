@@ -125,7 +125,7 @@ class SSU_Finder(object):
         bConcatenate = False
         concateSeqId = seqId
         while True:
-            # if hits overlap then retain only the longest
+            # get coordinates and strand of the new and existing hits
             startNew = int(info[2])
             endNew = int(info[3])
             bRevNew = (info[5] == 'True')
@@ -238,7 +238,7 @@ class SSU_Finder(object):
             for seqId in seqIds:
                 seqIdToBinId[seqId] = binId
 
-        # identify 16S reads from contigs/scaffolds
+        # identify SSU rRNA genes on contigs/scaffolds
         self.logger.info('Identifying SSU rRNAs on sequences.')
         self._hmmSearch(contigFile, evalueThreshold, os.path.join(outputDir, 'ssu'))
 

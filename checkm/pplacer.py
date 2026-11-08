@@ -40,7 +40,7 @@ class PplacerRunner():
         self.logger = logging.getLogger('timestamp')
         self.numThreads = threads
 
-        # make sure pplace and guppy are on the system path
+        # make sure pplacer and guppy are on the system path
         self._checkForPplacer()
         self._checkForGuppy()
 
@@ -140,7 +140,7 @@ class PplacerRunner():
     def _checkForGuppy(self):
         """Check to see if guppy is on the system before we try to run it."""
 
-        # Assume that a successful pplacer -h returns 0 and anything
+        # Assume that a successful guppy -h returns 0 and anything
         # else returns something non-zero
         try:
             subprocess.call(['guppy', '-h'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)

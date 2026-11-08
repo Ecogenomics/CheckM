@@ -37,14 +37,12 @@ class BinStatistics():
     """Statistics for genomes.
 
     This class calculates statistics for genomes comprised
-    of one or more scaffolds. Mean statistics are weighted by
-    scaffold length. The following statistics are calculated:
-     - bin assignment
-     - mean GC
-     - mean and median scaffold length
-     - N50
-     - mean coverage
-     - mean tetranucleotide signature
+    of one or more scaffolds. The following statistics are calculated:
+     - GC content and its standard deviation across scaffolds
+     - genome size and number of ambiguous bases
+     - number of scaffolds and contigs
+     - longest, mean, and N50 scaffold and contig lengths
+     - coding density, translation table, and number of predicted genes
 
     """
 
@@ -53,8 +51,8 @@ class BinStatistics():
 
         Parameters
         ----------
-        cpus : int
-            Number of cpus to use.
+        threads : int
+            Number of threads to use.
         """
 
         self.logger = logging.getLogger('timestamp')
@@ -215,7 +213,7 @@ class BinStatistics():
         return GC, math.sqrt(varGC)
 
     def calculateSeqStats(self, scaffolds, seqStats=None):
-        """Calculate scaffold length statistics (min length, max length, total length, N50, # contigs)."""
+        """Calculate scaffold and contig length statistics (max length, total length, N50, mean length, # contigs, # ambiguous bases)."""
         scaffoldLens = []
         contigLens = []
         numAmbiguousBases = 0
