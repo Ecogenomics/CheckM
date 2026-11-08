@@ -186,7 +186,7 @@ class BinStatistics():
             else:
                 gcContent = 0.0
 
-            if seqStats:
+            if seqStats is not None:
                 seqStats[seqId]['GC'] = gcContent
 
             if len(seq) > DefaultValues.MIN_SEQ_LEN_GC_STD:
@@ -221,7 +221,7 @@ class BinStatistics():
 
             contigLens += lenContigsInScaffold
 
-            if seqStats:
+            if seqStats is not None:
                 seqStats[scaffoldId]['Length'] = scaffoldLen
                 seqStats[scaffoldId]['Total contig length'] = sum(lenContigsInScaffold)
                 seqStats[scaffoldId]['# contigs'] = len(lenContigsInScaffold)

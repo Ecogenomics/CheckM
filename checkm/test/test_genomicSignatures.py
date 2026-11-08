@@ -18,61 +18,47 @@
 
 import unittest
 
-from collections import defaultdict
-
-from checkm.defaultValues import DefaultValues
-from checkm.binStatistics import BinStatistics
+from checkm.genomicSignatures import GenomicSignatures
 
 
-class VerifyBinStatistics(unittest.TestCase):
-    def testGC(self):
-        """Verify computation of GC."""
-        binStats = BinStatistics(threads=1)
+class VerifyGenomicSignatures(unittest.TestCase):
+    def testGenomicSignature(self):
+        """Verify computation of genomic signature."""
+        gs = GenomicSignatures(K=2, threads=1)
 
-        seqs = {'S1': 'ACgt', 'S2': 'GGgg', 'S3': 'TTtt', 'S4': 'NNNN'}
+        sig = gs.seqSignature('AACC')
+        kmerOrder = gs.canonicalKmerOrder()
+        aaIndex = kmerOrder.index('AA')
+        acIndex = kmerOrder.index('AC')
+        ccIndex = kmerOrder.index('AC')
+        atIndex = kmerOrder.index('AT')
 
-        seqStats = defaultdict(dict)
-        meanGC, _ = binStats.calculateGC(seqs, seqStats)
+        self.assertEqual(sig[aaIndex], 1.0 / 3.0)
+        self.assertEqual(sig[acIndex], 1.0 / 3.0)
+        self.assertEqual(sig[ccIndex], 1.0 / 3.0)
+        self.assertEqual(sig[atIndex], 0)
 
-        self.assertAlmostEqual(seqStats['S1']['GC'], 0.5)
-        self.assertAlmostEqual(seqStats['S2']['GC'], 1.0)
-        self.assertAlmostEqual(seqStats['S3']['GC'], 0.0)
-        self.assertAlmostEqual(seqStats['S4']['GC'], 0.0)
+    def testDistanceZero(self):
+        """Verify computation of distances between genomic signatures."""
+        gs = GenomicSignatures(K=2, threads=1)
 
-        self.assertAlmostEqual(meanGC, 6.0 / 12.0)
+        sig1 = gs.seqSignature('AACC')
+        sig2 = gs.seqSignature('AACC')
 
-    def testScaffoldLengthStats(self):
-        """Verify computation of scaffold length statistics."""
-        binStats = BinStatistics(threads=1)
+        dist = gs.distance(sig1, sig2)
 
-        scaffolds = {'S1': 'ACGT' + DefaultValues.CONTIG_BREAK + 'ACGT', 'S2': 'ACGTACGT', 'S3': 'TTtt'}
+        self.assertEqual(dist, 0)
 
-        scaffoldStats = defaultdict(dict)
-        maxScaffoldLen, maxContigLen, totalScaffoldBps, _, _, numContigs = binStats.calculateScaffoldLengthStats(scaffolds, scaffoldStats)
+    def testDistanceMax(self):
+        """Verify computation of distances between genomic signatures."""
+        gs = GenomicSignatures(K=2, threads=1)
 
-        self.assertAlmostEqual(scaffoldStats['S1']['Length'], len(DefaultValues.CONTIG_BREAK) + 8)
-        self.assertAlmostEqual(scaffoldStats['S1']['Total contig length'], 8)
-        self.assertAlmostEqual(scaffoldStats['S1']['# contigs'], 2)
+        sig1 = gs.seqSignature('AAAA')
+        sig2 = gs.seqSignature('GGGG')
 
-        self.assertAlmostEqual(maxScaffoldLen, len(DefaultValues.CONTIG_BREAK) + 8)
-        self.assertAlmostEqual(maxContigLen, 8)
-        self.assertAlmostEqual(totalScaffoldBps, len(DefaultValues.CONTIG_BREAK) + 8 + 8 + 4)
-        self.assertAlmostEqual(numContigs, 4)
+        dist = gs.distance(sig1, sig2)
 
-    def testCodingBases(self):
-        """Verify computation of coding bases."""
-
-        binStats = BinStatistics(threads=1)
-
-        aaGenes = {'S1_C1': 'ACGTACGT', 'S1_C2': 'ACGTACGT', 'S3_C1': 'TTtt'}
-
-        seqStats = defaultdict(dict)
-        codingBasePairs = binStats._BinStatistics__calculateCodingBases(aaGenes, seqStats)
-
-        self.assertAlmostEqual(seqStats['S1']['# ORFs'], 2)
-        self.assertAlmostEqual(seqStats['S1']['Coding bases'], len(aaGenes['S1_C1']) * 3 + len(aaGenes['S1_C2']) * 3)
-
-        self.assertAlmostEqual(codingBasePairs, len(aaGenes['S1_C1']) * 3 + len(aaGenes['S1_C2']) * 3 + len(aaGenes['S3_C1']) * 3)
+        self.assertAlmostEqual(dist, 2.0)
 
 if __name__ == "__main__":
     unittest.main()
