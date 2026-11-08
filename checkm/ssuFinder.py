@@ -79,7 +79,10 @@ class SSU_Finder(object):
         seqInfo = {}
 
         bReadHit = False
-        for line in open(resultsFile):
+        with open(resultsFile) as f:
+            lines = f.readlines()
+
+        for line in lines:
             if line[0:2] == '>>':
                 lineSplit = line.split()
                 seqId = lineSplit[1]
