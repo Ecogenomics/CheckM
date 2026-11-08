@@ -129,7 +129,7 @@ class AminoAcidIdentity():
         assert len(seq1) == len(seq2)
 
         # calculation of AAI should ignore missing data at
-        # the start of end of each sequence
+        # the start or end of each sequence
         startIndex = 0
         for i in range(0, len(seq1)):
             if seq1[i] == '-' or seq2[i] == '-':

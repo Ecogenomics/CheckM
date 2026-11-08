@@ -140,7 +140,7 @@ class PFAM(object):
                         if (startI <= startJ and endI > startJ) or (startJ <= startI and endJ > startI):
                             # check if pfams are nested
                             if not (pfamIdI in self.nested and pfamIdJ in self.nested[pfamIdI]):
-                                # hits should be filtered as it is from the same clan, overlaps, and is not
+                                # hit should be filtered as it is from the same clan, overlaps, and is not
                                 # nested with a pfam hit with a lower e-value
                                 filtered.add(j)
 

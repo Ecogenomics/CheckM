@@ -154,7 +154,7 @@ class ResultsParser():
         return binStats
 
     def parseBinStatsExt(self, resultsFolder):
-        """Read bin statistics from file."""
+        """Read extended bin statistics from file."""
         binStatsExtFile = os.path.join(
             resultsFolder, 'storage', DefaultValues.BIN_STATS_EXT_OUT)
 
@@ -169,7 +169,7 @@ class ResultsParser():
         return binStatsExt
 
     def parseMarkerGeneStats(self, resultsFolder):
-        """Read bin statistics from file."""
+        """Read marker gene statistics from file."""
         markerGeneStatsFile = os.path.join(
             resultsFolder, 'storage', DefaultValues.MARKER_GENE_STATS)
 
@@ -796,7 +796,7 @@ class ResultsManager():
 
         # Hunter Cameron, May 29, 2015 - print a fasta of marker genes
         elif outputFormat == 9:
-            # tabular of bin_id, marker, contig_id
+            # FASTA file (or table) of marker genes
 
             # check for the analyze folder for later use
             if anaFolder is None:

@@ -219,7 +219,7 @@ class TreeParser():
 
             curNode = curNode.parent_node
 
-        # perform depth first search to find a labeled internal node
+        # perform breadth-first search to find a labeled internal node
         queue = [curNode]
         while queue:
             curNode = queue.pop(0)
@@ -250,7 +250,7 @@ class TreeParser():
             lineSplit = line.split('\t')
             leafIdToTaxonomy[lineSplit[0]] = lineSplit[1].rstrip()
 
-        # find LCA of all labeled node in sister lineage
+        # find LCA of all labeled nodes in sister lineage
         binIdToSisterTaxonomy = {}
         for binId in binIds:
             node = tree.find_node_with_taxon_label(binId)
@@ -342,7 +342,7 @@ class TreeParser():
                             if not bRequireTaxonomy and stats['taxonomy'] == '':
                                 taxonomyStr = self._getNextNamedNode(selectedParentNode, uniqueIdToLineageStatistics)
 
-                            # all criteria meet, so use marker set from this node
+                            # all criteria met, so use marker set from this node
                             break
 
             if selectedParentNode.parent_node == None:

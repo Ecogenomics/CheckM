@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# markerSet.py - Calculate and process marker sets.
+# markerSets.py - Calculate and process marker sets.
 #
 ###############################################################################
 #                                                                             #
@@ -77,11 +77,11 @@ class BinMarkerSets():
         elif self.markerSetType == self.TREE_MARKER_SET:
             return self.selectedLinageSpecificMarkerSet
         else:
-            # there should be a single marker set associate with this bin
+            # there should be a single marker set associated with this bin
             if len(self.markerSets) == 1:
                 return self.markerSets[0]
 
-            self.logger.error('Expect a single marker set to be associated with each bin.')
+            self.logger.error('Expected a single marker set to be associated with each bin.')
             sys.exit(1)
 
     def setLineageSpecificSelectedMarkerSet(self, selectedMarkerSetMap):
@@ -296,7 +296,7 @@ class MarkerSetParser():
                 binMarkerSets.addMarkerSet(markerSet)
                 binIdToBinMarkerSets[binId] = binMarkerSets
 
-        # remove marker genes specified by user or marker for exclusion
+        # remove marker genes specified by user or marked for exclusion
         markersToExclude = set()
         if excludeMarkersFile:
             markersToExclude = self.readExcludeMarkersFile(excludeMarkersFile)
@@ -320,7 +320,7 @@ class MarkerSetParser():
         return markersToExclude
 
     def createHmmModelFile(self, binId, markerFile):
-        """Create HMM file for from a bin's marker set."""
+        """Create HMM file from a bin's marker set."""
 
         # determine type of marker set file
         markerFileType = self.markerFileType(markerFile)
