@@ -75,6 +75,8 @@ class BinStatistics():
         for _ in range(self.totalThreads):
             workerQueue.put(None)
 
+        calcProc = []
+        writeProc = None
         try:
             calcProc = [mp.Process(target=self._processBin, args=(outDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
             writeProc = mp.Process(target=self._reportProgress, args=(outDir, binStatsFile, len(binFiles), writerQueue))
@@ -94,7 +96,16 @@ class BinStatistics():
             for p in calcProc:
                 p.terminate()
 
-            writeProc.terminate()
+            if writeProc is not None:
+                writeProc.terminate()
+
+        # exit if any process failed, rather than continuing with missing statistics
+        # (checked outside the try/except above so the exit is not caught by it)
+        procs = calcProc + ([writeProc] if writeProc is not None else [])
+        numFailed = sum(1 for p in procs if p.exitcode != 0)
+        if numFailed:
+            self.logger.error(f'{numFailed} of {len(procs)} processes failed while calculating genome statistics. See the error messages above.')
+            sys.exit(1)
 
     def _processBin(self, outDir, queueIn, queueOut):
         """Thread safe bin processing."""
@@ -228,10 +239,16 @@ class BinStatistics():
 
             numAmbiguousBases += scaffold.count('N') + scaffold.count('n')
 
-        scaffold_N50 = calculateN50(scaffoldLens)
-        contig_N50 = calculateN50(contigLens)
+        # bins may contain no sequences or no contigs (e.g., all bases are ambiguous),
+        # in which case the statistics are reported as 0
+        scaffold_N50 = calculateN50(scaffoldLens) if scaffoldLens else 0
+        contig_N50 = calculateN50(contigLens) if contigLens else 0
+        maxScaffoldLen = max(scaffoldLens) if scaffoldLens else 0
+        maxContigLen = max(contigLens) if contigLens else 0
+        scaffoldAvgLen = mean(scaffoldLens) if scaffoldLens else 0.0
+        contigAvgLen = mean(contigLens) if contigLens else 0.0
 
-        return max(scaffoldLens), max(contigLens), sum(scaffoldLens), scaffold_N50, contig_N50, mean(scaffoldLens), mean(contigLens), len(contigLens), numAmbiguousBases
+        return maxScaffoldLen, maxContigLen, sum(scaffoldLens), scaffold_N50, contig_N50, scaffoldAvgLen, contigAvgLen, len(contigLens), numAmbiguousBases
 
     def calculateCodingDensity(self, outDir, scaffolds, genomeSize):
         """Calculate coding density of putative genome bin."""
@@ -246,7 +263,9 @@ class BinStatistics():
             for scaffold_id in scaffolds.keys():
                 codingBasePairs += prodigalParserGFF.codingBases(scaffold_id)
 
-            return float(codingBasePairs) / genomeSize, prodigalParserGFF.translationTable, len(aaGenes)
+            codingDensity = float(codingBasePairs) / genomeSize if genomeSize > 0 else 0.0
+
+            return codingDensity, prodigalParserGFF.translationTable, len(aaGenes)
         else:
             # there is no gene feature file (perhaps the user specified pre-calculated genes)
             # so calculating the coding density is not possible
