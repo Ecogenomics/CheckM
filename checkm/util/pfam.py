@@ -43,20 +43,21 @@ class PFAM(object):
         checkFileExists(self.pfamClanFile)
 
         idNested = defaultdict(list)
-        for line in open(self.pfamClanFile):
-            if '#=GF ID' in line:
-                ID = line.split()[2].strip()
-            elif '#=GF AC' in line:
-                pfamAcc = line.split()[2].strip()
-                pfamAcc = stripVersion(pfamAcc)
-                self.idToAcc[ID] = pfamAcc
-            elif '#=GF CL' in line:
-                clanId = line.split()[2].strip()
-                self.clan[pfamAcc] = clanId
-            elif '#=GF NE' in line:
-                nestedId = line.split()[2].strip()
-                idNested[nestedId].append(ID)
-                idNested[ID].append(nestedId)
+        with open(self.pfamClanFile) as f:
+            for line in f:
+                if '#=GF ID' in line:
+                    ID = line.split()[2].strip()
+                elif '#=GF AC' in line:
+                    pfamAcc = line.split()[2].strip()
+                    pfamAcc = stripVersion(pfamAcc)
+                    self.idToAcc[ID] = pfamAcc
+                elif '#=GF CL' in line:
+                    clanId = line.split()[2].strip()
+                    self.clan[pfamAcc] = clanId
+                elif '#=GF NE' in line:
+                    nestedId = line.split()[2].strip()
+                    idNested[nestedId].append(ID)
+                    idNested[ID].append(nestedId)
 
         # set nested structure to use pfam accessions instead of IDs
         for ID, nested in idNested.items():
@@ -68,12 +69,13 @@ class PFAM(object):
         checkFileExists(self.pfamClanFile)
 
         d = {}
-        for line in open(self.pfamClanFile):
-            if '#=GF AC' in line:
-                pfamAcc = line.split()[2].strip()
-            elif '#=GF CL' in line:
-                clanId = line.split()[2].strip()
-                d[pfamAcc] = clanId
+        with open(self.pfamClanFile) as f:
+            for line in f:
+                if '#=GF AC' in line:
+                    pfamAcc = line.split()[2].strip()
+                elif '#=GF CL' in line:
+                    clanId = line.split()[2].strip()
+                    d[pfamAcc] = clanId
 
         return d
 
@@ -82,12 +84,13 @@ class PFAM(object):
         checkFileExists(self.pfamClanFile)
 
         d = defaultdict(set)
-        for line in open(self.pfamClanFile):
-            if '#=GF AC' in line:
-                pfamAcc = line.split()[2].strip()
-            elif '#=GF CL' in line:
-                clanId = line.split()[2].strip()
-                d[clanId].update([pfamAcc])
+        with open(self.pfamClanFile) as f:
+            for line in f:
+                if '#=GF AC' in line:
+                    pfamAcc = line.split()[2].strip()
+                elif '#=GF CL' in line:
+                    clanId = line.split()[2].strip()
+                    d[clanId].update([pfamAcc])
 
         return d
 
