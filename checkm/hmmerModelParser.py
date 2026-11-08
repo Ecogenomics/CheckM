@@ -63,6 +63,9 @@ class HmmModelParser(object):
                     if line.startswith("//"):
                         yield HmmModel(headerKeys)
                         break
+
+                # header keys (e.g., ACC, GA, TC, NC) must not carry over to the next model
+                headerKeys = dict()
             else:
                 # header sections
                 fields = line.rstrip().split(None, 1)
@@ -79,12 +82,9 @@ class HmmModelParser(object):
                         if len(params) != 2:
                             raise HmmModelError
                         headerKeys[fields[0].lower()] = (float(params[0].replace(';', '')), float(params[1].replace(';', '')))
-                    else:
-                        pass
 
     def parse(self):
         """Parse full description of single model from HMM file."""
-        fields = []
         headerKeys = dict()
         for line in self.hmmFile:
             if line.startswith("HMMER"):
@@ -95,6 +95,9 @@ class HmmModelParser(object):
                     if line.startswith("//"):
                         yield HmmModel(headerKeys)
                         break
+
+                # header keys (e.g., ACC, GA, TC, NC) must not carry over to the next model
+                headerKeys = dict()
             else:
                 # header sections
                 fields = line.rstrip().split(None, 1)
@@ -123,7 +126,6 @@ class HmmModelParser(object):
                         if params[1] == "MSV" or params[1] == "VITERBI" or params[1] == "FORWARD":
                             headerKeys[(fields[0] + "_" + params[0] + "_" + params[1]).lower()] = (float(params[2]), float(params[3]))
                         else:
-                            print("'" + params[1] + "'")
                             raise HmmModelError
                     else:
                         headerKeys[fields[0].lower()] = fields[1]
