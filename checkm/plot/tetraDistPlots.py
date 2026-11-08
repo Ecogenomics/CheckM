@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# gcPlots.py - Create a GC histogram and delta-GC plot.
+# tetraDistPlots.py - Create a TD histogram and delta-TD plot.
 #
 ###############################################################################
 #                                                                             #
@@ -103,7 +103,7 @@ class TetraDistPlots(AbstractPlot):
             else:
                 spine.set_color(self.axesColour)
 
-        # get CD bin statistics
+        # get TD bin statistics
         meanTD, deltaTDs = binTools.tetraDiffDist(
             seqs, genomicSig, tetraSigs, binSig)
 
@@ -148,7 +148,7 @@ class TetraDistPlots(AbstractPlot):
 
             axesDeltaTD.plot(x, y, 'r--', lw=0.5, zorder=0)
 
-        # ensure y-axis include zero and covers all sequences
+        # ensure y-axis includes zero and covers all sequences
         axesDeltaTD.set_ylim([0, yMaxSeqs])
 
         # ensure x-axis is set appropriately for sequences

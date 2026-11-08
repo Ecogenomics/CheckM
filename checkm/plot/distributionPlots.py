@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# codingDensityPlots.py - Create a GC histogram and a delta-CD plot.
+# distributionPlots.py - Create GC, TD, and CD histograms and delta plots.
 #
 ###############################################################################
 #                                                                             #

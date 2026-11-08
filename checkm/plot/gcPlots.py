@@ -138,7 +138,7 @@ class GcPlots(AbstractPlot):
             axesDeltaGC.plot(xL, y, 'r--', lw=0.5, zorder=0)
             axesDeltaGC.plot(xU, y, 'r--', lw=0.5, zorder=0)
 
-        # ensure y-axis include zero and covers all sequences
+        # ensure y-axis includes zero and covers all sequences
         axesDeltaGC.set_ylim([0, yMaxSeqs])
 
         # ensure x-axis is set appropriately for sequences

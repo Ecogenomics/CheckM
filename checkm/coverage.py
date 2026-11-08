@@ -104,7 +104,7 @@ class Coverage():
                                 'sequence only if its length matches the BAM reference sequence, and will be assigned '
                                 'to all bins containing a sequence with the same ID and length.')
 
-        # process each fasta file
+        # process each BAM file
         self.logger.info("Processing %d file(s) with %d threads.\n" % (len(bamFiles), self.totalThreads))
 
         # BAM files are identified in the output by their filename without
@@ -312,7 +312,7 @@ class Coverage():
                         numMappedReads += 1
 
                         # Note: the alignment length (query_alignment_length) is used instead of the
-                        # read length (query_length) as this bring the calculated coverage
+                        # read length (query_length) as this brings the calculated coverage
                         # in line with 'samtools depth' (at least when the min
                         # alignment length and edit distance thresholds are zero).
                         coverage += read.query_alignment_length

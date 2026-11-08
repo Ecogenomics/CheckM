@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# seqLenPlot.py - Create a sequence length distribution histogram.
+# lengthHistogram.py - Create a sequence length distribution histogram.
 #
 ###############################################################################
 #                                                                             #
@@ -54,7 +54,7 @@ class LengthHistogram(AbstractPlot):
         axes.set_xlabel('Sequence length (kbp)')
         axes.set_ylabel('Number of sequences (out of %d)' % len(seqs))
 
-        # ensure y-axis include zero
+        # ensure y-axis includes zero
         _, end = axes.get_ylim()
         axes.set_ylim([0, end])
         axes.get_yaxis().set_major_locator(MaxNLocator(integer=True))

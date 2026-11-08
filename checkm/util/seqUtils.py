@@ -33,8 +33,8 @@ def isNucleotide(seq_file, req_perc=0.9, max_seqs_to_read=10):
 
     The check is performed by looking for the characters in
     {a,c,g,t,n,.,-} and confirming that these comprise the
-    majority of a sequences. A set number of sequences are
-    read and the file assumed to be not be in nucleotide space
+    majority of a sequence. A set number of sequences are
+    read and the file assumed to not be in nucleotide space
     if none of these sequences are comprised primarily of the
     defined nucleotide set.
 
@@ -53,7 +53,7 @@ def isNucleotide(seq_file, req_perc=0.9, max_seqs_to_read=10):
     Returns
     -------
     boolean
-        True is sequences are in nucleotide space, or file
+        True if sequences are in nucleotide space, or file
         contains no sequences.
     """
 
@@ -110,7 +110,7 @@ def checkNuclotideSeqs(seq_files):
             logger.warning(
                 'Expected all files to contain sequences in nucleotide space.')
             logger.warning(
-                'File %s appears to contain amino acids sequences.' % seq_file)
+                'File %s appears to contain amino acid sequences.' % seq_file)
 
     return True
 

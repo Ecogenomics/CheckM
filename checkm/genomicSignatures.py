@@ -2,7 +2,7 @@
 
 ###############################################################################
 #
-# calculateBoundsDeltaGC.py - find confidence intervals for GC distribution
+# genomicSignatures.py - calculate genomic signatures (k-mer frequencies)
 #
 ###############################################################################
 #                                                                             #
@@ -167,7 +167,7 @@ class GenomicSignatures(object):
                 kmerIndex = self.kmerToCanonicalIndex[tmp_seq[i:i + self.K]]
                 sig[kmerIndex] += 1  # Note: a numpy array would be slow here due to this single element increment
             except KeyError:
-                # unknown kmer (e.g., contains a N)
+                # unknown kmer (e.g., contains an N)
                 pass
 
         # normalize; a sequence without any valid kmers (e.g., shorter

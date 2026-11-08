@@ -59,7 +59,7 @@ class CodingDensityPlots(AbstractPlot):
             fastaFile), DefaultValues.PRODIGAL_GFF)
         if not os.path.exists(gffFile):
             self.logger.error(
-                'Missing gene feature file (%s). This plot if not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF)
+                'Missing gene feature file (%s). This plot is not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF)
             sys.exit(1)
 
         prodigalParser = ProdigalGeneFeatureParser(gffFile)
@@ -158,7 +158,7 @@ class CodingDensityPlots(AbstractPlot):
             axesDeltaCD.plot(xL, y, 'r--', lw=0.5, zorder=0)
             axesDeltaCD.plot(xU, y, 'r--', lw=0.5, zorder=0)
 
-        # ensure y-axis include zero and covers all sequences
+        # ensure y-axis includes zero and covers all sequences
         axesDeltaCD.set_ylim([0, yMaxSeqs])
 
         # ensure x-axis is set appropriately for sequences
