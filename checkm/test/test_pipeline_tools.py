@@ -238,6 +238,26 @@ class VerifyGenelessBins(unittest.TestCase):
             self.assertTrue(os.path.exists(prodigal.gffFile))
             self.assertFalse(prodigal.areORFsCalled(bNucORFs=False))
 
+    def testProdigalEmptyRecord(self):
+        """Verify a record without sequence data doesn't make prodigal fail."""
+        from checkm.prodigal import ProdigalRunner
+
+        # prodigal exits with 'no input sequences to analyze' if the first record is empty
+        binFile = os.path.join(self.tmpDir, 'empty record.fna')
+        with open(binFile, 'w') as f:
+            f.write('>empty\n>seq\n' + 'ACGTTGCA' * 25 + '\n')
+
+        outDir = os.path.join(self.tmpDir, 'empty record out')
+        os.makedirs(outDir)
+
+        prodigal = ProdigalRunner(outDir)
+        with self.assertLogs('timestamp', level='WARNING') as cm:
+            prodigal.run(binFile, bNucORFs=True)
+
+        self.assertTrue(any('without sequence data' in msg for msg in cm.output))
+        self.assertTrue(os.path.exists(prodigal.aaGeneFile))
+        self.assertTrue(os.path.exists(prodigal.gffFile))
+
     def testMarkerGeneFinderSkipsGenelessBins(self):
         """Verify bins without genes are skipped with a warning and other bins are processed."""
         from checkm.markerGeneFinder import MarkerGeneFinder

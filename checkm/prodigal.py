@@ -66,6 +66,15 @@ class ProdigalRunner():
 
         # gather statistics about query file
         seqs = readFasta(prodigal_input)
+
+        # Prodigal fails ('no input sequences to analyze') on FASTA files
+        # containing records without sequence data, so remove such records
+        emptySeqIds = [seqId for seqId, seq in seqs.items() if len(seq) == 0]
+        if emptySeqIds:
+            self.logger.warning('Ignoring %d sequence(s) without sequence data in %s (e.g., %s).'
+                                % (len(emptySeqIds), query, emptySeqIds[0]))
+            seqs = {seqId: seq for seqId, seq in seqs.items() if len(seq) > 0}
+
         totalBases = 0
         for seqId, seq in seqs.items():
             totalBases += len(seq)
@@ -80,13 +89,15 @@ class ProdigalRunner():
                 open(outputFile, 'w').close()
             return 11
 
-        # decompress gzip input files
+        # decompress gzip input files and remove records without sequence data
         tmp_dir = None
         try:
-            if prodigal_input.endswith('.gz'):
+            if prodigal_input.endswith('.gz') or emptySeqIds:
                 tmp_dir = tempfile.mkdtemp()
-                prodigal_input = os.path.join(
-                    tmp_dir, os.path.basename(prodigal_input[0:-3]))
+                inputName = os.path.basename(prodigal_input)
+                if inputName.endswith('.gz'):
+                    inputName = inputName[0:-3]
+                prodigal_input = os.path.join(tmp_dir, inputName)
                 writeFasta(seqs, prodigal_input)
 
             bestTranslationTable = self._run(query, prodigal_input, seqs, totalBases, bNucORFs)
