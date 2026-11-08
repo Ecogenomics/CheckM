@@ -31,6 +31,7 @@ from checkm.defaultValues import DefaultValues
 
 from checkm.common import checkDirExists
 from checkm.util.seqUtils import readFasta, writeFasta
+from checkm.hmmer import runWithStdout, exitOnFailure
 
 
 class PplacerRunner():
@@ -39,7 +40,7 @@ class PplacerRunner():
         self.logger = logging.getLogger('timestamp')
         self.numThreads = threads
 
-        # make sure pplace and guppy are on the system path
+        # make sure pplacer and guppy are on the system path
         self._checkForPplacer()
         self._checkForGuppy()
 
@@ -69,22 +70,16 @@ class PplacerRunner():
 
         # run pplacer to place bins in reference genome tree
         self.logger.info('Placing %d bins into the genome tree with pplacer (be patient).' % len(binFiles))
-        cmd = 'pplacer -j %d -c %s -o %s %s > %s' % (self.numThreads,
-                                                     pplacerRefPkg,
-                                                     pplacerJsonOut,
-                                                     concatenatedAlignFile,
-                                                     pplacerOut)
-        rtn = os.system(cmd)
-        if rtn != 0:
-            self.logger.error(f'pplacer exited with code: {rtn}')
-            sys.exit(rtn)
+        cmd = ['pplacer', '-j', str(self.numThreads),
+               '-c', pplacerRefPkg,
+               '-o', pplacerJsonOut,
+               concatenatedAlignFile]
+        rtn = runWithStdout(cmd, pplacerOut)
+        exitOnFailure(self.logger, 'pplacer', rtn)
 
         # extract tree
-        cmd = 'guppy tog -o %s %s' % (treeFile, pplacerJsonOut)
-        rtn = os.system(cmd)
-        if rtn != 0:
-            self.logger.error(f'guppy exited with code: {rtn}')
-            sys.exit(rtn)
+        rtn = subprocess.call(['guppy', 'tog', '-o', treeFile, pplacerJsonOut])
+        exitOnFailure(self.logger, 'guppy', rtn)
 
     def _createConcatenatedAlignment(self, binFiles, resultsParser, alignOutputDir):
         """Create a concatenated alignment of marker genes for each bin."""
@@ -117,7 +112,7 @@ class PplacerRunner():
         for markerId in sorted(markerIds):
             seqs = alignments[markerId]
 
-            for binId in binIds:
+            for binId in sorted(binIds):
                 if binId in seqs:
                     # append alignment
                     concatenatedSeqs[binId] = concatenatedSeqs.get(binId, '') + seqs[binId]
@@ -137,7 +132,7 @@ class PplacerRunner():
         # Assume that a successful pplacer -h returns 0 and anything
         # else returns something non-zero
         try:
-            subprocess.call(['pplacer', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+            subprocess.call(['pplacer', '-h'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         except:
             self.logger.error("Make sure pplacer is on your system path.")
             sys.exit(1)
@@ -145,10 +140,10 @@ class PplacerRunner():
     def _checkForGuppy(self):
         """Check to see if guppy is on the system before we try to run it."""
 
-        # Assume that a successful pplacer -h returns 0 and anything
+        # Assume that a successful guppy -h returns 0 and anything
         # else returns something non-zero
         try:
-            subprocess.call(['guppy', '-h'], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+            subprocess.call(['guppy', '-h'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         except:
             self.logger.error("Make sure guppy, which is part of the pplacer package, is on your system path.")
             sys.exit(1)
