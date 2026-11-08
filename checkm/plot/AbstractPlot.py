@@ -58,6 +58,19 @@ class AbstractPlot(FigureCanvas):
 
         self.axesColour = (0.5, 0.5, 0.5)
 
+    def histogramBins(self, binWidth, maxValue=1.0):
+        """Edges of bins with the given width that start at 0 and cover [0, maxValue]."""
+        if binWidth <= 0:
+            raise ValueError('Histogram bin width must be positive: %s' % str(binWidth))
+
+        # small tolerance so floating point error does not create an extra bin
+        numBins = max(int(np.ceil(maxValue / binWidth - 1e-6)), 1)
+        return np.linspace(0, numBins * binWidth, numBins + 1)
+
+    def percentWeights(self, data):
+        """Histogram weights giving the percentage of data points in each bin."""
+        return np.full(len(data), 100.0 / len(data))
+
     def savePlot(self, filename, dpi=300):
         imgFormat = filename[filename.rfind('.') + 1:len(filename)]
         if imgFormat in ['png', 'pdf', 'ps', 'eps', 'svg']:

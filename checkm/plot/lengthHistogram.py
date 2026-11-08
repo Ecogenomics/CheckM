@@ -49,10 +49,10 @@ class LengthHistogram(AbstractPlot):
         bins = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1e12]
         counts, _edges = np.histogram(seqLens, bins=bins)
 
-        # create histogram
-        axes.bar(x=np.arange(0.1, len(counts)), height=counts, width=0.8, color=(0.5, 0.5, 0.5))
+        # create histogram with bars centred on the category labels
+        axes.bar(x=np.arange(len(counts)) + 0.5, height=counts, width=0.8, color=(0.5, 0.5, 0.5))
         axes.set_xlabel('Sequence length (kbp)')
-        axes.set_ylabel('Number sequences (out of %d)' % len(seqs))
+        axes.set_ylabel('Number of sequences (out of %d)' % len(seqs))
 
         # ensure y-axis include zero
         _, end = axes.get_ylim()
@@ -65,14 +65,6 @@ class LengthHistogram(AbstractPlot):
         axes.set_xticklabels(['<1', '1-2', '2-5', '5-10', '10-20', '20-50', '50-100', '100-200', '200-500', '>500'])
 
         # Prettify plot
-        for a in axes.yaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
-        for a in axes.xaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
         for line in axes.yaxis.get_ticklines():
             line.set_color(self.axesColour)
 

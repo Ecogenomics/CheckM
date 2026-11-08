@@ -87,28 +87,14 @@ class TetraDistPlots(AbstractPlot):
 
         deltaTDs = np.array(deltaTDs)
 
-        # Histogram plot
-        bins = [0.0]
-        binWidth = self.options.td_bin_width
-        binEnd = binWidth
-        while binEnd <= 1.0:
-            bins.append(binEnd)
-            binEnd += binWidth
-
-        axesHist.hist(data, bins=bins, density=True, color=(0.5, 0.5, 0.5))
+        # Histogram plot showing the percentage of windows in each TD bin
+        bins = self.histogramBins(self.options.td_bin_width)
+        axesHist.hist(data, bins=bins, weights=self.percentWeights(data), color=(0.5, 0.5, 0.5))
         axesHist.set_xlabel(r'$\Delta$ TD')
         axesHist.set_ylabel(
             '% windows (' + str(self.options.td_window_size) + ' bp)')
 
         # Prettify plot
-        for a in axesHist.yaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
-        for a in axesHist.xaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
         for line in axesHist.yaxis.get_ticklines():
             line.set_color(self.axesColour)
 
@@ -187,14 +173,6 @@ class TetraDistPlots(AbstractPlot):
         axesDeltaTD.set_yticklabels(kbpLabels)
 
         # Prettify plot
-        for a in axesDeltaTD.yaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
-        for a in axesDeltaTD.xaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
         for line in axesDeltaTD.yaxis.get_ticklines():
             line.set_color(self.axesColour)
 

@@ -19,11 +19,32 @@
 #                                                                             #
 ###############################################################################
 
+import sys
+import logging
+
 import numpy as np
+
+from matplotlib.ticker import FuncFormatter
 
 from checkm.plot.AbstractPlot import AbstractPlot
 
 from checkm.util.seqUtils import readFasta
+
+
+def nxThresholds(stepSize):
+    """Nx thresholds from 0 to 1 (inclusive) in increments of stepSize."""
+    x = np.arange(0, 1.0, stepSize)
+    x = x[x < 1.0 - 1e-6 * stepSize]  # avoid near duplicate of 1.0 due to floating point error
+    return np.append(x, 1.0)
+
+
+def kbpLabel(seqLen, _pos=None):
+    """Format a sequence length in bp as a label in kbp."""
+    label = '%.1f' % (float(seqLen) / 1000)
+    if label.endswith('.0'):
+        label = label[0:-2]  # remove trailing zero
+
+    return label
 
 
 class NxPlot(AbstractPlot):
@@ -31,31 +52,20 @@ class NxPlot(AbstractPlot):
         AbstractPlot.__init__(self, options)
 
     def calculateNx(self, x, seqs):
-        seqLens = []
-        for _, seq in seqs.items():
-            seqLens.append(len(seq))
+        """Calculate Nx for each threshold in x (fractions of the total sequence length).
 
-        sumSeqLens = sum(seqLens)
+        Nx is the length of the shortest sequence such that sequences
+        of this length or longer contain at least x of all bases.
+        """
+        seqLens = np.array(sorted([len(seq) for seq in seqs.values()], reverse=True))
+        if len(seqLens) == 0 or seqLens.sum() == 0:
+            return [0] * len(x)
 
-        seqLens.sort(reverse=True)
-        x.sort()
+        cumSum = np.cumsum(seqLens)
+        indices = np.searchsorted(cumSum, np.asarray(x) * cumSum[-1], side='left')
+        indices = np.minimum(indices, len(seqLens) - 1)
 
-        testSum = 0
-        xIndex = 0
-        nxThreshold = x[xIndex] * sumSeqLens
-        nx = []
-        for seqLen in seqLens:
-            testSum += seqLen
-
-            while(testSum >= nxThreshold):
-                nx.append(seqLen)
-                if len(nx) == len(x):
-                    break
-
-                xIndex += 1
-                nxThreshold = x[xIndex] * sumSeqLens
-
-        return nx
+        return [int(v) for v in seqLens[indices]]
 
     def plot(self, fastaFile):
         # Set size of figure
@@ -64,8 +74,12 @@ class NxPlot(AbstractPlot):
         axes = self.fig.add_subplot(111)
 
         # calculate Nx
+        if not 0 < self.options.step_size <= 1:
+            logging.getLogger('timestamp').error('The step size must be > 0 and <= 1: %s' % str(self.options.step_size))
+            sys.exit(1)
+
         seqs = readFasta(fastaFile)
-        x = np.arange(0, 1.0 + 0.5 * self.options.step_size, self.options.step_size)
+        x = nxThresholds(self.options.step_size)
         nx = self.calculateNx(x, seqs)
 
         # Create plot
@@ -74,23 +88,9 @@ class NxPlot(AbstractPlot):
         axes.set_ylabel('Sequence length (kbp)')
 
         # Change sequence lengths from bp to kbp
-        yticks = axes.get_yticks()
-        kbpLabels = []
-        for seqLen in yticks:
-            label = '%.1f' % (float(seqLen) / 1000)
-            label = label.replace('.0', '')  # remove trailing zero
-            kbpLabels.append(label)
-        axes.set_yticklabels(kbpLabels)
+        axes.yaxis.set_major_formatter(FuncFormatter(kbpLabel))
 
         # Prettify plot
-        for a in axes.yaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
-        for a in axes.xaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
         for line in axes.yaxis.get_ticklines():
             line.set_color(self.axesColour)
 
