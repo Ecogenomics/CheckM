@@ -20,11 +20,15 @@
 ###############################################################################
 
 import os
+import gzip
 import shutil
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 
-from checkm.util.seqUtils import readFasta, isNucleotide, calculateN50
+from checkm.util.seqUtils import readFasta, readFastaSeqIds, writeFasta, isNucleotide, calculateN50
+from checkm.binTools import BinTools
 
 
 class VerifyReadFasta(unittest.TestCase):
@@ -55,6 +59,40 @@ class VerifyReadFasta(unittest.TestCase):
     def testHeaderNotTrimmed(self):
         path = self._write('a.fna', '>s1 some desc\nACGT\n')
         self.assertEqual(list(readFasta(path, trimHeader=False).keys()), ['s1 some desc'])
+
+
+class VerifyGzip(unittest.TestCase):
+    def setUp(self):
+        self.tmpDir = tempfile.mkdtemp()
+        self.seqs = {'s1': 'ACGTACGT', 's2': 'GGCC'}
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpDir)
+
+    def testWriteReadGzip(self):
+        """FASTA files can be written to and read from .gz files."""
+        path = os.path.join(self.tmpDir, 'bin.fna.gz')
+        writeFasta(self.seqs, path)
+        with gzip.open(path, 'rt') as f:
+            self.assertEqual(f.read(), '>s1\nACGTACGT\n>s2\nGGCC\n')
+        self.assertEqual(readFasta(path), self.seqs)
+        self.assertEqual(readFastaSeqIds(path), ['s1', 's2'])
+
+    def testReadSeqIdsPlain(self):
+        path = os.path.join(self.tmpDir, 'bin.fna')
+        writeFasta(self.seqs, path)
+        self.assertEqual(readFastaSeqIds(path), ['s1', 's2'])
+
+    def testUniqueGzip(self):
+        """checkm unique reports sequences shared with gzipped bins."""
+        writeFasta({'a': 'ACGT', 'shared': 'GGGG'}, os.path.join(self.tmpDir, 'b1.fna.gz'))
+        writeFasta({'b': 'ACGT', 'shared': 'GGGG'}, os.path.join(self.tmpDir, 'b2.fna'))
+        out = StringIO()
+        with redirect_stdout(out):
+            BinTools().unique([os.path.join(self.tmpDir, 'b1.fna.gz'),
+                               os.path.join(self.tmpDir, 'b2.fna')])
+        self.assertIn('Sequences shared between b1 and b2', out.getvalue())
+        self.assertIn('    shared', out.getvalue())
 
 
 class VerifyIsNucleotide(unittest.TestCase):

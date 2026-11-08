@@ -118,13 +118,14 @@ class BinTools():
                 openFile = open
 
             seqIds = set()
-            for line in openFile(f):
-                if line[0] == '>':
-                    seqId = line[1:].split(None, 1)[0]
+            with openFile(f, 'rt') as fin:
+                for line in fin:
+                    if line[0] == '>':
+                        seqId = line[1:].split(None, 1)[0]
 
-                    if seqId in seqIds:
-                        print ('  [Warning] Sequence %s found multiple times in bin %s.' % (seqId, binId))
-                    seqIds.add(seqId)
+                        if seqId in seqIds:
+                            print ('  [Warning] Sequence %s found multiple times in bin %s.' % (seqId, binId))
+                        seqIds.add(seqId)
 
             binSeqs[binId] = seqIds
 

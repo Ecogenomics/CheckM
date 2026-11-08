@@ -227,10 +227,11 @@ def readFastaSeqIds(fastaFile):
         openFile = open
 
     seqIds = []
-    for line in openFile(fastaFile):
-        if line[0] == '>':
-            seqId = line[1:].split(None, 1)[0]
-            seqIds.append(seqId)
+    with openFile(fastaFile, 'rt') as f:
+        for line in f:
+            if line[0] == '>':
+                seqId = line[1:].split(None, 1)[0]
+                seqIds.append(seqId)
 
     return seqIds
 
@@ -243,9 +244,10 @@ def readFastaBases(fastaFile):
         openFile = open
 
     bases = 0
-    for line in openFile(fastaFile):
-        if line[0] != '>':
-            bases += len(line.rstrip())
+    with openFile(fastaFile, 'rt') as f:
+        for line in f:
+            if line[0] != '>':
+                bases += len(line.rstrip())
 
     return bases
 
@@ -274,7 +276,7 @@ def readGenomicSeqsFromFasta(fastaFile, seqToIgnore=None):
 def writeFasta(seqs, outputFile):
     '''write sequences to FASTA file'''
     if outputFile.endswith('.gz'):
-        fout = gzip.open(outputFile, 'wb')
+        fout = gzip.open(outputFile, 'wt')
     else:
         fout = open(outputFile, 'w')
 
