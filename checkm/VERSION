@@ -1,3 +1,8 @@
+1.2.6
+- fix to report hmmalign failures instead of ignoring them, which caused a NameError on 'mask' (issue #387)
+- fix to 'OSError: AF_UNIX path too long' when using --tmpdir (issue #402)
+- fix to coverage command dropping bins that contain sequences with the same ID as sequences in other bins (issue #386)
+
 1.2.5
 - fix to regular expression syntax warnings in prettytable.py
 - fix to use of setuptools in checkmData.py thanks to meereeum

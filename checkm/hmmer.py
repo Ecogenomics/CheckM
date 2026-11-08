@@ -91,9 +91,9 @@ class HMMERRunner():
             cmd = cmd.replace('--allcol', '')
             rtn = os.system(cmd)
 
-            if rtn != 0:
-                self.logger.error(f'hmmalign exited with code: {rtn}')
-                sys.exit(rtn)
+        if rtn != 0:
+            self.logger.error(f'hmmalign exited with code: {rtn}')
+            sys.exit(1)
 
     def fetch(self, db, key, fetchFileName, bKeyFile=False):
         """Run hmmfetch"""
