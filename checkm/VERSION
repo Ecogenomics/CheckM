@@ -1,3 +1,21 @@
+1.2.8
+- fix to the Pfam same-clan filter, which treated Pfams without a clan as members of the same clan; this can slightly change completeness and contamination estimates
+- fix to reading FASTA files without a trailing newline, which dropped the last base
+- fix to end coordinates of merged adjacent marker gene hits
+- failures of external programs (Prodigal, HMMER, pplacer) and of worker processes now cause CheckM to exit with an error instead of exiting with status 0 or silently dropping bins
+- bins without any genes are now skipped with a warning, and FASTA records without sequence data are ignored
+- output is now deterministic (order of HMM models, bins and markers in output files)
+- fix to infinite loop when using --reduced_tree for bins placed at one node of the reduced tree
+- fix to qa -o 4 --individual_markers corrupting stored results, qa -o 9 omitting markers, and parsing of custom HMM files with models lacking accessions or thresholds
+- fix to --ali_top_hits aligning the worst rather than best hit
+- fix to gc_bias_plot (pysam compatibility), nx_plot step sizes, histogram bins and percentages, and len_hist bar alignment
+- fix to ssu_finder strand handling, contig matching, sequence coordinates and orientation of reverse-strand hits
+- fix to handling of gzipped FASTA files in ssu_finder, unique and modify
+- fix to coverage with BAM files lacking NM tags, BAM files with the same name, and BAM files without mapped reads
+- fix to checkm --help, invalid --tmpdir values, bin input tables with blank lines, and checkm data setRoot errors
+- paths containing spaces are now supported
+- removed unused code (including util/img.py and uniqueMarkers.py) and fixed spelling in comments and messages
+
 1.2.7
 - fix to crash in BinStatistics.sequenceStats when no called genes are available
 
