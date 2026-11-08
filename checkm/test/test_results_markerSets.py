@@ -16,6 +16,7 @@
 ###############################################################################
 
 import io
+import os
 import logging
 import unittest
 
@@ -65,6 +66,73 @@ class VerifyGenomeCheck(unittest.TestCase):
     def testEmptyCollocatedSetIgnored(self):
         ms = MarkerSet('UID1', 'k__Bacteria', 10, [set(['a', 'b']), set()])
         self.assertEqual(ms.genomeCheck({'a': ['h1']}, False), (50.0, 0.0))
+
+
+class VerifySelectedMarkerSet(unittest.TestCase):
+    def setUp(self):
+        logging.getLogger('timestamp').disabled = True
+
+    def tearDown(self):
+        logging.getLogger('timestamp').disabled = False
+
+    def _binMarkerSets(self, uids):
+        bms = BinMarkerSets('bin1', BinMarkerSets.TREE_MARKER_SET)
+        for uid in uids:
+            bms.addMarkerSet(MarkerSet(uid, uid, 10, [set([uid + '_marker'])]))
+        return bms
+
+    def testFullTree(self):
+        """The marker set selected for the most specific node is used."""
+        bms = self._binMarkerSets(['UID5', 'UID4', 'UID3', 'UID1'])
+        bms.setLineageSpecificSelectedMarkerSet({'UID5': 'UID4', 'UID4': 'UID4', 'UID3': 'UID3', 'UID1': 'UID1'})
+        self.assertEqual(bms.selectedMarkerSet().UID, 'UID4')
+
+    def testReducedTreeFollowChain(self):
+        """A selected set missing from the reduced tree is replaced by the set it selects."""
+        bms = self._binMarkerSets(['UID5', 'UID3', 'UID1'])
+        bms.setLineageSpecificSelectedMarkerSet({'UID5': 'UID4', 'UID4': 'UID3', 'UID3': 'UID3', 'UID1': 'UID1'})
+        self.assertEqual(bms.selectedMarkerSet().UID, 'UID3')
+
+    def testReducedTreeUID3097(self):
+        """UID3097 selects UID3076, which selects itself and is not in the reduced tree.
+
+        This previously looped forever. The next (less specific) marker set of
+        the bin is now tried instead.
+        """
+        bms = self._binMarkerSets(['UID3097', 'UID2', 'UID1'])
+        selectedMarkerSetMap = {'UID3097': 'UID3076', 'UID3076': 'UID3076', 'UID2': 'UID2', 'UID1': 'UID1'}
+        bms.setLineageSpecificSelectedMarkerSet(selectedMarkerSetMap)
+        self.assertEqual(bms.selectedMarkerSet().UID, 'UID2')
+
+    def testReducedTreeLongerCycle(self):
+        bms = self._binMarkerSets(['UID9', 'UID7', 'UID1'])
+        selectedMarkerSetMap = {'UID9': 'UID8', 'UID8': 'UID6', 'UID6': 'UID8',
+                                'UID7': 'UID6', 'UID1': 'UID1'}
+        bms.setLineageSpecificSelectedMarkerSet(selectedMarkerSetMap)
+        self.assertEqual(bms.selectedMarkerSet().UID, 'UID1')
+
+    def testNoSelectableMarkerSet(self):
+        bms = self._binMarkerSets(['UID3097', 'UID2'])
+        selectedMarkerSetMap = {'UID3097': 'UID3076', 'UID3076': 'UID3076', 'UID2': 'UID3076'}
+        with self.assertRaises(SystemExit) as cm:
+            bms.setLineageSpecificSelectedMarkerSet(selectedMarkerSetMap)
+        self.assertEqual(cm.exception.code, 1)
+
+    def testSelectedMarkerSetData(self):
+        """Every node in the reference data selects a marker set in a finite number of steps."""
+        from checkm.defaultValues import DefaultValues
+        from checkm.markerSets import MarkerSetParser
+
+        if not os.path.exists(DefaultValues.SELECTED_MARKER_SETS):
+            self.skipTest('CheckM reference data not available')
+
+        selectedMarkerSetMap = MarkerSetParser().parseSelectedMarkerSetMap()
+        self.assertEqual(selectedMarkerSetMap['UID3097'], 'UID3076')
+        self.assertEqual(selectedMarkerSetMap['UID3076'], 'UID3076')
+
+        bms = self._binMarkerSets(['UID3097', 'UID2', 'UID1'])
+        bms.setLineageSpecificSelectedMarkerSet(selectedMarkerSetMap)
+        self.assertIn(bms.selectedMarkerSet().UID, ['UID2', 'UID1'])
 
 
 class VerifyMarkerSetFile(unittest.TestCase):

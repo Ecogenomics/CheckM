@@ -93,32 +93,39 @@ class BinMarkerSets():
             sys.exit(1)
 
     def setLineageSpecificSelectedMarkerSet(self, selectedMarkerSetMap):
-        uid = self.mostSpecificMarkerSet().UID
+        """Select the lineage-specific marker set used to assess the bin.
 
-        selectedId = selectedMarkerSetMap[uid]
+        selectedMarkerSetMap maps the UID of each node in the genome tree to
+        the UID of the marker set selected for genomes placed below that node.
+        The marker sets of the bin are ordered from most specific to the root.
+        """
+        uidToMarkerSet = {}
+        for ms in self.markerSets:
+            uidToMarkerSet.setdefault(ms.UID, ms)
+
         self.selectedLinageSpecificMarkerSet = None
-        
-        while not self.selectedLinageSpecificMarkerSet:
-            for ms in self.markerSets:
-                if ms.UID == selectedId:
-                    self.selectedLinageSpecificMarkerSet = ms
-                    break
-                
-            if not self.selectedLinageSpecificMarkerSet:
-                # This is a hack for the reduced tree. Since not all
-                # marker sets are in the reduced tree it is possible the
-                # selected marker set might not be avaliable. In this case,
-                # we should move to the next suitable marker set. Ideally,
-                # this could be avoided by just forcing in the selected
-                # marker set.
-                selectedId = selectedMarkerSetMap[selectedId]
-            else:
-                break
+        for ms in self.markerSets:
+            # This is a hack for the reduced tree. Since not all
+            # marker sets are in the reduced tree it is possible the
+            # selected marker set might not be available. In this case,
+            # follow the selected marker sets until one associated with
+            # the bin is found. If the chain ends (e.g., at a marker set
+            # that selects itself) without finding one, move to the next
+            # (less specific) marker set of the bin. Ideally, this could be
+            # avoided by just forcing in the selected marker set.
+            selectedId = selectedMarkerSetMap.get(ms.UID)
+            visited = set()
+            while selectedId is not None and selectedId not in visited:
+                if selectedId in uidToMarkerSet:
+                    self.selectedLinageSpecificMarkerSet = uidToMarkerSet[selectedId]
+                    return
 
-        if self.selectedLinageSpecificMarkerSet == None:
-            # something has gone wrong
-            self.logger.error('Failed to set a selected lineage-specific marker set.')
-            sys.exit(1)
+                visited.add(selectedId)
+                selectedId = selectedMarkerSetMap.get(selectedId)
+
+        # something has gone wrong
+        self.logger.error('Failed to set a selected lineage-specific marker set for bin %s.' % self.binId)
+        sys.exit(1)
 
     def removeMarkers(self, markersToRemove):
         """Remove specified markers from all marker sets."""
@@ -515,6 +522,8 @@ class MarkerSetParser():
         """Parse marker sets from a lineage-specific marker set file."""
 
         # read all marker sets
+        selectedMarkerSetMap = self.parseSelectedMarkerSetMap()
+
         binIdToBinMarkerSets = {}
         with open(markerSetFile) as f:
             f.readline()  # skip header
@@ -527,7 +536,6 @@ class MarkerSetParser():
                 binMarkerSets.read(line)
 
                 # determine selected marker set
-                selectedMarkerSetMap = self.parseSelectedMarkerSetMap()
                 binMarkerSets.setLineageSpecificSelectedMarkerSet(selectedMarkerSetMap)
 
                 binIdToBinMarkerSets[binId] = binMarkerSets
