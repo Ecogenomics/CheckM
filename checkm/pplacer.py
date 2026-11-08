@@ -112,7 +112,7 @@ class PplacerRunner():
         for markerId in sorted(markerIds):
             seqs = alignments[markerId]
 
-            for binId in binIds:
+            for binId in sorted(binIds):
                 if binId in seqs:
                     # append alignment
                     concatenatedSeqs[binId] = concatenatedSeqs.get(binId, '') + seqs[binId]
