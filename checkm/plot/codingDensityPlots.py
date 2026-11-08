@@ -59,7 +59,7 @@ class CodingDensityPlots(AbstractPlot):
             fastaFile), DefaultValues.PRODIGAL_GFF)
         if not os.path.exists(gffFile):
             self.logger.error(
-                'Missing gene feature file (%s). This plot if not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF)
+                'Missing gene feature file (%s). This plot is not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF)
             sys.exit(1)
 
         prodigalParser = ProdigalGeneFeatureParser(gffFile)
@@ -83,7 +83,10 @@ class CodingDensityPlots(AbstractPlot):
                 codingBases = prodigalParser.codingBases(seqId, start, end)
 
                 a, c, g, t = baseCount(seq[start:end])
-                data.append(float(codingBases) / (a + c + g + t))
+                bases = a + c + g + t
+                if bases > 0:
+                    # skip windows without any A, C, G, or T bases (e.g., all N)
+                    data.append(float(codingBases) / bases)
 
                 start = end
                 end += self.options.cd_window_size
@@ -93,28 +96,14 @@ class CodingDensityPlots(AbstractPlot):
                 '[Error] No seqs >= %d, the specified window size' % self.options.cd_window_size)
             return
 
-        # Histogram plot
-        bins = [0.0]
-        binWidth = self.options.cd_bin_width
-        binEnd = binWidth
-        while binEnd <= 1.0:
-            bins.append(binEnd)
-            binEnd += binWidth
-
-        axesHist.hist(data, bins=bins, density=True, color=(0.5, 0.5, 0.5))
+        # Histogram plot showing the percentage of windows in each coding density bin
+        bins = self.histogramBins(self.options.cd_bin_width) * 100
+        axesHist.hist(np.array(data) * 100, bins=bins, weights=self.percentWeights(data), color=(0.5, 0.5, 0.5))
         axesHist.set_xlabel('% coding density')
         axesHist.set_ylabel(
             '% windows (' + str(self.options.cd_window_size) + ' bp)')
 
         # Prettify plot
-        for a in axesHist.yaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
-        for a in axesHist.xaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
         for line in axesHist.yaxis.get_ticklines():
             line.set_color(self.axesColour)
 
@@ -169,7 +158,7 @@ class CodingDensityPlots(AbstractPlot):
             axesDeltaCD.plot(xL, y, 'r--', lw=0.5, zorder=0)
             axesDeltaCD.plot(xU, y, 'r--', lw=0.5, zorder=0)
 
-        # ensure y-axis include zero and covers all sequences
+        # ensure y-axis includes zero and covers all sequences
         axesDeltaCD.set_ylim([0, yMaxSeqs])
 
         # ensure x-axis is set appropriately for sequences
@@ -190,14 +179,6 @@ class CodingDensityPlots(AbstractPlot):
         axesDeltaCD.set_yticklabels(kbpLabels)
 
         # Prettify plot
-        for a in axesDeltaCD.yaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
-        for a in axesDeltaCD.xaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
         for line in axesDeltaCD.yaxis.get_ticklines():
             line.set_color(self.axesColour)
 

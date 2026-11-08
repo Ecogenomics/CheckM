@@ -47,16 +47,6 @@ def appendTaxonomyRanks(taxonomy, ranks=7):
     return t
 
 
-def readTaxonomy(taxonomyFile):
-    """Read tab-seperated taxonomy file."""
-    taxonIdToTaxonomy = {}
-    for line in open(taxonomyFile):
-        lineSplit = line.split('\t')
-        taxonIdToTaxonomy[lineSplit[0]] = lineSplit[1].rstrip()
-
-    return taxonIdToTaxonomy
-
-
 def _parseTaxon(taxon):
     if '(' in taxon:
         taxonSplit = taxon.split('(')

@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# codingDensityPlots.py - Create a GC histogram and a delta-CD plot.
+# distributionPlots.py - Create GC, TD, and CD histograms and delta plots.
 #
 ###############################################################################
 #                                                                             #
@@ -29,7 +29,6 @@ from checkm.plot.tetraDistPlots import TetraDistPlots
 class DistributionPlots(AbstractPlot):
     def __init__(self, options):
         AbstractPlot.__init__(self, options)
-        self.options = options
 
     def plot(self, fastaFile, tetraSigs, distributionsToPlot):
         # Set size of figure

@@ -118,13 +118,14 @@ class BinTools():
                 openFile = open
 
             seqIds = set()
-            for line in openFile(f):
-                if line[0] == '>':
-                    seqId = line[1:].split(None, 1)[0]
+            with openFile(f, 'rt') as fin:
+                for line in fin:
+                    if line[0] == '>':
+                        seqId = line[1:].split(None, 1)[0]
 
-                    if seqId in seqIds:
-                        print ('  [Warning] Sequence %s found multiple times in bin %s.' % (seqId, binId))
-                    seqIds.add(seqId)
+                        if seqId in seqIds:
+                            print ('  [Warning] Sequence %s found multiple times in bin %s.' % (seqId, binId))
+                        seqIds.add(seqId)
 
             binSeqs[binId] = seqIds
 
@@ -146,7 +147,11 @@ class BinTools():
             print ('  No sequences assigned to multiple bins.')
 
     def gcDist(self, seqs):
-        """GC statistics for bin."""
+        """GC statistics for bin.
+
+        The GC of sequences without any A, C, G, or T
+        bases (e.g., all N) is reported as NaN.
+        """
         GCs = []
         gcTotal = 0
         basesTotal = 0
@@ -155,13 +160,19 @@ class BinTools():
             gc = g + c
             bases = a + c + g + t
 
-            GCs.append(float(gc) / (bases))
+            if bases > 0:
+                GCs.append(float(gc) / bases)
+            else:
+                GCs.append(np.nan)
 
             gcTotal += gc
             basesTotal += bases
 
-        meanGC = float(gcTotal) / basesTotal
-        deltaGCs = np.array(GCs) - meanGC
+        if basesTotal > 0:
+            meanGC = float(gcTotal) / basesTotal
+        else:
+            meanGC = 0.0
+        deltaGCs = np.array(GCs, dtype=float) - meanGC
 
         return meanGC, deltaGCs, GCs
 
@@ -174,39 +185,72 @@ class BinTools():
         for seqId, seq in seqs.items():
             codingBases = prodigalParser.codingBases(seqId)
 
-            CDs.append(float(codingBases) / len(seq))
+            if len(seq) > 0:
+                CDs.append(float(codingBases) / len(seq))
+            else:
+                CDs.append(np.nan)
             codingBasesTotal += codingBases
             basesTotal += len(seq)
 
-        meanCD = float(codingBasesTotal) / basesTotal
-        deltaCDs = np.array(CDs) - meanCD
+        if basesTotal > 0:
+            meanCD = float(codingBasesTotal) / basesTotal
+        else:
+            meanCD = 0.0
+        deltaCDs = np.array(CDs, dtype=float) - meanCD
 
         return meanCD, deltaCDs, CDs
 
-    def binTetraSig(self, seqs, tetraSigs):
-        """Tetranucleotide signature for bin. """
-        binSize = 0
-        for _, seq in seqs.items():
-            binSize += len(seq)
+    def _validTetraSig(self, sig):
+        """Check if a sequence has a tetranucleotide signature.
 
-        bInit = True
-        for seqId, seq in seqs.items():
-            weightedTetraSig = tetraSigs[seqId] * (float(len(seq)) / binSize)
-            if bInit:
+        Sequences without any valid tetranucleotides (e.g., shorter
+        than 4 bp or all N) have a signature of all zeros (or NaN
+        in files produced by older versions of CheckM).
+        """
+        return np.all(np.isfinite(sig)) and np.sum(sig) > 0
+
+    def binTetraSig(self, seqs, tetraSigs):
+        """Tetranucleotide signature for bin.
+
+        Sequences without a tetranucleotide signature are ignored.
+        """
+        validSeqIds = [seqId for seqId in seqs if self._validTetraSig(tetraSigs[seqId])]
+
+        binSize = 0
+        for seqId in validSeqIds:
+            binSize += len(seqs[seqId])
+
+        binSig = None
+        for seqId in validSeqIds:
+            weightedTetraSig = tetraSigs[seqId] * (float(len(seqs[seqId])) / binSize)
+            if binSig is None:
                 binSig = weightedTetraSig
-                bInit = False
             else:
                 binSig += weightedTetraSig
+
+        if binSig is None:
+            # no sequence has a tetranucleotide signature
+            binSig = np.zeros(len(tetraSigs[next(iter(seqs))]))
 
         return binSig
 
     def tetraDiffDist(self, seqs, genomicSig, tetraSigs, binSig):
-        """TD statistics for bin."""
+        """TD statistics for bin.
+
+        The TD of sequences without a tetranucleotide
+        signature is reported as NaN.
+        """
         deltaTDs = np.zeros(len(seqs))
         for i, seqId in enumerate(seqs.keys()):
-            deltaTDs[i] = genomicSig.distance(tetraSigs[seqId], binSig)
+            if self._validTetraSig(tetraSigs[seqId]):
+                deltaTDs[i] = genomicSig.distance(tetraSigs[seqId], binSig)
+            else:
+                deltaTDs[i] = np.nan
 
-        return np.mean(deltaTDs), deltaTDs
+        validTDs = deltaTDs[~np.isnan(deltaTDs)]
+        meanTD = np.mean(validTDs) if len(validTDs) > 0 else 0.0
+
+        return meanTD, deltaTDs
 
     def identifyOutliers(self, outDir, binFiles, tetraProfileFile, distribution, reportType, outputFile):
         """Identify sequences that are outliers."""
@@ -240,7 +284,7 @@ class BinTools():
 
             gffFile = os.path.join(outDir, 'bins', binId, DefaultValues.PRODIGAL_GFF)
             if not os.path.exists(gffFile):
-                self.logger.error('Missing gene feature file (%s). This plot if not compatible with the --genes option.\n' % DefaultValues.PRODIGAL_GFF)
+                self.logger.error('Missing gene feature file (%s). This command is not compatible with the --genes option.\n' % DefaultValues.PRODIGAL_GFF)
                 sys.exit(1)
 
             prodigalParser = ProdigalGeneFeatureParser(gffFile)

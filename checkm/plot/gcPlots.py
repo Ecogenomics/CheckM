@@ -63,13 +63,10 @@ class GcPlots(AbstractPlot):
 
             while(end < seqLen):
                 a, c, g, t = baseCount(seq[start:end])
-                try:
-                    data.append(float(g + c) / (a + c + g + t))
-                except:
-                    # it is possible to reach a long stretch of
-                    # N's that causes a division by zero error
-
-                    pass
+                bases = a + c + g + t
+                if bases > 0:
+                    # skip windows without any A, C, G, or T bases (e.g., all N)
+                    data.append(float(g + c) / bases)
 
                 start = end
                 end += self.options.gc_window_size
@@ -79,28 +76,14 @@ class GcPlots(AbstractPlot):
                 '[Error] No seqs >= %d, the specified window size' % self.options.gc_window_size)
             return
 
-        # Histogram plot
-        bins = [0.0]
-        binWidth = self.options.gc_bin_width
-        binEnd = binWidth
-        while binEnd <= 1.0:
-            bins.append(binEnd)
-            binEnd += binWidth
-
-        axesHist.hist(data, bins=bins, density=True, color=(0.5, 0.5, 0.5))
+        # Histogram plot showing the percentage of windows in each GC bin
+        bins = self.histogramBins(self.options.gc_bin_width) * 100
+        axesHist.hist(np.array(data) * 100, bins=bins, weights=self.percentWeights(data), color=(0.5, 0.5, 0.5))
         axesHist.set_xlabel('% GC')
         axesHist.set_ylabel(
             '% windows (' + str(self.options.gc_window_size) + ' bp)')
 
         # Prettify plot
-        for a in axesHist.yaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
-        for a in axesHist.xaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
         for line in axesHist.yaxis.get_ticklines():
             line.set_color(self.axesColour)
 
@@ -155,7 +138,7 @@ class GcPlots(AbstractPlot):
             axesDeltaGC.plot(xL, y, 'r--', lw=0.5, zorder=0)
             axesDeltaGC.plot(xU, y, 'r--', lw=0.5, zorder=0)
 
-        # ensure y-axis include zero and covers all sequences
+        # ensure y-axis includes zero and covers all sequences
         axesDeltaGC.set_ylim([0, yMaxSeqs])
 
         # ensure x-axis is set appropriately for sequences
@@ -176,14 +159,6 @@ class GcPlots(AbstractPlot):
         axesDeltaGC.set_yticklabels(kbpLabels)
 
         # Prettify plot
-        for a in axesDeltaGC.yaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
-        for a in axesDeltaGC.xaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
         for line in axesDeltaGC.yaxis.get_ticklines():
             line.set_color(self.axesColour)
 
