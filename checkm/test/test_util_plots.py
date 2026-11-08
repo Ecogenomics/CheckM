@@ -144,5 +144,12 @@ class VerifyHistograms(unittest.TestCase):
             self.assertAlmostEqual(counts.max(), 50.0)
 
 
+class VerifySavePlot(unittest.TestCase):
+    def testUnknownFormat(self):
+        plot = LengthHistogram(_options())
+        with self.assertRaises(ValueError):
+            plot.savePlot('plot.unknown')
+
+
 if __name__ == "__main__":
     unittest.main()

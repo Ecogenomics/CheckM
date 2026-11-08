@@ -380,32 +380,6 @@ class Coverage():
             print ('      # reads not properly paired: %d (%.1f%%)' % (totalFailedProperPair, perc(totalFailedProperPair)))
             print ('')
 
-    def parseCoverage(self, coverageFile):
-        """Read coverage information from file."""
-        coverageStats = {}
-        bHeader = True
-        for line in open(coverageFile):
-            if bHeader:
-                bHeader = False
-                continue
-
-            lineSplit = line.split('\t')
-            seqId = lineSplit[0]
-            binId = lineSplit[1]
-
-            if binId not in coverageStats:
-                coverageStats[binId] = {}
-
-            if seqId not in coverageStats[binId]:
-                coverageStats[binId][seqId] = {}
-
-            for i in range(3, len(lineSplit), 3):
-                bamId = lineSplit[i]
-                coverage = float(lineSplit[i + 1])
-                coverageStats[binId][seqId][bamId] = coverage
-
-        return coverageStats
-
     def binProfiles(self, coverageFile):
         """Read coverage information for each bin."""
         binCoverages = defaultdict(lambda: defaultdict(list))

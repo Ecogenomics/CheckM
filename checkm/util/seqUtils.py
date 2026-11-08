@@ -87,48 +87,6 @@ def isNucleotide(seq_file, req_perc=0.9, max_seqs_to_read=10):
     return False
 
 
-def queryYesNo(question, default="yes"):
-    """Ask a yes/no question via raw_input() and return their answer.
-
-    http://stackoverflow.com/questions/3041986/python-command-line-yes-no-input
-
-    Parameters
-    ----------
-    question : str
-        Prompt presented to the user.
-    default : str
-        Presumed answer if the user just hits <Enter>.
-        It must be "yes" (the default), "no" or None (meaning
-        an answer is required of the user).
-
-    Returns
-    -------
-    boolean
-        True for "yes", False for "no".
-    """
-    valid = {"yes": True, "y": True, "ye": True,
-             "no": False, "n": False}
-    if default is None:
-        prompt = " [y/n] "
-    elif default == "yes":
-        prompt = " [Y/n] "
-    elif default == "no":
-        prompt = " [y/N] "
-    else:
-        raise ValueError("invalid default answer: '%s'" % default)
-
-    while True:
-        sys.stdout.write(question + prompt)
-        choice = raw_input().lower()
-        if default is not None and choice == '':
-            return valid[default]
-        elif choice in valid:
-            return valid[choice]
-        else:
-            sys.stdout.write("Please respond with 'yes' or 'no' "
-                             "(or 'y' or 'n').\n")
-
-
 def checkNuclotideSeqs(seq_files):
     """Check if files contain sequences in nucleotide space.
 
@@ -235,43 +193,6 @@ def readFastaSeqIds(fastaFile):
                 seqIds.append(seqId)
 
     return seqIds
-
-
-def readFastaBases(fastaFile):
-    '''Determine number of bases in FASTA file.'''
-    if fastaFile.endswith('.gz'):
-        openFile = gzip.open
-    else:
-        openFile = open
-
-    bases = 0
-    with openFile(fastaFile, 'rt') as f:
-        for line in f:
-            if line[0] != '>':
-                bases += len(line.rstrip())
-
-    return bases
-
-
-def readGenomicSeqsFromFasta(fastaFile, seqToIgnore=None):
-    '''Read genomic sequences from FASTA file. Explicitly ignores sequences marked as plasmids.'''
-    seqs = {}
-    bRead = False
-    for line in open(fastaFile):
-        if line[0] == '>':
-            if 'plasmid' in line.lower():
-                bRead = False
-            else:
-                seqId = line[1:].split(None, 1)[0]
-                seqs[seqId] = []
-                bRead = True
-        elif bRead:
-            seqs[seqId].append(line[0:-1])
-
-    for seqId, seq in seqs.items():
-        seqs[seqId] = ''.join(seq)
-
-    return seqs
 
 
 def writeFasta(seqs, outputFile):

@@ -62,14 +62,12 @@ class TetraDistPlots(AbstractPlot):
 
         data = []
         seqLens = []
-        deltaTDs = []
         for seqId, seq in seqs.items():
             start = 0
             end = self.options.td_window_size
 
             seqLen = len(seq)
             seqLens.append(seqLen)
-            deltaTDs.append(genomicSig.distance(tetraSigs[seqId], binSig))
 
             while(end < seqLen):
                 windowSig = genomicSig.seqSignature(seq[start:end])
@@ -84,8 +82,6 @@ class TetraDistPlots(AbstractPlot):
             axesHist.set_xlabel(
                 '[Error] No seqs >= %d, the specified window size' % self.options.td_window_size)
             return
-
-        deltaTDs = np.array(deltaTDs)
 
         # Histogram plot showing the percentage of windows in each TD bin
         bins = self.histogramBins(self.options.td_bin_width)

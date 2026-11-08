@@ -24,7 +24,6 @@
 import sys
 import multiprocessing as mp
 from multiprocessing.connection import wait
-#from str import maketrans
 import logging
 
 import numpy as np
@@ -84,8 +83,6 @@ class GenomicSignatures(object):
             if kmer not in retList:
                 retList.append(kmer)
 
-        sorted(retList)
-
         # create mapping from kmers to their canonical order position
         kmerToCanonicalIndex = {}
         for index, kmer in enumerate(retList):
@@ -103,7 +100,6 @@ class GenomicSignatures(object):
 
     def _revComp(self, seq):
         """Return the reverse complement of a sequence."""
-        # build a dictionary to know what letter to switch to
         return seq.translate(self.compl)[::-1]
 
     def _calculateResults(self, queueIn, queueOut):
