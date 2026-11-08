@@ -41,17 +41,16 @@ class HMMMERModeError(BaseException):
 
 
 def returnCodeStr(returnCode):
-    """Describe the return code of a subprocess (e.g., 'exit code 1' or 'signal 9 (SIGKILL)').
+    """Describe the return code of a subprocess (e.g., 'exit code 1' or 'signal SIGKILL').
 
     Return codes are those reported by the subprocess module, where a
     negative value -N indicates the program was terminated by signal N.
     """
     if returnCode < 0:
         try:
-            signalName = signal.Signals(-returnCode).name
+            return f'signal {signal.Signals(-returnCode).name}'
         except ValueError:
-            signalName = 'unknown signal'
-        return f'signal {-returnCode} ({signalName})'
+            return f'signal {-returnCode}'
 
     return f'exit code {returnCode}'
 
@@ -59,7 +58,7 @@ def returnCodeStr(returnCode):
 def exitOnFailure(logger, program, returnCode):
     """Log an error and exit with status 1 if an external program failed."""
     if returnCode != 0:
-        logger.error(f'{program} failed ({returnCodeStr(returnCode)}).')
+        logger.error(f'{program} failed with {returnCodeStr(returnCode)}.')
         sys.exit(1)
 
 

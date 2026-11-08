@@ -56,7 +56,7 @@ class VerifyReturnCodes(unittest.TestCase):
     def testReturnCodeStr(self):
         """Verify description of subprocess return codes."""
         self.assertEqual(returnCodeStr(1), 'exit code 1')
-        self.assertEqual(returnCodeStr(-9), 'signal 9 (SIGKILL)')
+        self.assertEqual(returnCodeStr(-9), 'signal SIGKILL')
 
     def testExitOnFailure(self):
         """Verify failures exit with status 1, regardless of the program's exit code or signal."""
