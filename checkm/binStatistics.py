@@ -284,7 +284,8 @@ class BinStatistics():
         else:
             # missing amino acid file likely indicates users used a pre-called gene file, so
             # just set some defaults
-            seqStats[seqId]['# ORFs'] = seqStats[seqId].get('# ORFs', 0) + 1
-            seqStats[seqId]['Coding bases'] = seqStats[seqId].get('Coding bases', 0) + len(gene) * 3
+            for seqId in seqStats:
+                seqStats[seqId]['# ORFs'] = 0
+                seqStats[seqId]['Coding bases'] = 0
 
         return seqStats
