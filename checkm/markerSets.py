@@ -20,8 +20,11 @@
 ###############################################################################
 
 import os
+import re
 import sys
+import ast
 import logging
+import functools
 import pickle
 import gzip
 
@@ -30,6 +33,96 @@ from checkm.hmmer import HMMERRunner
 from checkm.hmmerModelParser import HmmModelParser
 
 from checkm.util.pfam import PFAM
+
+
+# patterns for parsing string representations of sets of marker genes, e.g.
+# {'PF00001.1', 'TIGR00001'}, set(['PF00001.1']), set([]) and set()
+_SET_STR_RE = re.compile(r"""\{([^{}]*)\}|set\(\[([^\[\]]*)\]\)|set\(\)""")
+_QUOTED_STR_RE = re.compile(r"'([^'\\]*)'" + r'|"([^"\\]*)"')
+
+
+def _parseQuotedItems(content):
+    """Parse comma-separated quoted strings, returning None if they are not in this format."""
+
+    # fast path for items without commas, quotes or escapes within them
+    items = []
+    for token in content.split(','):
+        token = token.strip()
+        if not token:
+            continue
+
+        quote = token[0]
+        if len(token) >= 2 and quote in '\'"' and token[-1] == quote and quote not in token[1:-1] and '\\' not in token:
+            items.append(token[1:-1])
+        else:
+            items = None
+            break
+
+    if items is not None:
+        return items
+
+    # general case
+    if _QUOTED_STR_RE.sub('', content).strip(' ,'):
+        return None
+
+    return [q.group(1) if q.group(1) is not None else q.group(2) for q in _QUOTED_STR_RE.finditer(content)]
+
+
+@functools.lru_cache(maxsize=None)
+def _parseSetStrs(s):
+    """Parse a comma-separated sequence of set representations.
+
+    Returns a tuple of frozensets, or None if the string is not in one of the
+    formats written by CheckM. Results are cached since marker sets are repeated
+    many times (e.g., the marker sets of each lineage in a lineage marker file).
+    """
+    sets = []
+    pos = 0
+    for m in _SET_STR_RE.finditer(s):
+        if s[pos:m.start()].strip(' ,'):
+            return None
+
+        content = m.group(1) if m.group(1) is not None else (m.group(2) or '')
+        items = _parseQuotedItems(content)
+        if items is None:
+            return None
+
+        sets.append(frozenset(items))
+        pos = m.end()
+
+    if s[pos:].strip(' ,'):
+        return None
+
+    return tuple(sets)
+
+
+def parseMarkerSetStr(s):
+    """Parse the string representation of a marker set (a list of sets of marker genes).
+
+    This replaces the use of eval(), which was slow and evaluated file contents as code.
+    The sets are returned as frozensets which may be shared between marker sets, since
+    marker sets are never modified in place (they are replaced when refined).
+    """
+    s = s.strip()
+    sets = None
+    if s.startswith('[') and s.endswith(']'):
+        sets = _parseSetStrs(s[1:-1])
+
+    if sets is None:
+        # fall back to Python's (safe) literal parser for any other formatting
+        return [frozenset(x) for x in ast.literal_eval(s)]
+
+    return list(sets)
+
+
+def parseSetStr(s):
+    """Parse the string representation of a single set of marker genes."""
+    s = s.strip()
+    sets = _parseSetStrs(s)
+    if sets is None or len(sets) != 1:
+        return set(ast.literal_eval(s))
+
+    return set(sets[0])
 
 
 class BinMarkerSets():
@@ -146,7 +239,7 @@ class BinMarkerSets():
             uid = lineSplit[i * 4 + 2]
             lineageStr = lineSplit[i * 4 + 3]
             numGenomes = int(lineSplit[i * 4 + 4])
-            markerSet = eval(lineSplit[i * 4 + 5])
+            markerSet = parseMarkerSetStr(lineSplit[i * 4 + 5])
             self.markerSets.append(MarkerSet(uid, lineageStr, numGenomes, markerSet))
 
 
@@ -162,7 +255,7 @@ class MarkerSet():
 
     def __repr__(self):
         # marker genes are written in sorted order so marker files are reproducible
-        # (the string is parsed with eval() so must remain a valid list of sets)
+        # (the string must remain a valid Python list of sets; see parseMarkerSetStr)
         markerSetStr = '[' + ', '.join([self._setStr(m) for m in self.markerSet]) + ']'
         return str(self.UID) + '\t' + self.lineageStr + '\t' + str(self.numGenomes) + '\t' + markerSetStr
 

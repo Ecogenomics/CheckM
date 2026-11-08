@@ -24,7 +24,7 @@ from collections import defaultdict
 
 import checkm.prettytable as prettytable
 
-from checkm.markerSets import BinMarkerSets, MarkerSet
+from checkm.markerSets import BinMarkerSets, MarkerSet, parseMarkerSetStr
 from checkm.util.taxonomyUtils import taxonomicRanks, ranksByLevel, ranksByLabel
 
 from checkm.defaultValues import DefaultValues
@@ -43,7 +43,7 @@ class TaxonParser():
             taxon = lineSplit[1]
             lineage = lineSplit[2]
             numGenomes = int(lineSplit[3])
-            markerSet = eval(lineSplit[6].rstrip())
+            markerSet = parseMarkerSetStr(lineSplit[6])
             
             ms = MarkerSet(ranksByLabel[rank], lineage, numGenomes, markerSet)
             ms.removeMarkers(DefaultValues.MARKERS_TO_EXCLUDE)

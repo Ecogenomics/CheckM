@@ -28,7 +28,7 @@ import dendropy
 import checkm.prettytable as prettytable
 
 from checkm.defaultValues import DefaultValues
-from checkm.markerSets import MarkerSet, BinMarkerSets
+from checkm.markerSets import MarkerSet, BinMarkerSets, parseMarkerSetStr, parseSetStr
 from checkm.common import checkDirExists, reassignStdOut, restoreStdOut, getBinIdsFromOutDir
 from checkm.util.seqUtils import readFasta
 from checkm.util.taxonomyUtils import taxonomicPrefixes
@@ -352,7 +352,7 @@ class TreeParser():
 
         # get marker set meeting all criteria required for a trusted marker set
         taxonomyStr = taxonomyStr.split(';')[-1]  # extract most specific taxonomy identifier
-        markerSet = MarkerSet(trustedUniqueId, taxonomyStr, int(stats['# genomes']), eval(stats['marker set']))
+        markerSet = MarkerSet(trustedUniqueId, taxonomyStr, int(stats['# genomes']), parseMarkerSetStr(stats['marker set']))
 
         return selectedParentNode, markerSet
 
@@ -363,8 +363,8 @@ class TreeParser():
         for line in open(os.path.join(DefaultValues.GENOME_TREE_DIR, DefaultValues.GENOME_TREE_MISSING_DUPLICATE)):
             lineSplit = line.split('\t')
             uid = lineSplit[0]
-            missingGenes = eval(lineSplit[1])
-            duplicateGenes = eval(lineSplit[2])
+            missingGenes = parseSetStr(lineSplit[1])
+            duplicateGenes = parseSetStr(lineSplit[2])
             self.lineageSpecificGenesToRemove[uid] = missingGenes.union(duplicateGenes)
 
     def _removeInvalidLineageMarkerGenes(self, markerSet, lineageSpecificMarkersToRemove):
