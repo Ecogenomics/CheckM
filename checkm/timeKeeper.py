@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# timeKeeper.py - lass for creating time stamps
+# timeKeeper.py - class for creating time stamps
 #
 ###############################################################################
 #                                                                             #
@@ -26,11 +26,6 @@ from functools import reduce
 class TimeKeeper:
     def __init__(self):
         self.logger = logging.getLogger('timestamp')
-        self.startTime = time.time()
-        self.lastLogTime = self.startTime
-
-    def startTimer(self):
-        """Restart the timer"""
         self.startTime = time.time()
         self.lastLogTime = self.startTime
 
