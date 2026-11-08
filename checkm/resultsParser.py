@@ -32,7 +32,7 @@ import checkm.prettytable as prettytable
 from checkm.defaultValues import DefaultValues
 from checkm.common import reassignStdOut, restoreStdOut, checkFileExists
 from checkm.coverage import Coverage
-from checkm.hmmer import HMMERParser
+from checkm.hmmer import HMMERParser, FormatError, HMMERError
 
 from checkm.util.pfam import PFAM
 from checkm.util.seqUtils import readFasta
@@ -192,29 +192,30 @@ class ResultsParser():
         """Parse HMMER results."""
         try:
             with open(fileName, 'r') as hmmerHandle:
-                try:
-                    HP = HMMERParser(hmmerHandle)
-                except:
-                    print("Error opening HMM file: ", fileName)
-                    raise
+                HP = HMMERParser(hmmerHandle)
 
                 while True:
                     hit = HP.next()
                     if hit is None:
                         break
                     resultsManager.addHit(hit)
-
-            # retain only best hit to PFAM clan
-            pfam = PFAM(DefaultValues.PFAM_CLAN_FILE)
-            resultsManager.markerHits = pfam.filterHitsFromSameClan(
-                resultsManager.markerHits)
-
-            # correct for errors in ORF calling
-            if not bSkipAdjCorrection:
-                resultsManager.identifyAdjacentMarkerGenes()
-
         except IOError as detail:
-            sys.stderr.write(str(detail) + "\n")
+            # a missing table must not be reported as a bin without marker genes
+            self.logger.error('Failed to read HMMER results for bin %s: %s' % (resultsManager.binId, detail))
+            sys.exit(1)
+        except (Exception, FormatError, HMMERError) as detail:
+            # (FormatError and HMMERError derive from BaseException)
+            self.logger.error('Failed to parse HMMER results in %s: %s: %s' % (fileName, type(detail).__name__, detail))
+            sys.exit(1)
+
+        # retain only best hit to PFAM clan
+        pfam = PFAM(DefaultValues.PFAM_CLAN_FILE)
+        resultsManager.markerHits = pfam.filterHitsFromSameClan(
+            resultsManager.markerHits)
+
+        # correct for errors in ORF calling
+        if not bSkipAdjCorrection:
+            resultsManager.identifyAdjacentMarkerGenes()
 
     def _getHeader(self, outputFormat, binMarkerSets, coverageBinProfiles=None, table=None):
         """Get header for requested output table."""

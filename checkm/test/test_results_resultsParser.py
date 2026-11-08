@@ -15,9 +15,13 @@
 #                                                                             #
 ###############################################################################
 
+import os
+import shutil
+import logging
+import tempfile
 import unittest
 
-from checkm.resultsParser import ResultsManager
+from checkm.resultsParser import ResultsParser, ResultsManager
 
 
 class Hit(object):
@@ -95,6 +99,36 @@ class VerifyAdjacentMarkerGenes(unittest.TestCase):
         rm.identifyAdjacentMarkerGenes()
         self.assertEqual(rm.markerHits['PF00001.1'], [a, b])
         self.assertEqual(rm.markerHits['PF00002.1'], [])
+
+
+class VerifyParseHmmerResults(unittest.TestCase):
+    def setUp(self):
+        self.tmpDir = tempfile.mkdtemp()
+        logging.getLogger('timestamp').disabled = True
+
+    def tearDown(self):
+        logging.getLogger('timestamp').disabled = False
+        shutil.rmtree(self.tmpDir)
+
+    def testMissingHmmerTable(self):
+        """A missing HMMER table is an error, not a bin without marker genes."""
+        rp = ResultsParser({'bin1': {}})
+        rm = ResultsManager('bin1', {})
+        missingFile = os.path.join(self.tmpDir, 'bins', 'bin1', 'hmmer.analyze.txt')
+        with self.assertRaises(SystemExit) as cm:
+            rp.parseHmmerResults(missingFile, rm, False)
+        self.assertEqual(cm.exception.code, 1)
+
+    def testMalformedHmmerTable(self):
+        tableFile = os.path.join(self.tmpDir, 'hmmer.analyze.txt')
+        with open(tableFile, 'w') as f:
+            f.write('contig_1_1 - 100 PF00001 PF00001.1\n')
+
+        rp = ResultsParser({'bin1': {}})
+        rm = ResultsManager('bin1', {})
+        with self.assertRaises(SystemExit) as cm:
+            rp.parseHmmerResults(tableFile, rm, False)
+        self.assertEqual(cm.exception.code, 1)
 
 
 if __name__ == "__main__":
