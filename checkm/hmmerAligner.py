@@ -177,6 +177,8 @@ class HmmerAligner:
 
             writeProc.terminate()
 
+        self._checkWorkerExitCodes(calcProc, 'aligning markers with multiple hits')
+
     def _createMSA(self, resultsParser, binIdToBinMarkerSets, hmmModelFile, outDir, alignOutputDir, queueIn, queueOut):
         """Create multiple sequence alignment for markers with multiple hits in a bin."""
 
@@ -263,6 +265,15 @@ class HmmerAligner:
 
             writeProc.terminate()
 
+        self._checkWorkerExitCodes(calcProc, 'aligning marker genes')
+
+    def _checkWorkerExitCodes(self, procs, task):
+        """Exit if any worker process failed, rather than continuing with missing alignments."""
+        numFailed = sum(1 for p in procs if p.exitcode != 0)
+        if numFailed:
+            self.logger.error(f'{numFailed} of {len(procs)} worker processes failed while {task}. See the error messages above.')
+            sys.exit(1)
+
     def _alignMarkerParallel(self, markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, bKeepUnmaskedAlign, queueIn, queueOut):
         while True:
             markerId = queueIn.get(block=True, timeout=None)
@@ -329,6 +340,7 @@ class HmmerAligner:
         # read STOCKHOLM alignment
         seqs = {}
         seqStats = {}
+        mask = None
         for line in open(inputFile):
             line = line.rstrip()
             if line == '' or line[0] == '#' or line == '//':
@@ -344,6 +356,12 @@ class HmmerAligner:
             else:
                 lineSplit = line.split()
                 seqs[lineSplit[0]] = lineSplit[1].upper().replace('.', '-').strip()
+
+        if mask is None:
+            # typically indicates hmmalign failed or produced truncated output (issue #387)
+            self.logger.error(f'Alignment file is missing the "#=GC RF" mask line: {inputFile}')
+            self.logger.error('Please verify that hmmalign (HMMER v3) is working and that sufficient memory and disk space are available.')
+            sys.exit(1)
 
         # output masked sequences in FASTA format
         fout = open(outputFile, 'w')

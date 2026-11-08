@@ -61,15 +61,26 @@ class Coverage():
         # determine bin assignment of each sequence
         self.logger.info('Determining bin assignment of each sequence.')
 
-        seqIdToBinId = {}
-        seqIdToSeqLen = {}
+        # sequences are tracked as (bin ID, sequence ID) pairs since bins
+        # (e.g., from different assemblies) may contain sequences with the
+        # same ID, which previously caused bins to be dropped (issue #386)
+        binSeqs = []
+        seqIdToBinIds = defaultdict(list)
         for binFile in binFiles:
             binId = binIdFromFilename(binFile)
 
             seqs = readFasta(binFile)
             for seqId, seq in seqs.items():
-                seqIdToBinId[seqId] = binId
-                seqIdToSeqLen[seqId] = len(seq)
+                binSeqs.append((binId, seqId, len(seq)))
+                seqIdToBinIds[seqId].append(binId)
+
+        dupSeqIds = [seqId for seqId, binIds in seqIdToBinIds.items() if len(binIds) > 1]
+        if dupSeqIds:
+            self.logger.warning('Identified %d sequence IDs present in multiple bins (e.g., %s in bins %s).'
+                                % (len(dupSeqIds), dupSeqIds[0], ', '.join(seqIdToBinIds[dupSeqIds[0]])))
+            self.logger.warning('BAM files identify sequences only by ID. Mapped reads are assigned to a duplicated '
+                                'sequence only if its length matches the BAM reference sequence, and will be assigned '
+                                'to all bins containing a sequence with the same ID and length.')
 
         # process each fasta file
         self.logger.info("Processing %d file(s) with %d threads.\n" % (len(bamFiles), self.totalThreads))
@@ -89,7 +100,7 @@ class Coverage():
             self.logger.info('Processing %s (%d of %d):' % (ntpath.basename(bamFile), numFilesStarted, len(bamFiles)))
 
             coverageInfo[bamFile] = mp.Manager().dict()
-            coverageInfo[bamFile] = self._processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, coverageInfo[bamFile])
+            coverageInfo[bamFile] = dict(self._processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, minQC, coverageInfo[bamFile]))
 
         # redirect output
         self.logger.info('Writing coverage information to file.')
@@ -101,19 +112,41 @@ class Coverage():
 
         print(header)
 
-        # get length of all seqs
-        for bamFile, seqIds in coverageInfo.items():
-            for seqId in seqIds.keys():
-                seqIdToSeqLen[seqId] = seqIds[seqId].seqLen
+        # write coverage stats for all binned sequences to file
+        for binId, seqId, seqLen in binSeqs:
+            bDupSeqId = len(seqIdToBinIds[seqId]) > 1
 
-        # write coverage stats for all scaffolds to file
-        for seqId, seqLen in seqIdToSeqLen.items():
-            rowStr = seqId + '\t' + seqIdToBinId.get(seqId, DefaultValues.UNBINNED) + '\t' + str(seqLen)
+            rowStr = seqId + '\t' + binId + '\t' + str(seqLen)
             for bamFile in bamFiles:
                 bamId = binIdFromFilename(bamFile)
 
-                if seqId in coverageInfo[bamFile]:
-                    rowStr += '\t%s\t%f\t%d' % (bamId, coverageInfo[bamFile][seqId].coverage, coverageInfo[bamFile][seqId].mappedReads)
+                covInfo = coverageInfo[bamFile].get(seqId)
+                if covInfo is not None and bDupSeqId and covInfo.seqLen != seqLen:
+                    # BAM reference is a different sequence with the same ID
+                    covInfo = None
+
+                if covInfo is not None:
+                    rowStr += '\t%s\t%f\t%d' % (bamId, covInfo.coverage, covInfo.mappedReads)
+                else:
+                    rowStr += '\t%s\t%f\t%d' % (bamId, 0, 0)
+
+            print(rowStr)
+
+        # write coverage stats for unbinned sequences in the BAM files to file
+        unbinnedSeqLens = {}
+        for bamFile, seqIds in coverageInfo.items():
+            for seqId, covInfo in seqIds.items():
+                if seqId not in seqIdToBinIds:
+                    unbinnedSeqLens[seqId] = covInfo.seqLen
+
+        for seqId, seqLen in unbinnedSeqLens.items():
+            rowStr = seqId + '\t' + DefaultValues.UNBINNED + '\t' + str(seqLen)
+            for bamFile in bamFiles:
+                bamId = binIdFromFilename(bamFile)
+
+                covInfo = coverageInfo[bamFile].get(seqId)
+                if covInfo is not None:
+                    rowStr += '\t%s\t%f\t%d' % (bamId, covInfo.coverage, covInfo.mappedReads)
                 else:
                     rowStr += '\t%s\t%f\t%d' % (bamId, 0, 0)
 

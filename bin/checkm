@@ -34,6 +34,7 @@ import sys
 import logging
 import tempfile
 import argparse
+import multiprocessing.util
 
 from checkm import main
 from checkm.defaultValues import DefaultValues
@@ -45,6 +46,12 @@ from checkm.logger import logger_setup
 class ChangeTempAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if os.path.isdir(values):
+            # Create the multiprocessing temp directory (used for the
+            # AF_UNIX sockets of mp.Manager) in the system default location
+            # before redirecting tempfile. Socket paths are limited to ~108
+            # characters, so placing them under a user-specified --tmpdir
+            # can cause "OSError: AF_UNIX path too long" (issue #402).
+            multiprocessing.util.get_temp_dir()
             tempfile.tempdir = values
         else:
             raise argparse.ArgumentTypeError(
