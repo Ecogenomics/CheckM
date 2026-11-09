@@ -252,12 +252,29 @@ class OptionsParser():
 
         # place bins into genome tree
 
-        # memory usage increases linearly with the number of pplacer threads
-        pplacer = PplacerRunner(threads=options.pplacer_threads)
+        pplacer = PplacerRunner(threads=self._pplacerThreads(options))
         pplacer.run(binFiles, resultsParser,
                     options.output_dir, options.bReducedTree)
 
         self.timeKeeper.printTimeStamp()
+
+    def _pplacerThreads(self, options):
+        """Number of threads to use for pplacer.
+
+        Defaults to the number of threads, to a maximum of 64 as pplacer does not run
+        properly with more threads. pplacer's worker processes share memory, so memory
+        usage increases only slightly with additional threads.
+        """
+        pplacerThreads = getattr(options, 'pplacer_threads', None)
+        if pplacerThreads is None:
+            return min(options.threads, DefaultValues.MAX_PPLACER_THREADS)
+
+        if pplacerThreads > DefaultValues.MAX_PPLACER_THREADS:
+            self.logger.warning('pplacer does not run properly with more than %d threads, so %d threads will be used.'
+                                % (DefaultValues.MAX_PPLACER_THREADS, DefaultValues.MAX_PPLACER_THREADS))
+            return DefaultValues.MAX_PPLACER_THREADS
+
+        return max(1, pplacerThreads)
 
     def treeQA(self, options):
         """Tree QA command"""
