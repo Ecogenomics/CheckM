@@ -21,7 +21,6 @@
 
 import os
 import sys
-import stat
 import subprocess
 import logging
 import shutil
@@ -32,6 +31,7 @@ import numpy as np
 from checkm.defaultValues import DefaultValues
 from checkm.common import checkFileExists
 from checkm.util.seqUtils import readFasta, writeFasta
+from checkm.util.compression import openFile, compressFile, hasContent, resolvePath, uncompressedName
 from checkm.hmmer import returnCodeStr
 
 
@@ -60,6 +60,7 @@ class ProdigalRunner():
         in which Prodigal identifies no genes is not considered an
         error: the output files are created but contain no genes
         (see areORFsCalled). The run is aborted if Prodigal fails.
+        Output files are gzip-compressed.
         """
 
         prodigal_input = query
@@ -86,7 +87,7 @@ class ProdigalRunner():
             if bNucORFs:
                 outputFiles.append(self.ntGeneFile)
             for outputFile in outputFiles:
-                open(outputFile, 'w').close()
+                openFile(outputFile, 'wt').close()
             return 11
 
         # decompress gzip input files and remove records without sequence data
@@ -144,12 +145,13 @@ class ProdigalRunner():
     def _run(self, query, prodigal_input, seqs, totalBases, bNucORFs):
         """Call genes with translation tables 4 and 11 and select the best table."""
 
-        # call ORFs with different translation tables and select the one with the highest coding density
+        # call ORFs with different translation tables and select the one with the highest coding density;
+        # Prodigal writes uncompressed files (e.g., genes.faa.11), and those of the best table are compressed
         tableCodingDensity = {}
         for translationTable in [4, 11]:
-            aaGeneFile = self.aaGeneFile + '.' + str(translationTable)
-            ntGeneFile = self.ntGeneFile + '.' + str(translationTable) if bNucORFs else None
-            gffFile = self.gffFile + '.' + str(translationTable)
+            aaGeneFile = self._tableFile(self.aaGeneFile, translationTable)
+            ntGeneFile = self._tableFile(self.ntGeneFile, translationTable) if bNucORFs else None
+            gffFile = self._tableFile(self.gffFile, translationTable)
 
             # check if there are sufficient bases to calculate prodigal parameters
             if totalBases < 100000:
@@ -192,33 +194,36 @@ class ProdigalRunner():
         if (tableCodingDensity[4] - tableCodingDensity[11] > 0.05) and tableCodingDensity[4] > 0.7:
             bestTranslationTable = 4
 
-        shutil.copyfile(self.aaGeneFile + '.' +
-                        str(bestTranslationTable), self.aaGeneFile)
-        shutil.copyfile(self.gffFile + '.' +
-                        str(bestTranslationTable), self.gffFile)
+        compressFile(self._tableFile(self.aaGeneFile, bestTranslationTable), self.aaGeneFile, remove=False)
+        compressFile(self._tableFile(self.gffFile, bestTranslationTable), self.gffFile, remove=False)
         if bNucORFs:
-            shutil.copyfile(self.ntGeneFile + '.' +
-                            str(bestTranslationTable), self.ntGeneFile)
+            compressFile(self._tableFile(self.ntGeneFile, bestTranslationTable), self.ntGeneFile, remove=False)
 
         # clean up redundant prodigal results
         for translationTable in [4, 11]:
-            os.remove(self.aaGeneFile + '.' + str(translationTable))
-            os.remove(self.gffFile + '.' + str(translationTable))
+            os.remove(self._tableFile(self.aaGeneFile, translationTable))
+            os.remove(self._tableFile(self.gffFile, translationTable))
             if bNucORFs:
-                os.remove(self.ntGeneFile + '.' + str(translationTable))
+                os.remove(self._tableFile(self.ntGeneFile, translationTable))
 
         return bestTranslationTable
 
+    @staticmethod
+    def _tableFile(outputFile, translationTable):
+        """Uncompressed file written by Prodigal for a translation table (e.g., genes.faa.11)."""
+        return uncompressedName(outputFile) + '.' + str(translationTable)
+
     def _areORFsCalled(self, aaGeneFile):
-        return os.path.exists(aaGeneFile) and os.stat(aaGeneFile)[stat.ST_SIZE] != 0
+        return hasContent(aaGeneFile)
 
     def areORFsCalled(self, bNucORFs):
         # if requested, check if nucleotide gene sequences have been generated
+        # (output files of CheckM <= 1.2.x are uncompressed; see resolvePath)
         if bNucORFs:
-            return os.path.exists(self.ntGeneFile) and os.stat(self.ntGeneFile)[stat.ST_SIZE] != 0
+            return hasContent(self.ntGeneFile)
 
         # otherwise, only the amino acid gene sequences are required
-        return os.path.exists(self.aaGeneFile) and os.stat(self.aaGeneFile)[stat.ST_SIZE] != 0
+        return hasContent(self.aaGeneFile)
 
     def checkForProdigal(self):
         """Check to see if Prodigal is on the system before we try to run it."""
@@ -240,18 +245,19 @@ class ProdigalFastaParser():
         pass
 
     def genePositions(self, filename):
-        checkFileExists(filename)
+        checkFileExists(resolvePath(filename))
 
         gp = {}
-        for line in open(filename):
-            if line[0] == '>':
-                lineSplit = line[1:].split()
+        with openFile(filename) as f:
+            for line in f:
+                if line[0] == '>':
+                    lineSplit = line[1:].split()
 
-                geneId = lineSplit[0]
-                startPos = int(lineSplit[2])
-                endPos = int(lineSplit[4])
+                    geneId = lineSplit[0]
+                    startPos = int(lineSplit[2])
+                    endPos = int(lineSplit[4])
 
-                gp[geneId] = [startPos, endPos]
+                    gp[geneId] = [startPos, endPos]
 
         return gp
 
@@ -260,7 +266,7 @@ class ProdigalGeneFeatureParser():
     """Parses prodigal GFF output."""
 
     def __init__(self, filename):
-        checkFileExists(filename)
+        checkFileExists(resolvePath(filename))
 
         self.genes = {}
         self.lastCodingBase = {}
@@ -274,35 +280,36 @@ class ProdigalGeneFeatureParser():
     def _parseGFF(self, filename):
         """Parse genes from GFF file."""
         self.translationTable = None
-        for line in open(filename):
-            if line.startswith('# Model Data') and not self.translationTable:
-                lineSplit = line.split(';')
-                for token in lineSplit:
-                    if 'transl_table' in token:
-                        self.translationTable = int(
-                            token[token.find('=') + 1:])
+        with openFile(filename) as f:
+            for line in f:
+                if line.startswith('# Model Data') and not self.translationTable:
+                    lineSplit = line.split(';')
+                    for token in lineSplit:
+                        if 'transl_table' in token:
+                            self.translationTable = int(
+                                token[token.find('=') + 1:])
 
-            if line[0] == '#' or line.strip() == '"':
-                # work around for Prodigal having lines with just a
-                # quotation on it when FASTA files have Windows style
-                # line endings
-                continue
+                if line[0] == '#' or line.strip() == '"':
+                    # work around for Prodigal having lines with just a
+                    # quotation on it when FASTA files have Windows style
+                    # line endings
+                    continue
 
-            lineSplit = line.split('\t')
-            seqId = lineSplit[0]
-            if seqId not in self.genes:
-                geneCounter = 0
-                self.genes[seqId] = {}
-                self.lastCodingBase[seqId] = 0
+                lineSplit = line.split('\t')
+                seqId = lineSplit[0]
+                if seqId not in self.genes:
+                    geneCounter = 0
+                    self.genes[seqId] = {}
+                    self.lastCodingBase[seqId] = 0
 
-            geneId = seqId + '_' + str(geneCounter)
-            geneCounter += 1
+                geneId = seqId + '_' + str(geneCounter)
+                geneCounter += 1
 
-            start = int(lineSplit[3])
-            end = int(lineSplit[4])
+                start = int(lineSplit[3])
+                end = int(lineSplit[4])
 
-            self.genes[seqId][geneId] = [start, end]
-            self.lastCodingBase[seqId] = max(self.lastCodingBase[seqId], end)
+                self.genes[seqId][geneId] = [start, end]
+                self.lastCodingBase[seqId] = max(self.lastCodingBase[seqId], end)
 
     def _buildCodingBaseMask(self, seqId):
         """Build mask indicating which bases in a sequence are coding."""

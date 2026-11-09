@@ -22,9 +22,13 @@
 import os
 import sys
 import shlex
+import shutil
 import signal
 import logging
+import tempfile
 import subprocess
+
+from checkm.util.compression import openFile, isGzipped, compressFile, uncompressedName
 
 
 class FormatError(BaseException):
@@ -90,16 +94,47 @@ class HMMERRunner():
             raise HMMMERModeError("Mode %s not understood" % mode)
 
     def search(self, db, query, tableOut, hmmerOut, cmdlineOptions='', bKeepOutput=True):
-        """Run hmmsearch"""
+        """Run hmmsearch.
+
+        Output files with a '.gz' extension are gzip-compressed: hmmsearch
+        writes them to uncompressed temporary files, which are compressed
+        once the search has finished. The query may be gzip-compressed.
+        """
         if self.mode != 'domtblout':
             raise HMMMERModeError("Mode %s not compatible with search" % self.mode)
 
         if not bKeepOutput:
             hmmerOut = os.devnull
 
-        cmd = ['hmmsearch', '--' + self.mode, tableOut] + shlex.split(cmdlineOptions) + [db, query]
-        rtn = runWithStdout(cmd, hmmerOut)
+        compressedOutputs = []
+        if tableOut.endswith('.gz'):
+            compressedOutputs.append((uncompressedName(tableOut) + '.tmp', tableOut))
+            tableOut = compressedOutputs[-1][0]
+        if hmmerOut.endswith('.gz'):
+            compressedOutputs.append((uncompressedName(hmmerOut) + '.tmp', hmmerOut))
+            hmmerOut = compressedOutputs[-1][0]
+
+        # HMMER reads gzip-compressed files by running 'gzip -dc <file>' through a shell,
+        # which fails for paths containing spaces, so a compressed query is decompressed
+        # to a temporary file (next to the output table) that is searched instead
+        tmpQuery = None
+        if isGzipped(query):
+            fd, tmpQuery = tempfile.mkstemp(prefix='.hmmsearch_query_', suffix='.tmp',
+                                            dir=os.path.dirname(os.path.abspath(tableOut)))
+            with openFile(query, 'rb') as fin, os.fdopen(fd, 'wb') as fout:
+                shutil.copyfileobj(fin, fout, 1024 * 1024)
+            query = tmpQuery
+
+        try:
+            cmd = ['hmmsearch', '--' + self.mode, tableOut] + shlex.split(cmdlineOptions) + [db, query]
+            rtn = runWithStdout(cmd, hmmerOut)
+        finally:
+            if tmpQuery:
+                os.remove(tmpQuery)
         exitOnFailure(self.logger, 'hmmsearch', rtn)
+
+        for tmpFile, outputFile in compressedOutputs:
+            compressFile(tmpFile, outputFile)
 
     def align(self, db, query, outputFile, writeMode='>', outputFormat='PSIBLAST', trim=True):
         """Run hmmalign"""

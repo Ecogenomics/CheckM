@@ -27,6 +27,8 @@ import logging
 
 from numpy import zeros
 
+from checkm.util.progress import progressBar
+
 
 def _waitForWorkers(workerProcs, writerProc):
     """Wait for worker processes to finish.
@@ -254,18 +256,14 @@ class CoverageWindows():
         totalFailedProperPair = 0
         totalMappedReads = 0
 
-        processedRefSeqs = 0
+        progress = progressBar(numRefSeqs, 'Processing reference sequences', 'seq')
         while True:
             seqId, seqLen, coverage, windowCoverages, numReads, numDuplicates, numSecondary, numFailedQC, numFailedAlignLen, numFailedEditDist, numFailedProperPair, numMappedReads = writerQueue.get(block=True, timeout=None)
             if seqId == None:
                 break
 
+            progress.update(1)
             if self.logger.getEffectiveLevel() <= logging.INFO:
-                processedRefSeqs += 1
-                statusStr = '    Finished processing %d of %d (%.2f%%) reference sequences.' % (processedRefSeqs, numRefSeqs, float(processedRefSeqs) * 100 / numRefSeqs)
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
-
                 totalReads += numReads
                 totalDuplicates += numDuplicates
                 totalSecondary += numSecondary
@@ -277,9 +275,9 @@ class CoverageWindows():
 
             coverageInfo[seqId] = [coverage, windowCoverages]
 
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
+        progress.close()
 
+        if self.logger.getEffectiveLevel() <= logging.INFO:
             def perc(count):
                 return float(count) * 100 / totalReads if totalReads > 0 else 0.0
 

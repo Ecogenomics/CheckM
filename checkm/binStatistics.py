@@ -29,6 +29,8 @@ from checkm.defaultValues import DefaultValues
 from checkm.util.seqUtils import readFasta, baseCount, calculateN50
 from checkm.common import binIdFromFilename, makeSurePathExists
 from checkm.prodigal import ProdigalGeneFeatureParser
+from checkm.util.progress import progressBar
+from checkm.util.compression import openFile, resolvePath
 
 from numpy import mean
 
@@ -156,28 +158,18 @@ class BinStatistics():
         """Report number of processed bins and write statistics to file."""
 
         storagePath = os.path.join(outDir, 'storage')
-        fout = open(os.path.join(storagePath, binStatsFile), 'w')
+        fout = openFile(os.path.join(storagePath, binStatsFile), 'wt')
 
-        numProcessedBins = 0
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
-            sys.stderr.write('%s\r' % statusStr)
-            sys.stderr.flush()
-
+        progress = progressBar(numBins, 'Processing bins', 'bin')
         while True:
             binId, curBinStats = queueIn.get(block=True, timeout=None)
             if binId == None:
                 break
 
             fout.write(binId + '\t' + str(curBinStats) + '\n')
-            if self.logger.getEffectiveLevel() <= logging.INFO:
-                numProcessedBins += 1
-                statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
+            progress.update(1)
 
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
+        progress.close()
 
         fout.close()
 
@@ -256,7 +248,7 @@ class BinStatistics():
     def calculateCodingDensity(self, outDir, scaffolds, genomeSize):
         """Calculate coding density of putative genome bin."""
         gffFile = os.path.join(outDir, DefaultValues.PRODIGAL_GFF)
-        if os.path.exists(gffFile):
+        if os.path.exists(resolvePath(gffFile)):
             prodigalParserGFF = ProdigalGeneFeatureParser(gffFile)
 
             aaFile = os.path.join(outDir, DefaultValues.PRODIGAL_AA)  # use AA file as nucleotide file is optional
@@ -297,7 +289,7 @@ class BinStatistics():
 
         binId = binIdFromFilename(binFile)
         aaFile = os.path.join(outDir, 'bins', binId, DefaultValues.PRODIGAL_AA)
-        if os.path.exists(aaFile):
+        if os.path.exists(resolvePath(aaFile)):
             aaGenes = readFasta(aaFile)
             for geneId, gene in aaGenes.items():
                 seqId = geneId[0:geneId.rfind('_')]

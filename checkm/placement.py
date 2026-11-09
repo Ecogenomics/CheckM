@@ -22,8 +22,6 @@
 import os
 import re
 import sys
-import stat
-import shutil
 import subprocess
 import logging
 from collections import defaultdict
@@ -32,7 +30,8 @@ from checkm.defaultValues import DefaultValues
 
 from checkm.common import checkDirExists
 from checkm.util.seqUtils import readFasta, writeFasta
-from checkm.hmmer import runWithStdout, exitOnFailure
+from checkm.hmmer import runWithStdout, exitOnFailure, returnCodeStr
+from checkm.util.compression import compressFile, hasContent, uncompressedName
 
 
 # minimum version of gPlace required by CheckM
@@ -51,6 +50,40 @@ def parseGPlaceVersion(versionOutput):
     return tuple(int(x) for x in m.group(1).split('.'))
 
 
+def parseMemorySize(value):
+    """Convert a memory size for gPlace's --max_memory option to bytes.
+
+    Accepts the same values as gPlace: e.g., '64G', '64GB', '64GiB', '500M', '1.5T',
+    or a plain number (GiB). Units are binary (K = 1024, M = 1024^2, ...).
+    Raises ValueError if the value is not a valid memory size.
+    """
+    m = re.fullmatch(r'\s*([0-9]*\.?[0-9]+)\s*([KMGT]?)(I?B)?\s*', str(value), re.IGNORECASE)
+    if not m:
+        raise ValueError('invalid memory size "%s" (examples: 64G, 500M, 1.5T)' % value)
+
+    unit = m.group(2).upper() or ('' if m.group(3) else 'G')
+    size = float(m.group(1)) * 1024 ** ('KMGT'.index(unit) + 1 if unit else 0)
+    if size < 1:
+        raise ValueError('memory size must be positive: "%s"' % value)
+
+    return int(size)
+
+
+def gplaceErrors(logFile):
+    """Error messages in a gPlace log (e.g., the standard output of 'gplace place')."""
+    errors = []
+    try:
+        with open(logFile) as f:
+            for line in f:
+                m = re.search(r'\bERROR:\s*(.*)', line)
+                if m and not m.group(1).startswith('Controlled exit'):
+                    errors.append(m.group(1).strip())
+    except OSError:
+        pass
+
+    return errors
+
+
 class GPlaceRunner():
     """Wrapper for running gPlace (https://github.com/cmc-aau/gPlace).
 
@@ -59,14 +92,29 @@ class GPlaceRunner():
     provides an equivalent of 'guppy tog' ('gplace tog').
     """
 
-    def __init__(self, threads):
+    def __init__(self, threads, maxMemory=None):
+        """Initialization.
+
+        Parameters
+        ----------
+        threads : int
+            Number of threads used by gPlace.
+        maxMemory : str
+            Memory gPlace may use (e.g., '64G'), passed to 'gplace place --max_memory'.
+            If the placement needs more, gPlace places bins tile by tile within this
+            limit, which gives identical results. None leaves the choice to gPlace.
+        """
         self.logger = logging.getLogger('timestamp')
         self.numThreads = threads
+
+        self.maxMemory = maxMemory
+        if self.maxMemory is not None:
+            parseMemorySize(self.maxMemory)  # raises ValueError for invalid sizes
 
         # make sure a suitable version of gPlace is on the system path
         self._checkForGPlace()
 
-    def run(self, binFiles, resultsParser, outDir, bReducedTree):
+    def run(self, binFiles, resultsParser, outDir):
         # make sure output and tree directories exist
         checkDirExists(outDir)
         alignOutputDir = os.path.join(outDir, 'storage', 'tree')
@@ -80,39 +128,69 @@ class GPlaceRunner():
         concatenatedAlignFile = self._createConcatenatedAlignment(binFiles, resultsParser, alignOutputDir)
 
         refPkg = DefaultValues.PPLACER_REF_PACKAGE_FULL
-        if bReducedTree:
-            refPkg = DefaultValues.PPLACER_REF_PACKAGE_REDUCED
 
         # check if concatenated alignment file is empty
         # (this can occur when all genomes have no phylogenetically informative marker genes)
-        if os.stat(concatenatedAlignFile)[stat.ST_SIZE] == 0:
+        if not hasContent(concatenatedAlignFile):
             self.logger.info('No genomes were identified that could be placed in the reference genome tree.')
-            shutil.copyfile(os.path.join(refPkg, DefaultValues.GENOME_TREE), treeFile)
+            compressFile(os.path.join(refPkg, DefaultValues.GENOME_TREE), treeFile, remove=False)
             return
 
+        # gPlace reads the gzip-compressed alignment, but writes uncompressed
+        # files, which are compressed once the tree has been created
+        placementJsonOut, compressedPlacementJsonOut = uncompressedName(placementJsonOut), placementJsonOut
+        treeFile, compressedTreeFile = uncompressedName(treeFile), treeFile
+
         # run gPlace to place bins in reference genome tree
-        self.logger.info('Placing %d bins into the genome tree with gPlace.' % len(binFiles))
-        cmd = ['gplace', 'place', '-j', str(self.numThreads),
-               '-c', refPkg,
-               '-o', placementJsonOut,
-               concatenatedAlignFile]
+        if self.maxMemory is not None:
+            self.logger.info('Placing %d bins into the genome tree with gPlace (maximum memory: %s).' % (len(binFiles), self.maxMemory))
+        else:
+            self.logger.info('Placing %d bins into the genome tree with gPlace.' % len(binFiles))
+        cmd = self._placeCmd(refPkg, placementJsonOut, concatenatedAlignFile)
         rtn = runWithStdout(cmd, placementOut)
-        exitOnFailure(self.logger, 'gplace place', rtn)
+        if rtn != 0:
+            # report gPlace's error message (e.g., --max_memory is too small)
+            msg = 'gplace place failed with %s' % returnCodeStr(rtn)
+            errors = gplaceErrors(placementOut)
+            if errors:
+                msg += ': ' + ' '.join(errors)
+            else:
+                msg += '.'
+            self.logger.error(msg)
+            self.logger.error('See %s for details.' % placementOut)
+            sys.exit(1)
 
         # extract tree
         rtn = subprocess.call(['gplace', 'tog', '-o', treeFile, placementJsonOut])
         exitOnFailure(self.logger, 'gplace tog', rtn)
 
+        compressFile(placementJsonOut, compressedPlacementJsonOut)
+        compressFile(treeFile, compressedTreeFile)
+
+    def _placeCmd(self, refPkg, placementJsonOut, concatenatedAlignFile):
+        """Command for placing the concatenated alignment with 'gplace place'."""
+        cmd = ['gplace', 'place', '-j', str(self.numThreads),
+               '-c', refPkg,
+               '-o', placementJsonOut]
+        if self.maxMemory is not None:
+            cmd += ['--max_memory', self.maxMemory]
+        cmd.append(concatenatedAlignFile)
+
+        return cmd
+
     def _createConcatenatedAlignment(self, binFiles, resultsParser, alignOutputDir):
         """Create a concatenated alignment of marker genes for each bin."""
 
-        # read alignment files
+        # read alignment files (gzip-compressed, or uncompressed if written by CheckM <= 1.2.x)
         self.logger.info('Reading marker alignment files.')
         alignments = defaultdict(dict)
         files = os.listdir(alignOutputDir)
         binIds = set()
         for f in files:
-            if f.endswith('.masked.faa'):
+            if f.endswith('.masked.faa') and f + '.gz' in files:
+                continue  # use the compressed alignment written by this version of CheckM
+
+            if f.endswith('.masked.faa') or f.endswith('.masked.faa.gz'):
                 markerId = f[0:f.find('.masked.faa')]
                 seqs = readFasta(os.path.join(alignOutputDir, f))
 

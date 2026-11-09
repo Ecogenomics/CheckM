@@ -19,7 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-import gzip
 import os
 import sys
 import shutil
@@ -38,6 +37,8 @@ from checkm.prodigal import ProdigalRunner
 from checkm.markerSets import MarkerSetParser, BinMarkerSets
 from checkm.hmmerModelParser import HmmModelParser
 from checkm.util.pfam import sharedPfam
+from checkm.util.progress import progressBar
+from checkm.util.compression import compressFile, hasContent, resolvePath
 
 
 def _fetchHmms(accessions, hmmModelFile):
@@ -65,20 +66,13 @@ def _searchBin(binFile, hmmModelFile, outDir, tableOut, hmmerOut, bKeepAlignment
         prodigal = ProdigalRunner(binDir)
         if not prodigal.areORFsCalled(bNucORFs):
             prodigal.run(binFile, bNucORFs)
-        aaGeneFile = prodigal.aaGeneFile
+        aaGeneFile = resolvePath(prodigal.aaGeneFile)  # genes may be from CheckM <= 1.2.x (genes.faa)
     else:
-        aaGeneFile = binFile
-        aaGeneFileSave = os.path.join(binDir, DefaultValues.PRODIGAL_AA)
-        if not aaGeneFile.endswith(".gz"):
-            shutil.copyfile(aaGeneFile, aaGeneFileSave)
-        else:
-            with gzip.open(aaGeneFile, 'rt') as f_in:
-                with open(aaGeneFileSave, 'w') as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-        aaGeneFile = aaGeneFileSave
+        # save a gzip-compressed copy of the genes (which may be gzip-compressed)
+        aaGeneFile = compressFile(binFile, os.path.join(binDir, DefaultValues.PRODIGAL_AA), remove=False)
 
     # skip bins without any genes, as there is nothing to search
-    if os.stat(aaGeneFile).st_size == 0:
+    if not hasContent(aaGeneFile):
         return False
 
     # run HMMER
@@ -217,8 +211,7 @@ class MarkerGeneFinder():
             markerFileModels = HmmModelParser(markerFile).models()
 
         numBins = sum(len(groupBinFiles) for _, groupBinFiles in orderedGroups)
-        numProcessedBins = 0
-        self._reportProgress(numProcessedBins, numBins)
+        progress = progressBar(numBins, 'Processing bins', 'bin')
 
         binIdToModels = {}
         skippedBinIds = []
@@ -292,17 +285,15 @@ class MarkerGeneFinder():
                         del groupHmmFile[groupIdx]
                         del groupModels[groupIdx]
 
-                    numProcessedBins += 1
-                    self._reportProgress(numProcessedBins, numBins)
+                    progress.update(1)
         except BaseException:
             # stop remaining work (e.g., after a failure or keyboard interrupt)
             self._terminatePool(pool)
             raise
+        finally:
+            progress.close()
 
         pool.shutdown()
-
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
 
         return binIdToModels, skippedBinIds
 
@@ -315,10 +306,3 @@ class MarkerGeneFinder():
             except Exception:
                 pass
         pool.shutdown(wait=False)
-
-    def _reportProgress(self, numProcessedBins, numBins):
-        """Report number of processed bins."""
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
-            sys.stderr.write('%s\r' % statusStr)
-            sys.stderr.flush()

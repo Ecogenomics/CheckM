@@ -22,11 +22,12 @@
 import os
 import sys
 import logging
+import tarfile
 from collections import defaultdict
 
 from checkm.defaultValues import DefaultValues
 from checkm.common import getBinIdsFromOutDir
-from checkm.util.seqUtils import readFasta
+from checkm.util.seqUtils import readFasta, parseFasta
 
 
 class AminoAcidIdentity():
@@ -47,7 +48,72 @@ class AminoAcidIdentity():
 
         # calculate AAI for duplicate marker genes
         binIds = getBinIdsFromOutDir(outDir)
-        aaiOutputDir = os.path.join(outDir, 'storage', 'aai_qa')
+        for binId, f, seqs in self._readAlignments(outDir, binIds):
+            markerId = f[0:f.find('.')]
+
+            # calculate AAI between all pairs of seqs
+            for i in range(0, len(seqs)):
+                seqIdI = list(seqs.keys())[i]
+                binIdI = seqIdI[0:seqIdI.find(DefaultValues.SEQ_CONCAT_CHAR)]
+
+                seqI = seqs[seqIdI]
+
+                for j in range(i + 1, len(seqs)):
+                    seqIdJ = list(seqs.keys())[j]
+                    binIdJ = seqIdJ[0:seqIdJ.find(DefaultValues.SEQ_CONCAT_CHAR)]
+
+                    seqJ = seqs[seqIdJ]
+
+                    if binIdI == binIdJ:
+                        aai = self.aai(seqI, seqJ)
+
+                        if alignmentOutputFile:
+                            fout.write(binId + ',' + markerId + '\n')
+                            fout.write(seqIdI + '\t' + seqI + '\n')
+                            fout.write(seqIdJ + '\t' + seqJ + '\n')
+                            fout.write('AAI: %.3f\n' % aai)
+                            fout.write('\n')
+
+                        if binIdI not in self.aaiRawScores:
+                            self.aaiRawScores[binIdI] = defaultdict(list)
+                        self.aaiRawScores[binIdI][markerId].append(aai)
+                    else:
+                        # something is wrong as the bin Ids should always be the same
+                        self.logger.error('Bin ids do not match.')
+                        sys.exit(1)
+
+        if alignmentOutputFile:
+            fout.close()
+
+        # calculate strain heterogeneity for each marker gene in each bin
+        self.aaiHetero, self.aaiMeanBinHetero = self.strainHetero(self.aaiRawScores, aaiStrainThreshold)
+
+    def _readAlignments(self, outDir, binIds):
+        """Read alignments of markers with multiple hits in a bin.
+
+        Alignments are read from the archive storage/aai_qa.tar.gz (members
+        <bin ID>/<marker>.masked.faa) or, for output of CheckM <= 1.2.x, from
+        the directory storage/aai_qa. Yields (bin ID, alignment file name,
+        sequences) for the specified bins, ordered by bin ID and file name.
+        """
+        archiveFile = os.path.join(outDir, 'storage', DefaultValues.AAI_QA_ARCHIVE)
+        if os.path.exists(archiveFile):
+            # read alignments into memory (without extracting them to disk)
+            binIds = set(binIds)
+            alignments = defaultdict(dict)
+            with tarfile.open(archiveFile, 'r:gz') as tar:
+                for member in tar:
+                    binId, f = os.path.split(member.name)
+                    if member.isfile() and binId in binIds and f.endswith('.masked.faa'):
+                        alignments[binId][f] = tar.extractfile(member).read()
+
+            for binId in sorted(alignments):
+                for f in sorted(alignments[binId]):
+                    yield binId, f, parseFasta(alignments[binId][f].decode('utf-8').splitlines())
+
+            return
+
+        aaiOutputDir = os.path.join(outDir, 'storage', DefaultValues.AAI_QA_DIR)
         for binId in sorted(binIds):
             binPath = os.path.join(aaiOutputDir, binId)
             if not os.path.exists(binPath):
@@ -57,46 +123,7 @@ class AminoAcidIdentity():
                 if not f.endswith('.masked.faa'):
                     continue
 
-                markerId = f[0:f.find('.')]
-
-                seqs = readFasta(os.path.join(binPath, f))
-
-                # calculate AAI between all pairs of seqs
-                for i in range(0, len(seqs)):
-                    seqIdI = list(seqs.keys())[i]
-                    binIdI = seqIdI[0:seqIdI.find(DefaultValues.SEQ_CONCAT_CHAR)]
-
-                    seqI = seqs[seqIdI]
-
-                    for j in range(i + 1, len(seqs)):
-                        seqIdJ = list(seqs.keys())[j]
-                        binIdJ = seqIdJ[0:seqIdJ.find(DefaultValues.SEQ_CONCAT_CHAR)]
-
-                        seqJ = seqs[seqIdJ]
-
-                        if binIdI == binIdJ:
-                            aai = self.aai(seqI, seqJ)
-
-                            if alignmentOutputFile:
-                                fout.write(binId + ',' + markerId + '\n')
-                                fout.write(seqIdI + '\t' + seqI + '\n')
-                                fout.write(seqIdJ + '\t' + seqJ + '\n')
-                                fout.write('AAI: %.3f\n' % aai)
-                                fout.write('\n')
-
-                            if binIdI not in self.aaiRawScores:
-                                self.aaiRawScores[binIdI] = defaultdict(list)
-                            self.aaiRawScores[binIdI][markerId].append(aai)
-                        else:
-                            # something is wrong as the bin Ids should always be the same
-                            self.logger.error('Bin ids do not match.')
-                            sys.exit(1)
-
-        if alignmentOutputFile:
-            fout.close()
-
-        # calculate strain heterogeneity for each marker gene in each bin
-        self.aaiHetero, self.aaiMeanBinHetero = self.strainHetero(self.aaiRawScores, aaiStrainThreshold)
+                yield binId, f, readFasta(os.path.join(binPath, f))
 
     def strainHetero(self, aaiScores, aaiStrainThreshold):
         """Calculate strain heterogeneity."""

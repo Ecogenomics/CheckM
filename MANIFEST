@@ -62,6 +62,8 @@ checkm/test/test_markerSets.py
 checkm/test/test_seqUtils.py
 checkm/test/test_taxonomyUtils.py
 checkm/util/__init__.py
+checkm/util/compression.py
 checkm/util/pfam.py
+checkm/util/progress.py
 checkm/util/seqUtils.py
 checkm/util/taxonomyUtils.py

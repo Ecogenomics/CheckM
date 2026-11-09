@@ -21,7 +21,7 @@ import stat
 import tempfile
 import unittest
 
-from checkm.placement import GPlaceRunner, parseGPlaceVersion
+from checkm.placement import GPlaceRunner, gplaceErrors, parseGPlaceVersion, parseMemorySize
 
 
 def fakeGPlace(binDir, versionOutput, exitCode=0):
@@ -45,6 +45,46 @@ class VerifyGPlaceVersion(unittest.TestCase):
 
         # versions are compared numerically
         self.assertTrue(parseGPlaceVersion('gplace: version 0.10.0') > (0, 9, 0))
+
+
+class VerifyMemorySize(unittest.TestCase):
+    def testParseMemorySize(self):
+        """Memory sizes are parsed as by gPlace's --max_memory option (binary units)."""
+        GiB = 1024 ** 3
+        self.assertEqual(parseMemorySize('64G'), 64 * GiB)
+        self.assertEqual(parseMemorySize('64GB'), 64 * GiB)
+        self.assertEqual(parseMemorySize('64gib'), 64 * GiB)
+        self.assertEqual(parseMemorySize('500M'), 500 * 1024 ** 2)
+        self.assertEqual(parseMemorySize('1.5T'), int(1.5 * 1024 ** 4))
+        self.assertEqual(parseMemorySize('16'), 16 * GiB)      # a plain number is GiB
+        self.assertEqual(parseMemorySize('2048B'), 2048)        # bytes
+
+    def testInvalidMemorySize(self):
+        """Invalid memory sizes are rejected."""
+        for value in ['', 'G', '64X', '-4G', '64 G B', 'lots', '0']:
+            with self.assertRaises(ValueError, msg=value):
+                parseMemorySize(value)
+
+
+class VerifyGPlaceErrors(unittest.TestCase):
+    def testGPlaceErrors(self):
+        """Error messages are extracted from a gPlace log."""
+        tmpDir = tempfile.mkdtemp(prefix='checkm_test_')
+        try:
+            logFile = os.path.join(tmpDir, 'pplacer.out')
+            with open(logFile, 'w') as f:
+                f.write('[2026-11-09 23:18:01] INFO: Read 128 sequences from concatenated.fasta\n')
+                f.write('[2026-11-09 23:18:02] ERROR: --max_memory 4.0 GiB is too small: placing 128 queries '
+                        'on this reference package needs --max_memory 5.0G or more.\n')
+                f.write('[2026-11-09 23:18:02] ERROR: Controlled exit resulting from an unrecoverable error or warning.\n')
+            self.assertEqual(gplaceErrors(logFile),
+                             ['--max_memory 4.0 GiB is too small: placing 128 queries on this '
+                              'reference package needs --max_memory 5.0G or more.'])
+
+            # a missing log gives no messages
+            self.assertEqual(gplaceErrors(os.path.join(tmpDir, 'missing.out')), [])
+        finally:
+            shutil.rmtree(tmpDir)
 
 
 class VerifyGPlaceCheck(unittest.TestCase):
@@ -92,6 +132,28 @@ class VerifyGPlaceCheck(unittest.TestCase):
         runner = GPlaceRunner(threads=96)
         self.assertEqual(runner.version, (0, 1, 0))
         self.assertEqual(runner.numThreads, 96)
+        self.assertIsNone(runner.maxMemory)
+
+    def testPlaceCmd(self):
+        """--max_memory is passed to 'gplace place' only when a memory limit is given."""
+        fakeGPlace(self.tmpDir, 'gplace: version 0.1.0 Copyright 2026 Pierre-Alain Chaumeil')
+        self._usePath(self.tmpDir + os.pathsep + self.origPath)
+
+        runner = GPlaceRunner(threads=8)
+        self.assertEqual(runner._placeCmd('ref.refpkg', 'out.json', 'aln.fasta'),
+                         ['gplace', 'place', '-j', '8', '-c', 'ref.refpkg', '-o', 'out.json', 'aln.fasta'])
+
+        runner = GPlaceRunner(threads=8, maxMemory='16G')
+        self.assertEqual(runner._placeCmd('ref.refpkg', 'out.json', 'aln.fasta'),
+                         ['gplace', 'place', '-j', '8', '-c', 'ref.refpkg', '-o', 'out.json',
+                          '--max_memory', '16G', 'aln.fasta'])
+
+    def testInvalidMaxMemory(self):
+        """An invalid memory limit is rejected."""
+        fakeGPlace(self.tmpDir, 'gplace: version 0.1.0 Copyright 2026 Pierre-Alain Chaumeil')
+        self._usePath(self.tmpDir + os.pathsep + self.origPath)
+        with self.assertRaises(ValueError):
+            GPlaceRunner(threads=1, maxMemory='lots')
 
 
 if __name__ == "__main__":

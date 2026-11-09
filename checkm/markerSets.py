@@ -33,6 +33,7 @@ from checkm.hmmer import HMMERRunner
 from checkm.hmmerModelParser import HmmModelParser
 
 from checkm.util.pfam import PFAM
+from checkm.util.compression import openFile
 
 
 # patterns for parsing string representations of sets of marker genes, e.g.
@@ -410,8 +411,12 @@ class MarkerSetParser():
         return markersToExclude
 
     def markerFileType(self, markerFile):
-        """Determine type of marker file."""
-        with open(markerFile, 'r') as f:
+        """Determine type of marker file.
+
+        Marker files may be gzip-compressed (e.g., lineage.ms.gz), and
+        lineage.ms is read as lineage.ms.gz if only the latter exists.
+        """
+        with openFile(markerFile) as f:
             header = f.readline()
 
         if DefaultValues.TAXON_MARKER_FILE_HEADER in header:
@@ -449,8 +454,8 @@ class MarkerSetParser():
             os.remove(keyFile)
 
     def parseTaxonomicMarkerSetFile(self, markerSetFile):
-        """Parse marker set from a taxonomic-specific marker set file."""
-        with open(markerSetFile) as f:
+        """Parse marker set from a taxonomic-specific marker set file (which may be gzip-compressed)."""
+        with openFile(markerSetFile) as f:
             f.readline()  # skip header
 
             binLine = f.readline()
@@ -461,13 +466,13 @@ class MarkerSetParser():
         return binMarkerSets
 
     def parseLineageMarkerSetFile(self, markerSetFile):
-        """Parse marker sets from a lineage-specific marker set file."""
+        """Parse marker sets from a lineage-specific marker set file (which may be gzip-compressed)."""
 
         # read all marker sets
         selectedMarkerSetMap = self.parseSelectedMarkerSetMap()
 
         binIdToBinMarkerSets = {}
-        with open(markerSetFile) as f:
+        with openFile(markerSetFile) as f:
             f.readline()  # skip header
 
             for line in f:

@@ -32,6 +32,8 @@ from checkm.common import makeSurePathExists
 from checkm.util.seqUtils import readFasta
 from checkm.hmmer import HMMERRunner
 from checkm.resultsParser import ResultsParser
+from checkm.util.progress import progressBar
+from checkm.util.compression import openFile
 
 
 class HmmerAligner:
@@ -112,9 +114,9 @@ class HmmerAligner:
         try:
             self._makeAlignmentModels(hmmModelFile, binIdToModels[binId], hmmModelFiles)
 
-            # align each of the marker genes
+            # align each of the marker genes (masked alignments are gzip-compressed)
             makeSurePathExists(alignOutputDir)
-            self._alignMarkerGenes(markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bKeepUnmaskedAlign)
+            self._alignMarkerGenes(markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bKeepUnmaskedAlign, bCompress=True)
         finally:
             # remove the temporary HMM files, including after a failure
             self._removeFiles(hmmModelFiles.values())
@@ -208,28 +210,18 @@ class HmmerAligner:
     def _reportBinProgress(self, numBins, queueIn):
         """Report number of processed bins."""
 
-        numProcessedBins = 0
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
-            sys.stderr.write('%s\r' % statusStr)
-            sys.stderr.flush()
-
+        progress = progressBar(numBins, 'Processing bins', 'bin')
         while True:
             binId = queueIn.get(block=True, timeout=None)
             if binId == None:
                 break
 
-            if self.logger.getEffectiveLevel() <= logging.INFO:
-                numProcessedBins += 1
-                statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
+            progress.update(1)
 
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
+        progress.close()
 
-    def _alignMarkerGenes(self, markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bKeepUnmaskedAlign=False, bReportProgress=True):
-        """Align marker genes with HMMs in parallel."""
+    def _alignMarkerGenes(self, markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bKeepUnmaskedAlign=False, bReportProgress=True, bCompress=False):
+        """Align marker genes with HMMs in parallel (gzip-compressing the masked alignments if bCompress is True)."""
 
         if bReportProgress:
             self.logger.info("Aligning %d marker genes with %d threads:" % (len(hmmModelFiles), self.totalThreads))
@@ -245,7 +237,7 @@ class HmmerAligner:
             workerQueue.put(None)
 
         try:
-            calcProc = [mp.Process(target=self._alignMarkerParallel, args=(markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, bKeepUnmaskedAlign, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            calcProc = [mp.Process(target=self._alignMarkerParallel, args=(markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, bKeepUnmaskedAlign, bCompress, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
             writeProc = mp.Process(target=self._reportAlignmentProgress, args=(len(hmmModelFiles), bReportProgress, writerQueue))
 
             writeProc.start()
@@ -285,17 +277,17 @@ class HmmerAligner:
 
             sys.exit(1)
 
-    def _alignMarkerParallel(self, markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, bKeepUnmaskedAlign, queueIn, queueOut):
+    def _alignMarkerParallel(self, markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, bKeepUnmaskedAlign, bCompress, queueIn, queueOut):
         while True:
             markerId = queueIn.get(block=True, timeout=None)
             if markerId == None:
                 break
 
-            self._alignMarker(markerId, markerSeqs[markerId], markerStats[markerId], bReportHitStats, alignOutputDir, hmmModelFiles[markerId], bKeepUnmaskedAlign)
+            self._alignMarker(markerId, markerSeqs[markerId], markerStats[markerId], bReportHitStats, alignOutputDir, hmmModelFiles[markerId], bKeepUnmaskedAlign, bCompress)
 
             queueOut.put(markerId)
 
-    def _alignMarker(self, markerId, binSeqs, binStats, bReportHitStats, alignOutputDir, hmmModelFile, bKeepUnmaskedAlign):
+    def _alignMarker(self, markerId, binSeqs, binStats, bReportHitStats, alignOutputDir, hmmModelFile, bKeepUnmaskedAlign, bCompress=False):
         unalignSeqFile = os.path.join(alignOutputDir, markerId + '.unaligned.faa')
         fout = open(unalignSeqFile, 'w')
         numSeqs = 0
@@ -316,6 +308,8 @@ class HmmerAligner:
             HA.align(hmmModelFile, unalignSeqFile, alignSeqFile, writeMode='>', outputFormat=self.outputFormat, trim=False)
 
             makedSeqFile = os.path.join(alignOutputDir, markerId + '.masked.faa')
+            if bCompress:
+                makedSeqFile += '.gz'
             self._maskAlignment(alignSeqFile, makedSeqFile)
 
             if not bKeepUnmaskedAlign:
@@ -326,28 +320,18 @@ class HmmerAligner:
     def _reportAlignmentProgress(self, numMarkers, bReportProgress, queueIn):
         """Report number of processed markers."""
 
-        numProcessedGenes = 0
-        if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
-            statusStr = '    Finished aligning %d of %d (%.2f%%) marker genes.' % (numProcessedGenes, numMarkers, float(numProcessedGenes) * 100 / numMarkers)
-            sys.stderr.write('%s\r' % statusStr)
-            sys.stderr.flush()
-
+        progress = progressBar(numMarkers, 'Aligning marker genes', 'gene', enabled=bReportProgress)
         while True:
             binId = queueIn.get(block=True, timeout=None)
             if binId == None:
                 break
 
-            if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
-                numProcessedGenes += 1
-                statusStr = '    Finished aligning %d of %d (%.2f%%) marker genes.' % (numProcessedGenes, numMarkers, float(numProcessedGenes) * 100 / numMarkers)
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
+            progress.update(1)
 
-        if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
+        progress.close()
 
     def _maskAlignment(self, inputFile, outputFile):
-        """Read HMMER alignment in STOCKHOLM format and output masked alignment in FASTA format."""
+        """Read HMMER alignment in STOCKHOLM format and output masked alignment in FASTA format (gzip-compressed if outputFile ends with '.gz')."""
         # read STOCKHOLM alignment
         seqs = {}
         seqStats = {}
@@ -375,7 +359,7 @@ class HmmerAligner:
             sys.exit(1)
 
         # output masked sequences in FASTA format
-        fout = open(outputFile, 'w')
+        fout = openFile(outputFile, 'wt')
         for seqId, seq in seqs.items():
             if seqStats:
                 fout.write('>%s %s\n' % (seqId, seqStats[seqId]))
@@ -543,22 +527,12 @@ class HmmerAligner:
     def _reportModelExtractionProgress(self, numMarkers, bReportProgress, queueIn):
         """Report number of extracted HMMs."""
 
-        numModelsExtracted = 0
-        if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
-            statusStr = '    Finished extracting %d of %d (%.2f%%) HMMs.' % (numModelsExtracted, numMarkers, float(numModelsExtracted) * 100 / numMarkers)
-            sys.stderr.write('%s\r' % statusStr)
-            sys.stderr.flush()
-
+        progress = progressBar(numMarkers, 'Extracting HMMs', 'HMM', enabled=bReportProgress)
         while True:
             modelId = queueIn.get(block=True, timeout=None)
             if modelId == None:
                 break
 
-            if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
-                numModelsExtracted += 1
-                statusStr = '    Finished extracting %d of %d (%.2f%%) HMMs.' % (numModelsExtracted, numMarkers, float(numModelsExtracted) * 100 / numMarkers)
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
+            progress.update(1)
 
-        if bReportProgress and self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
+        progress.close()

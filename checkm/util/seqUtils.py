@@ -21,8 +21,9 @@
 
 import os
 import sys
-import gzip
 import logging
+
+from checkm.util.compression import openFile
 
 nucleotide_bases = {'a', 'c', 'g', 't'}
 insertion_bases = {'-', '.'}
@@ -143,32 +144,34 @@ def checkProteinSeqs(seq_files):
     return True
 
 
-def readFasta(fastaFile, trimHeader=True):
-    '''Read sequences from FASTA file.'''
-    try:
-        if fastaFile.endswith('.gz'):
-            openFile = gzip.open
+def parseFasta(lines, trimHeader=True):
+    '''Parse sequences from the lines of a FASTA file.'''
+    seqs = {}
+    for line in lines:
+        # skip blank lines
+        if not line.strip():
+            continue
+
+        if line[0] == '>':
+            if trimHeader:
+                seqId = line[1:].split(None, 1)[0]
+            else:
+                seqId = line[1:].rstrip()
+            seqs[seqId] = []
         else:
-            openFile = open
+            seqs[seqId].append(line.rstrip())
 
-        seqs = {}
+    for seqId, seq in seqs.items():
+        seqs[seqId] = ''.join(seq)
+
+    return seqs
+
+
+def readFasta(fastaFile, trimHeader=True):
+    '''Read sequences from FASTA file (which may be gzip-compressed).'''
+    try:
         with openFile(fastaFile, 'rt') as f:
-            for line in f:
-                # skip blank lines
-                if not line.strip():
-                    continue
-
-                if line[0] == '>':
-                    if trimHeader:
-                        seqId = line[1:].split(None, 1)[0]
-                    else:
-                        seqId = line[1:].rstrip()
-                    seqs[seqId] = []
-                else:
-                    seqs[seqId].append(line.rstrip())
-
-        for seqId, seq in seqs.items():
-            seqs[seqId] = ''.join(seq)
+            seqs = parseFasta(f, trimHeader)
     except Exception as e:
         print(e)
         logger = logging.getLogger('timestamp')
@@ -179,12 +182,7 @@ def readFasta(fastaFile, trimHeader=True):
 
 
 def readFastaSeqIds(fastaFile):
-    '''Read sequence ids from FASTA file.'''
-    if fastaFile.endswith('.gz'):
-        openFile = gzip.open
-    else:
-        openFile = open
-
+    '''Read sequence ids from FASTA file (which may be gzip-compressed).'''
     seqIds = []
     with openFile(fastaFile, 'rt') as f:
         for line in f:
@@ -196,11 +194,8 @@ def readFastaSeqIds(fastaFile):
 
 
 def writeFasta(seqs, outputFile):
-    '''write sequences to FASTA file'''
-    if outputFile.endswith('.gz'):
-        fout = gzip.open(outputFile, 'wt')
-    else:
-        fout = open(outputFile, 'w')
+    '''write sequences to FASTA file (gzip-compressed if the file name ends with '.gz')'''
+    fout = openFile(outputFile, 'wt')
 
     for seqId, seq in seqs.items():
         fout.write('>' + seqId + '\n')
