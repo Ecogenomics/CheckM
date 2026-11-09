@@ -291,7 +291,7 @@ class OptionsParser():
         binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
 
         # calculate marker gene statistics
-        RP = ResultsParser(binIdToModels)
+        RP = ResultsParser(binIdToModels, getattr(options, 'threads', 1))
         binStats = RP.analyseResults(options.tree_dir,
                                      DefaultValues.BIN_STATS_PHYLO_OUT,
                                      DefaultValues.HMMER_TABLE_PHYLO_OUT)
@@ -322,7 +322,7 @@ class OptionsParser():
         binIdToModels = markerSetParser.loadBinModels(hmmModelInfoFile)
 
         # calculate marker gene statistics
-        resultsParser = ResultsParser(binIdToModels)
+        resultsParser = ResultsParser(binIdToModels, getattr(options, 'threads', 1))
         resultsParser.analyseResults(options.tree_dir,
                                      DefaultValues.BIN_STATS_PHYLO_OUT,
                                      DefaultValues.HMMER_TABLE_PHYLO_OUT)
@@ -516,7 +516,7 @@ class OptionsParser():
                                                              options.exclude_markers)
 
         # get results for each bin
-        RP = ResultsParser(binIdToModels)
+        RP = ResultsParser(binIdToModels, options.threads)
         RP.analyseResults(options.analyze_dir,
                           DefaultValues.BIN_STATS_OUT,
                           DefaultValues.HMMER_TABLE_OUT,

@@ -58,7 +58,7 @@ class HmmerAligner:
         self.logger.info("Extracting marker genes to align.")
 
         # parse HMM information
-        resultsParser = ResultsParser(binIdToModels)
+        resultsParser = ResultsParser(binIdToModels, self.totalThreads)
 
         # get HMM hits to each bin
         resultsParser.parseBinHits(outDir, hmmTableFile, False, bIgnoreThresholds, evalueThreshold, lengthThreshold)
@@ -98,7 +98,7 @@ class HmmerAligner:
         self.logger.info("Extracting marker genes to align.")
 
         # parse HMM information
-        resultsParser = ResultsParser(binIdToModels)
+        resultsParser = ResultsParser(binIdToModels, self.totalThreads)
 
         # get HMM hits to each bin
         resultsParser.parseBinHits(outDir, hmmTableFile, False, bIgnoreThresholds, evalueThreshold, lengthThreshold)
@@ -137,7 +137,7 @@ class HmmerAligner:
         makeSurePathExists(alignOutputDir)
 
         # parse HMM information
-        resultsParser = ResultsParser(binIdToModels)
+        resultsParser = ResultsParser(binIdToModels, self.totalThreads)
 
         # get HMM hits to each bin
         resultsParser.parseBinHits(outDir, hmmTableFile, False, bIgnoreThresholds, evalueThreshold, lengthThreshold)

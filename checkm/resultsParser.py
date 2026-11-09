@@ -23,6 +23,8 @@ import sys
 import os
 import ast
 import copy
+import multiprocessing as mp
+import concurrent.futures as cf
 from collections import defaultdict
 import logging
 
@@ -37,14 +39,28 @@ from checkm.util.pfam import sharedPfam
 from checkm.util.seqUtils import readFasta
 
 
+# arguments of the current parseBinHits() call, inherited by forked worker processes
+_PARSE_BIN_HITS_ARGS = None
+
+
+def _parseBinHitsWorker(binId):
+    """Parse HMMER results of a bin in a worker process, returning the marker hits."""
+    resultsParser, outDir, hmmTableFile, bSkipAdjCorrection, resultsManagerArgs = _PARSE_BIN_HITS_ARGS
+    resultsManager = resultsParser._resultsManager(binId, *resultsManagerArgs)
+    resultsParser.parseHmmerResults(os.path.join(outDir, 'bins', binId, hmmTableFile),
+                                    resultsManager, bSkipAdjCorrection)
+    return resultsManager.markerHits
+
+
 class ResultsParser():
     """Parse output of Prodigal+HMMER run and derived statistics."""
 
-    def __init__(self, binIdToModels):
+    def __init__(self, binIdToModels, threads=1):
         self.logger = logging.getLogger('timestamp')
 
         self.results = {}
         self.models = binIdToModels
+        self.threads = threads
 
     def analyseResults(self,
                        outDir,
@@ -89,29 +105,64 @@ class ResultsParser():
 
         self.logger.info('Parsing HMM hits to marker genes:')
 
+        resultsManagerArgs = (bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats)
+        binIds = list(self.models)
+
         numBinsProcessed = 0
-        for binId in self.models:
-            if self.logger.getEffectiveLevel() <= logging.INFO:
+        if self.threads > 1 and len(binIds) > 1:
+            # bins are parsed in parallel by forked worker processes, which inherit the
+            # arguments (incl. the HMM models) rather than having them sent to each process
+            global _PARSE_BIN_HITS_ARGS
+            _PARSE_BIN_HITS_ARGS = (self, outDir, hmmTableFile, bSkipAdjCorrection, resultsManagerArgs)
+
+            ctx = mp.get_context('fork') if 'fork' in mp.get_all_start_methods() else None
+            numWorkers = min(self.threads, len(binIds))
+            chunksize = max(1, min(16, len(binIds) // (4 * numWorkers)))
+            try:
+                with cf.ProcessPoolExecutor(max_workers=numWorkers, mp_context=ctx) as pool:
+                    # results are returned in the order of the bins
+                    for binId, markerHits in zip(binIds, pool.map(_parseBinHitsWorker, binIds, chunksize=chunksize)):
+                        resultsManager = self._resultsManager(binId, *resultsManagerArgs)
+                        resultsManager.markerHits = markerHits
+                        self.results[binId] = resultsManager
+
+                        numBinsProcessed += 1
+                        self._reportParseProgress(numBinsProcessed, len(binIds))
+            except cf.process.BrokenProcessPool:
+                self.logger.error('A process parsing HMMER results failed unexpectedly.')
+                sys.exit(1)
+            finally:
+                _PARSE_BIN_HITS_ARGS = None
+        else:
+            for binId in binIds:
+                resultsManager = self._resultsManager(binId, *resultsManagerArgs)
+                hmmerTableFile = os.path.join(outDir, 'bins', binId, hmmTableFile)
+                self.parseHmmerResults(
+                    hmmerTableFile, resultsManager, bSkipAdjCorrection)
+                self.results[binId] = resultsManager
+
                 numBinsProcessed += 1
-                statusStr = '    Finished parsing hits for %d of %d (%.2f%%) bins.' % (
-                    numBinsProcessed, len(self.models), float(numBinsProcessed) * 100 / len(self.models))
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
-
-            if binStats != None:
-                resultsManager = ResultsManager(
-                    binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats[binId])
-            else:
-                resultsManager = ResultsManager(
-                    binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection)
-
-            hmmerTableFile = os.path.join(outDir, 'bins', binId, hmmTableFile)
-            self.parseHmmerResults(
-                hmmerTableFile, resultsManager, bSkipAdjCorrection)
-            self.results[binId] = resultsManager
+                self._reportParseProgress(numBinsProcessed, len(binIds))
 
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
+
+    def _resultsManager(self, binId, bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats):
+        """Create results manager for a bin."""
+        if binStats != None:
+            return ResultsManager(binId, self.models[binId], bIgnoreThresholds, evalueThreshold,
+                                  lengthThreshold, bSkipPseudoGeneCorrection, binStats[binId])
+
+        return ResultsManager(binId, self.models[binId], bIgnoreThresholds, evalueThreshold,
+                              lengthThreshold, bSkipPseudoGeneCorrection)
+
+    def _reportParseProgress(self, numBinsProcessed, numBins):
+        """Report number of bins with parsed HMMER results."""
+        if self.logger.getEffectiveLevel() <= logging.INFO:
+            statusStr = '    Finished parsing hits for %d of %d (%.2f%%) bins.' % (
+                numBinsProcessed, numBins, float(numBinsProcessed) * 100 / numBins)
+            sys.stderr.write('%s\r' % statusStr)
+            sys.stderr.flush()
 
     def _writeBinStatsExt(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
         binStatsExtFile = os.path.join(directory, 'storage', DefaultValues.BIN_STATS_EXT_OUT)
