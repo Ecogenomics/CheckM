@@ -389,79 +389,82 @@ class ResultsManager():
                 self.markerHits[hit.query_accession] = [hit]
 
     def identifyAdjacentMarkerGenes(self):
-        """Identify adjacent marker genes and exclude these from the contamination estimate."""
+        """Identify adjacent marker genes and exclude these from the contamination estimate.
 
-        # check for adjacent ORFs with hits to the same marker gene
+        Hits to the same marker on consecutive ORFs of a scaffold (e.g., ORFs 28, 29, 30
+        and 31) are combined into a single hit. If the hits are to different parts of the
+        HMM, the marker gene was most likely split by a gene calling or assembly error. If
+        the hits overlap on the HMM this could represent contamination, but it seems more
+        likely that adjacent genes hitting the same marker represent legitimate gene
+        duplication, a gene calling error, or an assembly error and thus should not be
+        treated as contamination. Whole runs of consecutive ORFs are combined so the result
+        does not depend on the order of hits.
+        """
+
         for markerId, hits in self.markerHits.items():
+            # group hits by scaffold
+            scaffoldHits = defaultdict(list)
+            unparsedHits = []
+            for hit in hits:
+                orfId = hit.target_name
+                try:
+                    scaffoldId = orfId[0:orfId.rfind('_')]
+                    orfNum = int(orfId[orfId.rfind('_') + 1:])
+                except ValueError:
+                    # called genes are not labeled according to the Prodigal
+                    # format, so it is not possible to perform this correction
+                    unparsedHits.append(hit)
+                    continue
 
-            bCombined = True
-            while bCombined:
-                bCombined = False
-                for i in range(0, len(hits)):
-                    orfI = hits[i].target_name
-                    scaffoldIdI = orfI[0:orfI.rfind('_')]
+                scaffoldHits[scaffoldId].append((orfNum, hit))
 
-                    for j in range(i + 1, len(hits)):
-                        orfJ = hits[j].target_name
-                        scaffoldIdJ = orfJ[0:orfJ.rfind('_')]
+            # combine hits to runs of consecutive ORFs
+            # (each ORF has at most one hit to a given marker; see addHit)
+            newHits = []
+            for scaffoldId in sorted(scaffoldHits):
+                orfHits = sorted(scaffoldHits[scaffoldId], key=lambda x: x[0])
 
-                        # check if hits are on adjacent ORFs
-                        if scaffoldIdI == scaffoldIdJ:
-                            try:
-                                orfNumI = int(orfI[orfI.rfind('_') + 1:])
-                                orfNumJ = int(orfJ[orfJ.rfind('_') + 1:])
-                            except:
-                                # it appears called genes are not labeled
-                                # according to the prodigal format, so
-                                # it is not possible to perform this correction
-                                break
+                run = [orfHits[0]]
+                for orfNum, hit in orfHits[1:]:
+                    if orfNum == run[-1][0] + 1:
+                        run.append((orfNum, hit))
+                    else:
+                        newHits.append(self._combineHits([h for _, h in run]))
+                        run = [(orfNum, hit)]
 
-                            if abs(orfNumI - orfNumJ) == 1:
-                                # Hits to adjacent ORFs are combined. If the hits are to
-                                # different parts of the HMM, the marker gene was most likely
-                                # split by a gene calling or assembly error. If the hits
-                                # overlap on the HMM this could represent contamination,
-                                # but it seems more likely that adjacent genes hitting
-                                # the same marker represent legitimate gene duplication,
-                                # a gene calling error, or an assembly error and thus
-                                # should not be treated as contamination.
-                                bCombined = True
-                                break
+                newHits.append(self._combineHits([h for _, h in run]))
 
-                    if bCombined:
-                        # copy the hit so the original hit to each ORF is retained
-                        # (used to report the position of each gene, e.g. qa -o 9)
-                        newHit = copy.copy(hits[i])
-                        newHit.component_hits = (getattr(hits[i], 'component_hits', [hits[i]])
-                                                 + getattr(hits[j], 'component_hits', [hits[j]]))
+            self.markerHits[markerId] = newHits + unparsedHits
 
-                        # produce concatenated label indicating the two genes being combined
-                        orfA, orfB = sorted([orfI, orfJ])
-                        newHit.target_name = DefaultValues.SEQ_CONCAT_CHAR.join([
-                                                                                orfA, orfB])
+    def _combineHits(self, hits):
+        """Combine hits to consecutive ORFs into a single hit.
 
-                        newHit.target_length = hits[i].target_length + \
-                            hits[j].target_length
-                        newHit.hmm_from = min(
-                            hits[i].hmm_from, hits[j].hmm_from)
-                        newHit.hmm_to = max(hits[i].hmm_to, hits[j].hmm_to)
+        Hits must be ordered by ORF position. Scores and e-values are those of
+        the best hit, and coordinates span all hits.
+        """
 
-                        newHit.ali_from = min(
-                            hits[i].ali_from, hits[j].ali_from)
-                        newHit.ali_to = max(hits[i].ali_to, hits[j].ali_to)
+        if len(hits) == 1:
+            return hits[0]
 
-                        newHit.env_from = min(
-                            hits[i].env_from, hits[j].env_from)
-                        newHit.env_to = max(hits[i].env_to, hits[j].env_to)
+        bestHit = min(hits, key=lambda h: (h.full_e_value, -h.full_score))
 
-                        hits.remove(hits[j])
-                        hits.remove(hits[i])
+        # copy the hit so the original hit to each ORF is retained
+        # (used to report the position of each gene, e.g. qa -o 9)
+        newHit = copy.copy(bestHit)
+        newHit.component_hits = [c for h in hits for c in getattr(h, 'component_hits', [h])]
 
-                        hits.append(newHit)
+        # produce concatenated label indicating the genes being combined
+        newHit.target_name = DefaultValues.SEQ_CONCAT_CHAR.join([h.target_name for h in hits])
 
-                        break
+        newHit.target_length = sum(h.target_length for h in hits)
+        newHit.hmm_from = min(h.hmm_from for h in hits)
+        newHit.hmm_to = max(h.hmm_to for h in hits)
+        newHit.ali_from = min(h.ali_from for h in hits)
+        newHit.ali_to = max(h.ali_to for h in hits)
+        newHit.env_from = min(h.env_from for h in hits)
+        newHit.env_to = max(h.env_to for h in hits)
 
-            self.markerHits[markerId] = hits
+        return newHit
 
     def countUniqueHits(self):
         """Determine number of unique and multiple hits."""
