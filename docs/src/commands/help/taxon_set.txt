@@ -7,7 +7,7 @@ positional arguments:
   {life,domain,phylum,class,order,family,genus,species}
                         taxonomic rank
   taxon                 taxon of interest
-  marker_file           output file describing taxonomic-specific marker set
+  marker_file           output file describing taxonomic-specific marker set (gzip-compressed; '.gz' is appended if not present)
 
 options:
   -h, --help            show this help message and exit

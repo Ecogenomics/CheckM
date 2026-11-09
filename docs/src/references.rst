@@ -11,6 +11,8 @@ If you use CheckM in your research, please cite:
 
 CheckM relies on several other software packages; we recommend also citing:
 
+* `gPlace <https://github.com/cmc-aau/gPlace>`_ (CheckM >= 1.3.0), which reproduces pplacer's placements; please
+  also cite pplacer.
 * `pplacer <https://matsen.fhcrc.org/pplacer/>`_: Matsen FA, Kodner RB, Armbrust EV. 2010. pplacer: linear
   time maximum-likelihood and Bayesian phylogenetic placement of sequences onto a fixed reference tree.
   BMC Bioinformatics 11: doi:10.1186/1471-2105-11-538.

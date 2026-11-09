@@ -39,7 +39,7 @@ Latest release
 
 The latest release of CheckM is |release|. See the :ref:`changelog` for the changes in each release.
 
-CheckM >= 1.1.0 requires Python 3. We do not recommend installing CheckM from the master branch,
+CheckM >= 1.3.0 requires Python >= 3.11. We do not recommend installing CheckM from the master branch,
 which may be unstable. Please install an official release of CheckM (see :ref:`installing`).
 
 

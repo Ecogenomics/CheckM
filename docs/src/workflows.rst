@@ -50,7 +50,8 @@ command:
 
     checkm lineage_wf <bin folder> <output folder>
 
-This workflow writes the marker file ``lineage.ms`` to the output folder.
+This workflow writes the results to ``quality_report.tsv`` and the marker file ``lineage.ms.gz`` to the output
+folder.
 
 
 .. _workflows/taxonomy:
@@ -97,7 +98,8 @@ For convenience, the above workflow can be executed in a single step with the
 
     checkm taxonomy_wf <rank> <taxon> <bin folder> <output folder>
 
-This workflow writes the marker file ``<taxon>.ms`` (e.g. ``Bacteria.ms``) to the output folder.
+This workflow writes the results to ``quality_report.tsv`` and the marker file ``<taxon>.ms.gz`` (e.g.
+``Bacteria.ms.gz``) to the output folder.
 
 
 .. _workflows/custom:
