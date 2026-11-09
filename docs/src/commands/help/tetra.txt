@@ -1,0 +1,15 @@
+usage: checkm tetra [-h] [-t THREADS] [-q] seq_file output_file
+
+Calculate tetranucleotide signature of sequences.
+
+positional arguments:
+  seq_file              sequences used to generate bins (fasta format)
+  output_file           print results to file
+
+options:
+  -h, --help            show this help message and exit
+  -t, --threads THREADS
+                        number of threads (default: 1)
+  -q, --quiet           suppress console output
+
+Example: checkm tetra seqs.fna tetra.tsv

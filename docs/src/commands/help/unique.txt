@@ -1,0 +1,13 @@
+usage: checkm unique [-h] [-x EXTENSION] bin_input
+
+Ensure no sequences are assigned to multiple bins.
+
+positional arguments:
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+
+options:
+  -h, --help            show this help message and exit
+  -x, --extension EXTENSION
+                        extension of bins (all other files in bin directory are ignored) (default: fna)
+
+Example: checkm unique ./bins

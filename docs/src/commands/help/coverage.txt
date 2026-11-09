@@ -1,0 +1,26 @@
+usage: checkm coverage [-h] [-x EXTENSION] [-r] [-a MIN_ALIGN] [-e MAX_EDIT_DIST] [-m MIN_QC]
+                       [-t THREADS] [-q]
+                       bin_input output_file bam_files [bam_files ...]
+
+Calculate coverage of sequences.
+
+positional arguments:
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+  output_file           print results to file
+  bam_files             BAM files to parse
+
+options:
+  -h, --help            show this help message and exit
+  -x, --extension EXTENSION
+                        extension of bins (other files in directory are ignored) (default: fna)
+  -r, --all_reads       use all reads to estimate coverage instead of just those in proper pairs
+  -a, --min_align MIN_ALIGN
+                        minimum alignment length as percentage of read length (default: 0.98)
+  -e, --max_edit_dist MAX_EDIT_DIST
+                        maximum edit distance as percentage of read length (default: 0.02)
+  -m, --min_qc MIN_QC   minimum quality score (in phred) (default: 15)
+  -t, --threads THREADS
+                        number of threads (default: 1)
+  -q, --quiet           suppress console output
+
+Example: checkm coverage ./bins coverage.tsv example_1.bam example_2.bam

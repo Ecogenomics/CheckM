@@ -1,0 +1,55 @@
+usage: checkm qa [-h] [-o {1,2,3,4,5,6,7,8,9}] [--exclude_markers EXCLUDE_MARKERS]
+                 [--individual_markers] [--skip_adj_correction] [--skip_pseudogene_correction]
+                 [--aai_strain AAI_STRAIN] [-a ALIGNMENT_FILE] [--ignore_thresholds] [-e E_VALUE]
+                 [-l LENGTH] [-c COVERAGE_FILE] [-f FILE] [--tab_table] [-t THREADS] [-q]
+                 [--tmpdir TMPDIR]
+                 marker_file analyze_dir
+
+Assess bins for contamination and completeness.
+
+positional arguments:
+  marker_file           marker file specified during analyze command
+  analyze_dir           directory specified during analyze command
+
+options:
+  -h, --help            show this help message and exit
+  -o, --out_format {1,2,3,4,5,6,7,8,9}
+                        desired output: (default: 1)
+                          1. summary of bin completeness and contamination
+                          2. extended summary of bin statistics (includes GC, genome size, ...)
+                          3. summary of bin quality for increasingly basal lineage-specific marker sets
+                          4. list of marker genes and their counts
+                          5. list of bin id, marker gene id, gene id
+                          6. list of marker genes present multiple times in a bin
+                          7. list of marker genes present multiple times on the same scaffold
+                          8. list indicating position of each marker gene within a bin
+                          9. FASTA file of marker genes identified in each bin
+  --exclude_markers EXCLUDE_MARKERS
+                        file specifying markers to exclude from marker sets
+  --individual_markers  treat marker as independent (i.e., ignore co-located set structure)
+  --skip_adj_correction
+                        do not exclude adjacent marker genes when estimating contamination
+  --skip_pseudogene_correction
+                        skip identification and filtering of pseudogenes
+  --aai_strain AAI_STRAIN
+                        AAI threshold used to identify strain heterogeneity (default: 0.9)
+  -a, --alignment_file ALIGNMENT_FILE
+                        produce file showing alignment of multi-copy genes and their AAI identity
+  --ignore_thresholds   ignore model-specific score thresholds
+  -e, --e_value E_VALUE
+                        e-value cut off (default: 1e-10)
+  -l, --length LENGTH   minimum alignment length as a fraction of the marker HMM length (default: 0.7)
+  -c, --coverage_file COVERAGE_FILE
+                        file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)
+  -f, --file FILE       print results to file (default: stdout)
+  --tab_table           print tab-separated values table
+  -t, --threads THREADS
+                        number of threads (default: 1)
+  -q, --quiet           suppress console output
+  --tmpdir TMPDIR       specify an alternative directory for temporary files
+
+Note: lineage_wf and taxonomy_wf produce a marker file in the specified output directory. The
+        lineage workflow produces a marker file called lineage.ms, while the taxonomy workflow
+        produces a marker file called <taxon>.ms (e.g. Bacteria.ms).
+
+Example: checkm qa ./output/lineage.ms ./output

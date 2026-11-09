@@ -1,0 +1,14 @@
+usage: checkm profile [-h] [-f FILE] [--tab_table] [-q] coverage_file
+
+Calculate percentage of reads mapped to each bin.
+
+positional arguments:
+  coverage_file    file indicating coverage of each sequence (see coverage command)
+
+options:
+  -h, --help       show this help message and exit
+  -f, --file FILE  print results to file (default: stdout)
+  --tab_table      print tab-separated values table
+  -q, --quiet      suppress console output
+
+Example: checkm profile coverage.tsv

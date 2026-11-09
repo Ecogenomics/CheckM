@@ -1,0 +1,20 @@
+usage: checkm lineage_set [-h] [-u UNIQUE] [-m MULTI] [--force_domain] [--no_refinement] [-q]
+                          [--tmpdir TMPDIR]
+                          tree_dir marker_file
+
+Infer lineage-specific marker sets for each bin.
+
+positional arguments:
+  tree_dir             directory specified during tree command
+  marker_file          output file describing marker set for each bin
+
+options:
+  -h, --help           show this help message and exit
+  -u, --unique UNIQUE  minimum number of unique phylogenetic markers required to use lineage-specific marker set (default: 10)
+  -m, --multi MULTI    maximum number of multi-copy phylogenetic markers before defaulting to domain-level marker set (default: 10)
+  --force_domain       use domain-level sets for all bins
+  --no_refinement      do not perform lineage-specific marker set refinement
+  -q, --quiet          suppress console output
+  --tmpdir TMPDIR      specify an alternative directory for temporary files
+
+Example: checkm lineage_set ./output lineage.ms

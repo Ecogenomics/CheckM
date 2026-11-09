@@ -1,0 +1,23 @@
+usage: checkm tree_qa [-h] [-o {1,2,3,4,5}] [-f FILE] [--tab_table] [-q] [--tmpdir TMPDIR]
+                      tree_dir
+
+Assess phylogenetic markers found in each bin.
+
+positional arguments:
+  tree_dir              directory specified during tree command
+
+options:
+  -h, --help            show this help message and exit
+  -o, --out_format {1,2,3,4,5}
+                        desired output: (default: 1)
+                          1. brief summary of genome tree placement
+                          2. detailed summary of genome tree placement including lineage-specific statistics
+                          3. genome tree in Newick format decorated with IMG genome ids
+                          4. genome tree in Newick format decorated with taxonomy strings
+                          5. multiple sequence alignment of reference genomes and bins
+  -f, --file FILE       print results to file (default: stdout)
+  --tab_table           print tab-separated values table
+  -q, --quiet           suppress console output
+  --tmpdir TMPDIR       specify an alternative directory for temporary files
+
+Example: checkm tree_qa ./output

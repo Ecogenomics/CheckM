@@ -1,0 +1,30 @@
+usage: checkm merge [-h] [-g] [--delta_comp DELTA_COMP] [--delta_cont DELTA_CONT]
+                    [--merged_comp MERGED_COMP] [--merged_cont MERGED_CONT] [-x EXTENSION]
+                    [-t THREADS] [-q]
+                    marker_file bin_input output_dir
+
+Identify bins with complementary sets of marker genes.
+
+positional arguments:
+  marker_file           marker file to use for assessing potential bin mergers (marker set or HMM file)
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+  output_dir            directory to write output files
+
+options:
+  -h, --help            show this help message and exit
+  -g, --genes           bins contain genes as amino acids instead of nucleotide contigs
+  --delta_comp DELTA_COMP
+                        minimum increase in completeness to report pair (default: 5.0)
+  --delta_cont DELTA_CONT
+                        maximum increase in contamination to report pair (default: 10.0)
+  --merged_comp MERGED_COMP
+                        minimum merged completeness to report pair (default: 50.0)
+  --merged_cont MERGED_CONT
+                        maximum merged contamination to report pair (default: 20.0)
+  -x, --extension EXTENSION
+                        extension of bins (other files in directory are ignored) (default: fna)
+  -t, --threads THREADS
+                        number of threads (default: 1)
+  -q, --quiet           suppress console output
+
+Example: checkm merge bacteria.ms ./bins ./output
