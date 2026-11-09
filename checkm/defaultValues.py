@@ -94,3 +94,6 @@ class DefaultValues():
     UNBINNED = 'unbinned'
 
     MIN_SEQ_LEN_GC_STD = 1000
+
+    # pplacer does not run properly with more than 64 threads
+    MAX_PPLACER_THREADS = 64
