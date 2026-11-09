@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Change log &mdash; CheckM 1.2.10 documentation</title>
+  <title>Change log &mdash; CheckM 1.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=05c9bb44" />
@@ -16,7 +16,7 @@
     <link rel="canonical" href="https://ecogenomics.github.io/CheckM/changelog.html" />
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=12f20e84"></script>
+      <script src="_static/documentation_options.js?v=1f29e9d3"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
@@ -98,7 +98,22 @@
 from the <code class="docutils literal notranslate"><span class="pre">checkm/VERSION</span></code> file of the CheckM source code, which also defines the version number (first
 line). The releases are also available on <a class="reference external" href="https://github.com/Ecogenomics/CheckM/releases">GitHub</a> and
 <a class="reference external" href="https://pypi.org/project/checkm-genome/#history">PyPI</a>.</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1.2.10
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1.3.0
+- pplacer has been replaced by gPlace (https://github.com/cmc-aau/gPlace; PyPI: gtdb-gplace), which gives the same placements as pplacer, bit for bit, using less memory and time; gPlace &gt;= 0.1.0 must be on the system path (it requires Python &gt;= 3.12 and can be installed in a separate environment), and pplacer and guppy are no longer required
+- the --pplacer_threads option of the tree and lineage_wf commands has been removed; gPlace uses the number of threads given by -t, without the previous limit of 64 threads
+- the names of gPlace's output files are those of pplacer, apart from compression (e.g., storage/tree/concatenated.pplacer.json.gz; see below)
+- the --reduced_tree option of the tree and lineage_wf commands has been removed: bins are always placed in the full reference genome tree, which gPlace does with less memory than pplacer needed with the reduced tree (about 12 GB, mostly for the reference tree; pplacer needed about 35 GB with the full tree); use --gplace_max_memory to place bins with less memory (e.g., 6G for 128 bins)
+- 'checkm test' runs gPlace with --gplace_max_memory 6G, so it needs about 5 GB of memory
+- new --gplace_max_memory option for the tree and lineage_wf commands sets the memory gPlace may use (e.g., 64G); if the placement needs more, gPlace places bins tile by tile within this limit, which gives identical results
+- when gPlace fails, its error message (e.g., that --gplace_max_memory is too small) is included in CheckM's error message
+- progress is reported with tqdm progress bars (e.g., '    Processing bins: 100%|##########| 128/128 [01:15&lt;00:00, 1.70bin/s]'), which adds tqdm as a dependency; progress is no longer reported when console output is suppressed with --quiet
+- most output files are gzip-compressed (compression level 1, using xopen and ISA-L), which reduces the size of the output directory ~3.5x (e.g., from 596 MB to 169 MB for 128 genomes) and has little effect on run time: bins/&lt;genome_id&gt;/* (e.g., genes.faa.gz, genes.gff.gz, hmmer.tree.txt.gz, hmmer.analyze.txt.gz), lineage.ms (now lineage.ms.gz) and the marker files of lineage_set and taxon_set ('.gz' is appended to the given name if not present), storage/*.tsv (e.g., storage/bin_stats_ext.tsv.gz), all files in storage/tree except the *.log and *.out files (e.g., storage/tree/concatenated.tre.gz), and the storage/aai_qa directory, which is replaced by the archive storage/aai_qa.tar.gz; results are unchanged
+- all commands still read the uncompressed output of earlier versions of CheckM and accept the uncompressed file names (e.g., 'checkm qa ./output/lineage.ms ./output' reads lineage.ms.gz; if both lineage.ms and lineage.ms.gz exist, the most recently modified file is used), but scripts that read these files directly by their previous names must be updated
+- adds xopen (&gt;= 2.0) as a dependency and requires Python &gt;= 3.11
+- lineage_wf and taxonomy_wf write their results to &lt;output_dir&gt;/quality_report.tsv, the tab-separated table produced by 'qa -o 2 --tab_table', and no longer print a results table to the console; their -f/--file and --tab_table options have been removed (run 'checkm qa' on the output directory for other output formats)
+- new --rm_tmp_files option for lineage_wf and taxonomy_wf removes the bins and storage directories once the quality report has been written (other commands, such as qa and the plots, need these directories)
+
+1.2.10
 - Prodigal's error output is now captured and included in the error message when Prodigal fails (e.g., 'exit code 18: Error: no input sequences to analyze.'); results are unchanged
 
 1.2.9

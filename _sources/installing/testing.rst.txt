@@ -11,7 +11,8 @@ A general test of CheckM which verifies all third-party dependencies can be run 
     checkm test ~/checkm_test_results
 
 This runs the *E. coli* K-12 W3110 genome through the standard CheckM pipeline and verifies the resulting
-output files. The output directory can be removed once the test has run.
+output files. The output directory can be removed once the test has run. The test limits the memory used by
+gPlace to 6 GB (``--gplace_max_memory 6G``) and needs approximately 5 GB of memory.
 
 Unit tests
 ----------

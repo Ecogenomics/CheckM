@@ -9,10 +9,13 @@ FAQ and support
 Processing large numbers of genomes
 -----------------------------------
 
-If you plan to process a large number of genomes, you may wish to break these into smaller batches. On a
-64 GB machine, running 1,000 genomes at a time with 40 threads works well. Exceeding the available memory of
-your machine will cause CheckM to use swap space (as per any program), which will substantially increase the
-time to process genomes.
+If you plan to process a large number of genomes, you may wish to break these into smaller batches.
+With CheckM 1.3.0, running 1,000 genomes at a time with 64 threads takes ~20 minutes and 12 GB of memory.
+Exceeding the available memory of your machine will cause CheckM to use swap space (as per any
+program), which will substantially increase the time to process genomes; use ``--gplace_max_memory`` to limit
+the memory used to place genomes in the reference genome tree (see :ref:`installing/system_requirements`).
+CheckM's output files are gzip-compressed (see :ref:`outputs/files`), and ``--rm_tmp_files`` can be used to
+remove the intermediate files of a workflow once it has finished.
 
 It has also been reported that processing large numbers of genomes at once can cause a Python recursion
 error. As such, splitting large runs into batches of 1,000 genomes is recommended.

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Docker &mdash; CheckM 1.2.10 documentation</title>
+  <title>Docker &mdash; CheckM 1.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
@@ -16,7 +16,7 @@
     <link rel="canonical" href="https://ecogenomics.github.io/CheckM/installing/docker.html" />
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -110,8 +110,8 @@
 <span id="installing-docker"></span><h1>Docker<a class="headerlink" href="#docker" title="Link to this heading"></a></h1>
 <p>A <a class="reference external" href="https://github.com/Ecogenomics/CheckM/blob/master/docker/Dockerfile">Dockerfile</a> provided by a
 community member is available in the <code class="docutils literal notranslate"><span class="pre">docker</span></code> directory of the CheckM repository. The image installs
-HMMER, Prodigal, and pplacer from the Ubuntu package repository, installs the latest release of CheckM
-from PyPI, and downloads the <a class="reference internal" href="reference_data.html#installing-reference-data"><span class="std std-ref">CheckM reference data</span></a> into the image
+HMMER and Prodigal from the Ubuntu package repository, installs the latest release of CheckM and
+<a class="reference external" href="https://github.com/cmc-aau/gPlace">gPlace</a> from PyPI, and downloads the <a class="reference internal" href="reference_data.html#installing-reference-data"><span class="std std-ref">CheckM reference data</span></a> into the image
 (<code class="docutils literal notranslate"><span class="pre">CHECKM_DATA_PATH</span></code> is set accordingly).</p>
 <p>No pre-built image is provided. To build the image:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Ecogenomics/CheckM.git

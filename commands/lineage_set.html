@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>lineage_set &mdash; CheckM 1.2.10 documentation</title>
+  <title>lineage_set &mdash; CheckM 1.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
@@ -16,7 +16,7 @@
     <link rel="canonical" href="https://ecogenomics.github.io/CheckM/commands/lineage_set.html" />
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -120,7 +120,8 @@
 <p>This step of the <a class="reference internal" href="../workflows.html#workflows-lineage"><span class="std std-ref">lineage-specific workflow</span></a> uses the placement of each bin in the
 reference genome tree, as determined by the <a class="reference internal" href="tree.html#commands-tree"><span class="std std-ref">tree</span></a> command, to infer a lineage-specific
 marker set for each bin. The marker sets are written to the specified marker file, which is used by the
-<a class="reference internal" href="analyze.html#commands-analyze"><span class="std std-ref">analyze</span></a> and <a class="reference internal" href="qa.html#commands-qa"><span class="std std-ref">qa</span></a> commands.</p>
+<a class="reference internal" href="analyze.html#commands-analyze"><span class="std std-ref">analyze</span></a> and <a class="reference internal" href="qa.html#commands-qa"><span class="std std-ref">qa</span></a> commands. The marker file is gzip-compressed, and <code class="docutils literal notranslate"><span class="pre">.gz</span></code> is appended to its name if not already present (e.g.,
+<code class="docutils literal notranslate"><span class="pre">lineage.ms</span></code> is written as <code class="docutils literal notranslate"><span class="pre">lineage.ms.gz</span></code>); later commands accept the name with or without <code class="docutils literal notranslate"><span class="pre">.gz</span></code>.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">-u,</span> <span class="pre">--unique</span></code>: minimum number of unique phylogenetic markers required to use a lineage-specific marker
 set, otherwise a domain-level marker set is used.</p></li>
@@ -139,7 +140,7 @@ Infer lineage-specific marker sets for each bin.
 
 positional arguments:
   tree_dir             directory specified during tree command
-  marker_file          output file describing marker set for each bin
+  marker_file          output file describing marker set for each bin (gzip-compressed; '.gz' is appended if not present)
 
 options:
   -h, --help           show this help message and exit

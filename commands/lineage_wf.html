@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>lineage_wf &mdash; CheckM 1.2.10 documentation</title>
+  <title>lineage_wf &mdash; CheckM 1.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
@@ -16,7 +16,7 @@
     <link rel="canonical" href="https://ecogenomics.github.io/CheckM/commands/lineage_wf.html" />
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -120,22 +120,34 @@
 <a class="reference internal" href="tree.html#commands-tree"><span class="std std-ref">tree</span></a>, <a class="reference internal" href="lineage_set.html#commands-lineage-set"><span class="std std-ref">lineage_set</span></a>, <a class="reference internal" href="analyze.html#commands-analyze"><span class="std std-ref">analyze</span></a>,
 and <a class="reference internal" href="qa.html#commands-qa"><span class="std std-ref">qa</span></a> commands. This is the recommended workflow for assessing the completeness and
 contamination of genome bins. See the individual commands for a description of their options.</p>
-<p>The marker file <code class="docutils literal notranslate"><span class="pre">lineage.ms</span></code> is written to the output folder, and the <code class="docutils literal notranslate"><span class="pre">qa</span></code> summary of bin completeness and
-contamination (<code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">1</span></code>) is printed to the console or to the file given with <code class="docutils literal notranslate"><span class="pre">-f</span></code>. The
-<a class="reference internal" href="qa.html#commands-qa"><span class="std std-ref">qa</span></a> command can be re-run on the output folder to produce other tables:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>qa<span class="w"> </span>-o<span class="w"> </span><span class="m">2</span><span class="w"> </span>./output/lineage.ms<span class="w"> </span>./output
+<p>The results are written to <code class="docutils literal notranslate"><span class="pre">quality_report.tsv</span></code> in the output folder: the tab-separated table produced by
+<code class="docutils literal notranslate"><span class="pre">qa</span> <span class="pre">-o</span> <span class="pre">2</span> <span class="pre">--tab_table</span></code> (see <a class="reference internal" href="../outputs/qa.html#outputs-qa"><span class="std std-ref">Reported statistics</span></a>). The marker file <code class="docutils literal notranslate"><span class="pre">lineage.ms.gz</span></code> is also written to the
+output folder, and the <a class="reference internal" href="qa.html#commands-qa"><span class="std std-ref">qa</span></a> command can be re-run on the output folder to produce other
+tables:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>qa<span class="w"> </span>-o<span class="w"> </span><span class="m">1</span><span class="w"> </span>./output/lineage.ms<span class="w"> </span>./output
 </pre></div>
 </div>
-<p>If you are on a machine with &lt; 40 GB of memory, use <code class="docutils literal notranslate"><span class="pre">--reduced_tree</span></code> (see
-<a class="reference internal" href="../installing/index.html#installing-system-requirements"><span class="std std-ref">System requirements</span></a>).</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--rm_tmp_files</span></code>: remove the <code class="docutils literal notranslate"><span class="pre">bins</span></code> and <code class="docutils literal notranslate"><span class="pre">storage</span></code> folders once <code class="docutils literal notranslate"><span class="pre">quality_report.tsv</span></code> has been
+written. This saves disk space, but <code class="docutils literal notranslate"><span class="pre">qa</span></code> and the plotting commands can then no longer be run on the
+output folder. A folder containing the input genomes is never removed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span></code>: limit the memory used to place bins in the reference genome tree (see
+<a class="reference internal" href="tree.html#commands-tree"><span class="std std-ref">tree</span></a> and <a class="reference internal" href="../installing/index.html#installing-system-requirements"><span class="std std-ref">System requirements</span></a>).</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>CheckM &lt;= 1.2.10 printed the <code class="docutils literal notranslate"><span class="pre">qa</span> <span class="pre">-o</span> <span class="pre">1</span></code> table to the console (or to the file given with <code class="docutils literal notranslate"><span class="pre">-f</span></code>, as a
+tab-separated table with <code class="docutils literal notranslate"><span class="pre">--tab_table</span></code>). These options, and <code class="docutils literal notranslate"><span class="pre">--reduced_tree</span></code> and
+<code class="docutils literal notranslate"><span class="pre">--pplacer_threads</span></code>, were removed in CheckM 1.3.0.</p>
+</div>
 <section id="arguments">
 <h2>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h2>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: checkm lineage_wf [-h] [-r] [--ali] [--nt] [-g] [-u UNIQUE] [-m MULTI] [--force_domain]
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: checkm lineage_wf [-h] [--ali] [--nt] [-g] [-u UNIQUE] [-m MULTI] [--force_domain]
                          [--no_refinement] [--individual_markers] [--skip_adj_correction]
                          [--skip_pseudogene_correction] [--aai_strain AAI_STRAIN]
                          [-a ALIGNMENT_FILE] [--ignore_thresholds] [-e E_VALUE] [-l LENGTH]
-                         [-f FILE] [--tab_table] [-x EXTENSION] [-t THREADS]
-                         [--pplacer_threads PPLACER_THREADS] [-q] [--tmpdir TMPDIR]
+                         [--rm_tmp_files] [-x EXTENSION] [-t THREADS] [--gplace_max_memory MEMORY]
+                         [-q] [--tmpdir TMPDIR]
                          bin_input output_dir
 
 Runs tree, lineage_set, analyze, qa
@@ -146,7 +158,6 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -r, --reduced_tree    use reduced tree (requires &lt;16GB of memory) for determining lineage of each bin
   --ali                 generate HMMER alignment file for each bin
   --nt                  generate nucleotide gene sequences for each bin
   -g, --genes           bins contain genes as amino acids instead of nucleotide contigs
@@ -167,14 +178,13 @@ options:
   -e, --e_value E_VALUE
                         e-value cut off (default: 1e-10)
   -l, --length LENGTH   minimum alignment length as a fraction of the marker HMM length (default: 0.7)
-  -f, --file FILE       print results to file (default: stdout)
-  --tab_table           print tab-separated values table
+  --rm_tmp_files        remove the bins and storage directories once the quality report has been written
   -x, --extension EXTENSION
                         extension of bins (other files in directory are ignored) (default: fna)
   -t, --threads THREADS
                         number of threads (default: 1)
-  --pplacer_threads PPLACER_THREADS
-                        number of threads used by pplacer (default: number of threads, to a maximum of 64)
+  --gplace_max_memory MEMORY
+                        memory gPlace may use to place bins, e.g. 64G or 500M (a plain number is GiB) [default: set by gPlace from the available memory]
   -q, --quiet           suppress console output
   --tmpdir TMPDIR       specify an alternative directory for temporary files
 
@@ -185,7 +195,8 @@ Example: checkm lineage_wf ./bins ./output
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>lineage_wf<span class="w"> </span>-t<span class="w"> </span><span class="m">8</span><span class="w"> </span>-x<span class="w"> </span>fa<span class="w"> </span>./bins<span class="w"> </span>./output
-checkm<span class="w"> </span>lineage_wf<span class="w"> </span>-t<span class="w"> </span><span class="m">8</span><span class="w"> </span>--reduced_tree<span class="w"> </span>--tab_table<span class="w"> </span>-f<span class="w"> </span>checkm_results.tsv<span class="w"> </span>./bins<span class="w"> </span>./output
+checkm<span class="w"> </span>lineage_wf<span class="w"> </span>-t<span class="w"> </span><span class="m">8</span><span class="w"> </span>-x<span class="w"> </span>fa<span class="w"> </span>--rm_tmp_files<span class="w"> </span>./bins<span class="w"> </span>./output
+checkm<span class="w"> </span>lineage_wf<span class="w"> </span>-t<span class="w"> </span><span class="m">8</span><span class="w"> </span>-x<span class="w"> </span>fa<span class="w"> </span>--gplace_max_memory<span class="w"> </span>8G<span class="w"> </span>./bins<span class="w"> </span>./output
 </pre></div>
 </div>
 </section>

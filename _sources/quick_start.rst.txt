@@ -26,15 +26,21 @@ CheckM consists of a series of commands in order to support a number of differen
     checkm lineage_wf <bin folder> <output folder>
 
 For a full list of options, run ``checkm lineage_wf -h`` (see :ref:`commands/lineage_wf`). To speed up
-processing, use the ``-t`` flag to specify the desired number of threads. If you are on a machine with
-< 40 GB of memory, the ``--reduced_tree`` flag can be used, which reduces the memory requirements to less
-than 16 GB (see :ref:`installing/system_requirements`).
+processing, use the ``-t`` flag to specify the desired number of threads. Placing genomes in the reference
+genome tree requires approximately 12 GB of memory; on a machine with less memory, use
+``--gplace_max_memory`` (see :ref:`installing/system_requirements`).
+
+The results are written to the tab-separated file ``quality_report.tsv`` in the output folder (see
+:ref:`outputs/qa`). Use ``--rm_tmp_files`` to remove the intermediate ``bins`` and ``storage`` folders once the
+workflow has finished, which saves disk space but means ``qa`` and the plotting commands can no longer be run
+on the output folder (see :ref:`outputs/files`).
 
 After performing a lineage (``checkm lineage_wf``) or taxonomy (``checkm taxonomy_wf``) workflow, you can
 re-run the :ref:`qa <commands/qa>` command to produce a number of different output tables. The ``qa``
 command requires a marker file to run. This file is produced during the workflow and is stored in the
-CheckM output directory specified (``lineage.ms`` for ``lineage_wf`` or ``<taxon>.ms`` for
-``taxonomy_wf``). Plots can be produced with the :ref:`plotting commands <commands/plots>`.
+CheckM output directory specified (``lineage.ms.gz`` for ``lineage_wf`` or ``<taxon>.ms.gz`` for
+``taxonomy_wf``; the name can be given without ``.gz``). Plots can be produced with the
+:ref:`plotting commands <commands/plots>`.
 
 
 Example usage
@@ -54,6 +60,5 @@ Or, to process files of called genes in amino acid space which have the extensio
 
     checkm lineage_wf --genes -t 8 -x faa <bin folder> <output folder>
 
-To write the results to a tab-separated file instead of printing a table to the console, add
-``--tab_table -f checkm_results.tsv``. The completeness, contamination, and other statistics reported by
-CheckM are described in :ref:`outputs/qa`.
+The results are written to ``/home/donovan/checkm/quality_report.tsv``. The completeness, contamination, and
+other statistics reported by CheckM are described in :ref:`outputs/qa`.

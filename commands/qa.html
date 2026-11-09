@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>qa &mdash; CheckM 1.2.10 documentation</title>
+  <title>qa &mdash; CheckM 1.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
@@ -16,7 +16,7 @@
     <link rel="canonical" href="https://ecogenomics.github.io/CheckM/commands/qa.html" />
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -120,8 +120,9 @@
 identified by the <a class="reference internal" href="analyze.html#commands-analyze"><span class="std std-ref">analyze</span></a> command, and reports the results in one of several
 tables. The <code class="docutils literal notranslate"><span class="pre">qa</span></code> command must be given the marker file and output folder used with <code class="docutils literal notranslate"><span class="pre">analyze</span></code>. The
 <a class="reference internal" href="lineage_wf.html#commands-lineage-wf"><span class="std std-ref">lineage_wf</span></a> and <a class="reference internal" href="taxonomy_wf.html#commands-taxonomy-wf"><span class="std std-ref">taxonomy_wf</span></a> commands write their
-marker file to the output folder (<code class="docutils literal notranslate"><span class="pre">lineage.ms</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;taxon&gt;.ms</span></code>), so <code class="docutils literal notranslate"><span class="pre">qa</span></code> can be re-run on the output
-of a workflow to produce other tables.</p>
+marker file to the output folder (<code class="docutils literal notranslate"><span class="pre">lineage.ms.gz</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;taxon&gt;.ms.gz</span></code>), so <code class="docutils literal notranslate"><span class="pre">qa</span></code> can be re-run on the
+output of a workflow to produce other tables. The marker file can be given with or without the <code class="docutils literal notranslate"><span class="pre">.gz</span></code>
+extension (e.g. <code class="docutils literal notranslate"><span class="pre">./output/lineage.ms</span></code>).</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">-o,</span> <span class="pre">--out_format</span></code> option specifies the desired output (see <a class="reference internal" href="../outputs/qa_formats.html#outputs-qa-formats"><span class="std std-ref">qa output formats</span></a>):</p>
 <ol class="arabic simple">
 <li><p>summary of bin completeness, contamination, and strain heterogeneity</p></li>
@@ -218,8 +219,9 @@ options:
   --tmpdir TMPDIR       specify an alternative directory for temporary files
 
 Note: lineage_wf and taxonomy_wf produce a marker file in the specified output directory. The
-        lineage workflow produces a marker file called lineage.ms, while the taxonomy workflow
-        produces a marker file called &lt;taxon&gt;.ms (e.g. Bacteria.ms).
+        lineage workflow produces a marker file called lineage.ms.gz, while the taxonomy workflow
+        produces a marker file called &lt;taxon&gt;.ms.gz (e.g. Bacteria.ms.gz). Marker files can be
+        given with or without the .gz extension (e.g. lineage.ms).
 
 Example: checkm qa ./output/lineage.ms ./output
 </pre></div>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>analyze &mdash; CheckM 1.2.10 documentation</title>
+  <title>analyze &mdash; CheckM 1.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
@@ -16,7 +16,7 @@
     <link rel="canonical" href="https://ecogenomics.github.io/CheckM/commands/analyze.html" />
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -122,13 +122,13 @@ by <a class="reference internal" href="taxon_set.html#commands-taxon-set"><span 
 Completeness and contamination are then estimated with the <a class="reference internal" href="qa.html#commands-qa"><span class="std std-ref">qa</span></a> command.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">--ali</span></code>: generate a HMMER alignment file for each bin in
-<code class="docutils literal notranslate"><span class="pre">&lt;output</span> <span class="pre">folder&gt;/bins/&lt;bin</span> <span class="pre">id&gt;/hmmer.analyze.ali.txt</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">--nt</span></code>: generate nucleotide gene sequences for each bin in <code class="docutils literal notranslate"><span class="pre">&lt;output</span> <span class="pre">folder&gt;/bins/&lt;bin</span> <span class="pre">id&gt;/genes.fna</span></code>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">&lt;output</span> <span class="pre">folder&gt;/bins/&lt;bin</span> <span class="pre">id&gt;/hmmer.analyze.ali.txt.gz</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--nt</span></code>: generate nucleotide gene sequences for each bin in <code class="docutils literal notranslate"><span class="pre">&lt;output</span> <span class="pre">folder&gt;/bins/&lt;bin</span> <span class="pre">id&gt;/genes.fna.gz</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--genes</span></code>: bins contain genes as amino acids instead of nucleotide contigs.</p></li>
 </ul>
 <p>Outputs:</p>
 <ul class="simple">
-<li><p>called gene files are placed in <code class="docutils literal notranslate"><span class="pre">&lt;output</span> <span class="pre">folder&gt;/bins/&lt;bin</span> <span class="pre">id&gt;/genes.*</span></code></p></li>
+<li><p>called gene files are placed in <code class="docutils literal notranslate"><span class="pre">&lt;output</span> <span class="pre">folder&gt;/bins/&lt;bin</span> <span class="pre">id&gt;/genes.*.gz</span></code> (see <a class="reference internal" href="../outputs/files.html#outputs-files"><span class="std std-ref">Output files</span></a>)</p></li>
 <li><p>HMMER result files are placed in <code class="docutils literal notranslate"><span class="pre">&lt;output</span> <span class="pre">folder&gt;/bins/&lt;bin</span> <span class="pre">id&gt;/hmmer.*</span></code></p></li>
 </ul>
 <p>Genes are called with Prodigal as described for the <a class="reference internal" href="tree.html#commands-tree"><span class="std std-ref">tree</span></a> command.</p>

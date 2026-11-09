@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quick start &mdash; CheckM 1.2.10 documentation</title>
+  <title>Quick start &mdash; CheckM 1.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=05c9bb44" />
@@ -16,7 +16,7 @@
     <link rel="canonical" href="https://ecogenomics.github.io/CheckM/quick_start.html" />
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=12f20e84"></script>
+      <script src="_static/documentation_options.js?v=1f29e9d3"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
@@ -116,14 +116,19 @@ third column). Bin IDs are always taken from the FASTA file names with the exten
 </pre></div>
 </div>
 <p>For a full list of options, run <code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">lineage_wf</span> <span class="pre">-h</span></code> (see <a class="reference internal" href="commands/lineage_wf.html#commands-lineage-wf"><span class="std std-ref">lineage_wf</span></a>). To speed up
-processing, use the <code class="docutils literal notranslate"><span class="pre">-t</span></code> flag to specify the desired number of threads. If you are on a machine with
-&lt; 40 GB of memory, the <code class="docutils literal notranslate"><span class="pre">--reduced_tree</span></code> flag can be used, which reduces the memory requirements to less
-than 16 GB (see <a class="reference internal" href="installing/index.html#installing-system-requirements"><span class="std std-ref">System requirements</span></a>).</p>
+processing, use the <code class="docutils literal notranslate"><span class="pre">-t</span></code> flag to specify the desired number of threads. Placing genomes in the reference
+genome tree requires approximately 12 GB of memory; on a machine with less memory, use
+<code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span></code> (see <a class="reference internal" href="installing/index.html#installing-system-requirements"><span class="std std-ref">System requirements</span></a>).</p>
+<p>The results are written to the tab-separated file <code class="docutils literal notranslate"><span class="pre">quality_report.tsv</span></code> in the output folder (see
+<a class="reference internal" href="outputs/qa.html#outputs-qa"><span class="std std-ref">Reported statistics</span></a>). Use <code class="docutils literal notranslate"><span class="pre">--rm_tmp_files</span></code> to remove the intermediate <code class="docutils literal notranslate"><span class="pre">bins</span></code> and <code class="docutils literal notranslate"><span class="pre">storage</span></code> folders once the
+workflow has finished, which saves disk space but means <code class="docutils literal notranslate"><span class="pre">qa</span></code> and the plotting commands can no longer be run
+on the output folder (see <a class="reference internal" href="outputs/files.html#outputs-files"><span class="std std-ref">Output files</span></a>).</p>
 <p>After performing a lineage (<code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">lineage_wf</span></code>) or taxonomy (<code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">taxonomy_wf</span></code>) workflow, you can
 re-run the <a class="reference internal" href="commands/qa.html#commands-qa"><span class="std std-ref">qa</span></a> command to produce a number of different output tables. The <code class="docutils literal notranslate"><span class="pre">qa</span></code>
 command requires a marker file to run. This file is produced during the workflow and is stored in the
-CheckM output directory specified (<code class="docutils literal notranslate"><span class="pre">lineage.ms</span></code> for <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;taxon&gt;.ms</span></code> for
-<code class="docutils literal notranslate"><span class="pre">taxonomy_wf</span></code>). Plots can be produced with the <a class="reference internal" href="commands/index.html#commands-plots"><span class="std std-ref">plotting commands</span></a>.</p>
+CheckM output directory specified (<code class="docutils literal notranslate"><span class="pre">lineage.ms.gz</span></code> for <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;taxon&gt;.ms.gz</span></code> for
+<code class="docutils literal notranslate"><span class="pre">taxonomy_wf</span></code>; the name can be given without <code class="docutils literal notranslate"><span class="pre">.gz</span></code>). Plots can be produced with the
+<a class="reference internal" href="commands/index.html#commands-plots"><span class="std std-ref">plotting commands</span></a>.</p>
 </section>
 <section id="example-usage">
 <h2>Example usage<a class="headerlink" href="#example-usage" title="Link to this heading"></a></h2>
@@ -137,9 +142,8 @@ simply run:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>lineage_wf<span class="w"> </span>--genes<span class="w"> </span>-t<span class="w"> </span><span class="m">8</span><span class="w"> </span>-x<span class="w"> </span>faa<span class="w"> </span>&lt;bin<span class="w"> </span>folder&gt;<span class="w"> </span>&lt;output<span class="w"> </span>folder&gt;
 </pre></div>
 </div>
-<p>To write the results to a tab-separated file instead of printing a table to the console, add
-<code class="docutils literal notranslate"><span class="pre">--tab_table</span> <span class="pre">-f</span> <span class="pre">checkm_results.tsv</span></code>. The completeness, contamination, and other statistics reported by
-CheckM are described in <a class="reference internal" href="outputs/qa.html#outputs-qa"><span class="std std-ref">Reported statistics</span></a>.</p>
+<p>The results are written to <code class="docutils literal notranslate"><span class="pre">/home/donovan/checkm/quality_report.tsv</span></code>. The completeness, contamination, and
+other statistics reported by CheckM are described in <a class="reference internal" href="outputs/qa.html#outputs-qa"><span class="std std-ref">Reported statistics</span></a>.</p>
 </section>
 </section>
 

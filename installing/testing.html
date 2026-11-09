@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Testing the installation &mdash; CheckM 1.2.10 documentation</title>
+  <title>Testing the installation &mdash; CheckM 1.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
@@ -16,7 +16,7 @@
     <link rel="canonical" href="https://ecogenomics.github.io/CheckM/installing/testing.html" />
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -117,7 +117,8 @@
 </pre></div>
 </div>
 <p>This runs the <em>E. coli</em> K-12 W3110 genome through the standard CheckM pipeline and verifies the resulting
-output files. The output directory can be removed once the test has run.</p>
+output files. The output directory can be removed once the test has run. The test limits the memory used by
+gPlace to 6 GB (<code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span> <span class="pre">6G</span></code>) and needs approximately 5 GB of memory.</p>
 <section id="unit-tests">
 <h2>Unit tests<a class="headerlink" href="#unit-tests" title="Link to this heading"></a></h2>
 <p>Unit tests are also provided in the <code class="docutils literal notranslate"><span class="pre">checkm/test</span></code> directory of the source code. These are designed to aid

@@ -8,7 +8,8 @@ Infer lineage-specific marker sets for each bin.
 This step of the :ref:`lineage-specific workflow <workflows/lineage>` uses the placement of each bin in the
 reference genome tree, as determined by the :ref:`tree <commands/tree>` command, to infer a lineage-specific
 marker set for each bin. The marker sets are written to the specified marker file, which is used by the
-:ref:`analyze <commands/analyze>` and :ref:`qa <commands/qa>` commands.
+:ref:`analyze <commands/analyze>` and :ref:`qa <commands/qa>` commands. The marker file is gzip-compressed, and ``.gz`` is appended to its name if not already present (e.g.,
+``lineage.ms`` is written as ``lineage.ms.gz``); later commands accept the name with or without ``.gz``.
 
 * ``-u, --unique``: minimum number of unique phylogenetic markers required to use a lineage-specific marker
   set, otherwise a domain-level marker set is used.

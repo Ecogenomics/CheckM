@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workflows &mdash; CheckM 1.2.10 documentation</title>
+  <title>Workflows &mdash; CheckM 1.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=05c9bb44" />
@@ -16,7 +16,7 @@
     <link rel="canonical" href="https://ecogenomics.github.io/CheckM/workflows.html" />
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=12f20e84"></script>
+      <script src="_static/documentation_options.js?v=1f29e9d3"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
@@ -135,7 +135,8 @@ command:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>lineage_wf<span class="w"> </span>&lt;bin<span class="w"> </span>folder&gt;<span class="w"> </span>&lt;output<span class="w"> </span>folder&gt;
 </pre></div>
 </div>
-<p>This workflow writes the marker file <code class="docutils literal notranslate"><span class="pre">lineage.ms</span></code> to the output folder.</p>
+<p>This workflow writes the results to <code class="docutils literal notranslate"><span class="pre">quality_report.tsv</span></code> and the marker file <code class="docutils literal notranslate"><span class="pre">lineage.ms.gz</span></code> to the output
+folder.</p>
 </section>
 <section id="taxonomic-specific-workflow">
 <span id="workflows-taxonomy"></span><h2>Taxonomic-specific workflow<a class="headerlink" href="#taxonomic-specific-workflow" title="Link to this heading"></a></h2>
@@ -169,7 +170,8 @@ different tables summarizing the quality of each genome bin.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>taxonomy_wf<span class="w"> </span>&lt;rank&gt;<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>&lt;bin<span class="w"> </span>folder&gt;<span class="w"> </span>&lt;output<span class="w"> </span>folder&gt;
 </pre></div>
 </div>
-<p>This workflow writes the marker file <code class="docutils literal notranslate"><span class="pre">&lt;taxon&gt;.ms</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">Bacteria.ms</span></code>) to the output folder.</p>
+<p>This workflow writes the results to <code class="docutils literal notranslate"><span class="pre">quality_report.tsv</span></code> and the marker file <code class="docutils literal notranslate"><span class="pre">&lt;taxon&gt;.ms.gz</span></code> (e.g.
+<code class="docutils literal notranslate"><span class="pre">Bacteria.ms.gz</span></code>) to the output folder.</p>
 </section>
 <section id="using-custom-marker-genes">
 <span id="workflows-custom"></span><h2>Using custom marker genes<a class="headerlink" href="#using-custom-marker-genes" title="Link to this heading"></a></h2>
