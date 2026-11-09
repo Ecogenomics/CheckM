@@ -86,10 +86,15 @@ def _searchBin(binFile, hmmModelFile, outDir, tableOut, hmmerOut, bKeepAlignment
     if not bKeepAlignment:
         keepAlignStr = '--noali'
 
+    # when bins are searched in parallel with one thread each, HMMER is run in
+    # serial mode (--cpu 0) as '--cpu 1' uses an additional thread to read
+    # sequences, which costs ~15% more CPU time without reducing the run time
+    cpus = threadsPerSearch if threadsPerSearch > 1 else 0
+
     hmmer = HMMERRunner()
     hmmer.search(hmmModelFile, aaGeneFile,
                  os.path.join(binDir, tableOut), os.path.join(binDir, hmmerOut),
-                 '--cpu ' + str(threadsPerSearch) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr,
+                 '--cpu ' + str(cpus) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr,
                  bKeepAlignment)
 
     return True
