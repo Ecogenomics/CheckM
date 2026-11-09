@@ -41,6 +41,7 @@ from checkm.defaultValues import DefaultValues
 from checkm.customHelpFormatter import CustomHelpFormatter
 from checkm.util.taxonomyUtils import taxonomicRanks
 from checkm.logger import logger_setup
+from checkm.placement import parseMemorySize
 
 
 class ChangeTempAction(argparse.Action):
@@ -56,6 +57,16 @@ class ChangeTempAction(argparse.Action):
         else:
             raise argparse.ArgumentError(
                 self, 'the value of %s must be a valid directory: %s' % (option_string, values))
+
+
+def gplace_memory_size(value):
+    """Validate a memory size for gPlace's --max_memory option (e.g., 64G or 500M)."""
+    try:
+        parseMemorySize(value)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e))
+
+    return value
 
 
 def version():
@@ -147,8 +158,6 @@ if __name__ == '__main__':
                           "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     tree_parser.add_argument(
         'output_dir', help="directory to write output files")
-    tree_parser.add_argument('-r', '--reduced_tree', dest='bReducedTree', action="store_true",
-                             help="use reduced tree (requires <16GB of memory) for determining lineage of each bin")
     tree_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true",
                              default=False, help="generate HMMER alignment file for each bin")
     tree_parser.add_argument('--nt', dest='bNucORFs', action="store_true",
@@ -159,8 +168,8 @@ if __name__ == '__main__':
                              help="extension of bins (other files in directory are ignored)")
     tree_parser.add_argument('-t', '--threads', type=int,
                              default=1, help="number of threads")
-    tree_parser.add_argument('--pplacer_threads', type=int, default=None,
-                             help="number of threads used by pplacer (default: number of threads, to a maximum of 64)")
+    tree_parser.add_argument('--gplace_max_memory', type=gplace_memory_size, default=None, metavar='MEMORY',
+                             help="memory gPlace may use to place bins, e.g. 64G or 500M (a plain number is GiB) [default: set by gPlace from the available memory]")
     tree_parser.add_argument('-q', '--quiet', dest='bQuiet',
                              action="store_true", default=False, help="suppress console output")
     tree_parser.add_argument('--tmpdir', action=ChangeTempAction,
@@ -198,7 +207,7 @@ if __name__ == '__main__':
     lineage_set_parser.add_argument(
         'tree_dir', help="directory specified during tree command")
     lineage_set_parser.add_argument(
-        'marker_file', help="output file describing marker set for each bin")
+        'marker_file', help="output file describing marker set for each bin (gzip-compressed; '.gz' is appended if not present)")
     lineage_set_parser.add_argument('-u', '--unique', type=int, default=10,
                                     help="minimum number of unique phylogenetic markers required to use lineage-specific marker set")
     lineage_set_parser.add_argument('-m', '--multi', type=int, default=10,
@@ -231,7 +240,7 @@ if __name__ == '__main__':
         'rank', help="taxonomic rank", choices=taxonomicRanks)
     taxon_set_parser.add_argument('taxon', help="taxon of interest")
     taxon_set_parser.add_argument(
-        'marker_file', help="output file describing taxonomic-specific marker set")
+        'marker_file', help="output file describing taxonomic-specific marker set (gzip-compressed; '.gz' is appended if not present)")
     taxon_set_parser.add_argument('-q', '--quiet', dest='bQuiet',
                                   action="store_true", default=False, help="suppress console output")
     taxon_set_parser.add_argument('--tmpdir', action=ChangeTempAction,
@@ -275,8 +284,9 @@ if __name__ == '__main__':
                                       description='Assess bins for contamination and completeness.',
                                       epilog='''
 Note: lineage_wf and taxonomy_wf produce a marker file in the specified output directory. The
-        lineage workflow produces a marker file called lineage.ms, while the taxonomy workflow
-        produces a marker file called <taxon>.ms (e.g. Bacteria.ms).
+        lineage workflow produces a marker file called lineage.ms.gz, while the taxonomy workflow
+        produces a marker file called <taxon>.ms.gz (e.g. Bacteria.ms.gz). Marker files can be
+        given with or without the .gz extension (e.g. lineage.ms).
 
 Example: checkm qa ./output/lineage.ms ./output
                                         ''')
@@ -338,8 +348,6 @@ Example: checkm qa ./output/lineage.ms ./output
                           "separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]")
     lineage_wf_parser.add_argument(
         'output_dir', help="directory to write output files")
-    lineage_wf_parser.add_argument('-r', '--reduced_tree', dest='bReducedTree', action="store_true",
-                                   help="use reduced tree (requires <16GB of memory) for determining lineage of each bin")
     lineage_wf_parser.add_argument('--ali', dest='bKeepAlignment', action="store_true",
                                    default=False, help="generate HMMER alignment file for each bin")
     lineage_wf_parser.add_argument('--nt', dest='bNucORFs', action="store_true",
@@ -370,16 +378,14 @@ Example: checkm qa ./output/lineage.ms ./output
         '-e', '--e_value', type=float, default=DefaultValues.E_VAL, help="e-value cut off")
     lineage_wf_parser.add_argument(
         '-l', '--length', type=float, default=DefaultValues.LENGTH, help="minimum alignment length as a fraction of the marker HMM length")
-    lineage_wf_parser.add_argument(
-        '-f', '--file', default='stdout', help="print results to file")
-    lineage_wf_parser.add_argument('--tab_table', dest='bTabTable', action="store_true",
-                                   default=False, help="print tab-separated values table")
+    lineage_wf_parser.add_argument('--rm_tmp_files', dest='bRmTmpFiles', action="store_true",
+                                   default=False, help="remove the bins and storage directories once the quality report has been written")
     lineage_wf_parser.add_argument('-x', '--extension', default='fna',
                                    help="extension of bins (other files in directory are ignored)")
     lineage_wf_parser.add_argument(
         '-t', '--threads', type=int, default=1, help="number of threads")
-    lineage_wf_parser.add_argument('--pplacer_threads', type=int, default=None,
-                                   help="number of threads used by pplacer (default: number of threads, to a maximum of 64)")
+    lineage_wf_parser.add_argument('--gplace_max_memory', type=gplace_memory_size, default=None, metavar='MEMORY',
+                                   help="memory gPlace may use to place bins, e.g. 64G or 500M (a plain number is GiB) [default: set by gPlace from the available memory]")
     lineage_wf_parser.add_argument('-q', '--quiet', dest='bQuiet',
                                    action="store_true", default=False, help="suppress console output")
     lineage_wf_parser.add_argument('--tmpdir', action=ChangeTempAction,
@@ -424,10 +430,8 @@ Example: checkm qa ./output/lineage.ms ./output
         '-l', '--length', type=float, default=DefaultValues.LENGTH, help="minimum alignment length as a fraction of the marker HMM length")
     taxonomy_wf_parser.add_argument('-c', '--coverage_file', default=None,
                                     help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
-    taxonomy_wf_parser.add_argument(
-        '-f', '--file', default='stdout', help="print results to file")
-    taxonomy_wf_parser.add_argument('--tab_table', dest='bTabTable', action="store_true",
-                                    default=False, help="print tab-separated values table")
+    taxonomy_wf_parser.add_argument('--rm_tmp_files', dest='bRmTmpFiles', action="store_true",
+                                    default=False, help="remove the bins and storage directories once the quality report has been written")
     taxonomy_wf_parser.add_argument('-x', '--extension', default='fna',
                                     help="extension of bins (other files in directory are ignored)")
     taxonomy_wf_parser.add_argument(

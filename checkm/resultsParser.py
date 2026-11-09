@@ -37,6 +37,8 @@ from checkm.hmmer import HMMERParser, FormatError, HMMERError
 
 from checkm.util.pfam import sharedPfam
 from checkm.util.seqUtils import readFasta
+from checkm.util.progress import progressBar
+from checkm.util.compression import openFile, resolvePath
 
 
 # arguments of the current parseBinHits() call, inherited by forked worker processes
@@ -108,7 +110,7 @@ class ResultsParser():
         resultsManagerArgs = (bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats)
         binIds = list(self.models)
 
-        numBinsProcessed = 0
+        progress = progressBar(len(binIds), 'Parsing hits', 'bin')
         if self.threads > 1 and len(binIds) > 1:
             # bins are parsed in parallel by forked worker processes, which inherit the
             # arguments (incl. the HMM models) rather than having them sent to each process
@@ -125,10 +127,9 @@ class ResultsParser():
                         resultsManager = self._resultsManager(binId, *resultsManagerArgs)
                         resultsManager.markerHits = markerHits
                         self.results[binId] = resultsManager
-
-                        numBinsProcessed += 1
-                        self._reportParseProgress(numBinsProcessed, len(binIds))
+                        progress.update(1)
             except cf.process.BrokenProcessPool:
+                progress.close()
                 self.logger.error('A process parsing HMMER results failed unexpectedly.')
                 sys.exit(1)
             finally:
@@ -140,12 +141,9 @@ class ResultsParser():
                 self.parseHmmerResults(
                     hmmerTableFile, resultsManager, bSkipAdjCorrection)
                 self.results[binId] = resultsManager
+                progress.update(1)
 
-                numBinsProcessed += 1
-                self._reportParseProgress(numBinsProcessed, len(binIds))
-
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
+        progress.close()
 
     def _resultsManager(self, binId, bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats):
         """Create results manager for a bin."""
@@ -156,18 +154,10 @@ class ResultsParser():
         return ResultsManager(binId, self.models[binId], bIgnoreThresholds, evalueThreshold,
                               lengthThreshold, bSkipPseudoGeneCorrection)
 
-    def _reportParseProgress(self, numBinsProcessed, numBins):
-        """Report number of bins with parsed HMMER results."""
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            statusStr = '    Finished parsing hits for %d of %d (%.2f%%) bins.' % (
-                numBinsProcessed, numBins, float(numBinsProcessed) * 100 / numBins)
-            sys.stderr.write('%s\r' % statusStr)
-            sys.stderr.flush()
-
     def _writeBinStatsExt(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
         binStatsExtFile = os.path.join(directory, 'storage', DefaultValues.BIN_STATS_EXT_OUT)
         
-        fout = open(binStatsExtFile, 'w')
+        fout = openFile(binStatsExtFile, 'wt')
 
         for binId in sorted(self.results):
             binStatsExt = self.results[binId].getSummary(
@@ -180,7 +170,7 @@ class ResultsParser():
     def _writeMarkerGeneStats(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
         markerGenesFile = os.path.join(directory, 'storage', DefaultValues.MARKER_GENE_STATS)
 
-        fout = open(markerGenesFile, 'w')
+        fout = openFile(markerGenesFile, 'wt')
 
         for binId in sorted(self.results):
             markerGenesHits = self.results[binId].getSummary(
@@ -192,10 +182,10 @@ class ResultsParser():
         """Read bin statistics from file."""
         binStatsFile = os.path.join(resultsFolder, 'storage', binStatsFile)
 
-        checkFileExists(binStatsFile)
+        checkFileExists(resolvePath(binStatsFile))
 
         binStats = {}
-        with open(binStatsFile, 'r') as f:
+        with openFile(binStatsFile) as f:
             for line in f:
                 lineSplit = line.split('\t')
                 gid = lineSplit[0]
@@ -209,10 +199,10 @@ class ResultsParser():
         binStatsExtFile = os.path.join(
             resultsFolder, 'storage', DefaultValues.BIN_STATS_EXT_OUT)
 
-        checkFileExists(binStatsExtFile)
+        checkFileExists(resolvePath(binStatsExtFile))
 
         binStatsExt = {}
-        with open(binStatsExtFile, 'r') as f:
+        with openFile(binStatsExtFile) as f:
             for line in f:
                 lineSplit = line.split('\t')
                 binStatsExt[lineSplit[0]] = ast.literal_eval(lineSplit[1])
@@ -224,10 +214,10 @@ class ResultsParser():
         markerGeneStatsFile = os.path.join(
             resultsFolder, 'storage', DefaultValues.MARKER_GENE_STATS)
 
-        checkFileExists(markerGeneStatsFile)
+        checkFileExists(resolvePath(markerGeneStatsFile))
 
         markerGeneStats = {}
-        with open(markerGeneStatsFile, 'r') as f:
+        with openFile(markerGeneStatsFile) as f:
             for line in f:
                 lineSplit = line.split('\t')
                 markerGeneStats[lineSplit[0]] = ast.literal_eval(lineSplit[1])
@@ -235,9 +225,9 @@ class ResultsParser():
         return markerGeneStats
 
     def parseHmmerResults(self, fileName, resultsManager, bSkipAdjCorrection):
-        """Parse HMMER results."""
+        """Parse HMMER results (which may be gzip-compressed)."""
         try:
-            with open(fileName, 'r') as hmmerHandle:
+            with openFile(fileName) as hmmerHandle:
                 HP = HMMERParser(hmmerHandle)
 
                 while True:

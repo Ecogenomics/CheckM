@@ -17,6 +17,7 @@
 
 import os
 import sys
+import shutil
 import logging
 
 from checkm.defaultValues import DefaultValues
@@ -25,7 +26,7 @@ from checkm.markerSets import MarkerSetParser, BinMarkerSets
 from checkm.resultsParser import ResultsParser
 from checkm.hmmerAligner import HmmerAligner
 from checkm.markerGeneFinder import MarkerGeneFinder
-from checkm.pplacer import PplacerRunner
+from checkm.placement import GPlaceRunner
 from checkm.treeParser import TreeParser
 from checkm.taxonParser import TaxonParser
 from checkm.aminoAcidIdentity import AminoAcidIdentity
@@ -55,6 +56,7 @@ from checkm.plot.markerGenePosPlot import MarkerGenePosPlot
 from checkm.plot.gcBiasPlots import GcBiasPlot
 
 from checkm.util.seqUtils import checkNuclotideSeqs, checkProteinSeqs
+from checkm.util.compression import resolvePath, compressedName, uncompressedName, archiveDirectory
 
 from checkm.checkmData import DBManager
 
@@ -190,11 +192,54 @@ class OptionsParser():
 
         return binFiles
 
+    def _setQualityReportOptions(self, options):
+        """Have qa write the quality report of a workflow (qa -o 2 --tab_table) to the output directory."""
+        options.out_format = 2
+        options.bTabTable = True
+        options.file = os.path.join(options.output_dir, DefaultValues.QUALITY_REPORT)
+
+    def _removeTmpFiles(self, options):
+        """Remove the bins and storage directories of a workflow if requested (--rm_tmp_files)."""
+        if not options.bRmTmpFiles:
+            return
+
+        binInput = os.path.realpath(options.bin_input)
+        for d in ['bins', 'storage']:
+            path = os.path.realpath(os.path.join(options.output_dir, d))
+            if not os.path.isdir(path):
+                continue
+
+            # never remove the input genomes (e.g., if they are in <output_dir>/bins)
+            if os.path.commonpath([path, binInput]) == path:
+                self.logger.warning('Not removing %s as it contains the input genomes.' % path)
+                continue
+
+            shutil.rmtree(path)
+            self.logger.info('Removed %s (--rm_tmp_files).' % path)
+
+    def _resolveMarkerFile(self, markerFile):
+        """Locate a marker file, allowing for compression (e.g., lineage.ms -> lineage.ms.gz).
+
+        If both the compressed and uncompressed file exist (e.g., an output directory of
+        CheckM <= 1.2.x reused with CheckM >= 1.3.0), the most recently modified file is used.
+        """
+        candidates = [f for f in (uncompressedName(markerFile), compressedName(markerFile)) if os.path.isfile(f)]
+        if len(candidates) == 2:
+            newest = max(candidates, key=os.path.getmtime)
+            self.logger.warning('Both %s and %s exist; using the most recently modified file: %s'
+                                % (candidates[0], candidates[1], newest))
+            return newest
+
+        return resolvePath(markerFile)
+
     def tree(self, options):
         """Tree command"""
 
         self.logger.info(
             '[CheckM - tree] Placing bins in reference genome tree.')
+
+        # check for gPlace before the time-consuming gene calling and HMM searches
+        gplace = GPlaceRunner(threads=options.threads, maxMemory=options.gplace_max_memory)
 
         binFiles = self.binFiles(
             options.bin_input, options.extension, options.bCalledGenes)
@@ -251,30 +296,9 @@ class OptionsParser():
                                                        )
 
         # place bins into genome tree
-
-        pplacer = PplacerRunner(threads=self._pplacerThreads(options))
-        pplacer.run(binFiles, resultsParser,
-                    options.output_dir, options.bReducedTree)
+        gplace.run(binFiles, resultsParser, options.output_dir)
 
         self.timeKeeper.printTimeStamp()
-
-    def _pplacerThreads(self, options):
-        """Number of threads to use for pplacer.
-
-        Defaults to the number of threads, to a maximum of 64 as pplacer does not run
-        properly with more threads. pplacer's worker processes share memory, so memory
-        usage increases only slightly with additional threads.
-        """
-        pplacerThreads = getattr(options, 'pplacer_threads', None)
-        if pplacerThreads is None:
-            return min(options.threads, DefaultValues.MAX_PPLACER_THREADS)
-
-        if pplacerThreads > DefaultValues.MAX_PPLACER_THREADS:
-            self.logger.warning('pplacer does not run properly with more than %d threads, so %d threads will be used.'
-                                % (DefaultValues.MAX_PPLACER_THREADS, DefaultValues.MAX_PPLACER_THREADS))
-            return DefaultValues.MAX_PPLACER_THREADS
-
-        return max(1, pplacerThreads)
 
     def treeQA(self, options):
         """Tree QA command"""
@@ -334,6 +358,9 @@ class OptionsParser():
         bootstrap = getattr(options, 'bootstrap', 0)
         bRequireTaxonomy = getattr(options, 'bRequireTaxonomy', False)
 
+        # the marker file is gzip-compressed (e.g., lineage.ms.gz)
+        options.marker_file = compressedName(options.marker_file)
+
         treeParser = TreeParser()
         treeParser.getBinMarkerSets(options.tree_dir, options.marker_file,
                                     numGenomesMarkers,
@@ -362,6 +389,9 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - taxon_set] Generate taxonomic-specific marker set.')
 
+        # the marker file is gzip-compressed (e.g., Bacteria.ms.gz)
+        options.marker_file = compressedName(options.marker_file)
+
         path = os.path.split(options.marker_file)[0]
         if path:
             makeSurePathExists(path)
@@ -385,6 +415,9 @@ class OptionsParser():
         self.logger.info(
             '[CheckM - analyze] Identifying marker genes in bins.')
 
+        # marker files are gzip-compressed from CheckM 1.3.0 (e.g., lineage.ms is read as lineage.ms.gz)
+        options.marker_file = self._resolveMarkerFile(options.marker_file)
+
         binFiles = self.binFiles(
             options.bin_input, options.extension, options.bCalledGenes)
 
@@ -398,8 +431,13 @@ class OptionsParser():
         makeSurePathExists(options.output_dir)
         makeSurePathExists(os.path.join(options.output_dir, 'bins'))
         makeSurePathExists(os.path.join(options.output_dir, 'storage'))
-        makeSurePathExists(os.path.join(
-            options.output_dir, 'storage', 'aai_qa'))
+
+        # alignments of markers with multiple hits in a bin are written to a temporary
+        # directory, which is archived to storage/aai_qa.tar.gz once all bins are processed
+        aaiQaDir = os.path.join(options.output_dir, 'storage', DefaultValues.AAI_QA_DIR)
+        if os.path.isdir(aaiQaDir):
+            shutil.rmtree(aaiQaDir)  # e.g., output of CheckM <= 1.2.x
+        makeSurePathExists(aaiQaDir)
 
         # find marker genes in genome bins
         mgf = MarkerGeneFinder(options.threads)
@@ -442,9 +480,9 @@ class OptionsParser():
                                         False,
                                         DefaultValues.E_VAL,
                                         DefaultValues.LENGTH,
-                                        os.path.join(
-                                            options.output_dir, 'storage', 'aai_qa')
+                                        aaiQaDir
                                         )
+        archiveDirectory(aaiQaDir, os.path.join(options.output_dir, 'storage', DefaultValues.AAI_QA_ARCHIVE))
 
         self.timeKeeper.printTimeStamp()
 
@@ -494,6 +532,9 @@ class OptionsParser():
         self.logger.info('[CheckM - qa] Tabulating genome statistics.')
 
         checkDirExists(options.analyze_dir)
+
+        # marker files are gzip-compressed from CheckM 1.3.0 (e.g., lineage.ms is read as lineage.ms.gz)
+        options.marker_file = self._resolveMarkerFile(options.marker_file)
 
         if options.exclude_markers:
             checkFileExists(options.exclude_markers)
@@ -874,6 +915,9 @@ class OptionsParser():
 
         checkBinInputExists(options.bin_input, options.bCalledGenes)
 
+        # marker files are gzip-compressed from CheckM 1.3.0 (e.g., bacteria.ms is read as bacteria.ms.gz)
+        options.marker_file = self._resolveMarkerFile(options.marker_file)
+
         binFiles = self.binFiles(
             options.bin_input, options.extension, options.bCalledGenes)
 
@@ -899,8 +943,8 @@ class OptionsParser():
         mgf = MarkerGeneFinder(options.threads)
         binIdToModels = mgf.find(binFiles,
                                  options.output_dir,
-                                 "merger.table.txt",
-                                 "merger.hmmer3",
+                                 "merger.table.txt.gz",
+                                 "merger.hmmer3.gz",
                                  options.marker_file,
                                  False,
                                  False,
@@ -918,7 +962,7 @@ class OptionsParser():
         # compare markers found in each bin
 
         merger = Merger()
-        outputFile = merger.run(binFiles, options.output_dir, "merger.table.txt", binIdToModels, binIdToBinMarkerSets,
+        outputFile = merger.run(binFiles, options.output_dir, "merger.table.txt.gz", binIdToModels, binIdToBinMarkerSets,
                                 options.delta_comp, options.delta_cont, options.merged_comp, options.merged_cont)
 
         self.logger.info('Merger information written to: ' + outputFile)
@@ -1052,26 +1096,28 @@ class OptionsParser():
                 options.output_dir, 'lineage.ms')
             options.tree_dir = options.output_dir
             options.analyze_dir = options.output_dir
-            options.out_format = 1
             options.bAlignTopHit = False
             options.exclude_markers = None
             options.coverage_file = None
+            self._setQualityReportOptions(options)
 
             self.tree(options)
             self.lineageSet(options)
             self.analyze(options)
             self.qa(options)
+            self._removeTmpFiles(options)
         elif(options.subparser_name == 'taxonomy_wf'):
             options.marker_file = os.path.join(
                 options.output_dir, options.taxon + '.ms')
             options.analyze_dir = options.output_dir
-            options.out_format = 1
             options.bAlignTopHit = False
             options.exclude_markers = None
+            self._setQualityReportOptions(options)
 
             self.taxonSet(options)  # exits if the taxon is not recognized
             self.analyze(options)
             self.qa(options)
+            self._removeTmpFiles(options)
         elif(options.subparser_name == 'gc_plot'):
             self.gcPlot(options)
         elif(options.subparser_name == 'coding_plot'):

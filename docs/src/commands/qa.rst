@@ -9,8 +9,9 @@ Estimates the completeness, contamination, and strain heterogeneity of each bin 
 identified by the :ref:`analyze <commands/analyze>` command, and reports the results in one of several
 tables. The ``qa`` command must be given the marker file and output folder used with ``analyze``. The
 :ref:`lineage_wf <commands/lineage_wf>` and :ref:`taxonomy_wf <commands/taxonomy_wf>` commands write their
-marker file to the output folder (``lineage.ms`` or ``<taxon>.ms``), so ``qa`` can be re-run on the output
-of a workflow to produce other tables.
+marker file to the output folder (``lineage.ms.gz`` or ``<taxon>.ms.gz``), so ``qa`` can be re-run on the
+output of a workflow to produce other tables. The marker file can be given with or without the ``.gz``
+extension (e.g. ``./output/lineage.ms``).
 
 The ``-o, --out_format`` option specifies the desired output (see :ref:`outputs/qa_formats`):
 

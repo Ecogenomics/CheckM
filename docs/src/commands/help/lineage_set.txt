@@ -6,7 +6,7 @@ Infer lineage-specific marker sets for each bin.
 
 positional arguments:
   tree_dir             directory specified during tree command
-  marker_file          output file describing marker set for each bin
+  marker_file          output file describing marker set for each bin (gzip-compressed; '.gz' is appended if not present)
 
 options:
   -h, --help           show this help message and exit

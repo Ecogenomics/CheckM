@@ -34,15 +34,20 @@ setup(
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
     ],
+    python_requires='>=3.11',
     install_requires=[
         "numpy >= 1.21.3",
         "scipy >= 1.7.3",
         "matplotlib >= 3.5.1",
         "pysam >= 0.19.0",
         "dendropy >= 4.5.2",
+        "tqdm >= 4.62",
+        "xopen >= 2.0",
         "setuptools >= 81"],
     zip_safe=False
 )

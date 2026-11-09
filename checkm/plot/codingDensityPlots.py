@@ -32,6 +32,7 @@ from checkm.common import readDistribution, findNearest, binIdFromFilename
 from checkm.binTools import BinTools
 from checkm.util.seqUtils import readFasta, baseCount
 from checkm.defaultValues import DefaultValues
+from checkm.util.compression import resolvePath
 
 
 class CodingDensityPlots(AbstractPlot):
@@ -57,7 +58,7 @@ class CodingDensityPlots(AbstractPlot):
         # parse Prodigal output
         gffFile = os.path.join(self.options.results_dir, 'bins', binIdFromFilename(
             fastaFile), DefaultValues.PRODIGAL_GFF)
-        if not os.path.exists(gffFile):
+        if not os.path.exists(resolvePath(gffFile)):
             self.logger.error(
                 'Missing gene feature file (%s). This plot is not compatible with the --genes option.' % DefaultValues.PRODIGAL_GFF)
             sys.exit(1)

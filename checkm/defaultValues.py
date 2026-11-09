@@ -53,10 +53,9 @@ class DefaultValues():
     TAXON_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'taxon_marker_sets.tsv')
 
     GENOME_TREE_DIR = os.path.join(CHECKM_DATA_DIR, 'genome_tree')
+    # pplacer reference packages (used by gPlace)
     PPLACER_REF_PACKAGE_FULL = os.path.join(
         GENOME_TREE_DIR, 'genome_tree_full.refpkg')
-    PPLACER_REF_PACKAGE_REDUCED = os.path.join(
-        GENOME_TREE_DIR, 'genome_tree_reduced.refpkg')
     GENOME_TREE = 'genome_tree.tre'
     GENOME_TREE_FASTA = 'genome_tree.fasta'
     GENOME_TREE_DEREP = 'genome_tree.derep.txt'
@@ -68,32 +67,42 @@ class DefaultValues():
     PHYLO_HMM_MODEL_INFO = 'phylo_hmm_info.pkl.gz'
     CHECKM_HMM_MODEL_INFO = 'checkm_hmm_info.pkl.gz'
 
-    HMMER_TABLE_PHYLO_OUT = 'hmmer.tree.txt'
-    HMMER_PHYLO_OUT = 'hmmer.tree.ali.txt'
+    # output files are gzip-compressed from CheckM 1.3.0; files are read with
+    # checkm.util.compression.openFile(), which also reads the uncompressed
+    # files (e.g., genes.faa rather than genes.faa.gz) of earlier versions
+    HMMER_TABLE_PHYLO_OUT = 'hmmer.tree.txt.gz'
+    HMMER_PHYLO_OUT = 'hmmer.tree.ali.txt.gz'
 
-    HMMER_TABLE_OUT = 'hmmer.analyze.txt'
-    HMMER_OUT = 'hmmer.analyze.ali.txt'
+    HMMER_TABLE_OUT = 'hmmer.analyze.txt.gz'
+    HMMER_OUT = 'hmmer.analyze.ali.txt.gz'
 
-    PRODIGAL_AA = 'genes.faa'
-    PRODIGAL_NT = 'genes.fna'
-    PRODIGAL_GFF = 'genes.gff'
+    PRODIGAL_AA = 'genes.faa.gz'
+    PRODIGAL_NT = 'genes.fna.gz'
+    PRODIGAL_GFF = 'genes.gff.gz'
 
-    PPLACER_CONCAT_SEQ_OUT = 'concatenated.fasta'
-    PPLACER_JSON_OUT = 'concatenated.pplacer.json'
+    # placement files (gPlace replaced pplacer in CheckM 1.3.0; file names are unchanged for compatibility, apart from compression)
+    PPLACER_CONCAT_SEQ_OUT = 'concatenated.fasta.gz'
+    PPLACER_JSON_OUT = 'concatenated.pplacer.json.gz'
     PPLACER_OUT = 'pplacer.out'
-    PPLACER_TREE_OUT = 'concatenated.tre'
+    PPLACER_TREE_OUT = 'concatenated.tre.gz'
 
-    BIN_STATS_PHYLO_OUT = 'bin_stats.tree.tsv'
-    BIN_STATS_OUT = 'bin_stats.analyze.tsv'
+    BIN_STATS_PHYLO_OUT = 'bin_stats.tree.tsv.gz'
+    BIN_STATS_OUT = 'bin_stats.analyze.tsv.gz'
 
-    BIN_STATS_EXT_OUT = 'bin_stats_ext.tsv'
-    MARKER_GENE_STATS = 'marker_gene_stats.tsv'
+    BIN_STATS_EXT_OUT = 'bin_stats_ext.tsv.gz'
+    MARKER_GENE_STATS = 'marker_gene_stats.tsv.gz'
+
+    # alignments of markers with multiple hits in a bin (written by analyze, read by qa);
+    # CheckM <= 1.2.x wrote these to the directory storage/aai_qa
+    AAI_QA_DIR = 'aai_qa'
+    AAI_QA_ARCHIVE = 'aai_qa.tar.gz'
 
     CONTIG_BREAK = 'NNNNNNNNNN'
 
     UNBINNED = 'unbinned'
 
+    # quality report written by lineage_wf and taxonomy_wf (output of 'qa -o 2 --tab_table')
+    QUALITY_REPORT = 'quality_report.tsv'
+
     MIN_SEQ_LEN_GC_STD = 1000
 
-    # pplacer does not run properly with more than 64 threads
-    MAX_PPLACER_THREADS = 64

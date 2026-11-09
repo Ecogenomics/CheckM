@@ -1,5 +1,5 @@
-usage: checkm tree [-h] [-r] [--ali] [--nt] [-g] [-x EXTENSION] [-t THREADS]
-                   [--pplacer_threads PPLACER_THREADS] [-q] [--tmpdir TMPDIR]
+usage: checkm tree [-h] [--ali] [--nt] [-g] [-x EXTENSION] [-t THREADS]
+                   [--gplace_max_memory MEMORY] [-q] [--tmpdir TMPDIR]
                    bin_input output_dir
 
 Place bins in the genome tree.
@@ -10,7 +10,6 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -r, --reduced_tree    use reduced tree (requires <16GB of memory) for determining lineage of each bin
   --ali                 generate HMMER alignment file for each bin
   --nt                  generate nucleotide gene sequences for each bin
   -g, --genes           bins contain genes as amino acids instead of nucleotide contigs
@@ -18,8 +17,8 @@ options:
                         extension of bins (other files in directory are ignored) (default: fna)
   -t, --threads THREADS
                         number of threads (default: 1)
-  --pplacer_threads PPLACER_THREADS
-                        number of threads used by pplacer (default: number of threads, to a maximum of 64)
+  --gplace_max_memory MEMORY
+                        memory gPlace may use to place bins, e.g. 64G or 500M (a plain number is GiB) [default: set by gPlace from the available memory]
   -q, --quiet           suppress console output
   --tmpdir TMPDIR       specify an alternative directory for temporary files
 

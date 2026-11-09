@@ -225,6 +225,7 @@ class VerifyGenelessBins(unittest.TestCase):
     def testProdigalNoGenes(self):
         """Verify prodigal finding no genes, or being given no sequences, is not treated as a failure."""
         from checkm.prodigal import ProdigalRunner
+        from checkm.util.compression import hasContent
 
         for binFile, outDir in [(self.tinyBin, 'tiny out'), (self.emptyBin, 'empty out')]:
             outDir = os.path.join(self.tmpDir, outDir)
@@ -234,7 +235,7 @@ class VerifyGenelessBins(unittest.TestCase):
             prodigal.run(binFile, bNucORFs=True)
 
             self.assertTrue(os.path.exists(prodigal.aaGeneFile))
-            self.assertEqual(os.path.getsize(prodigal.aaGeneFile), 0)
+            self.assertFalse(hasContent(prodigal.aaGeneFile))  # an empty gzip-compressed file
             self.assertTrue(os.path.exists(prodigal.gffFile))
             self.assertFalse(prodigal.areORFsCalled(bNucORFs=False))
 

@@ -49,7 +49,8 @@ options:
   --tmpdir TMPDIR       specify an alternative directory for temporary files
 
 Note: lineage_wf and taxonomy_wf produce a marker file in the specified output directory. The
-        lineage workflow produces a marker file called lineage.ms, while the taxonomy workflow
-        produces a marker file called <taxon>.ms (e.g. Bacteria.ms).
+        lineage workflow produces a marker file called lineage.ms.gz, while the taxonomy workflow
+        produces a marker file called <taxon>.ms.gz (e.g. Bacteria.ms.gz). Marker files can be
+        given with or without the .gz extension (e.g. lineage.ms).
 
 Example: checkm qa ./output/lineage.ms ./output

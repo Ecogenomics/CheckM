@@ -28,6 +28,7 @@ from checkm.markerSets import BinMarkerSets, MarkerSet, parseMarkerSetStr
 from checkm.util.taxonomyUtils import taxonomicRanks, ranksByLevel, ranksByLabel
 
 from checkm.defaultValues import DefaultValues
+from checkm.util.compression import openFile
 
 
 class TaxonParser():
@@ -112,7 +113,7 @@ class TaxonParser():
             markerSet.lineageStr = taxon
             binMarkerSets.addMarkerSet(markerSet)
 
-        fout = open(markerFile, 'w')
+        fout = openFile(markerFile, 'wt')  # gzip-compressed if markerFile ends with '.gz'
         fout.write(DefaultValues.TAXON_MARKER_FILE_HEADER + '\n')
         binMarkerSets.write(fout)
         fout.close()

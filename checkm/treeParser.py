@@ -32,6 +32,14 @@ from checkm.markerSets import MarkerSet, BinMarkerSets, parseMarkerSetStr, parse
 from checkm.common import checkDirExists, reassignStdOut, restoreStdOut, getBinIdsFromOutDir
 from checkm.util.seqUtils import readFasta
 from checkm.util.taxonomyUtils import taxonomicPrefixes
+from checkm.util.progress import progressBar
+from checkm.util.compression import openFile
+
+
+def readTree(treeFile):
+    """Read the tree of placed bins (which may be gzip-compressed)."""
+    with openFile(treeFile) as f:
+        return dendropy.Tree.get(file=f, schema='newick', rooting="force-rooted", preserve_underscores=True)
 
 
 class TreeParser():
@@ -56,8 +64,9 @@ class TreeParser():
 
         # write bin alignments to file
         oldStdOut = reassignStdOut(outFile)
-        for line in open(os.path.join(outDir, 'storage', 'tree', DefaultValues.PPLACER_CONCAT_SEQ_OUT)):
-            print(line.rstrip())
+        with openFile(os.path.join(outDir, 'storage', 'tree', DefaultValues.PPLACER_CONCAT_SEQ_OUT)) as f:
+            for line in f:
+                print(line.rstrip())
 
         # read duplicate seqs
         duplicateNodes = self._readDuplicateSeqs()
@@ -81,7 +90,7 @@ class TreeParser():
 
         # read tree
         treeFile = os.path.join(outDir, 'storage', 'tree', DefaultValues.PPLACER_TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
+        tree = readTree(treeFile)
 
         # clean up internal node labels
         for node in tree.internal_nodes():
@@ -134,7 +143,7 @@ class TreeParser():
         # read genome tree (if it exists)
         binIdToUID = {}
         treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
+        tree = readTree(treeFile)
 
         # find first parent of each bin with a taxonomic label
         for binId in binIds:
@@ -165,7 +174,7 @@ class TreeParser():
         # read genome tree (if it exists)
         binIdToTaxonomy = {}
         treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
+        tree = readTree(treeFile)
 
         # find first parent of each bin with a taxonomic label
         for binId in binIds:
@@ -242,7 +251,7 @@ class TreeParser():
 
         # read genome tree
         treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
+        tree = readTree(treeFile)
 
         # read taxonomy string for each IMG genome
         leafIdToTaxonomy = {}
@@ -411,7 +420,7 @@ class TreeParser():
 
         # determine marker set for each bin
         treeFile = os.path.join(outDir, 'storage', 'tree', DefaultValues.PPLACER_TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
+        tree = readTree(treeFile)
         rootNode = tree.find_node(filter_fn=lambda n: n.parent_node == None)
 
         # map taxon labels to nodes once, as find_node_with_taxon_label() traverses the whole tree
@@ -421,19 +430,11 @@ class TreeParser():
             if n.taxon is not None:
                 labelToNode.setdefault(n.taxon.label, n)
 
-        fout = open(markerFile, 'w')
+        fout = openFile(markerFile, 'wt')  # gzip-compressed if markerFile ends with '.gz'
         fout.write(DefaultValues.LINEAGE_MARKER_FILE_HEADER + '\n')
 
-        numProcessedBins = 0
-        statusStr = ''
+        progress = progressBar(len(binIds), 'Processing bins', 'bin')
         for binId in binIds:
-            if self.logger.getEffectiveLevel() <= logging.INFO:
-                numProcessedBins += 1
-                sys.stderr.write(' ' * len(statusStr) + '\r')  # clear previous line
-                statusStr = '    Finished processing %d of %d (%.2f%%) bins (current: %s).' % (numProcessedBins, len(binIds), float(numProcessedBins) * 100 / len(binIds), binId)
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
-
             node = labelToNode.get(binId)
             binMarkerSets = BinMarkerSets(binId, BinMarkerSets.TREE_MARKER_SET)
             if node == None:
@@ -484,10 +485,9 @@ class TreeParser():
                     binMarkerSets.addMarkerSet(markerSet)
 
             binMarkerSets.write(fout)
+            progress.update(1)
 
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
-
+        progress.close()
         fout.close()
 
     def readNodeMetadata(self):
@@ -528,7 +528,7 @@ class TreeParser():
 
         # read genome tree
         treeFile = os.path.join(outDir, 'storage', 'tree', DefaultValues.PPLACER_TREE_OUT)
-        tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
+        tree = readTree(treeFile)
 
         # find first parent of each bin with a label
         binIdToLineageStatistics = {}

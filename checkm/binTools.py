@@ -31,6 +31,7 @@ from checkm.util.seqUtils import readFasta, writeFasta, baseCount
 from checkm.genomicSignatures import GenomicSignatures
 from checkm.prodigal import ProdigalGeneFeatureParser
 from checkm.defaultValues import DefaultValues
+from checkm.util.compression import resolvePath
 
 
 class BinTools():
@@ -283,7 +284,7 @@ class BinTools():
             meanTD, deltaTDs = self.tetraDiffDist(seqs, genomicSig, tetraSigs, binSig)
 
             gffFile = os.path.join(outDir, 'bins', binId, DefaultValues.PRODIGAL_GFF)
-            if not os.path.exists(gffFile):
+            if not os.path.exists(resolvePath(gffFile)):
                 self.logger.error('Missing gene feature file (%s). This command is not compatible with the --genes option.\n' % DefaultValues.PRODIGAL_GFF)
                 sys.exit(1)
 

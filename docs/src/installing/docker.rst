@@ -5,8 +5,8 @@ Docker
 
 A `Dockerfile <https://github.com/Ecogenomics/CheckM/blob/master/docker/Dockerfile>`_ provided by a
 community member is available in the ``docker`` directory of the CheckM repository. The image installs
-HMMER, Prodigal, and pplacer from the Ubuntu package repository, installs the latest release of CheckM
-from PyPI, and downloads the :ref:`CheckM reference data <installing/reference_data>` into the image
+HMMER and Prodigal from the Ubuntu package repository, installs the latest release of CheckM and
+`gPlace <https://github.com/cmc-aau/gPlace>`_ from PyPI, and downloads the :ref:`CheckM reference data <installing/reference_data>` into the image
 (``CHECKM_DATA_PATH`` is set accordingly).
 
 No pre-built image is provided. To build the image:

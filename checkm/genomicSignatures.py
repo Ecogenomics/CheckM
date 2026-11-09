@@ -29,6 +29,7 @@ import logging
 import numpy as np
 
 from checkm.util.seqUtils import readFasta
+from checkm.util.progress import progressBar
 
 
 def _waitForWorkers(workerProcs, writerProc):
@@ -126,17 +127,13 @@ class GenomicSignatures(object):
         totalSeqs = len(seqIds)
         pendingSigs = {}
         nextSeqIndex = 0
-        numProcessedSeq = 0
+        progress = progressBar(totalSeqs, 'Processing sequences', 'seq')
         while True:
             seqId, sig = writerQueue.get(block=True, timeout=None)
             if seqId == None:
                 break
 
-            if self.logger.getEffectiveLevel() <= logging.INFO:
-                numProcessedSeq += 1
-                statusStr = '    Finished processing %d of %d (%.2f%%) sequences.' % (numProcessedSeq, totalSeqs, float(numProcessedSeq) * 100 / totalSeqs)
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
+            progress.update(1)
 
             # results arrive in the order workers finish, so
             # write them out in the order of the input sequences
@@ -148,9 +145,7 @@ class GenomicSignatures(object):
                 fout.write('\n')
                 nextSeqIndex += 1
 
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
-
+        progress.close()
         fout.close()
 
     def canonicalKmerOrder(self):

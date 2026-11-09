@@ -7,20 +7,26 @@ Place bins in the reference genome tree.
 
 This is the first step of the :ref:`lineage-specific workflow <workflows/lineage>`. Genes are called in each
 bin with Prodigal (unless ``--genes`` is used), phylogenetically informative marker genes are identified with
-HMMER, and each bin is placed in the reference genome tree with pplacer.
+HMMER, and each bin is placed in the reference genome tree with `gPlace <https://github.com/cmc-aau/gPlace>`_.
 
-* ``--reduced_tree``: use the reduced reference genome tree, which requires < 16 GB of memory
-  (see :ref:`installing/system_requirements`).
 * ``--ali``: generate a HMMER alignment file for each bin in
-  ``<output folder>/bins/<bin id>/hmmer.tree.ali.txt``.
-* ``--nt``: generate nucleotide gene sequences for each bin in ``<output folder>/bins/<bin id>/genes.fna``.
+  ``<output folder>/bins/<bin id>/hmmer.tree.ali.txt.gz``.
+* ``--nt``: generate nucleotide gene sequences for each bin in ``<output folder>/bins/<bin id>/genes.fna.gz``.
 * ``--genes``: bins contain genes as amino acids instead of nucleotide contigs.
-* ``--pplacer_threads``: number of threads used by pplacer. By default, the number of threads given by
-  ``-t`` is used, to a maximum of 64. pplacer's memory usage increases only slightly with additional
-  threads.
+* ``-t``: number of threads, which is also the number of threads used by gPlace.
+* ``--gplace_max_memory``: memory gPlace may use to place bins, e.g. ``64G`` or ``500M`` (a plain number is
+  GiB). If the placement needs more memory, gPlace places bins tile by tile within this limit, which gives
+  identical results. By default, gPlace sets this from the available memory. If the limit is too small,
+  CheckM reports gPlace's error message, which gives the smallest limit that can be used (see
+  :ref:`installing/system_requirements`).
 
-Called genes are written to ``<output folder>/bins/<bin id>/genes.*``. Bins smaller than 100 kbp are
-processed with Prodigal's metagenomic mode (``-p meta``).
+Called genes are written to ``<output folder>/bins/<bin id>/genes.*.gz`` (see :ref:`outputs/files`). Bins
+smaller than 100 kbp are processed with Prodigal's metagenomic mode (``-p meta``).
+
+.. note::
+
+   CheckM <= 1.2.10 placed bins with pplacer and provided the ``--reduced_tree`` and ``--pplacer_threads``
+   options, which were removed in CheckM 1.3.0.
 
 .. note::
 
@@ -43,3 +49,4 @@ Example
 .. code-block:: bash
 
     checkm tree -t 8 -x fa ./bins ./output
+    checkm tree -t 8 -x fa --gplace_max_memory 8G ./bins ./output

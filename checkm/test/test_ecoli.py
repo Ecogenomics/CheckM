@@ -29,6 +29,7 @@ from checkm.resultsParser import ResultsParser
 from checkm.markerSets import MarkerSet
 from checkm.defaultValues import DefaultValues
 from checkm.common import makeSurePathExists, checkFileExists
+from checkm.util.compression import openFile
 
 import numpy as np
 
@@ -49,7 +50,7 @@ class VerifyEcoli():
 
         options = Options()
         options.threads = 1
-        options.pplacer_threads = 1
+        options.gplace_max_memory = '6G'  # gPlace places tile by tile, so the test needs ~5 GB of memory (~12 GB untiled)
         options.extension = 'fna'
         options.bQuiet = True
         options.output_dir = os.path.join(outputDir, 'results')
@@ -61,7 +62,6 @@ class VerifyEcoli():
         options.bKeepAlignment = False
         options.bNucORFs = False
         options.bCalledGenes = False
-        options.bReducedTree = True
         options.bin_input = os.path.join(DefaultValues.CHECKM_DATA_DIR, 'test_data')
         parser.tree(options)
         self.verifyTree(options.output_dir)
@@ -174,7 +174,7 @@ class VerifyEcoli():
     def verifyLineageSet(self, markerSetFile, bRequireTaxonomy):
         """Verify output of lineage set command."""
 
-        with open(markerSetFile) as f:
+        with openFile(markerSetFile) as f:
             f.readline()  # skip header
 
             for line in f:
