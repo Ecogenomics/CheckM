@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# pplacer.py - runs pplacer and provides functions for parsing output
+# placement.py - place genomes in the reference genome tree with gPlace
 #
 ###############################################################################
 #                                                                             #
@@ -20,6 +20,7 @@
 ###############################################################################
 
 import os
+import re
 import sys
 import stat
 import shutil
@@ -34,15 +35,36 @@ from checkm.util.seqUtils import readFasta, writeFasta
 from checkm.hmmer import runWithStdout, exitOnFailure
 
 
-class PplacerRunner():
-    """Wrapper for running pplacer."""
+# minimum version of gPlace required by CheckM
+MIN_GPLACE_VERSION = (0, 1, 0)
+
+
+def parseGPlaceVersion(versionOutput):
+    """Parse the version from the output of 'gplace --version' (e.g., 'gplace: version 0.1.0 ...').
+
+    Returns a tuple of integers, or None if the version can't be determined.
+    """
+    m = re.search(r'version\s+(\d+(?:\.\d+)*)', versionOutput)
+    if not m:
+        return None
+
+    return tuple(int(x) for x in m.group(1).split('.'))
+
+
+class GPlaceRunner():
+    """Wrapper for running gPlace (https://github.com/cmc-aau/gPlace).
+
+    gPlace is a replacement for pplacer that gives pplacer's placements, bit for bit,
+    using less memory and time. It takes pplacer's command line ('gplace place') and
+    provides an equivalent of 'guppy tog' ('gplace tog').
+    """
+
     def __init__(self, threads):
         self.logger = logging.getLogger('timestamp')
         self.numThreads = threads
 
-        # make sure pplacer and guppy are on the system path
-        self._checkForPplacer()
-        self._checkForGuppy()
+        # make sure a suitable version of gPlace is on the system path
+        self._checkForGPlace()
 
     def run(self, binFiles, resultsParser, outDir, bReducedTree):
         # make sure output and tree directories exist
@@ -51,35 +73,35 @@ class PplacerRunner():
         checkDirExists(alignOutputDir)
 
         treeFile = os.path.join(alignOutputDir, DefaultValues.PPLACER_TREE_OUT)
-        pplacerJsonOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_JSON_OUT)
-        pplacerOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_OUT)
+        placementJsonOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_JSON_OUT)
+        placementOut = os.path.join(alignOutputDir, DefaultValues.PPLACER_OUT)
 
         # create concatenated alignment file for each bin
         concatenatedAlignFile = self._createConcatenatedAlignment(binFiles, resultsParser, alignOutputDir)
 
-        pplacerRefPkg = DefaultValues.PPLACER_REF_PACKAGE_FULL
+        refPkg = DefaultValues.PPLACER_REF_PACKAGE_FULL
         if bReducedTree:
-            pplacerRefPkg = DefaultValues.PPLACER_REF_PACKAGE_REDUCED
+            refPkg = DefaultValues.PPLACER_REF_PACKAGE_REDUCED
 
         # check if concatenated alignment file is empty
         # (this can occur when all genomes have no phylogenetically informative marker genes)
         if os.stat(concatenatedAlignFile)[stat.ST_SIZE] == 0:
             self.logger.info('No genomes were identified that could be placed in the reference genome tree.')
-            shutil.copyfile(os.path.join(pplacerRefPkg, DefaultValues.GENOME_TREE), treeFile)
+            shutil.copyfile(os.path.join(refPkg, DefaultValues.GENOME_TREE), treeFile)
             return
 
-        # run pplacer to place bins in reference genome tree
-        self.logger.info('Placing %d bins into the genome tree with pplacer (be patient).' % len(binFiles))
-        cmd = ['pplacer', '-j', str(self.numThreads),
-               '-c', pplacerRefPkg,
-               '-o', pplacerJsonOut,
+        # run gPlace to place bins in reference genome tree
+        self.logger.info('Placing %d bins into the genome tree with gPlace.' % len(binFiles))
+        cmd = ['gplace', 'place', '-j', str(self.numThreads),
+               '-c', refPkg,
+               '-o', placementJsonOut,
                concatenatedAlignFile]
-        rtn = runWithStdout(cmd, pplacerOut)
-        exitOnFailure(self.logger, 'pplacer', rtn)
+        rtn = runWithStdout(cmd, placementOut)
+        exitOnFailure(self.logger, 'gplace place', rtn)
 
         # extract tree
-        rtn = subprocess.call(['guppy', 'tog', '-o', treeFile, pplacerJsonOut])
-        exitOnFailure(self.logger, 'guppy', rtn)
+        rtn = subprocess.call(['gplace', 'tog', '-o', treeFile, placementJsonOut])
+        exitOnFailure(self.logger, 'gplace tog', rtn)
 
     def _createConcatenatedAlignment(self, binFiles, resultsParser, alignOutputDir):
         """Create a concatenated alignment of marker genes for each bin."""
@@ -126,24 +148,30 @@ class PplacerRunner():
 
         return concatenatedAlignFile
 
-    def _checkForPplacer(self):
-        """Check to see if pplacer is on the system before we try to run it."""
+    def _checkForGPlace(self):
+        """Check that gPlace is on the system path and is a supported version."""
 
-        # Assume that a successful pplacer -h returns 0 and anything
-        # else returns something non-zero
+        minVersionStr = '.'.join(str(v) for v in MIN_GPLACE_VERSION)
+        installStr = ('gPlace >= %s is required; install it with "pip install gtdb-gplace" '
+                      '(requires Python >= 3.12; it can be installed in a separate environment '
+                      'as long as the gplace command is on your system path).' % minVersionStr)
+
         try:
-            subprocess.call(['pplacer', '-h'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-        except:
-            self.logger.error("Make sure pplacer is on your system path.")
+            proc = subprocess.run(['gplace', '--version'], stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT)
+        except OSError:
+            self.logger.error('Make sure gplace is on your system path. ' + installStr)
             sys.exit(1)
 
-    def _checkForGuppy(self):
-        """Check to see if guppy is on the system before we try to run it."""
-
-        # Assume that a successful guppy -h returns 0 and anything
-        # else returns something non-zero
-        try:
-            subprocess.call(['guppy', '-h'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-        except:
-            self.logger.error("Make sure guppy, which is part of the pplacer package, is on your system path.")
+        versionOutput = proc.stdout.decode('utf-8', errors='replace').strip()
+        version = parseGPlaceVersion(versionOutput)
+        if proc.returncode != 0 or version is None:
+            self.logger.error("Unable to determine the version of gPlace from 'gplace --version': %s" % versionOutput)
+            self.logger.error(installStr)
             sys.exit(1)
+
+        if version < MIN_GPLACE_VERSION:
+            self.logger.error('gPlace %s was found, but %s' % ('.'.join(str(v) for v in version), installStr))
+            sys.exit(1)
+
+        self.version = version

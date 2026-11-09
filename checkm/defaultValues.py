@@ -53,6 +53,7 @@ class DefaultValues():
     TAXON_MARKER_SETS = os.path.join(CHECKM_DATA_DIR, 'taxon_marker_sets.tsv')
 
     GENOME_TREE_DIR = os.path.join(CHECKM_DATA_DIR, 'genome_tree')
+    # pplacer reference packages (used by gPlace)
     PPLACER_REF_PACKAGE_FULL = os.path.join(
         GENOME_TREE_DIR, 'genome_tree_full.refpkg')
     PPLACER_REF_PACKAGE_REDUCED = os.path.join(
@@ -78,6 +79,7 @@ class DefaultValues():
     PRODIGAL_NT = 'genes.fna'
     PRODIGAL_GFF = 'genes.gff'
 
+    # placement files (gPlace replaced pplacer in CheckM 1.3.0; file names are unchanged for compatibility)
     PPLACER_CONCAT_SEQ_OUT = 'concatenated.fasta'
     PPLACER_JSON_OUT = 'concatenated.pplacer.json'
     PPLACER_OUT = 'pplacer.out'
@@ -95,5 +97,3 @@ class DefaultValues():
 
     MIN_SEQ_LEN_GC_STD = 1000
 
-    # pplacer does not run properly with more than 64 threads
-    MAX_PPLACER_THREADS = 64

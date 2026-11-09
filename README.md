@@ -17,6 +17,10 @@ Please see the project home page for usage details and installation instructions
 
 We do not recommend installing CheckM from the master branch. This may be unstable. Please install an official release of CheckM or use pip.
 
+### Dependencies
+
+CheckM requires [HMMER](http://hmmer.org/) (>=3.1), [Prodigal](https://github.com/hyattpd/Prodigal) (2.6.3) and, from CheckM 1.3.0, [gPlace](https://github.com/cmc-aau/gPlace) (>=0.1.0) to be on your system path. gPlace replaces [pplacer](https://github.com/matsen/pplacer), which was required by earlier versions of CheckM: it gives the same placements as pplacer, bit for bit, using less memory and time. gPlace requires Python >=3.12 and can be installed with `pip install gtdb-gplace`; it can be installed in a separate environment from CheckM as long as the `gplace` command is on your system path.
+
 ## Estimating quality of CPR genomes
 
 Information about obtaining improved quality estimates for CPR (Patescibacteria) genomes can be found here:

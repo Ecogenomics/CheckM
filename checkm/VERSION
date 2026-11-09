@@ -1,3 +1,8 @@
+1.3.0
+- pplacer has been replaced by gPlace (https://github.com/cmc-aau/gPlace; PyPI: gtdb-gplace), which gives the same placements as pplacer, bit for bit, using less memory and time; gPlace >= 0.1.0 must be on the system path (it requires Python >= 3.12 and can be installed in a separate environment), and pplacer and guppy are no longer required
+- the --pplacer_threads option of the tree and lineage_wf commands has been removed; gPlace uses the number of threads given by -t, without the previous limit of 64 threads
+- output file names are unchanged (e.g., storage/tree/concatenated.pplacer.json)
+
 1.2.10
 - Prodigal's error output is now captured and included in the error message when Prodigal fails (e.g., 'exit code 18: Error: no input sequences to analyze.'); results are unchanged
 

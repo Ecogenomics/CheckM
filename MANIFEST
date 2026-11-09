@@ -29,7 +29,7 @@ checkm/manifestManager.py
 checkm/markerGeneFinder.py
 checkm/markerSets.py
 checkm/merger.py
-checkm/pplacer.py
+checkm/placement.py
 checkm/prettytable.py
 checkm/prodigal.py
 checkm/profile.py
