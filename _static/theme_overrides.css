@@ -1,0 +1,16 @@
+/* Use the full page width so wide tables and help text have room */
+.wy-nav-content {
+    max-width: none;
+}
+
+/* Size the CheckM logo in the sidebar header */
+.wy-side-nav-search .wy-dropdown > a img.logo,
+.wy-side-nav-search > a img.logo {
+    width: 100%;
+    max-width: 220px;
+}
+
+/* Highlight table rows on mouseover */
+.row-even:hover td, .row-odd:hover td {
+    background-color: #e5e5e5 !important;
+}

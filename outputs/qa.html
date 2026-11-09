@@ -1,0 +1,197 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reported statistics &mdash; CheckM 1.2.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="../_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/outputs/qa.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="qa output formats" href="qa_formats.html" />
+    <link rel="prev" title="Outputs" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installing/index.html">Installing CheckM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../commands/index.html">Commands</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Outputs</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Reported statistics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#marker-set-and-quality-estimates">Marker set and quality estimates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#genome-statistics">Genome statistics</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="qa_formats.html">qa output formats</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Citing CheckM</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Outputs</a></li>
+      <li class="breadcrumb-item active">Reported statistics</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/outputs/qa.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="reported-statistics">
+<span id="outputs-qa"></span><h1>Reported statistics<a class="headerlink" href="#reported-statistics" title="Link to this heading"></a></h1>
+<p>The following statistics are reported by the <a class="reference internal" href="../commands/qa.html#commands-qa"><span class="std std-ref">qa</span></a> command. Output format 1
+(<code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">1</span></code>, the default and the output of the workflows) reports the bin ID, marker set information, marker
+counts, completeness, contamination, and strain heterogeneity. Output format 2 (<code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">2</span></code>) additionally reports
+the genome statistics. See <a class="reference internal" href="qa_formats.html#outputs-qa-formats"><span class="std std-ref">qa output formats</span></a> for the other output formats.</p>
+<section id="marker-set-and-quality-estimates">
+<h2>Marker set and quality estimates<a class="headerlink" href="#marker-set-and-quality-estimates" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Bin Id</strong>: unique identifier of genome bin (derived from the input FASTA file name).</p></li>
+<li><p><strong>Marker lineage</strong>: indicates the taxonomic rank of the lineage-specific marker set used to estimate genome
+completeness, contamination, and strain heterogeneity. More detailed information about the placement of a
+genome within the reference genome tree can be obtained with the <a class="reference internal" href="../commands/tree_qa.html#commands-tree-qa"><span class="std std-ref">tree_qa</span></a>
+command. The UID indicates the branch within the reference tree used to infer the marker set applied to
+estimate the bin’s quality. For <a class="reference internal" href="../workflows.html#workflows-custom"><span class="std std-ref">custom marker genes</span></a>, the marker lineage is
+<code class="docutils literal notranslate"><span class="pre">N/A</span></code>.</p></li>
+<li><p><strong># genomes</strong>: number of reference genomes used to infer the lineage-specific marker set (<code class="docutils literal notranslate"><span class="pre">-1</span></code> for custom
+marker genes).</p></li>
+<li><p><strong># markers</strong>: number of marker genes within the inferred lineage-specific marker set.</p></li>
+<li><p><strong># marker sets</strong>: number of co-located marker sets within the inferred lineage-specific marker set.</p></li>
+<li><p><strong>0, 1, 2, 3, 4, 5+</strong>: number of marker genes identified 0, 1, 2, 3, 4, or 5 or more times.</p></li>
+<li><p><strong>Completeness</strong>: estimated completeness of genome as determined from the presence/absence of marker genes
+and the expected collocalization of these genes (see Methods in the
+<a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4484387/">CheckM manuscript</a> for details).</p></li>
+<li><p><strong>Contamination</strong>: estimated contamination of genome as determined by the presence of multi-copy marker
+genes and the expected collocalization of these genes (see Methods in the
+<a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4484387/">CheckM manuscript</a> for details).</p></li>
+<li><p><strong>Strain heterogeneity</strong>: estimated strain heterogeneity as determined from the number of multi-copy marker
+pairs which exceed a specified amino acid identity threshold (default = 90%; see <code class="docutils literal notranslate"><span class="pre">--aai_strain</span></code>). High
+strain heterogeneity suggests the majority of reported contamination is from one or more closely related
+organisms (i.e. potentially the same species), while low strain heterogeneity suggests the majority of
+contamination is from more phylogenetically diverse sources (see Methods in the
+<a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4484387/">CheckM manuscript</a> for more details).</p></li>
+</ul>
+</section>
+<section id="genome-statistics">
+<h2>Genome statistics<a class="headerlink" href="#genome-statistics" title="Link to this heading"></a></h2>
+<p>The following statistics are also reported in output format 2:</p>
+<ul class="simple">
+<li><p><strong>Genome size (bp)</strong>: number of nucleotides (including unknowns specified by N’s) in the genome.</p></li>
+<li><p><strong># ambiguous bases</strong>: number of ambiguous (N’s) bases in the genome.</p></li>
+<li><p><strong># scaffolds</strong>: number of scaffolds within the genome.</p></li>
+<li><p><strong># contigs</strong>: number of contigs within the genome as determined by splitting scaffolds at any position
+consisting of more than 10 consecutive ambiguous bases.</p></li>
+<li><p><strong>N50 (scaffolds)</strong>: N50 statistic as calculated over all scaffolds.</p></li>
+<li><p><strong>N50 (contigs)</strong>: N50 statistic as calculated over all contigs.</p></li>
+<li><p><strong>Mean scaffold length (bp)</strong>: mean length of scaffolds within the genome.</p></li>
+<li><p><strong>Mean contig length (bp)</strong>: mean length of contigs within the genome.</p></li>
+<li><p><strong>Longest scaffold (bp)</strong>: the longest scaffold within the genome.</p></li>
+<li><p><strong>Longest contig (bp)</strong>: the longest contig within the genome.</p></li>
+<li><p><strong>GC</strong>: number of G/C nucleotides relative to all A, C, G, and T nucleotides in the genome.</p></li>
+<li><p><strong>GC std (scaffolds &gt; 1kbp)</strong>: standard deviation of the GC content of scaffolds longer than 1 kbp.</p></li>
+<li><p><strong>Coding density</strong>: the number of nucleotides within a coding sequence (CDS) relative to all nucleotides
+in the genome.</p></li>
+<li><p><strong>Translation table</strong>: indicates which
+<a class="reference external" href="https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi">genetic code</a> was used to translate
+nucleotides into amino acids (see <a class="reference internal" href="../commands/tree.html#commands-tree"><span class="std std-ref">tree</span></a>).</p></li>
+<li><p><strong># predicted genes</strong>: number of predicted coding sequences (CDS) within the genome as determined using
+<a class="reference external" href="https://github.com/hyattpd/Prodigal">Prodigal</a>.</p></li>
+<li><p><strong>Coverage (&lt;BAM&gt;)</strong>, <strong>Coverage std (&lt;BAM&gt;)</strong>: mean and standard deviation of the coverage of the bin in
+each BAM file. Only reported when a coverage file produced by the <a class="reference internal" href="../commands/coverage.html#commands-coverage"><span class="std std-ref">coverage</span></a>
+command is given with <code class="docutils literal notranslate"><span class="pre">-c</span></code>.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Outputs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="qa_formats.html" class="btn btn-neutral float-right" title="qa output formats" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

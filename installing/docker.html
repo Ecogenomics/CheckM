@@ -1,0 +1,156 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Docker &mdash; CheckM 1.2.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="../_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/installing/docker.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Reference data" href="reference_data.html" />
+    <link rel="prev" title="Bioconda" href="bioconda.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Installing CheckM</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pip.html">pip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bioconda.html">Bioconda</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference_data.html">Reference data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html">Testing the installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#system-requirements">System requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#bioinformatic-tool-dependencies">Bioinformatic tool dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#python-dependencies">Python dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#running-checkm">Running CheckM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#upgrading-checkm">Upgrading CheckM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#web-version-through-kbase">Web version through KBase</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../commands/index.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Citing CheckM</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Installing CheckM</a></li>
+      <li class="breadcrumb-item active">Docker</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/installing/docker.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="docker">
+<span id="installing-docker"></span><h1>Docker<a class="headerlink" href="#docker" title="Link to this heading"></a></h1>
+<p>A <a class="reference external" href="https://github.com/Ecogenomics/CheckM/blob/master/docker/Dockerfile">Dockerfile</a> provided by a
+community member is available in the <code class="docutils literal notranslate"><span class="pre">docker</span></code> directory of the CheckM repository. The image installs
+HMMER, Prodigal, and pplacer from the Ubuntu package repository, installs the latest release of CheckM
+from PyPI, and downloads the <a class="reference internal" href="reference_data.html#installing-reference-data"><span class="std std-ref">CheckM reference data</span></a> into the image
+(<code class="docutils literal notranslate"><span class="pre">CHECKM_DATA_PATH</span></code> is set accordingly).</p>
+<p>No pre-built image is provided. To build the image:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Ecogenomics/CheckM.git
+<span class="nb">cd</span><span class="w"> </span>CheckM/docker
+docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>checkm<span class="w"> </span>.
+</pre></div>
+</div>
+<p>CheckM can then be run by mounting the directory containing your genomes into the container, e.g.:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span>/path/to/my_data:/data<span class="w"> </span>checkm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>checkm<span class="w"> </span>lineage_wf<span class="w"> </span>-t<span class="w"> </span><span class="m">8</span><span class="w"> </span>-x<span class="w"> </span>fa<span class="w"> </span>/data/bins<span class="w"> </span>/data/checkm_output
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bioconda.html" class="btn btn-neutral float-left" title="Bioconda" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="reference_data.html" class="btn btn-neutral float-right" title="Reference data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

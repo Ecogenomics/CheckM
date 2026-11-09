@@ -1,0 +1,245 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workflows &mdash; CheckM 1.2.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/workflows.html" />
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=12f20e84"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Commands" href="commands/index.html" />
+    <link rel="prev" title="FAQ and support" href="faq.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing/index.html">Installing CheckM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Workflows</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#lineage-specific-workflow">Lineage-specific workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#taxonomic-specific-workflow">Taxonomic-specific workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-custom-marker-genes">Using custom marker genes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-the-cpr-marker-set">Using the CPR marker set</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="commands/index.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Citing CheckM</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Workflows</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/workflows.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="workflows">
+<span id="id1"></span><h1>Workflows<a class="headerlink" href="#workflows" title="Link to this heading"></a></h1>
+<p>CheckM is executed from the command line and consists of a series of <a class="reference internal" href="commands/index.html#commands"><span class="std std-ref">commands</span></a> in order to
+support a number of different analyses and workflows. The two most common workflows are to assess genomes
+using either <em>lineage-specific</em> or <em>taxonomic-specific</em> marker sets. Genome quality can also be assessed using
+custom marker genes, such as the marker set for CPR genomes provided with CheckM.</p>
+<section id="lineage-specific-workflow">
+<span id="workflows-lineage"></span><h2>Lineage-specific workflow<a class="headerlink" href="#lineage-specific-workflow" title="Link to this heading"></a></h2>
+<p>The recommended workflow for assessing the completeness and contamination of genome bins is to use
+lineage-specific marker sets. This workflow consists of 4 mandatory (M) steps and 1 recommended (R) step:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>(M) checkm tree &lt;bin folder&gt; &lt;output folder&gt;
+(R) checkm tree_qa &lt;output folder&gt;
+(M) checkm lineage_set &lt;output folder&gt; &lt;marker file&gt;
+(M) checkm analyze &lt;marker file&gt; &lt;bin folder&gt; &lt;output folder&gt;
+(M) checkm qa &lt;marker file&gt; &lt;output folder&gt;
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="commands/tree.html#commands-tree"><span class="std std-ref">tree</span></a> command places genome bins into a reference genome tree. All genomes to be
+analyzed must reside in a single bin directory (or be listed in a tab-separated file; see
+<a class="reference internal" href="quick_start.html#quick-start"><span class="std std-ref">Quick start</span></a>). CheckM assumes genome bins are in FASTA format with the extension <code class="docutils literal notranslate"><span class="pre">fna</span></code>, though this
+can be changed with the <code class="docutils literal notranslate"><span class="pre">-x</span></code> flag.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">tree</span></code> command can optionally be followed by the <a class="reference internal" href="commands/tree_qa.html#commands-tree-qa"><span class="std std-ref">tree_qa</span></a> command, which will
+indicate the number of phylogenetically informative marker genes found in each genome bin along with a
+taxonomic string indicating its approximate placement in the tree. If desired, genome bins with few
+phylogenetically informative marker genes may be removed in order to reduce the computational requirements
+of the following commands. Alternatively, if only genomes from a particular taxonomic group are of interest,
+these can be moved to a new directory and analyzed separately.</p>
+<p>The <a class="reference internal" href="commands/lineage_set.html#commands-lineage-set"><span class="std std-ref">lineage_set</span></a> command creates a marker file indicating lineage-specific
+marker sets suitable for evaluating each genome. This marker file is passed to the
+<a class="reference internal" href="commands/analyze.html#commands-analyze"><span class="std std-ref">analyze</span></a> command in order to identify marker genes and calculate genome statistics.
+Finally, the <a class="reference internal" href="commands/qa.html#commands-qa"><span class="std std-ref">qa</span></a> command estimates the completeness and contamination of each genome bin
+and can be used to produce different tables summarizing the quality of each genome bin.</p>
+<p>For convenience, the 4 mandatory steps can be executed using the <a class="reference internal" href="commands/lineage_wf.html#commands-lineage-wf"><span class="std std-ref">lineage_wf</span></a>
+command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>lineage_wf<span class="w"> </span>&lt;bin<span class="w"> </span>folder&gt;<span class="w"> </span>&lt;output<span class="w"> </span>folder&gt;
+</pre></div>
+</div>
+<p>This workflow writes the marker file <code class="docutils literal notranslate"><span class="pre">lineage.ms</span></code> to the output folder.</p>
+</section>
+<section id="taxonomic-specific-workflow">
+<span id="workflows-taxonomy"></span><h2>Taxonomic-specific workflow<a class="headerlink" href="#taxonomic-specific-workflow" title="Link to this heading"></a></h2>
+<p>In some cases it is convenient to analyze all genome bins with the same marker set. A common example would
+be a set of genomes from the same taxonomic group. The workflow for using a taxonomic-specific marker set
+consists of 3 mandatory (M) steps and 1 recommended (R) step:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>(R) checkm taxon_list
+(M) checkm taxon_set &lt;rank&gt; &lt;taxon&gt; &lt;marker file&gt;
+(M) checkm analyze &lt;marker file&gt; &lt;bin folder&gt; &lt;output folder&gt;
+(M) checkm qa &lt;marker file&gt; &lt;output folder&gt;
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="commands/taxon_list.html#commands-taxon-list"><span class="std std-ref">taxon_list</span></a> command produces a table indicating all taxa for which a marker
+set can be produced. All supported taxa at a given taxonomic rank can be listed by passing <code class="docutils literal notranslate"><span class="pre">taxon_list</span></code>
+the <code class="docutils literal notranslate"><span class="pre">--rank</span></code> flag:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>taxon_list<span class="w"> </span>--rank<span class="w"> </span>phylum
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="commands/taxon_set.html#commands-taxon-set"><span class="std std-ref">taxon_set</span></a> command is used to produce marker sets for a specific taxon:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>taxon_set<span class="w"> </span>phylum<span class="w"> </span>Cyanobacteria<span class="w"> </span>cyanobacteria.ms
+</pre></div>
+</div>
+<p>The marker file produced by the <code class="docutils literal notranslate"><span class="pre">taxon_set</span></code> command is passed to the <a class="reference internal" href="commands/analyze.html#commands-analyze"><span class="std std-ref">analyze</span></a>
+command in order to identify marker genes within each genome bin. All putative genomes to be analyzed must
+reside in a single bin directory (or be listed in a tab-separated file). CheckM assumes genomes are in FASTA
+format with the extension <code class="docutils literal notranslate"><span class="pre">fna</span></code>, though this can be changed with the <code class="docutils literal notranslate"><span class="pre">-x</span></code> flag. Finally, the
+<a class="reference internal" href="commands/qa.html#commands-qa"><span class="std std-ref">qa</span></a> command estimates completeness and contamination and can be used to produce
+different tables summarizing the quality of each genome bin.</p>
+<p>For convenience, the above workflow can be executed in a single step with the
+<a class="reference internal" href="commands/taxonomy_wf.html#commands-taxonomy-wf"><span class="std std-ref">taxonomy_wf</span></a> command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>taxonomy_wf<span class="w"> </span>&lt;rank&gt;<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>&lt;bin<span class="w"> </span>folder&gt;<span class="w"> </span>&lt;output<span class="w"> </span>folder&gt;
+</pre></div>
+</div>
+<p>This workflow writes the marker file <code class="docutils literal notranslate"><span class="pre">&lt;taxon&gt;.ms</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">Bacteria.ms</span></code>) to the output folder.</p>
+</section>
+<section id="using-custom-marker-genes">
+<span id="workflows-custom"></span><h2>Using custom marker genes<a class="headerlink" href="#using-custom-marker-genes" title="Link to this heading"></a></h2>
+<p>CheckM supports using custom marker genes for assessing genome completeness and contamination. The desired
+marker genes must be specified as hidden Markov models (HMMs) constructed with <a class="reference external" href="http://hmmer.org/">HMMER</a>
+(HMMER3 format). Genome quality can be assessed using these marker genes as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>analyze<span class="w"> </span>&lt;custom<span class="w"> </span>HMM<span class="w"> </span>file&gt;<span class="w"> </span>&lt;bin<span class="w"> </span>folder&gt;<span class="w"> </span>&lt;output<span class="w"> </span>folder&gt;
+checkm<span class="w"> </span>qa<span class="w"> </span>&lt;custom<span class="w"> </span>HMM<span class="w"> </span>file&gt;<span class="w"> </span>&lt;output<span class="w"> </span>folder&gt;
+</pre></div>
+</div>
+<p>The HMM file is passed to the <a class="reference internal" href="commands/analyze.html#commands-analyze"><span class="std std-ref">analyze</span></a> command in order to identify marker genes in
+each genome bin. Finally, the <a class="reference internal" href="commands/qa.html#commands-qa"><span class="std std-ref">qa</span></a> command estimates the completeness and contamination
+of each genome bin and can be used to produce different tables summarizing the quality of each genome bin.</p>
+<p>When using custom marker genes, all markers are treated as a single marker set. In the output of <code class="docutils literal notranslate"><span class="pre">qa</span></code>, the
+marker lineage is <code class="docutils literal notranslate"><span class="pre">N/A</span></code>, <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">genomes</span></code> is <code class="docutils literal notranslate"><span class="pre">-1</span></code> (indicating it is unknown how many genomes were used to
+create the custom marker set), and <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">marker</span> <span class="pre">sets</span></code> is <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p>
+</section>
+<section id="using-the-cpr-marker-set">
+<span id="workflows-cpr"></span><h2>Using the CPR marker set<a class="headerlink" href="#using-the-cpr-marker-set" title="Link to this heading"></a></h2>
+<p>CheckM tends to underestimate the completeness of CPR (Patescibacteria) genomes as they are often missing
+many of the “universal” set of 104 bacterial marker genes used by CheckM. The 43 marker genes proposed by
+<a class="reference external" href="https://www.nature.com/articles/nature14486">Brown et al., 2015</a> likely provide improved estimates of the
+quality of CPR genomes. This marker set has been provided by Adarsh Singh and
+<a class="reference external" href="https://www2.rowland.harvard.edu/people/nate-cira">Nate Cira</a> for use in CheckM and is available in the
+<a class="reference external" href="https://github.com/Ecogenomics/CheckM/tree/master/custom_marker_sets">custom_marker_sets</a> directory of
+the CheckM repository as <code class="docutils literal notranslate"><span class="pre">cpr_43_markers.hmm</span></code> (the markers are described in the Excel spreadsheet
+<code class="docutils literal notranslate"><span class="pre">cpr_43_markers.xlxs</span></code>). It can be applied to CPR genomes as a <a class="reference internal" href="#workflows-custom"><span class="std std-ref">custom marker set</span></a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>analyze<span class="w"> </span>cpr_43_markers.hmm<span class="w"> </span>&lt;bin<span class="w"> </span>folder&gt;<span class="w"> </span>&lt;output<span class="w"> </span>folder&gt;
+checkm<span class="w"> </span>qa<span class="w"> </span>cpr_43_markers.hmm<span class="w"> </span>&lt;output<span class="w"> </span>folder&gt;
+</pre></div>
+</div>
+<p>As an example, this marker set was applied to two CPR genomes:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.ncbi.nlm.nih.gov/assembly/GCA_001790095.1/">Candidatus Roizmanbacteria bacterium GCA_001790095.1</a>,
+which has an estimated completeness of 95.4% with the CPR marker genes and 72.1% when using the 104
+bacterial marker genes</p></li>
+<li><p><a class="reference external" href="https://www.ncbi.nlm.nih.gov/assembly/GCF_000398025.1/">Candidatus Paceibacter normanii GCA_000398025.1</a>,
+which has an estimated completeness of 69.8% with the CPR marker genes and 58.6% when using the 104
+bacterial marker genes</p></li>
+</ul>
+<p>As for any custom marker set, the marker lineage is reported as <code class="docutils literal notranslate"><span class="pre">N/A</span></code>, <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">genomes</span></code> as <code class="docutils literal notranslate"><span class="pre">-1</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">marker</span> <span class="pre">sets</span></code> as <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="faq.html" class="btn btn-neutral float-left" title="FAQ and support" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="commands/index.html" class="btn btn-neutral float-right" title="Commands" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

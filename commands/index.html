@@ -1,0 +1,353 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Commands &mdash; CheckM 1.2.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="../_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/commands/index.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tree" href="tree.html" />
+    <link rel="prev" title="Workflows" href="../workflows.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installing/index.html">Installing CheckM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Commands</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#lineage-specific-marker-set">Lineage-specific marker set</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tree.html">tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tree_qa.html">tree_qa</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lineage_set.html">lineage_set</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#taxonomic-specific-marker-set">Taxonomic-specific marker set</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="taxon_list.html">taxon_list</a></li>
+<li class="toctree-l3"><a class="reference internal" href="taxon_set.html">taxon_set</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#apply-marker-set-to-genome-bins">Apply marker set to genome bins</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyze.html">analyze</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qa.html">qa</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#common-workflows">Common workflows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="lineage_wf.html">lineage_wf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="taxonomy_wf.html">taxonomy_wf</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#plots">Plots</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gc_plot.html">gc_plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coding_plot.html">coding_plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tetra_plot.html">tetra_plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dist_plot.html">dist_plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="nx_plot.html">nx_plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="len_hist.html">len_hist</a></li>
+<li class="toctree-l3"><a class="reference internal" href="marker_plot.html">marker_plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gc_bias_plot.html">gc_bias_plot</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bin-exploration-and-modification">Bin exploration and modification</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="unique.html">unique</a></li>
+<li class="toctree-l3"><a class="reference internal" href="merge.html">merge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="outliers.html">outliers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="modify.html">modify</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#utility-functions">Utility functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="unbinned.html">unbinned</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coverage.html">coverage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tetra.html">tetra</a></li>
+<li class="toctree-l3"><a class="reference internal" href="profile.html">profile</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ssu_finder.html">ssu_finder</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#reference-data-and-testing">Reference data and testing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data.html">data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="test.html">test</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#removed-commands">Removed commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#checkm-h">checkm -h</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Citing CheckM</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Commands</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/commands/index.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="commands">
+<span id="id1"></span><h1>Commands<a class="headerlink" href="#commands" title="Link to this heading"></a></h1>
+<p>CheckM is executed from the command line and consists of a series of commands in order to support a number of
+different analyses and workflows. These commands are organized into several related groups, as listed by
+<code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">-h</span></code>. Help for each command can be shown with <code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">&lt;command&gt;</span> <span class="pre">-h</span></code>.</p>
+<p>The two most common workflows are to assess genomes using either <em>lineage-specific</em> or <em>taxonomic-specific</em>
+marker sets (see <a class="reference internal" href="../workflows.html#workflows"><span class="std std-ref">Workflows</span></a>).</p>
+<section id="lineage-specific-marker-set">
+<h2>Lineage-specific marker set<a class="headerlink" href="#lineage-specific-marker-set" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tree.html">tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tree_qa.html">tree_qa</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lineage_set.html">lineage_set</a></li>
+</ul>
+</div>
+</section>
+<section id="taxonomic-specific-marker-set">
+<h2>Taxonomic-specific marker set<a class="headerlink" href="#taxonomic-specific-marker-set" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="taxon_list.html">taxon_list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="taxon_set.html">taxon_set</a></li>
+</ul>
+</div>
+</section>
+<section id="apply-marker-set-to-genome-bins">
+<h2>Apply marker set to genome bins<a class="headerlink" href="#apply-marker-set-to-genome-bins" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="analyze.html">analyze</a></li>
+<li class="toctree-l1"><a class="reference internal" href="qa.html">qa</a></li>
+</ul>
+</div>
+</section>
+<section id="common-workflows">
+<h2>Common workflows<a class="headerlink" href="#common-workflows" title="Link to this heading"></a></h2>
+<p>These workflows combine the above commands.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lineage_wf.html">lineage_wf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="taxonomy_wf.html">taxonomy_wf</a></li>
+</ul>
+</div>
+</section>
+<section id="plots">
+<span id="commands-plots"></span><h2>Plots<a class="headerlink" href="#plots" title="Link to this heading"></a></h2>
+<p>CheckM can produce a number of plots for assessing the quality of genome bins.</p>
+<p>Reference distribution plots:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gc_plot.html">gc_plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coding_plot.html">coding_plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tetra_plot.html">tetra_plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dist_plot.html">dist_plot</a></li>
+</ul>
+</div>
+<p>General plots:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="nx_plot.html">nx_plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="len_hist.html">len_hist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="marker_plot.html">marker_plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gc_bias_plot.html">gc_bias_plot</a></li>
+</ul>
+</div>
+</section>
+<section id="bin-exploration-and-modification">
+<h2>Bin exploration and modification<a class="headerlink" href="#bin-exploration-and-modification" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="unique.html">unique</a></li>
+<li class="toctree-l1"><a class="reference internal" href="merge.html">merge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outliers.html">outliers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modify.html">modify</a></li>
+</ul>
+</div>
+</section>
+<section id="utility-functions">
+<h2>Utility functions<a class="headerlink" href="#utility-functions" title="Link to this heading"></a></h2>
+<p>CheckM also provides a number of additional commands that may be useful for exploring genome bins. Some of
+these commands also produce summary statistics of sequences required by specific plotting commands.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="unbinned.html">unbinned</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coverage.html">coverage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tetra.html">tetra</a></li>
+<li class="toctree-l1"><a class="reference internal" href="profile.html">profile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ssu_finder.html">ssu_finder</a></li>
+</ul>
+</div>
+</section>
+<section id="reference-data-and-testing">
+<h2>Reference data and testing<a class="headerlink" href="#reference-data-and-testing" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="data.html">data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html">test</a></li>
+</ul>
+</div>
+</section>
+<section id="removed-commands">
+<h2>Removed commands<a class="headerlink" href="#removed-commands" title="Link to this heading"></a></h2>
+<p>The following commands were removed in CheckM v1.1.x in order to simplify the code base and focus CheckM and
+support requests on critical functionality:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">bin_qa_plot</span></code>: non-critical, rarely used plot which does not scale to the large numbers of MAGs now being
+recovered</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">par_plot</span></code>: non-critical plot and the same information is better presented in the reference
+distribution plots</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cov_pca</span></code>, <code class="docutils literal notranslate"><span class="pre">tetra_pca</span></code>: alternatives to these static plots exist in tools such as
+<a class="reference external" href="http://merenlab.org/software/anvio/">Anvi’o</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">len_plot</span></code>: rarely used plot which is largely redundant with the <code class="docutils literal notranslate"><span class="pre">len_hist</span></code> and <code class="docutils literal notranslate"><span class="pre">nx_plot</span></code> plots</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bin_union</span></code>, <code class="docutils literal notranslate"><span class="pre">bin_compare</span></code>: feature-rich alternatives now exist, such as
+<a class="reference external" href="https://github.com/cmks/DAS_Tool">DAS Tool</a> and <a class="reference external" href="https://github.com/dparks1134/UniteM">UniteM</a></p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">join_tables</span></code> command is also no longer available.</p>
+</section>
+<section id="checkm-h">
+<h2>checkm -h<a class="headerlink" href="#checkm-h" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>                ...::: CheckM v1.2.10 :::...
+
+  Lineage-specific marker set:
+    tree         -&gt; Place bins in the reference genome tree
+    tree_qa      -&gt; Assess phylogenetic markers found in each bin
+    lineage_set  -&gt; Infer lineage-specific marker sets for each bin
+
+  Taxonomic-specific marker set:
+    taxon_list   -&gt; List available taxonomic-specific marker sets
+    taxon_set    -&gt; Generate taxonomic-specific marker set
+
+  Apply marker set to genome bins:
+    analyze      -&gt; Identify marker genes in bins
+    qa           -&gt; Assess bins for contamination and completeness
+
+  Common workflows (combines above commands):
+    lineage_wf   -&gt; Runs tree, lineage_set, analyze, qa
+    taxonomy_wf  -&gt; Runs taxon_set, analyze, qa
+
+  Reference distribution plots:
+    gc_plot      -&gt; Create GC histogram and delta-GC plot
+    coding_plot  -&gt; Create coding density (CD) histogram and delta-CD plot
+    tetra_plot   -&gt; Create tetranucleotide distance (TD) histogram and delta-TD plot
+    dist_plot    -&gt; Create image with GC, CD, and TD distribution plots together
+
+  General plots:
+    nx_plot      -&gt; Create Nx-plots
+    len_hist     -&gt; Sequence length histogram
+    marker_plot  -&gt; Plot position of marker genes on sequences
+    gc_bias_plot -&gt; Plot bin coverage as a function of GC
+
+  Bin exploration and modification:
+    unique       -&gt; Ensure no sequences are assigned to multiple bins
+    merge        -&gt; Identify bins with complementary sets of marker genes
+    outliers     -&gt; [Experimental] Identify outliers in bins relative to reference distributions
+    modify       -&gt; [Experimental] Modify sequences in a bin
+
+  Utility functions:
+    unbinned     -&gt; Identify unbinned sequences
+    coverage     -&gt; Calculate coverage of sequences
+    tetra        -&gt; Calculate tetranucleotide signature of sequences
+    profile      -&gt; Calculate percentage of reads mapped to each bin
+    ssu_finder   -&gt; Identify SSU (16S/18S) rRNAs in sequences
+
+  Testing:
+    test         -&gt; Run CheckM on a test genome (E. coli) to verify operation
+
+  Use 'checkm data setRoot &lt;checkm_data_dir&gt;' to specify the location of CheckM database files.
+
+  Usage: checkm &lt;command&gt; -h for command specific help
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../workflows.html" class="btn btn-neutral float-left" title="Workflows" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tree.html" class="btn btn-neutral float-right" title="tree" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

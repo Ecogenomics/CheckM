@@ -1,0 +1,224 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installing CheckM &mdash; CheckM 1.2.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="../_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/installing/index.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pip" href="pip.html" />
+    <link rel="prev" title="CheckM" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installing CheckM</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pip.html">pip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bioconda.html">Bioconda</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html">Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference_data.html">Reference data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html">Testing the installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#system-requirements">System requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bioinformatic-tool-dependencies">Bioinformatic tool dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#python-dependencies">Python dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-checkm">Running CheckM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#upgrading-checkm">Upgrading CheckM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#web-version-through-kbase">Web version through KBase</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../commands/index.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Citing CheckM</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installing CheckM</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/installing/index.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installing-checkm">
+<span id="installing"></span><h1>Installing CheckM<a class="headerlink" href="#installing-checkm" title="Link to this heading"></a></h1>
+<p>The latest release of CheckM is 1.2.10. CheckM &gt;= 1.1.0 requires Python 3.</p>
+<p>CheckM can be installed with <a class="reference internal" href="pip.html#installing-pip"><span class="std std-ref">pip</span></a> or <a class="reference internal" href="bioconda.html#installing-bioconda"><span class="std std-ref">Bioconda</span></a>, or run
+from a <a class="reference internal" href="docker.html#installing-docker"><span class="std std-ref">Docker</span></a> image built with the Dockerfile in the CheckM repository. All
+methods require the <a class="reference internal" href="reference_data.html#installing-reference-data"><span class="std std-ref">CheckM reference data</span></a>. We do not recommend
+installing CheckM from the master branch, which may be unstable; please install an official release.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pip.html">pip</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bioconda.html">Bioconda</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference_data.html">Reference data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing the installation</a></li>
+</ul>
+</div>
+<section id="system-requirements">
+<span id="installing-system-requirements"></span><h2>System requirements<a class="headerlink" href="#system-requirements" title="Link to this heading"></a></h2>
+<p>CheckM is designed to run on Linux. The limiting requirement for CheckM is memory. Inference of
+<a class="reference internal" href="../workflows.html#workflows-lineage"><span class="std std-ref">lineage-specific marker sets</span></a> using the full reference genome tree requires
+approximately <strong>40 GB</strong> of memory. However, a reduced genome tree (<code class="docutils literal notranslate"><span class="pre">--reduced_tree</span></code>) can also be used to
+infer lineage-specific marker sets, which is suitable for machines with as little as <strong>16 GB</strong> of memory. We
+recommend using the full tree if possible, though our results suggest that the same lineage-specific marker
+set will be selected for the vast majority of genomes regardless of the underlying reference tree.</p>
+<p>System requirements are <strong>far more modest</strong> if you plan to make use of
+<a class="reference internal" href="../workflows.html#workflows-taxonomy"><span class="std std-ref">taxonomic-specific marker sets</span></a> or your own
+<a class="reference internal" href="../workflows.html#workflows-custom"><span class="std std-ref">custom marker genes</span></a>, as this bypasses the need to place genomes in the reference
+genome tree.</p>
+<p>If you plan to process a large number of genomes, see <a class="reference internal" href="../faq.html#faq-large-numbers"><span class="std std-ref">Processing large numbers of genomes</span></a>.</p>
+</section>
+<section id="bioinformatic-tool-dependencies">
+<span id="installing-dependencies"></span><h2>Bioinformatic tool dependencies<a class="headerlink" href="#bioinformatic-tool-dependencies" title="Link to this heading"></a></h2>
+<p>CheckM requires the following programs to be
+<a class="reference external" href="https://unix.stackexchange.com/questions/26047/how-to-correctly-add-a-path-to-path">added to your system path</a>:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="http://hmmer.org/">HMMER</a> (&gt;= 3.1b1)</p></li>
+<li><p><a class="reference external" href="https://github.com/hyattpd/Prodigal">Prodigal</a> (2.60 or &gt;= 2.6.1)</p>
+<ul>
+<li><p>the executable must be named <code class="docutils literal notranslate"><span class="pre">prodigal</span></code> and not <code class="docutils literal notranslate"><span class="pre">prodigal.linux</span></code></p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://matsen.fhcrc.org/pplacer/">pplacer</a> (&gt;= 1.1)</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">guppy</span></code>, which is part of the pplacer package, must also be on your system path</p></li>
+<li><p>pplacer binaries can be found on the
+<a class="reference external" href="https://github.com/matsen/pplacer/releases/tag/v1.1.alpha17">pplacer GitHub</a> page</p></li>
+</ul>
+</li>
+</ul>
+<p>These programs are installed automatically with the <a class="reference internal" href="bioconda.html#installing-bioconda"><span class="std std-ref">Bioconda</span></a> package and in the
+<a class="reference internal" href="docker.html#installing-docker"><span class="std std-ref">Docker</span></a> image, but must be installed separately when CheckM is installed with
+<a class="reference internal" href="pip.html#installing-pip"><span class="std std-ref">pip</span></a>.</p>
+</section>
+<section id="python-dependencies">
+<span id="installing-python-dependencies"></span><h2>Python dependencies<a class="headerlink" href="#python-dependencies" title="Link to this heading"></a></h2>
+<p>The following Python libraries are required and are installed automatically by <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
+<ul class="simple">
+<li><p>numpy &gt;= 1.21.3</p></li>
+<li><p>scipy &gt;= 1.7.3</p></li>
+<li><p>matplotlib &gt;= 3.5.1</p></li>
+<li><p>pysam &gt;= 0.19.0</p></li>
+<li><p>dendropy &gt;= 4.5.2</p></li>
+<li><p>setuptools &gt;= 81</p></li>
+</ul>
+</section>
+<section id="running-checkm">
+<h2>Running CheckM<a class="headerlink" href="#running-checkm" title="Link to this heading"></a></h2>
+<p>Once CheckM and its reference data are installed, CheckM is ready to run. For a list of CheckM commands,
+type:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="../quick_start.html#quick-start"><span class="std std-ref">Quick start</span></a> to get started.</p>
+</section>
+<section id="upgrading-checkm">
+<span id="installing-upgrade"></span><h2>Upgrading CheckM<a class="headerlink" href="#upgrading-checkm" title="Link to this heading"></a></h2>
+<p>You can upgrade CheckM through <a class="reference external" href="https://pypi.org/project/checkm-genome/">pip</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip3<span class="w"> </span>install<span class="w"> </span>checkm-genome<span class="w"> </span>--upgrade<span class="w"> </span>--no-deps
+</pre></div>
+</div>
+<p>Upgrading CheckM v1 does not require new reference data.</p>
+</section>
+<section id="web-version-through-kbase">
+<span id="installing-kbase"></span><h2>Web version through KBase<a class="headerlink" href="#web-version-through-kbase" title="Link to this heading"></a></h2>
+<p>The <a class="reference external" href="https://narrative.kbase.us/#catalog/apps/kb_Msuite/run_checkM_lineage_wf">CheckM lineage workflow</a> has
+been made available through <a class="reference external" href="https://kbase.us/">KBase</a> for those looking for a web-based solution.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="CheckM" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pip.html" class="btn btn-neutral float-right" title="pip" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,215 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dist_plot &mdash; CheckM 1.2.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="../_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/commands/dist_plot.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="nx_plot" href="nx_plot.html" />
+    <link rel="prev" title="tetra_plot" href="tetra_plot.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installing/index.html">Installing CheckM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Commands</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#lineage-specific-marker-set">Lineage-specific marker set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#taxonomic-specific-marker-set">Taxonomic-specific marker set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#apply-marker-set-to-genome-bins">Apply marker set to genome bins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#common-workflows">Common workflows</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#plots">Plots</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="gc_plot.html">gc_plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coding_plot.html">coding_plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tetra_plot.html">tetra_plot</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">dist_plot</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#arguments">Arguments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="nx_plot.html">nx_plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="len_hist.html">len_hist</a></li>
+<li class="toctree-l3"><a class="reference internal" href="marker_plot.html">marker_plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gc_bias_plot.html">gc_bias_plot</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#bin-exploration-and-modification">Bin exploration and modification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#utility-functions">Utility functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#reference-data-and-testing">Reference data and testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#removed-commands">Removed commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#checkm-h">checkm -h</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Citing CheckM</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Commands</a></li>
+      <li class="breadcrumb-item active">dist_plot</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/commands/dist_plot.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dist-plot">
+<span id="commands-dist-plot"></span><h1>dist_plot<a class="headerlink" href="#dist-plot" title="Link to this heading"></a></h1>
+<p>Create image with GC, CD, and TD distribution plots together.</p>
+<p>Produces a single figure combining the plots produced by <a class="reference internal" href="gc_plot.html#commands-gc-plot"><span class="std std-ref">gc_plot</span></a>,
+<a class="reference internal" href="coding_plot.html#commands-coding-plot"><span class="std std-ref">coding_plot</span></a>, and <a class="reference internal" href="tetra_plot.html#commands-tetra-plot"><span class="std std-ref">tetra_plot</span></a>.</p>
+<p>This plot requires a file indicating the tetranucleotide signature of all sequences within the genome bins.
+This file can be created with the <a class="reference internal" href="tetra.html#commands-tetra"><span class="std std-ref">tetra</span></a> command.
+This command requires the output folder of the <a class="reference internal" href="analyze.html#commands-analyze"><span class="std std-ref">analyze</span></a>,
+<a class="reference internal" href="lineage_wf.html#commands-lineage-wf"><span class="std std-ref">lineage_wf</span></a>, or <a class="reference internal" href="taxonomy_wf.html#commands-taxonomy-wf"><span class="std std-ref">taxonomy_wf</span></a> command
+(<code class="docutils literal notranslate"><span class="pre">results_dir</span></code>).</p>
+<p>A plot is written for each bin to <code class="docutils literal notranslate"><span class="pre">&lt;output_dir&gt;/&lt;bin</span> <span class="pre">id&gt;.ref_dist_plots.&lt;image_type&gt;</span></code>.</p>
+<section id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: checkm dist_plot [-h] [--image_type {eps,pdf,png,ps,svg}] [--dpi DPI]
+                        [--font_size FONT_SIZE] [-x EXTENSION] [--width WIDTH] [--height HEIGHT]
+                        [-a GC_WINDOW_SIZE] [-b TD_WINDOW_SIZE] [-c CD_WINDOW_SIZE]
+                        [-1 GC_BIN_WIDTH] [-2 TD_BIN_WIDTH] [-3 CD_BIN_WIDTH] [-q]
+                        results_dir bin_input output_dir tetra_profile dist_value [dist_value ...]
+
+Create image with GC, CD, and TD distribution plots together.
+
+positional arguments:
+  results_dir           directory specified during analyze command
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+  output_dir            directory to hold plots
+  tetra_profile         tetranucleotide profiles for each sequence (see tetra command)
+  dist_value            reference distribution(s) to plot; integer between 0 and 100
+
+options:
+  -h, --help            show this help message and exit
+  --image_type {eps,pdf,png,ps,svg}
+                        desired image type (default: png)
+  --dpi DPI             desired DPI of output image (default: 600)
+  --font_size FONT_SIZE
+                        Desired font size (default: 8)
+  -x, --extension EXTENSION
+                        extension of bins (other files in directory are ignored) (default: fna)
+  --width WIDTH         width of output image (default: 6.5)
+  --height HEIGHT       height of output image (default: 8)
+  -a, --gc_window_size GC_WINDOW_SIZE
+                        window size used to calculate GC histogram (default: 5000)
+  -b, --td_window_size TD_WINDOW_SIZE
+                        window size used to calculate TD histogram (default: 5000)
+  -c, --cd_window_size CD_WINDOW_SIZE
+                        window size used to calculate CD histogram (default: 10000)
+  -1, --gc_bin_width GC_BIN_WIDTH
+                        width of GC bars in histogram (default: 0.01)
+  -2, --td_bin_width TD_BIN_WIDTH
+                        width of TD bars in histogram (default: 0.01)
+  -3, --cd_bin_width CD_BIN_WIDTH
+                        width of CD bars in histogram (default: 0.01)
+  -q, --quiet           suppress console output
+
+Example: checkm dist_plot ./output ./bins ./plots tetra.tsv 95
+</pre></div>
+</div>
+</section>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>tetra<span class="w"> </span>seqs.fna<span class="w"> </span>tetra.tsv
+checkm<span class="w"> </span>dist_plot<span class="w"> </span>./output<span class="w"> </span>./bins<span class="w"> </span>./plots<span class="w"> </span>tetra.tsv<span class="w"> </span><span class="m">95</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tetra_plot.html" class="btn btn-neutral float-left" title="tetra_plot" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="nx_plot.html" class="btn btn-neutral float-right" title="nx_plot" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

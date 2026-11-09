@@ -1,0 +1,206 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>merge &mdash; CheckM 1.2.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="../_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/commands/merge.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="outliers" href="outliers.html" />
+    <link rel="prev" title="unique" href="unique.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installing/index.html">Installing CheckM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Commands</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#lineage-specific-marker-set">Lineage-specific marker set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#taxonomic-specific-marker-set">Taxonomic-specific marker set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#apply-marker-set-to-genome-bins">Apply marker set to genome bins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#common-workflows">Common workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#plots">Plots</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#bin-exploration-and-modification">Bin exploration and modification</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="unique.html">unique</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">merge</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#arguments">Arguments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="outliers.html">outliers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="modify.html">modify</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#utility-functions">Utility functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#reference-data-and-testing">Reference data and testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#removed-commands">Removed commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#checkm-h">checkm -h</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Citing CheckM</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Commands</a></li>
+      <li class="breadcrumb-item active">merge</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/commands/merge.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="merge">
+<span id="commands-merge"></span><h1>merge<a class="headerlink" href="#merge" title="Link to this heading"></a></h1>
+<p>Identify bins with complementary sets of marker genes.</p>
+<p>Identifies genome bins with complementary sets of marker genes. Merging such bins will result in a notable
+increase in completeness with only a marginal, or no, increase in contamination. Caution must be exercised
+before merging two bins.</p>
+<p>To identify complementary sets of marker genes, a common set of markers must be sought in each bin, so this
+command requires a taxonomic-specific marker set (see <a class="reference internal" href="taxon_set.html#commands-taxon-set"><span class="std std-ref">taxon_set</span></a>) or a HMM file of
+<a class="reference internal" href="../workflows.html#workflows-custom"><span class="std std-ref">custom marker genes</span></a>; lineage-specific marker files are not supported. We generally
+consider both the bacterial and archaeal sets produced by the <code class="docutils literal notranslate"><span class="pre">taxon_set</span></code> command.</p>
+<p>It is entirely possible that two bins will have complementary sets of marker genes, but should not be
+merged. We have observed this situation many times. Additional information should be used to confirm the
+merging of bins. We only merge bins after verifying that they have similar genomic characteristics (e.g.,
+GC, coverage) and are placed in similar locations within a reference genome tree. This information is
+available using the <a class="reference internal" href="qa.html#commands-qa"><span class="std std-ref">qa</span></a> and <a class="reference internal" href="tree_qa.html#commands-tree-qa"><span class="std std-ref">tree_qa</span></a> commands, respectively.</p>
+<p>Pairs of bins meeting the <code class="docutils literal notranslate"><span class="pre">--delta_comp</span></code>, <code class="docutils literal notranslate"><span class="pre">--delta_cont</span></code>, <code class="docutils literal notranslate"><span class="pre">--merged_comp</span></code>, and <code class="docutils literal notranslate"><span class="pre">--merged_cont</span></code>
+criteria are written to <code class="docutils literal notranslate"><span class="pre">&lt;output_dir&gt;/merger.tsv</span></code>.</p>
+<section id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: checkm merge [-h] [-g] [--delta_comp DELTA_COMP] [--delta_cont DELTA_CONT]
+                    [--merged_comp MERGED_COMP] [--merged_cont MERGED_CONT] [-x EXTENSION]
+                    [-t THREADS] [-q]
+                    marker_file bin_input output_dir
+
+Identify bins with complementary sets of marker genes.
+
+positional arguments:
+  marker_file           marker file to use for assessing potential bin mergers (marker set or HMM file)
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+  output_dir            directory to write output files
+
+options:
+  -h, --help            show this help message and exit
+  -g, --genes           bins contain genes as amino acids instead of nucleotide contigs
+  --delta_comp DELTA_COMP
+                        minimum increase in completeness to report pair (default: 5.0)
+  --delta_cont DELTA_CONT
+                        maximum increase in contamination to report pair (default: 10.0)
+  --merged_comp MERGED_COMP
+                        minimum merged completeness to report pair (default: 50.0)
+  --merged_cont MERGED_CONT
+                        maximum merged contamination to report pair (default: 20.0)
+  -x, --extension EXTENSION
+                        extension of bins (other files in directory are ignored) (default: fna)
+  -t, --threads THREADS
+                        number of threads (default: 1)
+  -q, --quiet           suppress console output
+
+Example: checkm merge bacteria.ms ./bins ./output
+</pre></div>
+</div>
+</section>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>taxon_set<span class="w"> </span>domain<span class="w"> </span>Bacteria<span class="w"> </span>bacteria.ms
+checkm<span class="w"> </span>merge<span class="w"> </span>bacteria.ms<span class="w"> </span>./bins<span class="w"> </span>./output
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="unique.html" class="btn btn-neutral float-left" title="unique" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="outliers.html" class="btn btn-neutral float-right" title="outliers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,170 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pip &mdash; CheckM 1.2.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="../_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/installing/pip.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Bioconda" href="bioconda.html" />
+    <link rel="prev" title="Installing CheckM" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Installing CheckM</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bioconda.html">Bioconda</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html">Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference_data.html">Reference data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html">Testing the installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#system-requirements">System requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#bioinformatic-tool-dependencies">Bioinformatic tool dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#python-dependencies">Python dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#running-checkm">Running CheckM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#upgrading-checkm">Upgrading CheckM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#web-version-through-kbase">Web version through KBase</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../commands/index.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Citing CheckM</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Installing CheckM</a></li>
+      <li class="breadcrumb-item active">pip</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/installing/pip.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pip">
+<span id="installing-pip"></span><h1>pip<a class="headerlink" href="#pip" title="Link to this heading"></a></h1>
+<p>CheckM is a Python 3 program and is available on <a class="reference external" href="https://pypi.org/project/checkm-genome/">PyPI</a> as
+<code class="docutils literal notranslate"><span class="pre">checkm-genome</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip3<span class="w"> </span>install<span class="w"> </span>checkm-genome
+</pre></div>
+</div>
+<p>This will install CheckM and all other required Python libraries
+(see <a class="reference internal" href="index.html#installing-python-dependencies"><span class="std std-ref">Python dependencies</span></a>). If <code class="docutils literal notranslate"><span class="pre">pip</span></code> complains about breaking system packages, install
+CheckM into a virtual environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv<span class="w">       </span><span class="c1"># or: uv venv, if you prefer https://pypi.org/project/uv/</span>
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">   </span><span class="c1"># or: whatever the venv command tells you to run</span>
+pip3<span class="w"> </span>install<span class="w"> </span>checkm-genome<span class="w">  </span><span class="c1"># or: uv pip install checkm-genome</span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="index.html#installing-dependencies"><span class="std std-ref">bioinformatic tool dependencies</span></a> (HMMER, Prodigal, and pplacer) need to
+be installed separately and placed on your system path. If you are not too concerned about having the
+latest versions, your package manager may provide them:</p>
+<ul class="simple">
+<li><p>Debian, Ubuntu, etc.: <code class="docutils literal notranslate"><span class="pre">apt</span> <span class="pre">install</span> <span class="pre">hmmer</span> <span class="pre">prodigal</span> <span class="pre">pplacer</span></code></p></li>
+<li><p>Fedora: <code class="docutils literal notranslate"><span class="pre">dnf</span> <span class="pre">install</span> <span class="pre">hmmer</span></code> (Prodigal and pplacer need to be obtained separately, e.g. from Bioconda)</p></li>
+</ul>
+<p>Alternatively, a Conda environment can be set up with the dependencies from Bioconda and CheckM installed
+with <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>checkm<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.9
+conda<span class="w"> </span>activate<span class="w"> </span>checkm
+conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>bioconda<span class="w"> </span>numpy<span class="w"> </span>matplotlib<span class="w"> </span>pysam
+conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>bioconda<span class="w"> </span>hmmer<span class="w"> </span>prodigal<span class="w"> </span>pplacer
+pip3<span class="w"> </span>install<span class="w"> </span>checkm-genome
+</pre></div>
+</div>
+<p>Finally, download and configure the <a class="reference internal" href="reference_data.html#installing-reference-data"><span class="std std-ref">reference data</span></a>.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Installing CheckM" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="bioconda.html" class="btn btn-neutral float-right" title="Bioconda" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

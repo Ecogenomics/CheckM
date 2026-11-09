@@ -1,0 +1,173 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quick start &mdash; CheckM 1.2.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/quick_start.html" />
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=12f20e84"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="FAQ and support" href="faq.html" />
+    <link rel="prev" title="Testing the installation" href="installing/testing.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installing/index.html">Installing CheckM</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quick start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#typical-workflow">Typical workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-usage">Example usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflows.html">Workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="commands/index.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Citing CheckM</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Quick start</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/quick_start.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="quick-start">
+<span id="id1"></span><h1>Quick start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h1>
+<section id="typical-workflow">
+<h2>Typical workflow<a class="headerlink" href="#typical-workflow" title="Link to this heading"></a></h2>
+<p>CheckM works on a directory of genome bins in FASTA format. By default, CheckM assumes genomes consist of
+contigs/scaffolds in nucleotide space and that the files to process end with the extension <code class="docutils literal notranslate"><span class="pre">fna</span></code>. You can
+specify a different extension with the <code class="docutils literal notranslate"><span class="pre">-x</span></code> flag. CheckM calls genes internally using
+<a class="reference external" href="https://github.com/hyattpd/Prodigal">Prodigal</a>, taking care to identify genes with recoded stop codons.
+You can call genes externally and provide CheckM with FASTA files containing genes in amino acid space. To
+specify this, use the <code class="docutils literal notranslate"><span class="pre">--genes</span></code> flag. Again, you may need to change the extension CheckM looks for (e.g.,
+<code class="docutils literal notranslate"><span class="pre">-x</span> <span class="pre">faa</span></code>).</p>
+<p>Instead of a directory, genomes can also be specified with a tab-separated file listing a genome ID and the
+path to the genome FASTA file on each line (and, with <code class="docutils literal notranslate"><span class="pre">--genes</span></code>, the path to the protein FASTA file as a
+third column). Bin IDs are always taken from the FASTA file names with the extension removed.</p>
+<p>CheckM consists of a series of commands in order to support a number of different analyses and workflows
+(see <a class="reference internal" href="commands/index.html#commands"><span class="std std-ref">Commands</span></a>). If you are in a rush to get started, the standard workflow for CheckM is:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>lineage_wf<span class="w"> </span>&lt;bin<span class="w"> </span>folder&gt;<span class="w"> </span>&lt;output<span class="w"> </span>folder&gt;
+</pre></div>
+</div>
+<p>For a full list of options, run <code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">lineage_wf</span> <span class="pre">-h</span></code> (see <a class="reference internal" href="commands/lineage_wf.html#commands-lineage-wf"><span class="std std-ref">lineage_wf</span></a>). To speed up
+processing, use the <code class="docutils literal notranslate"><span class="pre">-t</span></code> flag to specify the desired number of threads. If you are on a machine with
+&lt; 40 GB of memory, the <code class="docutils literal notranslate"><span class="pre">--reduced_tree</span></code> flag can be used, which reduces the memory requirements to less
+than 16 GB (see <a class="reference internal" href="installing/index.html#installing-system-requirements"><span class="std std-ref">System requirements</span></a>).</p>
+<p>After performing a lineage (<code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">lineage_wf</span></code>) or taxonomy (<code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">taxonomy_wf</span></code>) workflow, you can
+re-run the <a class="reference internal" href="commands/qa.html#commands-qa"><span class="std std-ref">qa</span></a> command to produce a number of different output tables. The <code class="docutils literal notranslate"><span class="pre">qa</span></code>
+command requires a marker file to run. This file is produced during the workflow and is stored in the
+CheckM output directory specified (<code class="docutils literal notranslate"><span class="pre">lineage.ms</span></code> for <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;taxon&gt;.ms</span></code> for
+<code class="docutils literal notranslate"><span class="pre">taxonomy_wf</span></code>). Plots can be produced with the <a class="reference internal" href="commands/index.html#commands-plots"><span class="std std-ref">plotting commands</span></a>.</p>
+</section>
+<section id="example-usage">
+<h2>Example usage<a class="headerlink" href="#example-usage" title="Link to this heading"></a></h2>
+<p>Assume you have putative genomes in the directory <code class="docutils literal notranslate"><span class="pre">/home/donovan/bins</span></code> with <code class="docutils literal notranslate"><span class="pre">fa</span></code> as the file extension
+and want to store the CheckM results in <code class="docutils literal notranslate"><span class="pre">/home/donovan/checkm</span></code>. To process these genomes with 8 threads,
+simply run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>lineage_wf<span class="w"> </span>-t<span class="w"> </span><span class="m">8</span><span class="w"> </span>-x<span class="w"> </span>fa<span class="w"> </span>/home/donovan/bins<span class="w"> </span>/home/donovan/checkm
+</pre></div>
+</div>
+<p>Or, to process files of called genes in amino acid space which have the extension <code class="docutils literal notranslate"><span class="pre">faa</span></code>, use:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>lineage_wf<span class="w"> </span>--genes<span class="w"> </span>-t<span class="w"> </span><span class="m">8</span><span class="w"> </span>-x<span class="w"> </span>faa<span class="w"> </span>&lt;bin<span class="w"> </span>folder&gt;<span class="w"> </span>&lt;output<span class="w"> </span>folder&gt;
+</pre></div>
+</div>
+<p>To write the results to a tab-separated file instead of printing a table to the console, add
+<code class="docutils literal notranslate"><span class="pre">--tab_table</span> <span class="pre">-f</span> <span class="pre">checkm_results.tsv</span></code>. The completeness, contamination, and other statistics reported by
+CheckM are described in <a class="reference internal" href="outputs/qa.html#outputs-qa"><span class="std std-ref">Reported statistics</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installing/testing.html" class="btn btn-neutral float-left" title="Testing the installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="faq.html" class="btn btn-neutral float-right" title="FAQ and support" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

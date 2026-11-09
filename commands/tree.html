@@ -1,0 +1,211 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tree &mdash; CheckM 1.2.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="../_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/commands/tree.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tree_qa" href="tree_qa.html" />
+    <link rel="prev" title="Commands" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installing/index.html">Installing CheckM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Commands</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#lineage-specific-marker-set">Lineage-specific marker set</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">tree</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#arguments">Arguments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tree_qa.html">tree_qa</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lineage_set.html">lineage_set</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#taxonomic-specific-marker-set">Taxonomic-specific marker set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#apply-marker-set-to-genome-bins">Apply marker set to genome bins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#common-workflows">Common workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#plots">Plots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#bin-exploration-and-modification">Bin exploration and modification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#utility-functions">Utility functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#reference-data-and-testing">Reference data and testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#removed-commands">Removed commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#checkm-h">checkm -h</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Citing CheckM</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Commands</a></li>
+      <li class="breadcrumb-item active">tree</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/commands/tree.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tree">
+<span id="commands-tree"></span><h1>tree<a class="headerlink" href="#tree" title="Link to this heading"></a></h1>
+<p>Place bins in the reference genome tree.</p>
+<p>This is the first step of the <a class="reference internal" href="../workflows.html#workflows-lineage"><span class="std std-ref">lineage-specific workflow</span></a>. Genes are called in each
+bin with Prodigal (unless <code class="docutils literal notranslate"><span class="pre">--genes</span></code> is used), phylogenetically informative marker genes are identified with
+HMMER, and each bin is placed in the reference genome tree with pplacer.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--reduced_tree</span></code>: use the reduced reference genome tree, which requires &lt; 16 GB of memory
+(see <a class="reference internal" href="../installing/index.html#installing-system-requirements"><span class="std std-ref">System requirements</span></a>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--ali</span></code>: generate a HMMER alignment file for each bin in
+<code class="docutils literal notranslate"><span class="pre">&lt;output</span> <span class="pre">folder&gt;/bins/&lt;bin</span> <span class="pre">id&gt;/hmmer.tree.ali.txt</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--nt</span></code>: generate nucleotide gene sequences for each bin in <code class="docutils literal notranslate"><span class="pre">&lt;output</span> <span class="pre">folder&gt;/bins/&lt;bin</span> <span class="pre">id&gt;/genes.fna</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--genes</span></code>: bins contain genes as amino acids instead of nucleotide contigs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--pplacer_threads</span></code>: number of threads used by pplacer. By default, the number of threads given by
+<code class="docutils literal notranslate"><span class="pre">-t</span></code> is used, to a maximum of 64. pplacer’s memory usage increases only slightly with additional
+threads.</p></li>
+</ul>
+<p>Called genes are written to <code class="docutils literal notranslate"><span class="pre">&lt;output</span> <span class="pre">folder&gt;/bins/&lt;bin</span> <span class="pre">id&gt;/genes.*</span></code>. Bins smaller than 100 kbp are
+processed with Prodigal’s metagenomic mode (<code class="docutils literal notranslate"><span class="pre">-p</span> <span class="pre">meta</span></code>).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The following heuristic is used to establish the translation table used by Prodigal: use table 11 unless
+the coding density using table 4 is more than 5 percentage points higher than when using table 11 and the
+coding density under table 4 is &gt; 70%. Distinguishing between tables 4 and 25 is challenging so CheckM
+does not attempt to distinguish between these two tables. If you know the correct translation table for
+your genomes, it is recommended that you call genes outside of CheckM and provide CheckM with the protein
+sequences (see <code class="docutils literal notranslate"><span class="pre">--genes</span></code>).</p>
+</div>
+<section id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: checkm tree [-h] [-r] [--ali] [--nt] [-g] [-x EXTENSION] [-t THREADS]
+                   [--pplacer_threads PPLACER_THREADS] [-q] [--tmpdir TMPDIR]
+                   bin_input output_dir
+
+Place bins in the genome tree.
+
+positional arguments:
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+  output_dir            directory to write output files
+
+options:
+  -h, --help            show this help message and exit
+  -r, --reduced_tree    use reduced tree (requires &lt;16GB of memory) for determining lineage of each bin
+  --ali                 generate HMMER alignment file for each bin
+  --nt                  generate nucleotide gene sequences for each bin
+  -g, --genes           bins contain genes as amino acids instead of nucleotide contigs
+  -x, --extension EXTENSION
+                        extension of bins (other files in directory are ignored) (default: fna)
+  -t, --threads THREADS
+                        number of threads (default: 1)
+  --pplacer_threads PPLACER_THREADS
+                        number of threads used by pplacer (default: number of threads, to a maximum of 64)
+  -q, --quiet           suppress console output
+  --tmpdir TMPDIR       specify an alternative directory for temporary files
+
+Example: checkm tree ./bins ./output
+</pre></div>
+</div>
+</section>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>tree<span class="w"> </span>-t<span class="w"> </span><span class="m">8</span><span class="w"> </span>-x<span class="w"> </span>fa<span class="w"> </span>./bins<span class="w"> </span>./output
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Commands" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tree_qa.html" class="btn btn-neutral float-right" title="tree_qa" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

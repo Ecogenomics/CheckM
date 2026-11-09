@@ -1,0 +1,264 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qa &mdash; CheckM 1.2.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="../_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/commands/qa.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=12f20e84"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="lineage_wf" href="lineage_wf.html" />
+    <link rel="prev" title="analyze" href="analyze.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installing/index.html">Installing CheckM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Commands</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#lineage-specific-marker-set">Lineage-specific marker set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#taxonomic-specific-marker-set">Taxonomic-specific marker set</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#apply-marker-set-to-genome-bins">Apply marker set to genome bins</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="analyze.html">analyze</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">qa</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#arguments">Arguments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#common-workflows">Common workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#plots">Plots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#bin-exploration-and-modification">Bin exploration and modification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#utility-functions">Utility functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#reference-data-and-testing">Reference data and testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#removed-commands">Removed commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#checkm-h">checkm -h</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">Citing CheckM</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Commands</a></li>
+      <li class="breadcrumb-item active">qa</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/commands/qa.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="qa">
+<span id="commands-qa"></span><h1>qa<a class="headerlink" href="#qa" title="Link to this heading"></a></h1>
+<p>Assess bins for contamination and completeness.</p>
+<p>Estimates the completeness, contamination, and strain heterogeneity of each bin from the marker genes
+identified by the <a class="reference internal" href="analyze.html#commands-analyze"><span class="std std-ref">analyze</span></a> command, and reports the results in one of several
+tables. The <code class="docutils literal notranslate"><span class="pre">qa</span></code> command must be given the marker file and output folder used with <code class="docutils literal notranslate"><span class="pre">analyze</span></code>. The
+<a class="reference internal" href="lineage_wf.html#commands-lineage-wf"><span class="std std-ref">lineage_wf</span></a> and <a class="reference internal" href="taxonomy_wf.html#commands-taxonomy-wf"><span class="std std-ref">taxonomy_wf</span></a> commands write their
+marker file to the output folder (<code class="docutils literal notranslate"><span class="pre">lineage.ms</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;taxon&gt;.ms</span></code>), so <code class="docutils literal notranslate"><span class="pre">qa</span></code> can be re-run on the output
+of a workflow to produce other tables.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">-o,</span> <span class="pre">--out_format</span></code> option specifies the desired output (see <a class="reference internal" href="../outputs/qa_formats.html#outputs-qa-formats"><span class="std std-ref">qa output formats</span></a>):</p>
+<ol class="arabic simple">
+<li><p>summary of bin completeness, contamination, and strain heterogeneity</p></li>
+<li><p>extended summary of bin quality (includes GC, genome size, coding density, …)</p></li>
+<li><p>summary of bin quality for increasingly basal lineage-specific marker sets</p></li>
+<li><p>list of marker genes for each bin along with the number of times each marker was identified</p></li>
+<li><p>list of bin ID, marker gene ID, and called gene ID for each identified marker gene</p></li>
+<li><p>list of marker genes present multiple times in a bin</p></li>
+<li><p>list of marker genes present multiple times on the same scaffold</p></li>
+<li><p>list indicating the position of each marker gene within a bin</p></li>
+<li><p>FASTA file of marker genes identified in each bin</p></li>
+</ol>
+<p>The statistics reported in these tables are described in <a class="reference internal" href="../outputs/qa.html#outputs-qa"><span class="std std-ref">Reported statistics</span></a>.</p>
+<p>Other options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--exclude_markers</span></code>: file specifying markers to exclude from marker sets. Each marker to exclude should
+be listed on a separate line of the file.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--individual_markers</span></code>: treat markers as independent (i.e., ignore the co-located set structure).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--skip_adj_correction</span></code>: do not combine hits to adjacent genes (see note below).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--skip_pseudogene_correction</span></code>: do not filter hits that are likely to be pseudogenes. By default, hits
+with an alignment shorter than 30% of the length of the marker HMM are ignored.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--aai_strain</span></code>: amino acid identity (AAI) threshold used to identify strain heterogeneity.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-a,</span> <span class="pre">--alignment_file</span></code>: produce a file showing the alignment of multi-copy genes and their AAI, which can
+be used to further assess strain heterogeneity.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--ignore_thresholds</span></code>: ignore model-specific score thresholds.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-e,</span> <span class="pre">--e_value</span></code>: e-value cut-off (not used if model-specific thresholds are specified).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-l,</span> <span class="pre">--length</span></code>: minimum alignment length as a fraction of the marker HMM length (not used if
+model-specific thresholds are specified).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-c,</span> <span class="pre">--coverage_file</span></code>: file containing the coverage of each sequence; coverage information is appended
+to table type 2 when this file is provided (see <a class="reference internal" href="coverage.html#commands-coverage"><span class="std std-ref">coverage</span></a>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-f,</span> <span class="pre">--file</span></code>: print results to file instead of the console.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--tab_table</span></code>: for tabular outputs, print a tab-separated values table instead of a table formatted for
+console output.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Adjacent called genes matching the same marker gene may indicate a true duplication event, a gene calling
+error, or an assembly error. Unless <code class="docutils literal notranslate"><span class="pre">--skip_adj_correction</span></code> is used, hits to the same marker gene on a
+run of consecutive genes of a scaffold are combined into a single hit, so they are not treated as
+contamination. The IDs of the combined genes are joined with a pair of ampersands (<code class="docutils literal notranslate"><span class="pre">&amp;&amp;</span></code>). Output
+format 7 lists marker genes present multiple times on the same scaffold, which is useful for identifying
+true gene duplication events, gene calling errors, or assembly errors.</p>
+</div>
+<section id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: checkm qa [-h] [-o {1,2,3,4,5,6,7,8,9}] [--exclude_markers EXCLUDE_MARKERS]
+                 [--individual_markers] [--skip_adj_correction] [--skip_pseudogene_correction]
+                 [--aai_strain AAI_STRAIN] [-a ALIGNMENT_FILE] [--ignore_thresholds] [-e E_VALUE]
+                 [-l LENGTH] [-c COVERAGE_FILE] [-f FILE] [--tab_table] [-t THREADS] [-q]
+                 [--tmpdir TMPDIR]
+                 marker_file analyze_dir
+
+Assess bins for contamination and completeness.
+
+positional arguments:
+  marker_file           marker file specified during analyze command
+  analyze_dir           directory specified during analyze command
+
+options:
+  -h, --help            show this help message and exit
+  -o, --out_format {1,2,3,4,5,6,7,8,9}
+                        desired output: (default: 1)
+                          1. summary of bin completeness and contamination
+                          2. extended summary of bin statistics (includes GC, genome size, ...)
+                          3. summary of bin quality for increasingly basal lineage-specific marker sets
+                          4. list of marker genes and their counts
+                          5. list of bin id, marker gene id, gene id
+                          6. list of marker genes present multiple times in a bin
+                          7. list of marker genes present multiple times on the same scaffold
+                          8. list indicating position of each marker gene within a bin
+                          9. FASTA file of marker genes identified in each bin
+  --exclude_markers EXCLUDE_MARKERS
+                        file specifying markers to exclude from marker sets
+  --individual_markers  treat marker as independent (i.e., ignore co-located set structure)
+  --skip_adj_correction
+                        do not exclude adjacent marker genes when estimating contamination
+  --skip_pseudogene_correction
+                        skip identification and filtering of pseudogenes
+  --aai_strain AAI_STRAIN
+                        AAI threshold used to identify strain heterogeneity (default: 0.9)
+  -a, --alignment_file ALIGNMENT_FILE
+                        produce file showing alignment of multi-copy genes and their AAI identity
+  --ignore_thresholds   ignore model-specific score thresholds
+  -e, --e_value E_VALUE
+                        e-value cut off (default: 1e-10)
+  -l, --length LENGTH   minimum alignment length as a fraction of the marker HMM length (default: 0.7)
+  -c, --coverage_file COVERAGE_FILE
+                        file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)
+  -f, --file FILE       print results to file (default: stdout)
+  --tab_table           print tab-separated values table
+  -t, --threads THREADS
+                        number of threads (default: 1)
+  -q, --quiet           suppress console output
+  --tmpdir TMPDIR       specify an alternative directory for temporary files
+
+Note: lineage_wf and taxonomy_wf produce a marker file in the specified output directory. The
+        lineage workflow produces a marker file called lineage.ms, while the taxonomy workflow
+        produces a marker file called &lt;taxon&gt;.ms (e.g. Bacteria.ms).
+
+Example: checkm qa ./output/lineage.ms ./output
+</pre></div>
+</div>
+</section>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>checkm<span class="w"> </span>qa<span class="w"> </span>./output/lineage.ms<span class="w"> </span>./output
+checkm<span class="w"> </span>qa<span class="w"> </span>-o<span class="w"> </span><span class="m">2</span><span class="w"> </span>--tab_table<span class="w"> </span>-f<span class="w"> </span>qa_extended.tsv<span class="w"> </span>./output/lineage.ms<span class="w"> </span>./output
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="analyze.html" class="btn btn-neutral float-left" title="analyze" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lineage_wf.html" class="btn btn-neutral float-right" title="lineage_wf" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
