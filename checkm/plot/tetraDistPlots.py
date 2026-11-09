@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# gcPlots.py - Create a GC histogram and delta-GC plot.
+# tetraDistPlots.py - Create a TD histogram and delta-TD plot.
 #
 ###############################################################################
 #                                                                             #
@@ -62,18 +62,18 @@ class TetraDistPlots(AbstractPlot):
 
         data = []
         seqLens = []
-        deltaTDs = []
         for seqId, seq in seqs.items():
             start = 0
             end = self.options.td_window_size
 
             seqLen = len(seq)
             seqLens.append(seqLen)
-            deltaTDs.append(genomicSig.distance(tetraSigs[seqId], binSig))
 
             while(end < seqLen):
                 windowSig = genomicSig.seqSignature(seq[start:end])
-                data.append(genomicSig.distance(windowSig, binSig))
+                if np.sum(windowSig) > 0:
+                    # skip windows without any valid tetranucleotides (e.g., all N)
+                    data.append(genomicSig.distance(windowSig, binSig))
 
                 start = end
                 end += self.options.td_window_size
@@ -83,30 +83,14 @@ class TetraDistPlots(AbstractPlot):
                 '[Error] No seqs >= %d, the specified window size' % self.options.td_window_size)
             return
 
-        deltaTDs = np.array(deltaTDs)
-
-        # Histogram plot
-        bins = [0.0]
-        binWidth = self.options.td_bin_width
-        binEnd = binWidth
-        while binEnd <= 1.0:
-            bins.append(binEnd)
-            binEnd += binWidth
-
-        axesHist.hist(data, bins=bins, density=True, color=(0.5, 0.5, 0.5))
+        # Histogram plot showing the percentage of windows in each TD bin
+        bins = self.histogramBins(self.options.td_bin_width)
+        axesHist.hist(data, bins=bins, weights=self.percentWeights(data), color=(0.5, 0.5, 0.5))
         axesHist.set_xlabel(r'$\Delta$ TD')
         axesHist.set_ylabel(
             '% windows (' + str(self.options.td_window_size) + ' bp)')
 
         # Prettify plot
-        for a in axesHist.yaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
-        for a in axesHist.xaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
         for line in axesHist.yaxis.get_ticklines():
             line.set_color(self.axesColour)
 
@@ -119,7 +103,7 @@ class TetraDistPlots(AbstractPlot):
             else:
                 spine.set_color(self.axesColour)
 
-        # get CD bin statistics
+        # get TD bin statistics
         meanTD, deltaTDs = binTools.tetraDiffDist(
             seqs, genomicSig, tetraSigs, binSig)
 
@@ -164,7 +148,7 @@ class TetraDistPlots(AbstractPlot):
 
             axesDeltaTD.plot(x, y, 'r--', lw=0.5, zorder=0)
 
-        # ensure y-axis include zero and covers all sequences
+        # ensure y-axis includes zero and covers all sequences
         axesDeltaTD.set_ylim([0, yMaxSeqs])
 
         # ensure x-axis is set appropriately for sequences
@@ -185,14 +169,6 @@ class TetraDistPlots(AbstractPlot):
         axesDeltaTD.set_yticklabels(kbpLabels)
 
         # Prettify plot
-        for a in axesDeltaTD.yaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
-        for a in axesDeltaTD.xaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
-
         for line in axesDeltaTD.yaxis.get_ticklines():
             line.set_color(self.axesColour)
 

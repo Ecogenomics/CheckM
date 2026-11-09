@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# hmmerAlign.py - runs HMMER and provides functions for parsing output
+# hmmerAligner.py - aligns marker genes to their HMMs with HMMER
 #
 ###############################################################################
 #                                                                             #
@@ -24,7 +24,6 @@ import sys
 import uuid
 import logging
 import tempfile
-import shutil
 import multiprocessing as mp
 from collections import defaultdict
 
@@ -70,15 +69,15 @@ class HmmerAligner:
         # generate individual HMMs required to create multiple sequence alignments
         binId = list(binIdToModels.keys())[0]
         hmmModelFiles = {}
-        self._makeAlignmentModels(hmmModelFile, binIdToModels[binId], hmmModelFiles)
+        try:
+            self._makeAlignmentModels(hmmModelFile, binIdToModels[binId], hmmModelFiles)
 
-        # align each of the marker genes
-        makeSurePathExists(alignOutputDir)
-        self._alignMarkerGenes(markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bKeepUnmaskedAlign)
-
-        # remove the temporary HMM files
-        for fileName in hmmModelFiles:
-            os.remove(hmmModelFiles[fileName])
+            # align each of the marker genes
+            makeSurePathExists(alignOutputDir)
+            self._alignMarkerGenes(markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bKeepUnmaskedAlign)
+        finally:
+            # remove the temporary HMM files, including after a failure
+            self._removeFiles(hmmModelFiles.values())
 
         return resultsParser
 
@@ -110,15 +109,15 @@ class HmmerAligner:
         # generate individual HMMs required to create multiple sequence alignments
         binId = list(binIdToModels.keys())[0]
         hmmModelFiles = {}
-        self._makeAlignmentModels(hmmModelFile, binIdToModels[binId], hmmModelFiles)
+        try:
+            self._makeAlignmentModels(hmmModelFile, binIdToModels[binId], hmmModelFiles)
 
-        # align each of the marker genes
-        makeSurePathExists(alignOutputDir)
-        self._alignMarkerGenes(markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bKeepUnmaskedAlign)
-
-        # remove the temporary HMM files
-        for fileName in hmmModelFiles:
-            os.remove(hmmModelFiles[fileName])
+            # align each of the marker genes
+            makeSurePathExists(alignOutputDir)
+            self._alignMarkerGenes(markerSeqs, markerStats, bReportHitStats, hmmModelFiles, alignOutputDir, bKeepUnmaskedAlign)
+        finally:
+            # remove the temporary HMM files, including after a failure
+            self._removeFiles(hmmModelFiles.values())
 
         return resultsParser
 
@@ -177,7 +176,7 @@ class HmmerAligner:
 
             writeProc.terminate()
 
-        self._checkWorkerExitCodes(calcProc, 'aligning markers with multiple hits')
+        self._checkWorkerExitCodes(calcProc, 'aligning markers with multiple hits', [workerQueue, writerQueue])
 
     def _createMSA(self, resultsParser, binIdToBinMarkerSets, hmmModelFile, outDir, alignOutputDir, queueIn, queueOut):
         """Create multiple sequence alignment for markers with multiple hits in a bin."""
@@ -197,11 +196,12 @@ class HmmerAligner:
                 makeSurePathExists(binAlignOutputDir)
                 for markerId in markersWithMultipleHits:
                     tempModelFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-                    HF.fetch(hmmModelFile, markerId, tempModelFile)
+                    try:
+                        HF.fetch(hmmModelFile, markerId, tempModelFile)
 
-                    self._alignMarker(markerId, markersWithMultipleHits[markerId], None, False, binAlignOutputDir, tempModelFile, bKeepUnmaskedAlign=False)
-
-                    os.remove(tempModelFile)
+                        self._alignMarker(markerId, markersWithMultipleHits[markerId], None, False, binAlignOutputDir, tempModelFile, bKeepUnmaskedAlign=False)
+                    finally:
+                        self._removeFiles([tempModelFile])
 
             queueOut.put(binId)
 
@@ -234,7 +234,7 @@ class HmmerAligner:
         if bReportProgress:
             self.logger.info("Aligning %d marker genes with %d threads:" % (len(hmmModelFiles), self.totalThreads))
 
-        # process each bin in parallel
+        # process each marker in parallel
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
 
@@ -265,13 +265,24 @@ class HmmerAligner:
 
             writeProc.terminate()
 
-        self._checkWorkerExitCodes(calcProc, 'aligning marker genes')
+        self._checkWorkerExitCodes(calcProc, 'aligning marker genes', [workerQueue, writerQueue])
 
-    def _checkWorkerExitCodes(self, procs, task):
+    def _removeFiles(self, files):
+        """Remove files that exist."""
+        for f in files:
+            if os.path.exists(f):
+                os.remove(f)
+
+    def _checkWorkerExitCodes(self, procs, task, queues=()):
         """Exit if any worker process failed, rather than continuing with missing alignments."""
         numFailed = sum(1 for p in procs if p.exitcode != 0)
         if numFailed:
             self.logger.error(f'{numFailed} of {len(procs)} worker processes failed while {task}. See the error messages above.')
+
+            # items left unread in a queue would otherwise block the exit
+            for q in queues:
+                q.cancel_join_thread()
+
             sys.exit(1)
 
     def _alignMarkerParallel(self, markerSeqs, markerStats, bReportHitStats, alignOutputDir, hmmModelFiles, bKeepUnmaskedAlign, queueIn, queueOut):
@@ -347,7 +358,7 @@ class HmmerAligner:
                 if 'GC RF' in line:
                     mask = line.split('GC RF')[1].strip()
                 elif '=GS' in line:
-                    # read additional sequence informations
+                    # read additional sequence information
                     lineSplit = line.split()
                     seqId = lineSplit[1]
                     stats = lineSplit[3].strip()
@@ -390,14 +401,16 @@ class HmmerAligner:
                 markerSeqs[markerId][binId] = {}
                 markerStats[markerId][binId] = {}
 
-                # sort hits from highest to lowest e-value in order to ensure only the best hit
-                # to a given target is retained
-                hits.sort(key=lambda x: x.full_e_value, reverse=True)
-                topHit = hits[0]
+                # align only the best hit to the marker
+                topHit = self._topHit(hits)
                 markerSeqs[markerId][binId][topHit.target_name] = self._extractSeq(topHit.target_name, binORFs)
                 markerStats[markerId][binId][topHit.target_name] = [topHit.full_e_value, topHit.full_score]
 
         return markerSeqs, markerStats
+
+    def _topHit(self, hits):
+        """Get best hit: the hit with the lowest e-value, with ties broken by the highest bit score."""
+        return min(hits, key=lambda x: (x.full_e_value, -x.full_score))
 
     def _extractMarkerSeqsUnique(self, outDir, resultsParser):
         """Extract marker sequences with a single unique hit."""
@@ -458,8 +471,9 @@ class HmmerAligner:
             if markerId not in markerGenes or len(hits) < 2:
                 continue
 
-            # sort hits from highest to lowest e-value in order to ensure only the best hit
-            # to a given target is retained
+            # sort hits from highest to lowest e-value; all hits are retained (each
+            # target has at most one hit to a marker), so this only sets the order
+            # in which sequences are written for alignment
             hits.sort(key=lambda x: x.full_e_value, reverse=True)
 
             # Note: this data structure is used to mimic that used by _extractMarkerSeqsTopHits()
@@ -487,6 +501,8 @@ class HmmerAligner:
         for _ in range(self.totalThreads):
             workerQueue.put((None, None))
 
+        calcProc = []
+        writeProc = None
         try:
             calcProc = [mp.Process(target=self._extractModel, args=(hmmModelFile, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
             writeProc = mp.Process(target=self._reportModelExtractionProgress, args=(len(modelKeys), bReportProgress, writerQueue))
@@ -506,7 +522,10 @@ class HmmerAligner:
             for p in calcProc:
                 p.terminate()
 
-            writeProc.terminate()
+            if writeProc is not None:
+                writeProc.terminate()
+
+        self._checkWorkerExitCodes(calcProc, 'extracting HMMs', [workerQueue, writerQueue])
 
     def _extractModel(self, hmmModelFile, queueIn, queueOut):
         """Extract HMM."""

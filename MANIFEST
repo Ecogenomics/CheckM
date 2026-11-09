@@ -39,7 +39,6 @@ checkm/taxonParser.py
 checkm/timeKeeper.py
 checkm/treeParser.py
 checkm/unbinned.py
-checkm/uniqueMarkers.py
 checkm/plot/AbstractPlot.py
 checkm/plot/__init__.py
 checkm/plot/binQAPlot.py
@@ -63,7 +62,6 @@ checkm/test/test_markerSets.py
 checkm/test/test_seqUtils.py
 checkm/test/test_taxonomyUtils.py
 checkm/util/__init__.py
-checkm/util/img.py
 checkm/util/pfam.py
 checkm/util/seqUtils.py
 checkm/util/taxonomyUtils.py

@@ -46,7 +46,6 @@ class MarkerGenePosPlot(AbstractPlot):
 
     def getMarkerGenesPerSeq(self, markerGeneStats):
         markerGenePos = {}
-        markerGeneNum = {}
 
         for geneId in markerGeneStats:
             scaffoldId = geneId[0:geneId.rfind('_')]
@@ -56,9 +55,8 @@ class MarkerGenePosPlot(AbstractPlot):
                     start = hit[0]
                     end = hit[1]
                 markerGenePos[scaffoldId] = markerGenePos.get(scaffoldId, []) + [[geneId, markerId, start, end]]
-                markerGeneNum[markerId] = len(hitList)
 
-        return markerGenePos, markerGeneNum
+        return markerGenePos
 
     def roundUpToNearest100(self, x):
         return int(math.ceil(x / 100.0)) * 100
@@ -66,7 +64,7 @@ class MarkerGenePosPlot(AbstractPlot):
     def plot(self, binFile, markerGeneStats, binStats):
         binId = binIdFromFilename(binFile)
 
-        markerGenesPerSeq, _markerGeneNum = self.getMarkerGenesPerSeq(markerGeneStats)
+        markerGenesPerSeq = self.getMarkerGenesPerSeq(markerGeneStats)
 
         if len(markerGenesPerSeq) == 0:
             return False
@@ -149,9 +147,8 @@ class MarkerGenePosPlot(AbstractPlot):
         colourBar.outline.set_linewidth(0.5)
         colourBar.dividers.set_linewidth(0.5)
 
-        for a in axisColourMap.xaxis.majorTicks:
-            a.tick1On = False
-            a.tick2On = False
+        # hide colour bar tick marks, but keep tick labels
+        axisColourMap.tick_params(axis='x', which='both', length=0)
 
         # plot each bin
         binPosX = 0.5
@@ -179,14 +176,9 @@ class MarkerGenePosPlot(AbstractPlot):
         titleStr += '({})'.format(result_str)
         axes.set_title(titleStr)
 
-        # Prettify plot
-        for a in axes.yaxis.majorTicks:
-            a.tick1On = False
-            a.tick2On = False
-
-        for a in axes.xaxis.majorTicks:
-            a.tick1On = True
-            a.tick2On = False
+        # Prettify plot; hide y-axis tick marks, but keep sequence labels
+        axes.tick_params(axis='y', which='both', left=False, right=False)
+        axes.tick_params(axis='x', which='both', top=False)
 
         for line in axes.yaxis.get_ticklines():
             line.set_color(self.axesColour)

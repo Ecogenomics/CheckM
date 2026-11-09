@@ -54,8 +54,8 @@ class ChangeTempAction(argparse.Action):
             multiprocessing.util.get_temp_dir()
             tempfile.tempdir = values
         else:
-            raise argparse.ArgumentTypeError(
-                'The value of %s must be a valid directory' % option_string)
+            raise argparse.ArgumentError(
+                self, 'the value of %s must be a valid directory: %s' % (option_string, values))
 
 
 def version():
@@ -101,7 +101,7 @@ def printHelp():
   Bin exploration and modification:
     unique       -> Ensure no sequences are assigned to multiple bins
     merge        -> Identify bins with complementary sets of marker genes
-    outliers     -> [Experimental] Identify outlier in bins relative to reference distributions
+    outliers     -> [Experimental] Identify outliers in bins relative to reference distributions
     modify       -> [Experimental] Modify sequences in a bin
 
   Utility functions:
@@ -110,6 +110,9 @@ def printHelp():
     tetra        -> Calculate tetranucleotide signature of sequences
     profile      -> Calculate percentage of reads mapped to each bin
     ssu_finder   -> Identify SSU (16S/18S) rRNAs in sequences
+
+  Testing:
+    test         -> Run CheckM on a test genome (E. coli) to verify operation
 
   Use 'checkm data setRoot <checkm_data_dir>' to specify the location of CheckM database files.
 
@@ -127,10 +130,10 @@ if __name__ == '__main__':
                                         description='Set path to the CheckM database files.',
                                         epilog='Example: checkm data setRoot')
     data_parser.add_argument('action', nargs="+",
-                             help='''b
-  setRoot <DB_PATH> -> set the the checkm data directory to <DB_PATH> (requires permissions)
+                             help='''
+  setRoot <DB_PATH> -> set the CheckM data directory to <DB_PATH> (requires permissions)
   or
-  setRoot <DB_PATH> <CONFIG_PATH> -> set the the checkm data directory to <DB_PATH> and the checkM DATA_CONFIG FILE to CONFIG_PATH (requires permissions)
+  setRoot <DB_PATH> <CONFIG_PATH> -> set the CheckM data directory to <DB_PATH> and the CheckM DATA_CONFIG file to CONFIG_PATH (requires permissions)
             ''')
 
     # determine placement of each genome bin in the genome tree
@@ -272,7 +275,7 @@ if __name__ == '__main__':
                                       description='Assess bins for contamination and completeness.',
                                       epilog='''
 Note: lineage_wf and taxonomy_wf produce a marker file in the specified output directory. The
-        lineage workflow produced a marker file called lineage.ms, while the taxonomy workflow
+        lineage workflow produces a marker file called lineage.ms, while the taxonomy workflow
         produces a marker file called <taxon>.ms (e.g. Bacteria.ms).
 
 Example: checkm qa ./output/lineage.ms ./output
@@ -292,7 +295,6 @@ Example: checkm qa ./output/lineage.ms ./output
   7. list of marker genes present multiple times on the same scaffold
   8. list indicating position of each marker gene within a bin
   9. FASTA file of marker genes identified in each bin''',
-                           # 10. scaffold statistics: scaffold id, bin id, length, GC, ..., marker gene(s)''',
                            default=1, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9])
     qa_parser.add_argument('--exclude_markers', default=None,
                            help="file specifying markers to exclude from marker sets")
@@ -311,7 +313,7 @@ Example: checkm qa ./output/lineage.ms ./output
     qa_parser.add_argument('-e', '--e_value', type=float,
                            default=DefaultValues.E_VAL, help="e-value cut off")
     qa_parser.add_argument('-l', '--length', type=float, default=DefaultValues.LENGTH,
-                           help="percent overlap between target and query")
+                           help="minimum alignment length as a fraction of the marker HMM length")
     qa_parser.add_argument('-c', '--coverage_file', default=None,
                            help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
     qa_parser.add_argument('-f', '--file', default='stdout',
@@ -367,7 +369,7 @@ Example: checkm qa ./output/lineage.ms ./output
     lineage_wf_parser.add_argument(
         '-e', '--e_value', type=float, default=DefaultValues.E_VAL, help="e-value cut off")
     lineage_wf_parser.add_argument(
-        '-l', '--length', type=float, default=DefaultValues.LENGTH, help="percent overlap between target and query")
+        '-l', '--length', type=float, default=DefaultValues.LENGTH, help="minimum alignment length as a fraction of the marker HMM length")
     lineage_wf_parser.add_argument(
         '-f', '--file', default='stdout', help="print results to file")
     lineage_wf_parser.add_argument('--tab_table', dest='bTabTable', action="store_true",
@@ -419,7 +421,7 @@ Example: checkm qa ./output/lineage.ms ./output
     taxonomy_wf_parser.add_argument(
         '-e', '--e_value', type=float, default=DefaultValues.E_VAL, help="e-value cut off")
     taxonomy_wf_parser.add_argument(
-        '-l', '--length', type=float, default=DefaultValues.LENGTH, help="percent overlap between target and query")
+        '-l', '--length', type=float, default=DefaultValues.LENGTH, help="minimum alignment length as a fraction of the marker HMM length")
     taxonomy_wf_parser.add_argument('-c', '--coverage_file', default=None,
                                     help="file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)")
     taxonomy_wf_parser.add_argument(
@@ -439,7 +441,7 @@ Example: checkm qa ./output/lineage.ms ./output
     plot_need_qa_results_parser = argparse.ArgumentParser(
         'plot_need_qa_results', add_help=False)
     plot_need_qa_results_parser.add_argument(
-        'results_dir', help="directory specified during qa command")
+        'results_dir', help="output directory of the analyze, lineage_wf or taxonomy_wf command (for marker_plot, qa must also have been run)")
 
     plot_parser = argparse.ArgumentParser('plot', add_help=False)
     plot_parser.add_argument(
@@ -470,13 +472,6 @@ Example: checkm qa ./output/lineage.ms ./output
     plot_double_parser.add_argument(
         '--height', type=float, default=3.5, help='height of output image')
 
-    plot_rows_parser = argparse.ArgumentParser('plot_rows',
-                                               parents=[plot_parser], add_help=False)
-    plot_rows_parser.add_argument(
-        '--width', type=float, default=6.5, help='width of output image')
-    plot_rows_parser.add_argument(
-        '--row_height', type=float, default=0.3, help='height of each row in the output image')
-
     # GC plot
     plot_gc_parser = subparsers.add_parser('gc_plot',
                                            formatter_class=CustomHelpFormatter,
@@ -486,7 +481,7 @@ Example: checkm qa ./output/lineage.ms ./output
                                            epilog='Example: checkm gc_plot ./bins ./plots 95')
 
     plot_gc_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100',
-                                nargs='+', type=int, choices=range(0, 101), default=95, metavar='dist_value')
+                                nargs='+', type=int, choices=range(0, 101), metavar='dist_value')
     plot_gc_parser.add_argument(
         '-w', '--gc_window_size', help="window size used to calculate GC histogram", type=int, default=5000)
     plot_gc_parser.add_argument(
@@ -503,7 +498,7 @@ Example: checkm qa ./output/lineage.ms ./output
                                                epilog='Example: checkm coding_plot ./output ./bins ./plots 95')
 
     plot_coding_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100',
-                                    nargs='+', type=int, choices=range(0, 101), default=95, metavar='dist_value')
+                                    nargs='+', type=int, choices=range(0, 101), metavar='dist_value')
     plot_coding_parser.add_argument(
         '-w', '--cd_window_size', help="window size used to calculate CD histogram", type=int, default=10000)
     plot_coding_parser.add_argument(
@@ -511,7 +506,7 @@ Example: checkm qa ./output/lineage.ms ./output
     plot_coding_parser.add_argument(
         '-q', '--quiet', dest='bQuiet', action="store_true", default=False, help="suppress console output")
 
-    # Tetranucleotide distance  plot
+    # Tetranucleotide distance plot
     plot_tetra_parser = subparsers.add_parser('tetra_plot',
                                               formatter_class=CustomHelpFormatter,
                                               parents=[
@@ -519,9 +514,9 @@ Example: checkm qa ./output/lineage.ms ./output
                                               description='Create tetranucleotide distance (TD) histogram and delta-TD plot.',
                                               epilog='Example: checkm tetra_plot ./output ./bins ./plots tetra.tsv 95')
     plot_tetra_parser.add_argument(
-        'tetra_profile', help='tetranucleotide profiles for each bin (see tetra command)')
+        'tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
     plot_tetra_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100',
-                                   nargs='+', type=int, choices=range(0, 101), default=95, metavar='dist_value')
+                                   nargs='+', type=int, choices=range(0, 101), metavar='dist_value')
     plot_tetra_parser.add_argument(
         '-w', '--td_window_size', help="window size used to calculate TD histogram", type=int, default=5000)
     plot_tetra_parser.add_argument(
@@ -529,7 +524,7 @@ Example: checkm qa ./output/lineage.ms ./output
     plot_tetra_parser.add_argument('-q', '--quiet', dest='bQuiet',
                                    action="store_true", default=False, help="suppress console output")
 
-    # Reference distribution  plot
+    # Reference distribution plot
     plot_dist_parser = subparsers.add_parser('dist_plot',
                                              formatter_class=CustomHelpFormatter,
                                              description='Create image with GC, CD, and TD distribution plots together.',
@@ -544,7 +539,7 @@ Example: checkm qa ./output/lineage.ms ./output
     plot_dist_parser.add_argument(
         'tetra_profile', help='tetranucleotide profiles for each sequence (see tetra command)')
     plot_dist_parser.add_argument('distributions', help='reference distribution(s) to plot; integer between 0 and 100',
-                                  nargs='+', type=int, choices=range(0, 101), default=95, metavar='dist_value')
+                                  nargs='+', type=int, choices=range(0, 101), metavar='dist_value')
 
     plot_dist_parser.add_argument('--image_type', default='png', choices=[
                                   'eps', 'pdf', 'png', 'ps', 'svg'], help='desired image type')
@@ -826,22 +821,20 @@ Example: checkm qa ./output/lineage.ms ./output
 
     # get and check options
     args = None
-    if(len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv == '--help'):
+    if len(sys.argv) == 1 or sys.argv[1] in ('-h', '--help'):
         printHelp()
         sys.exit(0)
     else:
         args = parser.parse_args()
 
-    # setup logging
+    # set up logging
     silent = False
     if hasattr(args, 'bQuiet') and args.bQuiet:
         silent = True
 
-    try:
-        logger_setup(args.output_dir, "checkm.log",
-                     "CheckM", version(), silent)
-    except:
-        logger_setup(None, "checkm.log", "CheckM", version(), silent)
+    # only commands with an output_dir write a log file
+    logger_setup(getattr(args, 'output_dir', None), "checkm.log",
+                 "CheckM", version(), silent)
 
     # do what we came here to do
     try:
@@ -849,18 +842,7 @@ Example: checkm qa ./output/lineage.ms ./output
         logger.info(f"CheckM data: {DefaultValues.CHECKM_DATA_DIR}")
 
         checkmParser = main.OptionsParser()
-        if(False):
-            # import pstats
-            # p = pstats.Stats('prof')
-            # p.sort_stats('cumulative').print_stats(10)
-            # p.sort_stats('time').print_stats(10)
-            import cProfile
-            cProfile.run('checkmParser.parseOptions(args)', 'prof')
-        elif False:
-            import pdb
-            pdb.run(checkmParser.parseOptions(args))
-        else:
-            checkmParser.parseOptions(args)
+        checkmParser.parseOptions(args)
     except SystemExit:
         print("\n  Controlled exit resulting from an unrecoverable error or warning.")
         raise

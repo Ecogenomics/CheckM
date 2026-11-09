@@ -24,6 +24,14 @@ from collections import defaultdict
 from checkm.common import checkFileExists
 
 
+def stripVersion(accession):
+    """Remove version suffix (e.g., '.14' in 'PF00162.14') from a Pfam accession, if present."""
+    if '.' in accession:
+        return accession[0:accession.rfind('.')]
+
+    return accession
+
+
 class PFAM(object):
     def __init__(self, pfamClanFile):
         self.pfamClanFile = pfamClanFile
@@ -35,20 +43,21 @@ class PFAM(object):
         checkFileExists(self.pfamClanFile)
 
         idNested = defaultdict(list)
-        for line in open(self.pfamClanFile):
-            if '#=GF ID' in line:
-                ID = line.split()[2].strip()
-            elif '#=GF AC' in line:
-                pfamAcc = line.split()[2].strip()
-                pfamAcc = pfamAcc[0:pfamAcc.rfind('.')]
-                self.idToAcc[ID] = pfamAcc
-            elif '#=GF CL' in line:
-                clanId = line.split()[2].strip()
-                self.clan[pfamAcc] = clanId
-            elif '#=GF NE' in line:
-                nestedId = line.split()[2].strip()
-                idNested[nestedId].append(ID)
-                idNested[ID].append(nestedId)
+        with open(self.pfamClanFile) as f:
+            for line in f:
+                if '#=GF ID' in line:
+                    ID = line.split()[2].strip()
+                elif '#=GF AC' in line:
+                    pfamAcc = line.split()[2].strip()
+                    pfamAcc = stripVersion(pfamAcc)
+                    self.idToAcc[ID] = pfamAcc
+                elif '#=GF CL' in line:
+                    clanId = line.split()[2].strip()
+                    self.clan[pfamAcc] = clanId
+                elif '#=GF NE' in line:
+                    nestedId = line.split()[2].strip()
+                    idNested[nestedId].append(ID)
+                    idNested[ID].append(nestedId)
 
         # set nested structure to use pfam accessions instead of IDs
         for ID, nested in idNested.items():
@@ -60,38 +69,41 @@ class PFAM(object):
         checkFileExists(self.pfamClanFile)
 
         d = {}
-        for line in open(self.pfamClanFile):
-            if '#=GF AC' in line:
-                pfamAcc = line.split()[2].strip()
-            elif '#=GF CL' in line:
-                clanId = line.split()[2].strip()
-                d[pfamAcc] = clanId
+        with open(self.pfamClanFile) as f:
+            for line in f:
+                if '#=GF AC' in line:
+                    pfamAcc = line.split()[2].strip()
+                elif '#=GF CL' in line:
+                    clanId = line.split()[2].strip()
+                    d[pfamAcc] = clanId
 
         return d
 
     def genesInClan(self):
-        """Determine all genes within a each clan."""
+        """Determine all genes within each clan."""
         checkFileExists(self.pfamClanFile)
 
         d = defaultdict(set)
-        for line in open(self.pfamClanFile):
-            if '#=GF AC' in line:
-                pfamAcc = line.split()[2].strip()
-            elif '#=GF CL' in line:
-                clanId = line.split()[2].strip()
-                d[clanId].update([pfamAcc])
+        with open(self.pfamClanFile) as f:
+            for line in f:
+                if '#=GF AC' in line:
+                    pfamAcc = line.split()[2].strip()
+                elif '#=GF CL' in line:
+                    clanId = line.split()[2].strip()
+                    d[clanId].update([pfamAcc])
 
         return d
 
     def filterHitsFromSameClan(self, markerHits):
         """Filter hits to ORF from same clan."""
 
-        # check if clan and nesting need to be computer
+        # check if clan and nesting need to be computed
         if len(self.clan) == 0:
             self.__readClansAndNesting()
 
         # determine all PFAM hits to each ORF and setup initial set of filtered markers
-        filteredMarkers = defaultdict(list)
+        # (a plain dict is used so looking up an absent marker never inserts an empty hit list)
+        filteredMarkers = {}
         hitsToORFs = defaultdict(list)
         for markerId, hits in markerHits.items():
             if markerId.startswith('PF'):
@@ -103,7 +115,7 @@ class PFAM(object):
 
         # for each gene, take only the best hit for each PFAM clan
         for target_name, hits in hitsToORFs.items():
-            # sort in ascending order of e-value followed by score
+            # sort in ascending order of full sequence e-value followed by domain (independent) e-value
             hits.sort(key=lambda x: (x.full_e_value, x.i_evalue))
 
             filtered = set()
@@ -111,8 +123,7 @@ class PFAM(object):
                 if i in filtered:
                     continue
 
-                pfamIdI = hits[i].query_accession
-                pfamIdI = pfamIdI[0:pfamIdI.rfind('.')]
+                pfamIdI = stripVersion(hits[i].query_accession)
                 clanI = self.clan.get(pfamIdI, None)
                 startI = hits[i].ali_from
                 endI = hits[i].ali_to
@@ -121,19 +132,18 @@ class PFAM(object):
                     if j in filtered:
                         continue
 
-                    pfamIdJ = hits[j].query_accession
-                    pfamIdJ = pfamIdJ[0:pfamIdJ.rfind('.')]
+                    pfamIdJ = stripVersion(hits[j].query_accession)
                     clanJ = self.clan.get(pfamIdJ, None)
                     startJ = hits[j].ali_from
                     endJ = hits[j].ali_to
 
-                    # check if hits are from the same clan
-                    if pfamIdI != None and pfamIdJ != None and clanI == clanJ:
+                    # check if hits are from the same clan (Pfams without a clan are unrelated)
+                    if clanI is not None and clanI == clanJ:
                         # check if hits overlap
                         if (startI <= startJ and endI > startJ) or (startJ <= startI and endJ > startI):
                             # check if pfams are nested
                             if not (pfamIdI in self.nested and pfamIdJ in self.nested[pfamIdI]):
-                                # hits should be filtered as it is from the same clan, overlaps, and is not
+                                # hit should be filtered as it is from the same clan, overlaps, and is not
                                 # nested with a pfam hit with a lower e-value
                                 filtered.add(j)
 
@@ -142,7 +152,7 @@ class PFAM(object):
                 if i in filtered:
                     continue
 
-                filteredMarkers[hits[i].query_accession].append(hits[i])
+                filteredMarkers.setdefault(hits[i].query_accession, []).append(hits[i])
 
         return filteredMarkers
 

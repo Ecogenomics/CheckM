@@ -67,22 +67,39 @@ class OptionsParser():
         self.timeKeeper = TimeKeeper()
 
     def updateCheckM_DB(self, options):
+        """Data command"""
         self.logger.info(
-            '[CheckM - data] Check for database updates. [%s]' % options.action[0])
+            '[CheckM - data] Setting the location of the CheckM reference data. [%s]' % options.action[0])
 
+        usage = 'Usage: checkm data setRoot <DB_PATH> [<CONFIG_PATH>]'
         action = options.action
-        if action and action[0] == 'setRoot':
-            if len(action) > 2:
-                DBM = DBManager(set_path=action[1], configFile=action[2])
-            elif len(action) > 1:
-                DBM = DBManager(set_path=action[1])
-        else:
+        if action[0] != 'setRoot':
+            self.logger.error("Unknown data action '%s'. %s" % (action[0], usage))
+            sys.exit(1)
+
+        if len(action) < 2:
             self.logger.error(
-                'Path to the CheckM reference data must be specified.')
+                'Path to the CheckM reference data must be specified. ' + usage)
+            sys.exit(1)
+
+        if len(action) > 3:
+            self.logger.error('Too many arguments. ' + usage)
+            sys.exit(1)
+
+        if len(action) == 3:
+            DBManager(set_path=action[1], configFile=action[2])
+        else:
+            DBManager(set_path=action[1])
 
     def binFiles(self, binInput, binExtension, bCalledGenes):
+        """Get bin files from a directory or a tab-separated table.
+
+        A table has one bin per line: [genome ID, genome FASTA file]
+        or, with bCalledGenes, [genome ID, genome FASTA file, protein
+        FASTA file]. Blank lines and lines starting with '#' are ignored.
+        The bin ID is always taken from the bin's filename.
+        """
         binFiles = []
-        binIDs = set()
         isInputDir = True
         if binInput is not None:
             if os.path.isdir(binInput):
@@ -98,23 +115,41 @@ class OptionsParser():
                                 "Skipping bin %s as it has a size of 0 bytes." % f)
                         else:
                             binFiles.append(binFile)
-                            binIDs.add(os.path.basename(binFile))
-            else:
+            elif os.path.isfile(binInput):
+                isInputDir = False
+                numRequiredColumns = 3 if bCalledGenes else 2
                 with open(binInput, "r") as oh:
-                    for line in oh:
+                    for lineNum, line in enumerate(oh, 1):
+                        if not line.strip() or line.lstrip().startswith('#'):
+                            continue
+
                         files = line.strip().split("\t")
+                        if len(files) < numRequiredColumns:
+                            self.logger.error(
+                                "Line %d of the bin input table %s has %d column(s), but at least %d tab-separated columns are required." % (
+                                    lineNum, binInput, len(files), numRequiredColumns))
+                            if bCalledGenes:
+                                self.logger.error(
+                                    "With --genes, please supply: [genome_id, genome_contigs_file, genome_genes_file]")
+                            else:
+                                self.logger.error(
+                                    "Please supply: [genome_id, genome_contigs_file]")
+                            sys.exit(1)
+
                         binFile = files[1]
                         if bCalledGenes:
                             binFile = files[2]
                         if not os.path.exists(binFile):
                             self.logger.warning(
-                                "Skipping bin %s as it doesn't exists." % binFile)
+                                "Skipping bin %s as it doesn't exist." % binFile)
                         elif os.stat(binFile).st_size == 0:
                             self.logger.warning(
                                 "Skipping bin %s as it has a size of 0 bytes." % binFile)
                         else:
                             binFiles.append(binFile)
-                            binIDs.add(os.path.basename(binFile))
+            else:
+                self.logger.error("Bin input does not exist: %s" % binInput)
+                sys.exit(1)
 
         if not binFiles:
             if isInputDir:
@@ -122,15 +157,38 @@ class OptionsParser():
                     "No bins found. Check the extension (-x) used to identify bins.")
             else:
                 self.logger.error(
-                    "No bins found. Check the bins input table to verify bins exists.")
+                    "No bins found. Check the bins input table to verify bins exist.")
             sys.exit(1)
 
-        if len(binIDs) != len(binFiles):
+        # bin IDs are derived from filenames (extension removed) and must be unique
+        # as they are used to name output files and directories
+        binIdToFiles = {}
+        for binFile in binFiles:
+            binIdToFiles.setdefault(binIdFromFilename(binFile), []).append(binFile)
+
+        redundantBinIds = sorted(binId for binId, files in binIdToFiles.items() if len(files) > 1)
+        if redundantBinIds:
             self.logger.error(
-                "There are redundant bin IDs, please check and update.")
+                "There are redundant bin IDs, please check and update. Bin IDs are taken from filenames with the extension removed.")
+            for binId in redundantBinIds:
+                self.logger.error("Bin ID %s is used by: %s" % (binId, ', '.join(sorted(binIdToFiles[binId]))))
             sys.exit(1)
 
         return sorted(binFiles)
+
+    def binsWithGenes(self, binFiles, binIdToModels):
+        """Restrict bins to those processed by MarkerGeneFinder.find().
+
+        Bins without any called genes are skipped (with a warning) by
+        MarkerGeneFinder.find() and are absent from binIdToModels.
+        """
+        binFiles = [f for f in binFiles if binIdFromFilename(f) in binIdToModels]
+        if not binFiles:
+            self.logger.error(
+                "No genes were identified in any bin. Check that the bins contain valid sequences.")
+            sys.exit(1)
+
+        return binFiles
 
     def tree(self, options):
         """Tree command"""
@@ -141,14 +199,13 @@ class OptionsParser():
         binFiles = self.binFiles(
             options.bin_input, options.extension, options.bCalledGenes)
 
+        # warn if sequences do not match the expected type
         if not options.bCalledGenes:
-            if not checkNuclotideSeqs(binFiles):
-                return
+            checkNuclotideSeqs(binFiles)
         else:
-            if not checkProteinSeqs(binFiles):
-                return
+            checkProteinSeqs(binFiles)
 
-        # setup directory structure
+        # set up directory structure
         makeSurePathExists(os.path.join(options.output_dir, 'bins'))
         makeSurePathExists(os.path.join(options.output_dir, 'storage'))
 
@@ -162,6 +219,9 @@ class OptionsParser():
                                  options.bKeepAlignment,
                                  options.bNucORFs,
                                  options.bCalledGenes)
+
+        # only process bins with called genes
+        binFiles = self.binsWithGenes(binFiles, binIdToModels)
 
         # write model information to file
         markerSetParser = MarkerSetParser(options.threads)
@@ -192,7 +252,7 @@ class OptionsParser():
 
         # place bins into genome tree
 
-        # fix at one thread to keep memory requirements reasonable
+        # memory usage increases linearly with the number of pplacer threads
         pplacer = PplacerRunner(threads=options.pplacer_threads)
         pplacer.run(binFiles, resultsParser,
                     options.output_dir, options.bReducedTree)
@@ -200,7 +260,7 @@ class OptionsParser():
         self.timeKeeper.printTimeStamp()
 
     def treeQA(self, options):
-        """QA command"""
+        """Tree QA command"""
 
         self.logger.info(
             '[CheckM - tree_qa] Assessing phylogenetic markers found in each bin.')
@@ -230,7 +290,7 @@ class OptionsParser():
 
         self.timeKeeper.printTimeStamp()
 
-    def lineageSet(self, options, db=None):
+    def lineageSet(self, options):
         """Lineage set command"""
 
         self.logger.info(
@@ -251,25 +311,25 @@ class OptionsParser():
                                      DefaultValues.HMMER_TABLE_PHYLO_OUT)
 
         # These options are incompatible with how the lineage-specific marker set is selected, so
-        # the default values are currently hard-coded
-
-        options.num_genomes_markers = 2
-        options.bootstrap = 0
-        options.bRequireTaxonomy = False
+        # they are not exposed on the command line and default values are used. They can be set
+        # programmatically (e.g., by checkm/test/test_ecoli.py); the caller's options are not modified.
+        numGenomesMarkers = getattr(options, 'num_genomes_markers', 2)
+        bootstrap = getattr(options, 'bootstrap', 0)
+        bRequireTaxonomy = getattr(options, 'bRequireTaxonomy', False)
 
         treeParser = TreeParser()
         treeParser.getBinMarkerSets(options.tree_dir, options.marker_file,
-                                    options.num_genomes_markers,
-                                    options.bootstrap, options.bNoLineageSpecificRefinement,
-                                    options.bForceDomain, options.bRequireTaxonomy,
+                                    numGenomesMarkers,
+                                    bootstrap, options.bNoLineageSpecificRefinement,
+                                    options.bForceDomain, bRequireTaxonomy,
                                     resultsParser, options.unique, options.multi)
 
         self.logger.info('Marker set written to: ' + options.marker_file)
 
         self.timeKeeper.printTimeStamp()
 
-    def taxonList(self, options, db=None):
-        """Lineage set command"""
+    def taxonList(self, options):
+        """Taxon list command"""
 
         self.logger.info(
             '[CheckM - taxon_list] Listing available taxonomic-specific marker sets.')
@@ -279,7 +339,7 @@ class OptionsParser():
 
         self.timeKeeper.printTimeStamp()
 
-    def taxonSet(self, options, db=None):
+    def taxonSet(self, options):
         """Taxon set command"""
 
         self.logger.info(
@@ -293,12 +353,16 @@ class OptionsParser():
         bValidSet = taxonParser.markerSet(
             options.rank, options.taxon, options.marker_file)
 
-        if bValidSet:
-            self.logger.info('Marker set written to: ' + options.marker_file)
+        if not bValidSet:
+            self.logger.error('Unable to create a marker set for %s (rank %s). Use taxon_list to see the available taxa.' % (
+                options.taxon, options.rank))
+            sys.exit(1)
+
+        self.logger.info('Marker set written to: ' + options.marker_file)
 
         self.timeKeeper.printTimeStamp()
 
-    def analyze(self, options, db=None):
+    def analyze(self, options):
         """Analyze command"""
 
         self.logger.info(
@@ -307,14 +371,13 @@ class OptionsParser():
         binFiles = self.binFiles(
             options.bin_input, options.extension, options.bCalledGenes)
 
+        # warn if sequences do not match the expected type
         if not options.bCalledGenes:
-            if not checkNuclotideSeqs(binFiles):
-                return
+            checkNuclotideSeqs(binFiles)
         else:
-            if not checkProteinSeqs(binFiles):
-                return
+            checkProteinSeqs(binFiles)
 
-        # setup directory structure
+        # set up directory structure
         makeSurePathExists(options.output_dir)
         makeSurePathExists(os.path.join(options.output_dir, 'bins'))
         makeSurePathExists(os.path.join(options.output_dir, 'storage'))
@@ -332,10 +395,12 @@ class OptionsParser():
                                  options.bNucORFs,
                                  options.bCalledGenes)
 
+        # only process bins with called genes
+        binFiles = self.binsWithGenes(binFiles, binIdToModels)
+
         markerSetParser = MarkerSetParser(options.threads)
         binIdToBinMarkerSets = markerSetParser.getMarkerSets(options.output_dir,
-                                                             getBinIdsFromOutDir(
-                                                                 options.output_dir),
+                                                             sorted(binIdToModels.keys()),
                                                              options.marker_file)
 
         hmmModelInfoFile = os.path.join(
@@ -381,7 +446,7 @@ class OptionsParser():
 
             HA = HmmerAligner(options.threads)
             resultsParser = HA.makeAlignmentTopHit(options.output_dir,
-                                                   options.marker_file,
+                                                   markerFile,
                                                    DefaultValues.HMMER_TABLE_OUT,
                                                    binIdToModels,
                                                    False,
@@ -416,7 +481,7 @@ class OptionsParser():
         if options.exclude_markers:
             checkFileExists(options.exclude_markers)
 
-        # calculate AAI between marks with multiple hits in a single bin
+        # calculate AAI between markers with multiple hits in a single bin
         aai = AminoAcidIdentity()
         aai.run(options.aai_strain, options.analyze_dir, options.alignment_file)
 
@@ -535,7 +600,7 @@ class OptionsParser():
         plots = TetraDistPlots(options)
         filesProcessed = 1
         for f in binFiles:
-            self.logger.info('Plotting tetranuclotide distance plots for %s (%d of %d)' % (
+            self.logger.info('Plotting tetranucleotide distance plots for %s (%d of %d)' % (
                 f, filesProcessed, len(binFiles)))
             filesProcessed += 1
 
@@ -599,7 +664,7 @@ class OptionsParser():
         plots = GcBiasPlot(options)
         filesProcessed = 1
         for f in binFiles:
-            self.logger.info('Plotting GC plots for %s (%d of %d)' %
+            self.logger.info('Plotting GC bias plots for %s (%d of %d)' %
                              (f, filesProcessed, len(binFiles)))
             filesProcessed += 1
 
@@ -764,7 +829,7 @@ class OptionsParser():
         tetraSig.calculate(options.seq_file, options.output_file)
 
         self.logger.info(
-            'Tetranucletoide signatures written to: ' + options.output_file)
+            'Tetranucleotide signatures written to: ' + options.output_file)
 
         self.timeKeeper.printTimeStamp()
 
@@ -795,28 +860,23 @@ class OptionsParser():
         binFiles = self.binFiles(
             options.bin_input, options.extension, options.bCalledGenes)
 
+        # warn if sequences do not match the expected type
         if not options.bCalledGenes:
-            if not checkNuclotideSeqs(binFiles):
-                return
+            checkNuclotideSeqs(binFiles)
         else:
-            if not checkProteinSeqs(binFiles):
-                return
+            checkProteinSeqs(binFiles)
 
         markerSetParser = MarkerSetParser()
         if markerSetParser.markerFileType(options.marker_file) == BinMarkerSets.TREE_MARKER_SET:
             self.logger.error(
                 'Merge command requires a taxonomic-specific marker set or a user-defined HMM file.\n')
-            return
+            sys.exit(1)
 
-        # setup directory structure
+        # set up directory structure
         makeSurePathExists(options.output_dir)
         makeSurePathExists(os.path.join(options.output_dir, 'bins'))
         makeSurePathExists(os.path.join(options.output_dir, 'storage'))
         makeSurePathExists(os.path.join(options.output_dir, 'storage', 'hmms'))
-
-        binIds = []
-        for binFile in binFiles:
-            binIds.append(binIdFromFilename(binFile))
 
         # find marker genes in genome bins
         mgf = MarkerGeneFinder(options.threads)
@@ -828,6 +888,10 @@ class OptionsParser():
                                  False,
                                  False,
                                  options.bCalledGenes)
+
+        # only process bins with called genes
+        binFiles = self.binsWithGenes(binFiles, binIdToModels)
+        binIds = [binIdFromFilename(binFile) for binFile in binFiles]
 
         # get HMM file for each bin
         markerSetParser = MarkerSetParser()
@@ -934,7 +998,7 @@ class OptionsParser():
         """Quick test of CheckM"""
 
         self.logger.info(
-            '[CheckM - Test] Processing E.coli K12-W3310 to verify operation of CheckM.')
+            '[CheckM - Test] Processing E. coli K-12 W3110 to verify operation of CheckM.')
 
         verifyEcoli = VerifyEcoli()
         verifyEcoli.run(self, options.output_dir)
@@ -988,7 +1052,7 @@ class OptionsParser():
             options.bAlignTopHit = False
             options.exclude_markers = None
 
-            self.taxonSet(options)
+            self.taxonSet(options)  # exits if the taxon is not recognized
             self.analyze(options)
             self.qa(options)
         elif(options.subparser_name == 'gc_plot'):
@@ -1026,8 +1090,6 @@ class OptionsParser():
         elif(options.subparser_name == 'ssu_finder'):
             self.ssuFinder(options)
         elif(options.subparser_name == 'test'):
-            options.bCalledGenes = False
-            options.pplacer_threads = 1
             self.test(options)
         else:
             self.logger.error('Unknown CheckM command: ' +

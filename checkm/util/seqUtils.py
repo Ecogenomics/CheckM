@@ -33,8 +33,8 @@ def isNucleotide(seq_file, req_perc=0.9, max_seqs_to_read=10):
 
     The check is performed by looking for the characters in
     {a,c,g,t,n,.,-} and confirming that these comprise the
-    majority of a sequences. A set number of sequences are
-    read and the file assumed to be not be in nucleotide space
+    majority of a sequence. A set number of sequences are
+    read and the file assumed to not be in nucleotide space
     if none of these sequences are comprised primarily of the
     defined nucleotide set.
 
@@ -53,7 +53,7 @@ def isNucleotide(seq_file, req_perc=0.9, max_seqs_to_read=10):
     Returns
     -------
     boolean
-        True is sequences are in nucleotide space, or file
+        True if sequences are in nucleotide space, or file
         contains no sequences.
     """
 
@@ -63,6 +63,10 @@ def isNucleotide(seq_file, req_perc=0.9, max_seqs_to_read=10):
 
     seq_count = 0
     for _seq_id, seq in seqs.items():
+        if len(seq) == 0:
+            # skip empty records
+            continue
+
         seq = seq.lower()
 
         nt_bases = 0
@@ -76,49 +80,11 @@ def isNucleotide(seq_file, req_perc=0.9, max_seqs_to_read=10):
         if seq_count == max_seqs_to_read:
             break
 
+    if seq_count == 0:
+        # all records are empty so treat as file with no sequences
+        return True
+
     return False
-
-
-def queryYesNo(question, default="yes"):
-    """Ask a yes/no question via raw_input() and return their answer.
-
-    http://stackoverflow.com/questions/3041986/python-command-line-yes-no-input
-
-    Parameters
-    ----------
-    question : str
-        Prompt presented to the user.
-    default : str
-        Presumed answer if the user just hits <Enter>.
-        It must be "yes" (the default), "no" or None (meaning
-        an answer is required of the user).
-
-    Returns
-    -------
-    boolean
-        True for "yes", False for "no".
-    """
-    valid = {"yes": True, "y": True, "ye": True,
-             "no": False, "n": False}
-    if default is None:
-        prompt = " [y/n] "
-    elif default == "yes":
-        prompt = " [Y/n] "
-    elif default == "no":
-        prompt = " [y/N] "
-    else:
-        raise ValueError("invalid default answer: '%s'" % default)
-
-    while True:
-        sys.stdout.write(question + prompt)
-        choice = raw_input().lower()
-        if default is not None and choice == '':
-            return valid[default]
-        elif choice in valid:
-            return valid[choice]
-        else:
-            sys.stdout.write("Please respond with 'yes' or 'no' "
-                             "(or 'y' or 'n').\n")
 
 
 def checkNuclotideSeqs(seq_files):
@@ -144,7 +110,7 @@ def checkNuclotideSeqs(seq_files):
             logger.warning(
                 'Expected all files to contain sequences in nucleotide space.')
             logger.warning(
-                'File %s appears to contain amino acids sequences.' % seq_file)
+                'File %s appears to contain amino acid sequences.' % seq_file)
 
     return True
 
@@ -186,19 +152,20 @@ def readFasta(fastaFile, trimHeader=True):
             openFile = open
 
         seqs = {}
-        for line in openFile(fastaFile, 'rt'):
-            # skip blank lines
-            if not line.strip():
-                continue
+        with openFile(fastaFile, 'rt') as f:
+            for line in f:
+                # skip blank lines
+                if not line.strip():
+                    continue
 
-            if line[0] == '>':
-                if trimHeader:
-                    seqId = line[1:].split(None, 1)[0]
+                if line[0] == '>':
+                    if trimHeader:
+                        seqId = line[1:].split(None, 1)[0]
+                    else:
+                        seqId = line[1:].rstrip()
+                    seqs[seqId] = []
                 else:
-                    seqId = line[1:].rstrip()
-                seqs[seqId] = []
-            else:
-                seqs[seqId].append(line[0:-1])
+                    seqs[seqId].append(line.rstrip())
 
         for seqId, seq in seqs.items():
             seqs[seqId] = ''.join(seq)
@@ -219,54 +186,19 @@ def readFastaSeqIds(fastaFile):
         openFile = open
 
     seqIds = []
-    for line in openFile(fastaFile):
-        if line[0] == '>':
-            seqId = line[1:].split(None, 1)[0]
-            seqIds.append(seqId)
+    with openFile(fastaFile, 'rt') as f:
+        for line in f:
+            if line[0] == '>':
+                seqId = line[1:].split(None, 1)[0]
+                seqIds.append(seqId)
 
     return seqIds
-
-
-def readFastaBases(fastaFile):
-    '''Determine number of bases in FASTA file.'''
-    if fastaFile.endswith('.gz'):
-        openFile = gzip.open
-    else:
-        openFile = open
-
-    bases = 0
-    for line in openFile(fastaFile):
-        if line[0] != '>':
-            bases += len(line.rstrip())
-
-    return bases
-
-
-def readGenomicSeqsFromFasta(fastaFile, seqToIgnore=None):
-    '''Read genomic sequences from FASTA file. Explicitly ignores sequences marked as plasmids.'''
-    seqs = {}
-    bRead = False
-    for line in open(fastaFile):
-        if line[0] == '>':
-            if 'plasmid' in line.lower():
-                bRead = False
-            else:
-                seqId = line[1:].split(None, 1)[0]
-                seqs[seqId] = []
-                bRead = True
-        elif bRead:
-            seqs[seqId].append(line[0:-1])
-
-    for seqId, seq in seqs.items():
-        seqs[seqId] = ''.join(seq)
-
-    return seqs
 
 
 def writeFasta(seqs, outputFile):
     '''write sequences to FASTA file'''
     if outputFile.endswith('.gz'):
-        fout = gzip.open(outputFile, 'wb')
+        fout = gzip.open(outputFile, 'wt')
     else:
         fout = open(outputFile, 'w')
 
@@ -287,15 +219,16 @@ def baseCount(seq):
 
 
 def calculateN50(seqLens):
+    """Calculate N50 of a list of sequence lengths (0 if the list is empty)."""
+    if len(seqLens) == 0:
+        return 0
+
     thresholdN50 = sum(seqLens) / 2.0
 
-    seqLens.sort(reverse=True)
-
     testSum = 0
-    for seqLen in seqLens:
+    for seqLen in sorted(seqLens, reverse=True):
         testSum += seqLen
         if testSum >= thresholdN50:
-            N50 = seqLen
-            break
+            return seqLen
 
-    return N50
+    return 0

@@ -77,7 +77,12 @@ class TaxonParser():
         print (pTable.get_string())
 
     def markerSet(self, rank, taxon, markerFile):
-        """Obtain specified taxonomic-specific marker set."""
+        """Obtain specified taxonomic-specific marker set.
+
+        Returns True if the marker set was written to markerFile. Returns False,
+        after logging an error and without writing markerFile, if the rank or
+        taxon is not recognized.
+        """
 
         taxonMarkerSets = self.readMarkerSets()
 
@@ -85,7 +90,7 @@ class TaxonParser():
             self.logger.error('Unrecognized taxonomic rank: ' + rank)
             return False
         elif taxon not in taxonMarkerSets[rank]:
-            self.logger.error('Unrecognized taxon: %s (in rank %s): ' % (taxon, rank))
+            self.logger.error('Unrecognized taxon: %s (in rank %s)' % (taxon, rank))
             return False
 
         markerSet = taxonMarkerSets[rank][taxon]

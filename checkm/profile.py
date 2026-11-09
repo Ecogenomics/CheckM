@@ -75,14 +75,21 @@ class Profile():
             normBinCoverage[binId] = {}
 
             for bamId in bamIds:
-                perMR = float(
-                    readsMappedToBin[binId][bamId]) / totalMappedReads[bamId]
+                if totalMappedReads[bamId] > 0:
+                    perMR = float(
+                        readsMappedToBin[binId][bamId]) / totalMappedReads[bamId]
+                else:
+                    # no reads mapped in this BAM file
+                    perMR = 0.0
                 perMappedReads[binId][bamId] = perMR
 
                 if binId == DefaultValues.UNBINNED:
                     continue
 
-                normCoverage = perMR / binSize[binId]
+                if binSize[binId] > 0:
+                    normCoverage = perMR / binSize[binId]
+                else:
+                    normCoverage = 0.0
                 normBinCoverage[binId][bamId] = normCoverage
                 sumNormBinCoverage[bamId] = sumNormBinCoverage.get(
                     bamId, 0) + normCoverage

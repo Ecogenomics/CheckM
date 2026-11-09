@@ -62,60 +62,51 @@ def findNearest(array, value):
     return array[idx]
 
 
-def checkEmptyDir(inputDir):
-    """Check the the specified directory is empty and create it if necessary."""
-    if not os.path.exists(inputDir):
-        makeSurePathExists(inputDir)
-    else:
-        # check if directory is empty
-        files = os.listdir(inputDir)
-        if len(files) != 0:
-            logger = logging.getLogger('timestamp')
-            logger.error('Output directory must be empty: ' + inputDir + '\n')
-            sys.exit(1)
-
-
 def checkBinInputExists(binInput, bCalledGenes):
-    """Check if bin input exists."""
+    """Check if bin input exists.
+
+    The bin input is either a directory or a tab-separated table. For a
+    table, the first non-blank line that does not start with '#' must
+    have at least 2 columns (3 columns if bCalledGenes is True). Exits
+    with an error if these conditions are not met.
+    """
     if os.path.isdir(binInput):
-        checkDirExists(binInput)
-    else:
-        checkFileExists(binInput)
+        return
 
-        binInput_ih = open(binInput)
-        binInput_oneline = binInput_ih.readline().strip().split("\t")
-        binInput_ih.close()
+    checkFileExists(binInput)
 
-        have_error = False
-        if bCalledGenes:
-            if len(binInput_oneline) < 3:
-                have_error = True
-        else:
-            if len(binInput_oneline) < 2:
-                have_error = True
-        if have_error:
-            logger = logging.getLogger("timestamp")
-            logger.error('Input table format is not correct: ' +
-                         binInput + '\n')
-            logger.error(
-                'If input is nucleotide contigs, please supply 2 column at least: [genome_id, genome_contigs_file]')
-            logger.error(
-                'If input is gene, please supply 3 column at least: [genome_id, genome_contigs_file, genome_genes_file]')
+    first_row = None
+    with open(binInput) as binInput_ih:
+        for line in binInput_ih:
+            if line.strip() and not line.lstrip().startswith('#'):
+                first_row = line.strip().split("\t")
+                break
+
+    num_required_columns = 3 if bCalledGenes else 2
+    if first_row is None or len(first_row) < num_required_columns:
+        logger = logging.getLogger("timestamp")
+        logger.error('Input table format is not correct: ' +
+                     binInput + '\n')
+        logger.error(
+            'If input is nucleotide contigs, please supply at least 2 columns: [genome_id, genome_contigs_file]')
+        logger.error(
+            'If input is gene, please supply at least 3 columns: [genome_id, genome_contigs_file, genome_genes_file]')
+        sys.exit(1)
 
 
 def checkFileExists(inputFile):
     """Check if file exists."""
     if not os.path.exists(inputFile):
         logger = logging.getLogger('timestamp')
-        logger.error('Input file does not exists: ' + inputFile + '\n')
+        logger.error('Input file does not exist: ' + inputFile + '\n')
         sys.exit(1)
 
 
 def checkDirExists(inputDir):
     """Check if directory exists."""
-    if not os.path.exists(inputDir):
+    if not os.path.isdir(inputDir):
         logger = logging.getLogger('timestamp')
-        logger.error('Input directory does not exists: ' + inputDir + '\n')
+        logger.error('Input directory does not exist: ' + inputDir + '\n')
         sys.exit(1)
 
 
@@ -169,10 +160,10 @@ def restoreStdOut(outFile, oldStdOut):
     """Redirect standard out back to system standard out."""
     if(outFile != ''):
         try:
-            # redirect stdout to a file
+            # restore original stdout
             sys.stdout.close()
             sys.stdout = oldStdOut
         except:
             logger = logging.getLogger('timestamp')
-            logger.error("Error restoring stdout ", outFile)
+            logger.error("Error restoring stdout: %s", outFile)
             sys.exit(1)

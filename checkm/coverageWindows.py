@@ -22,21 +22,45 @@
 import sys
 import os
 import multiprocessing as mp
+from multiprocessing.connection import wait
 import logging
 
 from numpy import zeros
 
 
+def _waitForWorkers(workerProcs, writerProc):
+    """Wait for worker processes to finish.
+
+    Workers are terminated if the writer process exits
+    early, since workers can block on exit until the
+    data they put on the writer queue has been consumed.
+    """
+    pending = list(workerProcs)
+    while pending:
+        wait([p.sentinel for p in pending] + [writerProc.sentinel])
+        pending = [p for p in pending if p.is_alive()]
+        if pending and not writerProc.is_alive():
+            for p in pending:
+                p.terminate()
+            for p in pending:
+                p.join()
+            break
+
+    for p in workerProcs:
+        p.join()
+
+
+class MissingNMTagError(Exception):
+    """Read is missing the NM (edit distance) tag."""
+    pass
+
+
 class ReadLoader:
-    """Callback for counting aligned reads with pysam.fetch"""
+    """Count aligned reads returned by pysam's fetch and calculate per-base coverage."""
 
     def __init__(self, refLength, bAllReads, minAlignPer, maxEditDistPer):
         """Initialization."""
 
-        # pysam can be a challenge to install and most users
-        # will not use this functionality so importing pysam here
-        import pysam
-        
         self.bAllReads = bAllReads
         self.minAlignPer = minAlignPer
         self.maxEditDistPer = maxEditDistPer
@@ -59,36 +83,38 @@ class ReadLoader:
             pass
         elif read.is_duplicate:
             self.numDuplicates += 1
-        elif read.is_secondary:
+        elif read.is_secondary or read.is_supplementary:
             self.numSecondary += 1
         elif read.is_qcfail:
             self.numFailedQC += 1
-        elif read.alen < self.minAlignPer * read.rlen:
+        elif read.query_alignment_length < self.minAlignPer * read.query_length:
             self.numFailedAlignLen += 1
-        elif read.opt('NM') > self.maxEditDistPer * read.rlen:
+        elif not read.has_tag('NM'):
+            raise MissingNMTagError(read.query_name)
+        elif read.get_tag('NM') > self.maxEditDistPer * read.query_length:
             self.numFailedEditDist += 1
         elif not self.bAllReads and not read.is_proper_pair:
             self.numFailedProperPair += 1
         else:
             self.numMappedReads += 1
 
-            # Note: the alignment length (alen) is used instead of the
-            # read length (rlen) as this bring the calculated coverage
+            # Note: the aligned reference bases are counted instead of the
+            # read length (query_length) as this brings the calculated coverage
             # in line with 'samtools depth' (at least when the min
             # alignment length and edit distance thresholds are zero).
-            self.coverage[read.pos:read.pos + read.alen] += 1.0
-
-
-class CoverageStruct():
-    def __init__(self, seqLen, mappedReads, coverage):
-        self.seqLen = seqLen
-        self.mappedReads = mappedReads
-        self.coverage = coverage
+            self.coverage[read.reference_start:read.reference_end] += 1.0
 
 
 class CoverageWindows():
     """Calculate coverage of all sequences."""
     def __init__(self, threads):
+        """Initialization."""
+
+        # pysam can be a challenge to install and most users
+        # will not use this functionality so importing pysam here
+        import pysam
+        self.pysam = pysam
+
         self.logger = logging.getLogger('timestamp')
 
         self.totalThreads = threads
@@ -103,8 +129,8 @@ class CoverageWindows():
 
         # calculate coverage of each BAM file
         self.logger.info('Calculating coverage of windows.')
-        coverageInfo = mp.Manager().dict()
-        coverageInfo = self._processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, coverageInfo)
+        with mp.Manager() as manager:
+            coverageInfo = dict(self._processBam(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, manager.dict()))
 
         return coverageInfo
 
@@ -115,7 +141,7 @@ class CoverageWindows():
         workerQueue = mp.Queue()
         writerQueue = mp.Queue()
 
-        bamfile = pysam.Samfile(bamFile, 'rb')
+        bamfile = self.pysam.AlignmentFile(bamFile, 'rb')
         refSeqIds = bamfile.references
         refSeqLens = bamfile.lengths
 
@@ -146,26 +172,31 @@ class CoverageWindows():
         for _ in range(self.totalThreads):
             workerQueue.put((None, None))
 
-        try:
-            workerProc = [mp.Process(target=self._workerThread, args=(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target=self._writerThread, args=(coverageInfo, len(refSeqIds), writerQueue))
+        bamfile.close()
 
+        workerProc = [mp.Process(target=self._workerThread, args=(bamFile, bAllReads, minAlignPer, maxEditDistPer, windowSize, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        writeProc = mp.Process(target=self._writerThread, args=(coverageInfo, len(refSeqIds), writerQueue))
+
+        try:
             writeProc.start()
 
             for p in workerProc:
                 p.start()
 
-            for p in workerProc:
-                p.join()
+            _waitForWorkers(workerProc, writeProc)
 
             writerQueue.put((None, None, None, None, None, None, None, None, None, None, None, None))
             writeProc.join()
-        except:
+        except BaseException:
             # make sure all processes are terminated
-            for p in workerProc:
-                p.terminate()
+            for p in workerProc + [writeProc]:
+                if p.is_alive():
+                    p.terminate()
+            raise
 
-            writeProc.terminate()
+        if any(p.exitcode != 0 for p in workerProc) or writeProc.exitcode != 0:
+            self.logger.error('Failed to calculate coverage for BAM file: %s' % bamFile)
+            sys.exit(1)
 
         return coverageInfo
 
@@ -176,28 +207,34 @@ class CoverageWindows():
             if seqIds == None:
                 break
 
-            bamfile = pysam.Samfile(bamFile, 'rb')
+            bamfile = self.pysam.AlignmentFile(bamFile, 'rb')
 
             for seqId, seqLen in zip(seqIds, seqLens):
                 readLoader = ReadLoader(seqLen, bAllReads, minAlignPer, maxEditDistPer)
-                bamfile.fetch(seqId, 0, seqLen, callback=readLoader)
+                try:
+                    for read in bamfile.fetch(seqId, 0, seqLen):
+                        readLoader(read)
+                except MissingNMTagError as e:
+                    self.logger.error('Read %s in BAM file %s has no NM (edit distance) tag. '
+                                      'CheckM requires BAM files with NM tags (e.g., from BWA or Bowtie2, '
+                                      'or added with samtools calmd).' % (str(e), bamFile))
+                    sys.exit(1)
 
+                # coverage of each complete window; a partial window
+                # at the end of the sequence is ignored
                 start = 0
                 end = windowSize
                 windowCoverages = []
-                while(end < seqLen):
+                while end <= seqLen:
                     windowCoverages.append(sum(readLoader.coverage[start:end]) / windowSize)
 
                     start = end
-                    try:
-                        end += windowSize
-                    except:
-                        print ('*****************')
-                        print (end)
-                        print (windowSize)
-                        print ('******************')
+                    end += windowSize
 
-                coverage = float(sum(readLoader.coverage)) / seqLen
+                if seqLen > 0:
+                    coverage = float(sum(readLoader.coverage)) / seqLen
+                else:
+                    coverage = 0.0
 
                 queueOut.put((seqId, seqLen, coverage, windowCoverages, readLoader.numReads,
                                 readLoader.numDuplicates, readLoader.numSecondary, readLoader.numFailedQC,
@@ -243,13 +280,16 @@ class CoverageWindows():
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
 
+            def perc(count):
+                return float(count) * 100 / totalReads if totalReads > 0 else 0.0
+
             print ('')
             print ('    # total reads: %d' % totalReads)
-            print ('      # properly mapped reads: %d (%.1f%%)' % (totalMappedReads, float(totalMappedReads) * 100 / totalReads))
-            print ('      # duplicate reads: %d (%.1f%%)' % (totalDuplicates, float(totalDuplicates) * 100 / totalReads))
-            print ('      # secondary reads: %d (%.1f%%)' % (totalSecondary, float(totalSecondary) * 100 / totalReads))
-            print ('      # reads failing QC: %d (%.1f%%)' % (totalFailedQC, float(totalFailedQC) * 100 / totalReads))
-            print ('      # reads failing alignment length: %d (%.1f%%)' % (totalFailedAlignLen, float(totalFailedAlignLen) * 100 / totalReads))
-            print ('      # reads failing edit distance: %d (%.1f%%)' % (totalFailedEditDist, float(totalFailedEditDist) * 100 / totalReads))
-            print ('      # reads not properly paired: %d (%.1f%%)' % (totalFailedProperPair, float(totalFailedProperPair) * 100 / totalReads))
+            print ('      # properly mapped reads: %d (%.1f%%)' % (totalMappedReads, perc(totalMappedReads)))
+            print ('      # duplicate reads: %d (%.1f%%)' % (totalDuplicates, perc(totalDuplicates)))
+            print ('      # secondary reads: %d (%.1f%%)' % (totalSecondary, perc(totalSecondary)))
+            print ('      # reads failing QC: %d (%.1f%%)' % (totalFailedQC, perc(totalFailedQC)))
+            print ('      # reads failing alignment length: %d (%.1f%%)' % (totalFailedAlignLen, perc(totalFailedAlignLen)))
+            print ('      # reads failing edit distance: %d (%.1f%%)' % (totalFailedEditDist, perc(totalFailedEditDist)))
+            print ('      # reads not properly paired: %d (%.1f%%)' % (totalFailedProperPair, perc(totalFailedProperPair)))
             print ('')

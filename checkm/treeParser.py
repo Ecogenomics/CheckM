@@ -22,7 +22,6 @@
 import os
 import sys
 import logging
-import json
 
 import dendropy
 
@@ -51,8 +50,6 @@ class TreeParser():
             self.reportNewickTree(outDir, outFile, 'taxonomy')
         elif outputFormat == 5:
             self.reportFullMSA(outDir, outFile)
-        else:
-            self.logger.error("Unknown output format: %d", outputFormat)
 
     def reportFullMSA(self, outDir, outFile):
         """Create MSA with all reference and bin alignments."""
@@ -77,26 +74,6 @@ class TreeParser():
                     print(seq)
 
         restoreStdOut(outFile, oldStdOut)
-
-    def readPlacementFile(self, placementFile):
-        '''Read pplacer JSON placement file.'''
-        jsonData = open(placementFile)
-
-        data = json.load(jsonData)
-        binIdToPP = {}
-        for placementData in data['placements']:
-            binId = placementData['nm'][0][0]
-
-            topPP = 0
-            for pp in placementData['p']:
-                if pp[2] > topPP:
-                    topPP = pp[2]
-
-            binIdToPP[binId] = topPP
-
-        jsonData.close()
-
-        return binIdToPP
 
     def reportNewickTree(self, outDir, outFile, leafLabels=None):
         # read duplicate nodes
@@ -242,7 +219,7 @@ class TreeParser():
 
             curNode = curNode.parent_node
 
-        # perform depth first search to find a labeled internal node
+        # perform breadth-first search to find a labeled internal node
         queue = [curNode]
         while queue:
             curNode = queue.pop(0)
@@ -273,7 +250,7 @@ class TreeParser():
             lineSplit = line.split('\t')
             leafIdToTaxonomy[lineSplit[0]] = lineSplit[1].rstrip()
 
-        # find LCA of all labeled node in sister lineage
+        # find LCA of all labeled nodes in sister lineage
         binIdToSisterTaxonomy = {}
         for binId in binIds:
             node = tree.find_node_with_taxon_label(binId)
@@ -365,7 +342,7 @@ class TreeParser():
                             if not bRequireTaxonomy and stats['taxonomy'] == '':
                                 taxonomyStr = self._getNextNamedNode(selectedParentNode, uniqueIdToLineageStatistics)
 
-                            # all criteria meet, so use marker set from this node
+                            # all criteria met, so use marker set from this node
                             break
 
             if selectedParentNode.parent_node == None:
@@ -378,54 +355,6 @@ class TreeParser():
         markerSet = MarkerSet(trustedUniqueId, taxonomyStr, int(stats['# genomes']), eval(stats['marker set']))
 
         return selectedParentNode, markerSet
-
-    def _refineMarkerSet(self, markerSet, binNode, tree, uniqueIdToLineageStatistics, numGenomesRefine):
-        """Refine marker set to account for lineage-specific gene loss and duplication."""
-
-        # lineage-specific refine is done with the sister lineage to where the bin is inserted
-
-        # get lineage-specific marker set which will be used to refine the above marker set
-        curNode = binNode.sister_nodes()[0]
-        while True:
-            if curNode.label:  # nodes inserted by PPLACER will not have a label
-                uniqueId = curNode.label.split('|')[0]
-                stats = uniqueIdToLineageStatistics[uniqueId]
-
-                if stats['# genomes'] >= numGenomesRefine:
-                    break
-
-            curNode = curNode.parent_node
-            if curNode == None:
-                break  # reached the root node so terminate
-
-        # get lineage-specific marker set
-        lineageMarkerSet = eval(stats['marker set'])
-
-        # refine marker set by finding the intersection between these two sets,
-        # this removes markers that are not single-copy or ubiquitous in the
-        # specific lineage of a bin
-        # Note: co-localization information is taken from the trusted set
-
-        # get all lineage-specific marker genes
-        allLineageSpecificGenes = set()
-        for m in lineageMarkerSet:
-            for gene in m:
-                allLineageSpecificGenes.add(gene)
-
-        # remove genes not present in the lineage-specific gene set
-        finalMarkerSet = []
-        for ms in markerSet.markerSet:
-            s = set()
-            for gene in ms:
-                if gene in allLineageSpecificGenes:
-                    s.add(gene)
-
-            if s:
-                finalMarkerSet.append(s)
-
-        refinedMarkerSet = MarkerSet(markerSet.UID, markerSet.lineageStr, markerSet.numGenomes, finalMarkerSet)
-
-        return refinedMarkerSet
 
     def _readLineageSpecificGenesToRemove(self):
         """Get set of genes subject to lineage-specific gene loss and duplication."""
@@ -474,8 +403,8 @@ class TreeParser():
 
         self.logger.info('Determining marker sets for each genome bin.')
 
-        # get all bin ids
-        binIds = getBinIdsFromOutDir(outDir)
+        # get all bin ids (sorted so bins are written to the marker file in a reproducible order)
+        binIds = sorted(getBinIdsFromOutDir(outDir))
 
         # get statistics for internal nodes
         uniqueIdToLineageStatistics = self.readNodeMetadata()

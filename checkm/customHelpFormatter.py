@@ -48,7 +48,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):
                             h = '\n'.join(lines)
                         else:
                             h += ' (default: %(default)s)'
-            return h
+        return h
 
     def _fill_text(self, text, width, indent):
         return ''.join([indent + line for line in text.splitlines(True)])

@@ -39,7 +39,6 @@ __status__ = "Beta"
 ###############################################################################
 
 # system includes
-import sys
 import os
 
 # local includes
@@ -64,31 +63,10 @@ class FileEntity(object):
         self.hashd = hashd
         self.size = size
 
-    def getFullPath(self):
-        """get the full path to this entity"""
-        if self.parent == None:
-            return ""
-        else:
-            return os.path.join(self.parent.getFullPath(), self.name)
-
-    def checkIntegrity(self):
-        """Check the file for corruption"""
-        if self.type == 'dir':
-            return True
-        else:
-            # check the hashd and compare against the recorded MD5
-            return True
-
     def __str__(self):
         if self.parent is not None:
             return "\t".join([os.path.join(self.path,self.name),self.hashd,str(self.size)])
         return ""
-
-#------------------------------------------------------------------------------
-# Handling IDs
-
-
-
 
 ###############################################################################
 ###############################################################################

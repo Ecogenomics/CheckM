@@ -2,7 +2,7 @@
 
 ###############################################################################
 #
-# calculateBoundsDeltaGC.py - find confidence intervals for GC distribution
+# genomicSignatures.py - calculate genomic signatures (k-mer frequencies)
 #
 ###############################################################################
 #                                                                             #
@@ -23,12 +23,34 @@
 
 import sys
 import multiprocessing as mp
-#from str import maketrans
+from multiprocessing.connection import wait
 import logging
 
 import numpy as np
 
 from checkm.util.seqUtils import readFasta
+
+
+def _waitForWorkers(workerProcs, writerProc):
+    """Wait for worker processes to finish.
+
+    Workers are terminated if the writer process exits
+    early, since workers can block on exit until the
+    data they put on the writer queue has been consumed.
+    """
+    pending = list(workerProcs)
+    while pending:
+        wait([p.sentinel for p in pending] + [writerProc.sentinel])
+        pending = [p for p in pending if p.is_alive()]
+        if pending and not writerProc.is_alive():
+            for p in pending:
+                p.terminate()
+            for p in pending:
+                p.join()
+            break
+
+    for p in workerProcs:
+        p.join()
 
 
 class GenomicSignatures(object):
@@ -61,8 +83,6 @@ class GenomicSignatures(object):
             if kmer not in retList:
                 retList.append(kmer)
 
-        sorted(retList)
-
         # create mapping from kmers to their canonical order position
         kmerToCanonicalIndex = {}
         for index, kmer in enumerate(retList):
@@ -80,7 +100,6 @@ class GenomicSignatures(object):
 
     def _revComp(self, seq):
         """Return the reverse complement of a sequence."""
-        # build a dictionary to know what letter to switch to
         return seq.translate(self.compl)[::-1]
 
     def _calculateResults(self, queueIn, queueOut):
@@ -94,8 +113,8 @@ class GenomicSignatures(object):
 
             queueOut.put((seqId, sig))
 
-    def _storeResults(self, seqFile, outputFile, totalSeqs, writerQueue):
-        """Store genomic signatures to file."""
+    def _storeResults(self, seqIds, outputFile, writerQueue):
+        """Store genomic signatures to file in the order given by seqIds."""
 
         # write header
         fout = open(outputFile, 'w')
@@ -104,6 +123,9 @@ class GenomicSignatures(object):
             fout.write('\t' + kmer)
         fout.write('\n')
 
+        totalSeqs = len(seqIds)
+        pendingSigs = {}
+        nextSeqIndex = 0
         numProcessedSeq = 0
         while True:
             seqId, sig = writerQueue.get(block=True, timeout=None)
@@ -116,9 +138,15 @@ class GenomicSignatures(object):
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 
-            fout.write(seqId)
-            fout.write('\t' + '\t'.join(list(map(str, sig))))
-            fout.write('\n')
+            # results arrive in the order workers finish, so
+            # write them out in the order of the input sequences
+            pendingSigs[seqId] = sig
+            while nextSeqIndex < totalSeqs and seqIds[nextSeqIndex] in pendingSigs:
+                nextSeqId = seqIds[nextSeqIndex]
+                fout.write(nextSeqId)
+                fout.write('\t' + '\t'.join(list(map(str, pendingSigs.pop(nextSeqId)))))
+                fout.write('\n')
+                nextSeqIndex += 1
 
         if self.logger.getEffectiveLevel() <= logging.INFO:
             sys.stderr.write('\n')
@@ -139,12 +167,15 @@ class GenomicSignatures(object):
                 kmerIndex = self.kmerToCanonicalIndex[tmp_seq[i:i + self.K]]
                 sig[kmerIndex] += 1  # Note: a numpy array would be slow here due to this single element increment
             except KeyError:
-                # unknown kmer (e.g., contains a N)
+                # unknown kmer (e.g., contains an N)
                 pass
 
-        # normalize
+        # normalize; a sequence without any valid kmers (e.g., shorter
+        # than K or all N) has a signature of all zeros
         sig = np.array(sig, dtype=float)
-        sig /= np.sum(sig)
+        sigSum = np.sum(sig)
+        if sigSum > 0:
+            sig /= sigSum
 
         return sig
 
@@ -165,26 +196,29 @@ class GenomicSignatures(object):
         for _ in range(self.totalThreads):
             workerQueue.put((None, None))
 
-        try:
-            calcProc = [mp.Process(target=self._calculateResults, args=(workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target=self._storeResults, args=(seqFile, outputFile, len(seqs), writerQueue))
+        calcProc = [mp.Process(target=self._calculateResults, args=(workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+        writeProc = mp.Process(target=self._storeResults, args=(list(seqs.keys()), outputFile, writerQueue))
 
+        try:
             writeProc.start()
 
             for p in calcProc:
                 p.start()
 
-            for p in calcProc:
-                p.join()
+            _waitForWorkers(calcProc, writeProc)
 
             writerQueue.put((None, None))
             writeProc.join()
-        except:
+        except BaseException:
             # make sure all processes are terminated
-            for p in calcProc:
-                p.terminate()
+            for p in calcProc + [writeProc]:
+                if p.is_alive():
+                    p.terminate()
+            raise
 
-            writeProc.terminate()
+        if any(p.exitcode != 0 for p in calcProc) or writeProc.exitcode != 0:
+            self.logger.error('Failed to calculate tetranucleotide signatures for: %s' % seqFile)
+            sys.exit(1)
 
     def distance(self, sig1, sig2):
         return np.sum(np.abs(sig1 - sig2))

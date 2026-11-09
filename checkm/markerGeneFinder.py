@@ -43,7 +43,12 @@ class MarkerGeneFinder():
         self.totalThreads = threads
 
     def find(self, binFiles, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, bCalledGenes):
-        """Identify marker genes in each bin using prodigal and HMMER."""
+        """Identify marker genes in each bin using prodigal and HMMER.
+
+        Returns a dictionary mapping bin IDs to HMM models, sorted by
+        bin ID. Bins without any genes are skipped with a warning and
+        are not included in the returned dictionary.
+        """
 
         # make sure HMMER and prodigal are on system path
         HMMERRunner()
@@ -65,11 +70,15 @@ class MarkerGeneFinder():
         for _ in range(self.totalThreads):
             workerQueue.put(None)
 
-        binIdToModels = mp.Manager().dict()
+        manager = mp.Manager()
+        binIdToModels = manager.dict()
+        skippedBinIds = manager.list()
 
+        calcProc = []
+        writeProc = None
         try:
             calcProc = [mp.Process(target=self._processBin, args=(outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, bCalledGenes, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target=self._reportProgress, args=(len(binFiles), binIdToModels, writerQueue))
+            writeProc = mp.Process(target=self._reportProgress, args=(len(binFiles), binIdToModels, skippedBinIds, writerQueue))
 
             writeProc.start()
 
@@ -86,12 +95,39 @@ class MarkerGeneFinder():
             for p in calcProc:
                 p.terminate()
 
-            writeProc.terminate()
+            if writeProc is not None:
+                writeProc.terminate()
 
-        # create a standard dictionary from the managed dictionary
+        # exit if any process failed, rather than silently continuing without some bins
+        # (checked outside the try/except above so the exit is not caught by it)
+        procs = calcProc + ([writeProc] if writeProc is not None else [])
+        numFailed = sum(1 for p in procs if p.exitcode != 0)
+        if numFailed:
+            self.logger.error(f'{numFailed} of {len(procs)} processes failed while identifying marker genes. See the error messages above.')
+
+            # items left unread in a queue would otherwise block the exit
+            workerQueue.cancel_join_thread()
+            writerQueue.cancel_join_thread()
+
+            sys.exit(1)
+
+        for binId in sorted(skippedBinIds):
+            if bCalledGenes:
+                self.logger.warning(f'Skipping bin {binId}: the gene file contains no genes.')
+            else:
+                self.logger.warning(f'Skipping bin {binId}: no genes were identified by Prodigal.')
+
+            # remove the bin's (empty) output directory so commands that identify
+            # bins from the output directory (e.g., tree_qa, lineage_set, qa) skip it too
+            shutil.rmtree(os.path.join(outDir, 'bins', binId), ignore_errors=True)
+
+        # create a standard dictionary from the managed dictionary,
+        # with bins in a deterministic order
         d = {}
-        for binId in binIdToModels.keys():
+        for binId in sorted(binIdToModels.keys()):
             d[binId] = binIdToModels[binId]
+
+        manager.shutdown()
 
         return d
 
@@ -126,6 +162,11 @@ class MarkerGeneFinder():
                             shutil.copyfileobj(f_in, f_out)
                 aaGeneFile = aaGeneFileSave
 
+            # skip bins without any genes, as there is nothing to search
+            if os.stat(aaGeneFile).st_size == 0:
+                queueOut.put((binId, None))
+                continue
+
             # extract HMMs into temporary file
             hmmModelFile = markerSetParser.createHmmModelFile(binId, markerFile)
 
@@ -137,13 +178,24 @@ class MarkerGeneFinder():
             keepAlignStr = ''
             if not bKeepAlignment:
                 keepAlignStr = '--noali'
-            hmmer.search(hmmModelFile, aaGeneFile, tableOutPath, hmmerOutPath,
-                         '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr,
-                         bKeepAlignment)
+            try:
+                hmmer.search(hmmModelFile, aaGeneFile, tableOutPath, hmmerOutPath,
+                             '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr,
+                             bKeepAlignment)
+            except BaseException:
+                # the writer process removes the temporary HMM file, so remove it here on failure
+                self._removeHmmModelFile(hmmModelFile)
+                raise
 
             queueOut.put((binId, hmmModelFile))
 
-    def _reportProgress(self, numBins, binIdToModels, queueIn):
+    def _removeHmmModelFile(self, hmmModelFile):
+        """Remove temporary HMM file and its index."""
+        for f in [hmmModelFile, hmmModelFile + '.ssi']:
+            if os.path.exists(f):
+                os.remove(f)
+
+    def _reportProgress(self, numBins, binIdToModels, skippedBinIds, queueIn):
         """Report number of processed bins."""
 
         numProcessedBins = 0
@@ -157,19 +209,18 @@ class MarkerGeneFinder():
             if binId == None:
                 break
 
-            # parse HMM file
-            # (This is done here as pushing the models onto the shared queue is too memory intensive)
-            modelParser = HmmModelParser(hmmModelFile)
-            models = modelParser.models()
+            if hmmModelFile is None:
+                # bin has no genes
+                skippedBinIds.append(binId)
+            else:
+                # parse HMM file
+                # (This is done here as pushing the models onto the shared queue is too memory intensive)
+                modelParser = HmmModelParser(hmmModelFile)
+                models = modelParser.models()
 
-            binIdToModels[binId] = models
+                binIdToModels[binId] = models
 
-            if os.path.exists(hmmModelFile):
-                os.remove(hmmModelFile)
-
-            indexFile = hmmModelFile + '.ssi'
-            if os.path.exists(indexFile):
-                os.remove(indexFile)
+                self._removeHmmModelFile(hmmModelFile)
 
             if self.logger.getEffectiveLevel() <= logging.INFO:
                 numProcessedBins += 1

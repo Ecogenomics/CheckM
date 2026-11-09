@@ -19,11 +19,10 @@
 #                                                                             #
 ###############################################################################
 
-from __future__ import print_function
-
 import sys
 import os
 import ast
+import copy
 from collections import defaultdict
 import logging
 
@@ -32,7 +31,7 @@ import checkm.prettytable as prettytable
 from checkm.defaultValues import DefaultValues
 from checkm.common import reassignStdOut, restoreStdOut, checkFileExists
 from checkm.coverage import Coverage
-from checkm.hmmer import HMMERParser
+from checkm.hmmer import HMMERParser, FormatError, HMMERError
 
 from checkm.util.pfam import PFAM
 from checkm.util.seqUtils import readFasta
@@ -102,13 +101,9 @@ class ResultsParser():
             if binStats != None:
                 resultsManager = ResultsManager(
                     binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats[binId])
-            elif binStats == None:
+            else:
                 resultsManager = ResultsManager(
                     binId, self.models[binId], bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection)
-            else:
-                self.logger.error(
-                    'Invalid parameter settings for binStats and seqStats.')
-                sys.exit(1)
 
             hmmerTableFile = os.path.join(outDir, 'bins', binId, hmmTableFile)
             self.parseHmmerResults(
@@ -123,7 +118,7 @@ class ResultsParser():
         
         fout = open(binStatsExtFile, 'w')
 
-        for binId in self.results:
+        for binId in sorted(self.results):
             binStatsExt = self.results[binId].getSummary(
                 binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=2)
             binStatsExt.update(self.results[binId].geneCopyNumber(
@@ -136,7 +131,7 @@ class ResultsParser():
 
         fout = open(markerGenesFile, 'w')
 
-        for binId in self.results:
+        for binId in sorted(self.results):
             markerGenesHits = self.results[binId].getSummary(
                 binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=8)
             fout.write(binId + '\t' + str(markerGenesHits) + '\n')
@@ -159,7 +154,7 @@ class ResultsParser():
         return binStats
 
     def parseBinStatsExt(self, resultsFolder):
-        """Read bin statistics from file."""
+        """Read extended bin statistics from file."""
         binStatsExtFile = os.path.join(
             resultsFolder, 'storage', DefaultValues.BIN_STATS_EXT_OUT)
 
@@ -174,7 +169,7 @@ class ResultsParser():
         return binStatsExt
 
     def parseMarkerGeneStats(self, resultsFolder):
-        """Read bin statistics from file."""
+        """Read marker gene statistics from file."""
         markerGeneStatsFile = os.path.join(
             resultsFolder, 'storage', DefaultValues.MARKER_GENE_STATS)
 
@@ -192,29 +187,30 @@ class ResultsParser():
         """Parse HMMER results."""
         try:
             with open(fileName, 'r') as hmmerHandle:
-                try:
-                    HP = HMMERParser(hmmerHandle)
-                except:
-                    print("Error opening HMM file: ", fileName)
-                    raise
+                HP = HMMERParser(hmmerHandle)
 
                 while True:
                     hit = HP.next()
                     if hit is None:
                         break
                     resultsManager.addHit(hit)
-
-            # retain only best hit to PFAM clan
-            pfam = PFAM(DefaultValues.PFAM_CLAN_FILE)
-            resultsManager.markerHits = pfam.filterHitsFromSameClan(
-                resultsManager.markerHits)
-
-            # correct for errors in ORF calling
-            if not bSkipAdjCorrection:
-                resultsManager.identifyAdjacentMarkerGenes()
-
         except IOError as detail:
-            sys.stderr.write(str(detail) + "\n")
+            # a missing table must not be reported as a bin without marker genes
+            self.logger.error('Failed to read HMMER results for bin %s: %s' % (resultsManager.binId, detail))
+            sys.exit(1)
+        except (Exception, FormatError, HMMERError) as detail:
+            # (FormatError and HMMERError derive from BaseException)
+            self.logger.error('Failed to parse HMMER results in %s: %s: %s' % (fileName, type(detail).__name__, detail))
+            sys.exit(1)
+
+        # retain only best hit to PFAM clan
+        pfam = PFAM(DefaultValues.PFAM_CLAN_FILE)
+        resultsManager.markerHits = pfam.filterHitsFromSameClan(
+            resultsManager.markerHits)
+
+        # correct for errors in ORF calling
+        if not bSkipAdjCorrection:
+            resultsManager.identifyAdjacentMarkerGenes()
 
     def _getHeader(self, outputFormat, binMarkerSets, coverageBinProfiles=None, table=None):
         """Get header for requested output table."""
@@ -261,14 +257,8 @@ class ResultsParser():
             header = ['Bin Id', 'Gene Id',
                       '{Marker Id, Start position, End position}']
         elif outputFormat == 9:
-            if table is not None:
-                header = ['Bin Id', 'Contig', 'Gene Number', 'Gene Start', 'Gene End',
-                          'Gene Strand', 'Prot Length', 'Marker Id', 'Align Start', 'Align End', 'Sequence']
-            else:
-                header = " "
-        elif outputFormat == 10:
-            header = ['Scaffold Id', 'Bin Id', 'Length', '# contigs',
-                      'GC', '# ORFs', 'Coding density', 'Marker Ids']
+            header = ['Bin Id', 'Contig', 'Gene Number', 'Gene Start', 'Gene End',
+                      'Gene Strand', 'Prot Length', 'Marker Id', 'Align Start', 'Align End', 'Sequence']
 
         return header
 
@@ -399,84 +389,82 @@ class ResultsManager():
                 self.markerHits[hit.query_accession] = [hit]
 
     def identifyAdjacentMarkerGenes(self):
-        """Identify adjacent marker genes and exclude these from the contamination estimate."""
+        """Identify adjacent marker genes and exclude these from the contamination estimate.
 
-        # check for adjacent ORFs with hits to the same marker gene
+        Hits to the same marker on consecutive ORFs of a scaffold (e.g., ORFs 28, 29, 30
+        and 31) are combined into a single hit. If the hits are to different parts of the
+        HMM, the marker gene was most likely split by a gene calling or assembly error. If
+        the hits overlap on the HMM this could represent contamination, but it seems more
+        likely that adjacent genes hitting the same marker represent legitimate gene
+        duplication, a gene calling error, or an assembly error and thus should not be
+        treated as contamination. Whole runs of consecutive ORFs are combined so the result
+        does not depend on the order of hits.
+        """
+
         for markerId, hits in self.markerHits.items():
+            # group hits by scaffold
+            scaffoldHits = defaultdict(list)
+            unparsedHits = []
+            for hit in hits:
+                orfId = hit.target_name
+                try:
+                    scaffoldId = orfId[0:orfId.rfind('_')]
+                    orfNum = int(orfId[orfId.rfind('_') + 1:])
+                except ValueError:
+                    # called genes are not labeled according to the Prodigal
+                    # format, so it is not possible to perform this correction
+                    unparsedHits.append(hit)
+                    continue
 
-            bCombined = True
-            while bCombined:
-                for i in range(0, len(hits)):
-                    orfI = hits[i].target_name
-                    scaffoldIdI = orfI[0:orfI.rfind('_')]
+                scaffoldHits[scaffoldId].append((orfNum, hit))
 
-                    bCombined = False
-                    for j in range(i + 1, len(hits)):
-                        orfJ = hits[j].target_name
-                        scaffoldIdJ = orfJ[0:orfJ.rfind('_')]
+            # combine hits to runs of consecutive ORFs
+            # (each ORF has at most one hit to a given marker; see addHit)
+            newHits = []
+            for scaffoldId in sorted(scaffoldHits):
+                orfHits = sorted(scaffoldHits[scaffoldId], key=lambda x: x[0])
 
-                        # check if hits are on adjacent ORFs
-                        if scaffoldIdI == scaffoldIdJ:
-                            try:
-                                orfNumI = int(orfI[orfI.rfind('_') + 1:])
-                                orfNumJ = int(orfJ[orfJ.rfind('_') + 1:])
-                            except:
-                                # it appears called genes are not labeled
-                                # according to the prodigal format, so
-                                # it is not possible to perform this correction
-                                break
+                run = [orfHits[0]]
+                for orfNum, hit in orfHits[1:]:
+                    if orfNum == run[-1][0] + 1:
+                        run.append((orfNum, hit))
+                    else:
+                        newHits.append(self._combineHits([h for _, h in run]))
+                        run = [(orfNum, hit)]
 
-                            if abs(orfNumI - orfNumJ) == 1:
-                                # check if hits are to different parts of the HMM
-                                sI = hits[i].hmm_from
-                                eI = hits[i].hmm_to
+                newHits.append(self._combineHits([h for _, h in run]))
 
-                                sJ = hits[j].hmm_from
-                                eJ = hits[j].hmm_to
+            self.markerHits[markerId] = newHits + unparsedHits
 
-                                if (sI <= sJ and eI > sJ) or (sJ <= sI and eJ > sI):
-                                    # models overlap so this could represent contamination,
-                                    # but it seems more likely that adjacent genes hitting
-                                    # the same marker represent legitimate gene duplication,
-                                    # a gene calling error, or an assembly error and thus
-                                    # should not be treated as contamination
-                                    bCombined = True
-                                    break
-                                else:
-                                    # combine the two hits
-                                    bCombined = True
-                                    break
+    def _combineHits(self, hits):
+        """Combine hits to consecutive ORFs into a single hit.
 
-                    if bCombined:
-                        newHit = hits[i]
+        Hits must be ordered by ORF position. Scores and e-values are those of
+        the best hit, and coordinates span all hits.
+        """
 
-                        # produce concatenated label indicating the two genes being combined
-                        orfA, orfB = sorted([orfI, orfJ])
-                        newHit.target_name = DefaultValues.SEQ_CONCAT_CHAR.join([
-                                                                                orfA, orfB])
+        if len(hits) == 1:
+            return hits[0]
 
-                        newHit.target_length = hits[i].target_length + \
-                            hits[j].target_length
-                        newHit.hmm_from = min(
-                            hits[i].hmm_from, hits[j].hmm_from)
-                        newHit.hmm_to = min(hits[i].hmm_to, hits[j].hmm_to)
+        bestHit = min(hits, key=lambda h: (h.full_e_value, -h.full_score))
 
-                        newHit.ali_from = min(
-                            hits[i].ali_from, hits[j].ali_from)
-                        newHit.ali_to = min(hits[i].ali_to, hits[j].ali_to)
+        # copy the hit so the original hit to each ORF is retained
+        # (used to report the position of each gene, e.g. qa -o 9)
+        newHit = copy.copy(bestHit)
+        newHit.component_hits = [c for h in hits for c in getattr(h, 'component_hits', [h])]
 
-                        newHit.env_from = min(
-                            hits[i].env_from, hits[j].env_from)
-                        newHit.env_to = min(hits[i].env_to, hits[j].env_to)
+        # produce concatenated label indicating the genes being combined
+        newHit.target_name = DefaultValues.SEQ_CONCAT_CHAR.join([h.target_name for h in hits])
 
-                        hits.remove(hits[j])
-                        hits.remove(hits[i])
+        newHit.target_length = sum(h.target_length for h in hits)
+        newHit.hmm_from = min(h.hmm_from for h in hits)
+        newHit.hmm_to = max(h.hmm_to for h in hits)
+        newHit.ali_from = min(h.ali_from for h in hits)
+        newHit.ali_to = max(h.ali_to for h in hits)
+        newHit.env_from = min(h.env_from for h in hits)
+        newHit.env_to = max(h.env_to for h in hits)
 
-                        hits.append(newHit)
-
-                        break
-
-            self.markerHits[markerId] = hits
+        return newHit
 
     def countUniqueHits(self):
         """Determine number of unique and multiple hits."""
@@ -493,11 +481,9 @@ class ResultsManager():
     def hitsToMarkerGene(self, markerSet):
         """Determine number of times each marker gene is hit."""
         ret = dict()
-        for marker in markerSet.getMarkerGenes():
-            try:
-                ret[marker] = len(self.markerHits[marker])
-            except KeyError:
-                ret[marker] = 0
+        for marker in sorted(markerSet.getMarkerGenes()):
+            # use get() so absent markers are not inserted into the hit dictionary
+            ret[marker] = len(self.markerHits.get(marker, []))
 
         return ret
 
@@ -514,15 +500,12 @@ class ResultsManager():
         """ Determine number of marker genes with 0-5 hits
             as well as the total completeness and contamination."""
         geneCounts = [0] * 6
-        multiCopyCount = 0
         for marker in markerSet.getMarkerGenes():
             if marker in markerHits:
                 if len(markerHits[marker]) > 5:
                     markerCount = 5
                 else:
                     markerCount = len(markerHits[marker])
-
-                multiCopyCount += (len(markerHits[marker]) - 1)
             else:
                 markerCount = 0
 
@@ -548,7 +531,7 @@ class ResultsManager():
 
         markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
-        for marker in self.models:
+        for marker in sorted(self.models):
             if marker not in markerGenes:
                 continue
 
@@ -564,28 +547,15 @@ class ResultsManager():
 
         return geneCopyNumber
 
-    def getSummary(self, binMarkerSets, bIndividualMarkers, outputFormat=1):
-        """Get dictionary containing information about bin."""
+    def getSummary(self, binMarkerSets, bIndividualMarkers, outputFormat):
+        """Get dictionary containing information about bin.
+
+        Output format 2 gives the extended bin statistics (bin_stats_ext.tsv) and
+        output format 8 the position of marker genes (marker_gene_stats.tsv).
+        """
         summary = {}
 
-        if outputFormat == 1:
-            selectedMarkerSet = binMarkerSets.selectedMarkerSet()
-            data = self.geneCountsForSelectedMarkerSet(
-                binMarkerSets, bIndividualMarkers)
-
-            summary['marker lineage'] = selectedMarkerSet.lineageStr
-            summary['# genomes'] = selectedMarkerSet.numGenomes
-            summary['# markers'] = selectedMarkerSet.numMarkers()
-            summary['# marker sets'] = selectedMarkerSet.numSets()
-            summary['0'] = data[0]
-            summary['1'] = data[1]
-            summary['2'] = data[2]
-            summary['3'] = data[3]
-            summary['4'] = data[4]
-            summary['5+'] = data[5]
-            summary['Completeness'] = data[6]
-            summary['Contamination'] = data[7]
-        elif outputFormat == 2:
+        if outputFormat == 2:
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
             data = self.geneCountsForSelectedMarkerSet(
                 binMarkerSets, bIndividualMarkers)
@@ -604,60 +574,12 @@ class ResultsManager():
             summary['Contamination'] = data[7]
             summary.update(self.binStats)
 
-        elif outputFormat == 5:
-            # tabular of bin_id, marker, contig_id
-            markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
-
-            for marker, hit_list in self.markerHits.items():
-                if marker not in markerGenes:
-                    continue
-
-                summary[marker] = []
-                for hit in hit_list:
-                    summary[marker].append(hit.target_name)
-
-        elif outputFormat == 6:
-            markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
-
-            for marker, hit_list in self.markerHits.items():
-                if marker not in markerGenes:
-                    continue
-
-                if len(hit_list) >= 2:
-                    summary[marker] = []
-                    for hit in hit_list:
-                        summary[marker].append(hit.target_name)
-
-        elif outputFormat == 7:
-            # tabular - print only contigs that have more than one copy
-            # of the same marker on them
-            markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
-
-            contigs = defaultdict(dict)
-            for marker, hit_list in self.markerHits.items():
-                if marker not in markerGenes:
-                    continue
-
-                for hit in hit_list:
-                    try:
-                        contigs[hit.target_name][marker] += 1
-                    except KeyError:
-                        contigs[hit.target_name][marker] = 1
-
-            for contig_name, marker_counts in contigs.items():
-                for marker_name, marker_count in marker_counts.items():
-                    if marker_count > 1:
-                        if contig_name not in summary:
-                            summary[contig_name] = {}
-
-                        summary[contig_name][marker_name] = marker_count
-
         elif outputFormat == 8:
             # tabular - print only position of marker genes
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             genesWithMarkers = {}
-            for marker, hit_list in self.markerHits.items():
+            for marker, hit_list in sorted(self.markerHits.items()):
                 if marker not in markerGenes:
                     continue
 
@@ -665,13 +587,11 @@ class ResultsManager():
                     genesWithMarkers[hit.target_name] = genesWithMarkers.get(
                         hit.target_name, []) + [hit]
 
-            for geneId, hits in genesWithMarkers.items():
+            for geneId, hits in sorted(genesWithMarkers.items()):
                 summary[geneId] = {}
                 for hit in hits:
                     summary[geneId][hit.query_accession] = summary[geneId].get(
                         hit.query_accession, []) + [[hit.ali_from, hit.ali_to]]
-        else:
-            print("Unknown output format: ", outputFormat)
 
         return summary
 
@@ -681,7 +601,8 @@ class ResultsManager():
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
 
             lineageStr = selectedMarkerSet.lineageStr
-            if selectedMarkerSet.UID != '0':
+            if str(selectedMarkerSet.UID) != '0':
+                # marker sets from a file of HMMs have the UID 0
                 lineageStr += ' (' + str(selectedMarkerSet.UID) + ')'
 
             data = self.geneCountsForSelectedMarkerSet(
@@ -704,7 +625,8 @@ class ResultsManager():
             selectedMarkerSet = binMarkerSets.selectedMarkerSet()
 
             lineageStr = selectedMarkerSet.lineageStr
-            if selectedMarkerSet.UID != '0':
+            if str(selectedMarkerSet.UID) != '0':
+                # marker sets from a file of HMMs have the UID 0
                 lineageStr += ' (' + str(selectedMarkerSet.UID) + ')'
 
             data = self.geneCountsForSelectedMarkerSet(
@@ -799,18 +721,18 @@ class ResultsManager():
             # tabular of bin_id, marker, contig_id
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
-            for marker, hit_list in self.markerHits.items():
+            for marker, hit_list in sorted(self.markerHits.items()):
                 if marker not in markerGenes:
                     continue
 
-                for hit in hit_list:
-                    print(self.binId, marker, hit.target_name, sep='\t', end='\n')
+                for geneId in sorted(hit.target_name for hit in hit_list):
+                    print(self.binId, marker, geneId, sep='\t', end='\n')
 
         elif outputFormat == 6:
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             seqsReported = 0
-            for marker, hitList in self.markerHits.items():
+            for marker, hitList in sorted(self.markerHits.items()):
                 if marker not in markerGenes:
                     continue
 
@@ -831,7 +753,7 @@ class ResultsManager():
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             seqsReported = 0
-            for marker, hitList in self.markerHits.items():
+            for marker, hitList in sorted(self.markerHits.items()):
                 if marker not in markerGenes:
                     continue
 
@@ -860,7 +782,7 @@ class ResultsManager():
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
 
             genesWithMarkers = {}
-            for marker, hit_list in self.markerHits.items():
+            for marker, hit_list in sorted(self.markerHits.items()):
                 if marker not in markerGenes:
                     continue
 
@@ -868,7 +790,7 @@ class ResultsManager():
                     genesWithMarkers[hit.target_name] = genesWithMarkers.get(
                         hit.target_name, []) + [hit]
 
-            for geneId, hits in genesWithMarkers.items():
+            for geneId, hits in sorted(genesWithMarkers.items()):
                 rowStr = self.binId + '\t' + geneId
                 for hit in hits:
                     rowStr += '\t' + hit.query_accession + ',' + \
@@ -877,118 +799,108 @@ class ResultsManager():
 
         # Hunter Cameron, May 29, 2015 - print a fasta of marker genes
         elif outputFormat == 9:
-            # tabular of bin_id, marker, contig_id
+            # FASTA file (or table) of marker genes
 
             # check for the analyze folder for later use
             if anaFolder is None:
                 raise ValueError(
                     "AnaFolder must not be None for outputFormat 9")
 
-            # ## build a dict to link target_names with marker gene alignment information
+            # ## build a dict to link genes with marker gene alignment information
+            # (a gene may be hit by several markers, and hits to adjacent genes
+            # may have been combined into a single hit, e.g. 'geneA&&geneB')
             markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
-            hitInfo = {}
-            for marker, hit_list in self.markerHits.items():
+            hitInfo = defaultdict(list)
+            for marker in sorted(self.markerHits):
                 if marker not in markerGenes:
                     continue
 
-                for hit in hit_list:
-                    name = hit.target_name
-                    hitInfo[name] = {
-                        "marker": marker,
-                        "ali_from": str(hit.ali_from),
-                        "ali_to": str(hit.ali_to)
-                    }
+                for hit in self.markerHits[marker]:
+                    for geneHit in getattr(hit, 'component_hits', [hit]):
+                        for geneId in geneHit.target_name.split(DefaultValues.SEQ_CONCAT_CHAR):
+                            hitInfo[geneId].append({
+                                "marker": marker,
+                                "ali_from": str(geneHit.ali_from),
+                                "ali_to": str(geneHit.ali_to)
+                            })
 
             # ## Open genes.faa and print the ones that were found with some descriptive info in the header
-            path_to_genes = "/".join([anaFolder, "bins",
-                                     self.binId, "genes.faa"])
+            path_to_genes = os.path.join(anaFolder, "bins", self.binId, DefaultValues.PRODIGAL_AA)
 
             # get only the seqs we need and their information as a dict
             seqs = readFasta(path_to_genes, trimHeader=False)
 
-            filt_seqs = []
-            # remove seqs without markers
-            for header in seqs.keys():
-                gene_name = header.split(" # ")[0]
-                if gene_name in hitInfo:
-                    filt_seqs.append(header)
+            def parse_header(header):
+                """Parse gene information from a Prodigal header.
 
-            def sort_header(header):
-                """ sorts headers by contig and gene number """
-                name = header.split(" # ")[0]
-                ctg_name, gene_num = name.rsplit("_", 1)
-                return ctg_name, int(gene_num)
-
-            for header in sorted(filt_seqs, key=sort_header):
+                Headers of user-supplied protein files (--genes) may not follow the
+                Prodigal format, in which case 'NA' is reported for unknown fields.
+                """
                 elems = header.split(" # ")
-                gene_name = elems[0]
+                fields = elems[0].split(None, 1)
+                gene_name = fields[0] if fields else ''
 
                 # remove the gene number from Prodigal to get the original contig name
-                contig_name, gene_num = gene_name.rsplit("_", 1)
+                contig_name = gene_name
+                gene_num = 'NA'
+                if '_' in gene_name:
+                    ctg_name, num = gene_name.rsplit("_", 1)
+                    if num.isdigit():
+                        contig_name, gene_num = ctg_name, num
 
-                # parse some info about the gene from the header line
-                gene_start = elems[1]
-                gene_end = elems[2]
-                gene_strand = elems[3]
-
-                # if table output not specified, print FASTA
-                if table != None:
-                    gene_info = "geneId={};start={};end={};strand={};protlen={}".format(
-                        gene_num, gene_start, gene_end, gene_strand, str(len(seqs[header])))
-
-                    marker_info = "marker={};mstart={};mend={}".format(
-                        hitInfo[gene_name]["marker"],
-                        hitInfo[gene_name]["ali_from"],
-                        hitInfo[gene_name]["ali_to"])
-
-                    # new header will be the bin name, contig name, gene info, and marker info separated by spaces
-                    new_header = ">" + \
-                        " ".join([self.binId, contig_name,
-                                 gene_info, marker_info])
-
-                    print(new_header, seqs[header], sep="\n")
-                # otherwise, print a table
+                if len(elems) >= 4:
+                    gene_start, gene_end, gene_strand = [e.strip() for e in elems[1:4]]
                 else:
-                    print("\t".join([
-                        self.binId,
-                        contig_name,
-                        gene_num,
-                        gene_start,
-                        gene_end,
-                        gene_strand,
-                        str(len(seqs[header])),
-                        hitInfo[gene_name]["marker"],
-                        hitInfo[gene_name]["ali_from"],
-                        hitInfo[gene_name]["ali_to"],
-                        seqs[header]
-                    ]))
-        else:
-            self.logger.error("Unknown output format: %d", outputFormat)
+                    gene_start, gene_end, gene_strand = 'NA', 'NA', 'NA'
+
+                return gene_name, contig_name, gene_num, gene_start, gene_end, gene_strand
+
+            genes = []
+            for header in seqs.keys():
+                gene_info = parse_header(header)
+                if gene_info[0] in hitInfo:
+                    genes.append((header, gene_info))
+
+            def sort_genes(gene):
+                """ sorts genes by contig and gene number """
+                gene_name, contig_name, gene_num = gene[1][0:3]
+                if gene_num.isdigit():
+                    return contig_name, int(gene_num), gene_name
+                return contig_name, -1, gene_name
+
+            for header, (gene_name, contig_name, gene_num, gene_start, gene_end, gene_strand) in sorted(genes, key=sort_genes):
+                seq = seqs[header]
+                for marker_hit in hitInfo[gene_name]:
+                    # if table output not specified, print FASTA
+                    if table != None:
+                        gene_info = "geneId={};start={};end={};strand={};protlen={}".format(
+                            gene_num, gene_start, gene_end, gene_strand, str(len(seq)))
+
+                        marker_info = "marker={};mstart={};mend={}".format(
+                            marker_hit["marker"],
+                            marker_hit["ali_from"],
+                            marker_hit["ali_to"])
+
+                        # new header will be the bin name, contig name, gene info, and marker info separated by spaces
+                        new_header = ">" + \
+                            " ".join([self.binId, contig_name,
+                                     gene_info, marker_info])
+
+                        print(new_header, seq, sep="\n")
+                    # otherwise, print a table
+                    else:
+                        print("\t".join([
+                            self.binId,
+                            contig_name,
+                            gene_num,
+                            gene_start,
+                            gene_end,
+                            gene_strand,
+                            str(len(seq)),
+                            marker_hit["marker"],
+                            marker_hit["ali_from"],
+                            marker_hit["ali_to"],
+                            seq
+                        ]))
 
         return 0
-
-        '''
-        elif outputFormat == 10:
-            markerGenes = binMarkerSets.selectedMarkerSet().getMarkerGenes()
-
-            markersInScaffold = {}
-            for marker, hit_list in self.markerHits.items():
-                if marker not in markerGenes:
-                    continue
-
-                for hit in hit_list:
-                    scaffoldId = hit.target_name[0:hit.target_name.rfind('_')]
-                    markersInScaffold[scaffoldId] = markersInScaffold.get(scaffoldId, []) + [marker]
-
-            for scaffoldId, data in self.scaffoldStats.items():
-                print(scaffoldId, self.binId, str(data['Length']), str(data['# contigs']),
-                      '%.3f' % (data['GC']), str(data.get('# ORFs', 0)),
-                      '%.3f' % (float(data.get('Coding bases', 0)) / data['Total contig length']),
-                      sep='\t', end='\t')
-
-                if scaffoldId in markersInScaffold:
-                    markerStr = ','.join(sorted(markersInScaffold[scaffoldId]))
-                    print(markerStr, end='\n')
-                else:
-                    print()
-        '''
