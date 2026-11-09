@@ -1,0 +1,22 @@
+usage: checkm ssu_finder [-h] [-x EXTENSION] [-e EVALUE] [-c CONCATENATE] [-t THREADS] [-q]
+                         seq_file bin_input output_dir
+
+Identify SSU (16S/18S) rRNAs in sequences.
+
+positional arguments:
+  seq_file              sequences used to generate bins (fasta format)
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+  output_dir            directory to write output files
+
+options:
+  -h, --help            show this help message and exit
+  -x, --extension EXTENSION
+                        extension of bins (other files in directory are ignored) (default: fna)
+  -e, --evalue EVALUE   e-value threshold for identifying hits (default: 1e-05)
+  -c, --concatenate CONCATENATE
+                        concatenate hits that are within the specified number of base pairs (default: 200)
+  -t, --threads THREADS
+                        number of threads (default: 1)
+  -q, --quiet           suppress console output
+
+Example: checkm ssu_finder seqs.fna ./bins ./ssu_finder

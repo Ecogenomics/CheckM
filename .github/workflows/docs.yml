@@ -1,0 +1,51 @@
+name: Documentation update
+
+on:
+  push:
+    branches: [master]
+    # checkm/VERSION holds the version number and change log shown on the site
+    paths: ['docs/**', 'checkm/VERSION', '.github/workflows/docs.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v4
+        with:
+          path: master
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh_pages
+      - name: Install Sphinx requirements
+        working-directory: ${{ github.workspace }}/master/docs
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Build documentation
+        working-directory: ${{ github.workspace }}/master/docs
+        run: make html SPHINXOPTS="-W --keep-going"
+      - name: Move documentation
+        run: |
+          # Remove the previous site before copying the new build so pages that no
+          # longer exist (including the old hand-written site: index.html, css/, js/,
+          # fonts/, img/, LICENSE.txt) do not linger on gh-pages. manual/ is kept as
+          # it holds the old PDF/DOCX manual, which may still be linked to.
+          find gh_pages -mindepth 1 -maxdepth 1 ! -name .git ! -name manual -exec rm -rf {} +
+          touch master/docs/build/html/.nojekyll
+          cp -a master/docs/build/html/. gh_pages/
+      - name: Upload documentation
+        working-directory: ${{ github.workspace }}/gh_pages
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add --all
+          git diff-index --quiet HEAD || git commit -m "docs update" -a
+          git push

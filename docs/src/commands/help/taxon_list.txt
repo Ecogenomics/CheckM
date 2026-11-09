@@ -1,0 +1,12 @@
+usage: checkm taxon_list [-h] [--rank {ALL,life,domain,phylum,class,order,family,genus,species}]
+                         [--tmpdir TMPDIR]
+
+List available taxonomic-specific marker sets.
+
+options:
+  -h, --help            show this help message and exit
+  --rank {ALL,life,domain,phylum,class,order,family,genus,species}
+                        restrict list to specified taxonomic rank (default: ALL)
+  --tmpdir TMPDIR       specify an alternative directory for temporary files
+
+Example: checkm taxon_list --rank phylum

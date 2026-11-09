@@ -1,0 +1,17 @@
+usage: checkm taxon_set [-h] [-q] [--tmpdir TMPDIR]
+                        {life,domain,phylum,class,order,family,genus,species} taxon marker_file
+
+Generate taxonomic-specific marker set.
+
+positional arguments:
+  {life,domain,phylum,class,order,family,genus,species}
+                        taxonomic rank
+  taxon                 taxon of interest
+  marker_file           output file describing taxonomic-specific marker set
+
+options:
+  -h, --help            show this help message and exit
+  -q, --quiet           suppress console output
+  --tmpdir TMPDIR       specify an alternative directory for temporary files
+
+Example: checkm taxon_set domain Bacteria bacteria.ms

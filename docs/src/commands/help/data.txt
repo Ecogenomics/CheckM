@@ -1,0 +1,14 @@
+usage: checkm data [-h] action [action ...]
+
+Set path to the CheckM database files.
+
+positional arguments:
+  action
+                setRoot <DB_PATH> -> set the CheckM data directory to <DB_PATH> (requires permissions)
+                or
+                setRoot <DB_PATH> <CONFIG_PATH> -> set the CheckM data directory to <DB_PATH> and the CheckM DATA_CONFIG file to CONFIG_PATH (requires permissions)
+
+options:
+  -h, --help  show this help message and exit
+
+Example: checkm data setRoot
