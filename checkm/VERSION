@@ -1,3 +1,6 @@
+1.2.10
+- Prodigal's error output is now captured and included in the error message when Prodigal fails (e.g., 'exit code 18: Error: no input sequences to analyze.'); results are unchanged
+
 1.2.9
 - performance improvements; results are unchanged
 - marker genes are identified more efficiently: the marker file is parsed once rather than once per bin, the HMM file for each unique marker set is created once and is no longer indexed, larger bins are processed first, and HMMER runs in serial mode when bins are searched in parallel
