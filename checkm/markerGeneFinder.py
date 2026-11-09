@@ -37,7 +37,7 @@ from checkm.prodigal import ProdigalRunner
 
 from checkm.markerSets import MarkerSetParser, BinMarkerSets
 from checkm.hmmerModelParser import HmmModelParser
-from checkm.util.pfam import PFAM
+from checkm.util.pfam import sharedPfam
 
 
 def _fetchHmms(accessions, hmmModelFile):
@@ -186,7 +186,7 @@ class MarkerGeneFinder():
             markerGenes = frozenset(binIdToBinMarkerSets[binId].getMarkerGenes())
             markerGenesToBinFiles.setdefault(markerGenes, []).append(binFile)
 
-        pfam = PFAM(DefaultValues.PFAM_CLAN_FILE)
+        pfam = sharedPfam(DefaultValues.PFAM_CLAN_FILE)
         groups = []
         for markerGenes, groupBinFiles in markerGenesToBinFiles.items():
             accessions = frozenset(markerGenes | pfam.genesInSameClan(markerGenes))

@@ -19,6 +19,7 @@
 #                                                                             #
 ###############################################################################
 
+import functools
 from collections import defaultdict
 
 from checkm.common import checkFileExists
@@ -32,12 +33,26 @@ def stripVersion(accession):
     return accession
 
 
+@functools.lru_cache(maxsize=None)
+def sharedPfam(pfamClanFile):
+    """Pfam clan information, read from file once per process.
+
+    The clan file was previously re-read for every bin each time HMMER results
+    were parsed. A PFAM instance is not modified after the clan file is read.
+    """
+    return PFAM(pfamClanFile)
+
+
 class PFAM(object):
     def __init__(self, pfamClanFile):
         self.pfamClanFile = pfamClanFile
         self.idToAcc = {}  # map ids to pfam accessions
         self.clan = {}  # map pfam accessions to clans
         self.nested = {}  # map pfam accessions to nested pfam accessions
+
+        # cached results of pfamIdToClanId() and genesInClan()
+        self._pfamIdToClanId = None
+        self._genesInClan = None
 
     def __readClansAndNesting(self):
         checkFileExists(self.pfamClanFile)
@@ -66,6 +81,9 @@ class PFAM(object):
 
     def pfamIdToClanId(self):
         """Determine clan of each pfam."""
+        if self._pfamIdToClanId is not None:
+            return self._pfamIdToClanId
+
         checkFileExists(self.pfamClanFile)
 
         d = {}
@@ -77,10 +95,14 @@ class PFAM(object):
                     clanId = line.split()[2].strip()
                     d[pfamAcc] = clanId
 
+        self._pfamIdToClanId = d
         return d
 
     def genesInClan(self):
         """Determine all genes within each clan."""
+        if self._genesInClan is not None:
+            return self._genesInClan
+
         checkFileExists(self.pfamClanFile)
 
         d = defaultdict(set)
@@ -92,6 +114,7 @@ class PFAM(object):
                     clanId = line.split()[2].strip()
                     d[clanId].update([pfamAcc])
 
+        self._genesInClan = d
         return d
 
     def filterHitsFromSameClan(self, markerHits):

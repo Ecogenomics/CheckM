@@ -414,6 +414,13 @@ class TreeParser():
         tree = dendropy.Tree.get_from_path(treeFile, schema='newick', rooting="force-rooted", preserve_underscores=True)
         rootNode = tree.find_node(filter_fn=lambda n: n.parent_node == None)
 
+        # map taxon labels to nodes once, as find_node_with_taxon_label() traverses the whole tree
+        # (setdefault keeps the first node in preorder, as returned by find_node_with_taxon_label())
+        labelToNode = {}
+        for n in tree.preorder_node_iter():
+            if n.taxon is not None:
+                labelToNode.setdefault(n.taxon.label, n)
+
         fout = open(markerFile, 'w')
         fout.write(DefaultValues.LINEAGE_MARKER_FILE_HEADER + '\n')
 
@@ -427,7 +434,7 @@ class TreeParser():
                 sys.stderr.write('%s\r' % statusStr)
                 sys.stderr.flush()
 
-            node = tree.find_node_with_taxon_label(binId)
+            node = labelToNode.get(binId)
             binMarkerSets = BinMarkerSets(binId, BinMarkerSets.TREE_MARKER_SET)
             if node == None:
                 # bin is not in tree
@@ -457,7 +464,9 @@ class TreeParser():
                 # get lineage specific refinement for first node with an id
                 if not bNoLineageSpecificRefinement:
                     uniqueId = parentNode.label.split('|')[0]
-                    self._readLineageSpecificGenesToRemove()
+                    if not hasattr(self, 'lineageSpecificGenesToRemove'):
+                        # read once, rather than once per bin
+                        self._readLineageSpecificGenesToRemove()
                     lineageSpecificRefinement = self.lineageSpecificGenesToRemove[uniqueId]
 
                 # ascend tree to root, recording all marker sets meeting selection criteria

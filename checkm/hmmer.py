@@ -25,7 +25,6 @@ import shlex
 import signal
 import logging
 import subprocess
-from re import split as re_split
 
 
 class FormatError(BaseException):
@@ -181,7 +180,7 @@ NODE_925902_length_6780_cov_18.428171_754_2 -            399 PGK                
             line = self.handle.readline().rstrip()
             try:
                 if line[0] != '#' and len(line) != 0:
-                    dMatch = re_split(r'\s+', line.rstrip())
+                    dMatch = line.split()
                     if len(dMatch) < 23:
                         raise FormatError("Error processing line:\n%s" % (line))
                     refined_match = dMatch[0:22] + [" ".join([str(i) for i in dMatch[22:]])]

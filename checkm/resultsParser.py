@@ -33,7 +33,7 @@ from checkm.common import reassignStdOut, restoreStdOut, checkFileExists
 from checkm.coverage import Coverage
 from checkm.hmmer import HMMERParser, FormatError, HMMERError
 
-from checkm.util.pfam import PFAM
+from checkm.util.pfam import sharedPfam
 from checkm.util.seqUtils import readFasta
 
 
@@ -204,7 +204,7 @@ class ResultsParser():
             sys.exit(1)
 
         # retain only best hit to PFAM clan
-        pfam = PFAM(DefaultValues.PFAM_CLAN_FILE)
+        pfam = sharedPfam(DefaultValues.PFAM_CLAN_FILE)
         resultsManager.markerHits = pfam.filterHitsFromSameClan(
             resultsManager.markerHits)
 
