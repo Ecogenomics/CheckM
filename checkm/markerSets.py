@@ -20,11 +20,11 @@
 ###############################################################################
 
 import os
+import re
 import sys
+import ast
 import logging
-import uuid
-import tempfile
-import shutil
+import functools
 import pickle
 import gzip
 
@@ -33,6 +33,96 @@ from checkm.hmmer import HMMERRunner
 from checkm.hmmerModelParser import HmmModelParser
 
 from checkm.util.pfam import PFAM
+
+
+# patterns for parsing string representations of sets of marker genes, e.g.
+# {'PF00001.1', 'TIGR00001'}, set(['PF00001.1']), set([]) and set()
+_SET_STR_RE = re.compile(r"""\{([^{}]*)\}|set\(\[([^\[\]]*)\]\)|set\(\)""")
+_QUOTED_STR_RE = re.compile(r"'([^'\\]*)'" + r'|"([^"\\]*)"')
+
+
+def _parseQuotedItems(content):
+    """Parse comma-separated quoted strings, returning None if they are not in this format."""
+
+    # fast path for items without commas, quotes or escapes within them
+    items = []
+    for token in content.split(','):
+        token = token.strip()
+        if not token:
+            continue
+
+        quote = token[0]
+        if len(token) >= 2 and quote in '\'"' and token[-1] == quote and quote not in token[1:-1] and '\\' not in token:
+            items.append(token[1:-1])
+        else:
+            items = None
+            break
+
+    if items is not None:
+        return items
+
+    # general case
+    if _QUOTED_STR_RE.sub('', content).strip(' ,'):
+        return None
+
+    return [q.group(1) if q.group(1) is not None else q.group(2) for q in _QUOTED_STR_RE.finditer(content)]
+
+
+@functools.lru_cache(maxsize=None)
+def _parseSetStrs(s):
+    """Parse a comma-separated sequence of set representations.
+
+    Returns a tuple of frozensets, or None if the string is not in one of the
+    formats written by CheckM. Results are cached since marker sets are repeated
+    many times (e.g., the marker sets of each lineage in a lineage marker file).
+    """
+    sets = []
+    pos = 0
+    for m in _SET_STR_RE.finditer(s):
+        if s[pos:m.start()].strip(' ,'):
+            return None
+
+        content = m.group(1) if m.group(1) is not None else (m.group(2) or '')
+        items = _parseQuotedItems(content)
+        if items is None:
+            return None
+
+        sets.append(frozenset(items))
+        pos = m.end()
+
+    if s[pos:].strip(' ,'):
+        return None
+
+    return tuple(sets)
+
+
+def parseMarkerSetStr(s):
+    """Parse the string representation of a marker set (a list of sets of marker genes).
+
+    This replaces the use of eval(), which was slow and evaluated file contents as code.
+    The sets are returned as frozensets which may be shared between marker sets, since
+    marker sets are never modified in place (they are replaced when refined).
+    """
+    s = s.strip()
+    sets = None
+    if s.startswith('[') and s.endswith(']'):
+        sets = _parseSetStrs(s[1:-1])
+
+    if sets is None:
+        # fall back to Python's (safe) literal parser for any other formatting
+        return [frozenset(x) for x in ast.literal_eval(s)]
+
+    return list(sets)
+
+
+def parseSetStr(s):
+    """Parse the string representation of a single set of marker genes."""
+    s = s.strip()
+    sets = _parseSetStrs(s)
+    if sets is None or len(sets) != 1:
+        return set(ast.literal_eval(s))
+
+    return set(sets[0])
 
 
 class BinMarkerSets():
@@ -149,7 +239,7 @@ class BinMarkerSets():
             uid = lineSplit[i * 4 + 2]
             lineageStr = lineSplit[i * 4 + 3]
             numGenomes = int(lineSplit[i * 4 + 4])
-            markerSet = eval(lineSplit[i * 4 + 5])
+            markerSet = parseMarkerSetStr(lineSplit[i * 4 + 5])
             self.markerSets.append(MarkerSet(uid, lineageStr, numGenomes, markerSet))
 
 
@@ -165,7 +255,7 @@ class MarkerSet():
 
     def __repr__(self):
         # marker genes are written in sorted order so marker files are reproducible
-        # (the string is parsed with eval() so must remain a valid list of sets)
+        # (the string must remain a valid Python list of sets; see parseMarkerSetStr)
         markerSetStr = '[' + ', '.join([self._setStr(m) for m in self.markerSet]) + ']'
         return str(self.UID) + '\t' + self.lineageStr + '\t' + str(self.numGenomes) + '\t' + markerSetStr
 
@@ -319,25 +409,6 @@ class MarkerSetParser():
 
         return markersToExclude
 
-    def createHmmModelFile(self, binId, markerFile):
-        """Create HMM file from a bin's marker set."""
-
-        # determine type of marker set file
-        markerFileType = self.markerFileType(markerFile)
-
-        # create HMM file
-        hmmModelFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-        if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
-            binMarkerSets = self.parseTaxonomicMarkerSetFile(markerFile)
-            self._createMarkerHMMs(binMarkerSets, hmmModelFile, bReportProgress=False)
-        elif markerFileType == BinMarkerSets.TREE_MARKER_SET:
-            binIdToBinMarkerSets = self.parseLineageMarkerSetFile(markerFile)
-            self._createMarkerHMMs(binIdToBinMarkerSets[binId], hmmModelFile, bReportProgress=False)
-        else:
-            shutil.copyfile(markerFile, hmmModelFile)
-
-        return hmmModelFile
-
     def markerFileType(self, markerFile):
         """Determine type of marker file."""
         with open(markerFile, 'r') as f:
@@ -353,41 +424,29 @@ class MarkerSetParser():
             self.logger.error('Unrecognized file type: ' + markerFile)
             sys.exit(1)
 
-    def _createMarkerHMMs(self, binMarkerSet, outputFile, bReportProgress=True):
-        """Create HMM file for markers."""
+    def hmmAccessions(self, binMarkerSet, pfam):
+        """Get accessions of the HMMs to search for a marker set.
 
-        # get list of marker genes
+        These are the marker genes in the marker set along with all genes
+        from the same Pfam clan as any marker gene.
+        """
         markerGenes = binMarkerSet.getMarkerGenes()
+        return markerGenes | pfam.genesInSameClan(markerGenes)
 
-        # get all genes from the same clan as any marker gene
-        pfam = PFAM(DefaultValues.PFAM_CLAN_FILE)
-        genesInSameClan = pfam.genesInSameClan(markerGenes)
+    def fetchHmms(self, accessions, outputFile):
+        """Create a HMM file containing the specified models from the CheckM HMM file."""
 
-        # extract marker genes along with all genes from the same clan
-        allMarkers = markerGenes | genesInSameClan
+        # accessions are sorted so the order of models in the HMM file
+        # (and hence downstream output) is deterministic
+        keyFile = outputFile + '.keys'
+        with open(keyFile, 'w') as fout:
+            for modelAcc in sorted(accessions):
+                fout.write(modelAcc + '\n')
 
-        if bReportProgress:
-            self.logger.info("There are %d genes in the marker set and %d genes from the same PFAM clan." % (len(markerGenes), len(genesInSameClan)))
-
-        # create file with all model accession numbers; accessions are sorted so the
-        # order of models in the HMM file (and hence downstream output) is deterministic
-        keyFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-        fout = open(keyFile, 'w')
-        for modelAcc in sorted(allMarkers):
-            fout.write(modelAcc + '\n')
-        fout.close()
-
-        # fetch specified models
-        HF = HMMERRunner(mode='fetch')
-        HF.fetch(DefaultValues.HMM_MODELS, keyFile, outputFile, bKeyFile=True)
-
-        # index the HMM file
-        if os.path.exists(outputFile + '.ssi'):
-            os.remove(outputFile + '.ssi')
-        HF.index(outputFile)
-
-        # remove key file
-        os.remove(keyFile)
+        try:
+            HMMERRunner(mode='fetch').fetch(DefaultValues.HMM_MODELS, keyFile, outputFile, bKeyFile=True)
+        finally:
+            os.remove(keyFile)
 
     def parseTaxonomicMarkerSetFile(self, markerSetFile):
         """Parse marker set from a taxonomic-specific marker set file."""

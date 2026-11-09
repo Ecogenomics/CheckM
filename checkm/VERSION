@@ -1,3 +1,12 @@
+1.2.9
+- performance improvements; results are unchanged
+- marker genes are identified more efficiently: the marker file is parsed once rather than once per bin, the HMM file for each unique marker set is created once and is no longer indexed, larger bins are processed first, and HMMER runs in serial mode when bins are searched in parallel
+- marker sets in lineage.ms and the reference data are parsed without eval(), which is ~13x faster
+- the Pfam clan file and other reference files are read once rather than once per bin, and lineage_set no longer searches the reference tree for each bin
+- HMMER results are parsed in parallel (qa now uses -t)
+- --pplacer_threads now defaults to the number of threads (-t), to a maximum of 64; pplacer's memory usage increases only slightly with additional threads
+- README badges are cached for a shorter time
+
 1.2.8
 - fix to the Pfam same-clan filter, which treated Pfams without a clan as members of the same clan; this can slightly change completeness and contamination estimates
 - fix to reading FASTA files without a trailing newline, which dropped the last base

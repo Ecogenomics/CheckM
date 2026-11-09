@@ -23,8 +23,11 @@ import gzip
 import os
 import sys
 import shutil
-import multiprocessing as mp
 import logging
+import tempfile
+import multiprocessing as mp
+import concurrent.futures as cf
+from collections import deque
 
 from checkm.common import binIdFromFilename, makeSurePathExists
 from checkm.defaultValues import DefaultValues
@@ -32,8 +35,77 @@ from checkm.defaultValues import DefaultValues
 from checkm.hmmer import HMMERRunner
 from checkm.prodigal import ProdigalRunner
 
-from checkm.markerSets import MarkerSetParser
+from checkm.markerSets import MarkerSetParser, BinMarkerSets
 from checkm.hmmerModelParser import HmmModelParser
+from checkm.util.pfam import sharedPfam
+
+
+def _fetchHmms(accessions, hmmModelFile):
+    """Create a HMM file with the specified models and return the parsed models.
+
+    Run in a worker process.
+    """
+    MarkerSetParser().fetchHmms(accessions, hmmModelFile)
+    return HmmModelParser(hmmModelFile).models()
+
+
+def _searchBin(binFile, hmmModelFile, outDir, tableOut, hmmerOut, bKeepAlignment, bNucORFs, bCalledGenes, threadsPerSearch):
+    """Call genes (unless provided) and search them with HMMER.
+
+    Run in a worker process. Returns False if the bin contains no genes,
+    in which case no search is performed, otherwise True.
+    """
+
+    binId = binIdFromFilename(binFile)
+    binDir = os.path.join(outDir, 'bins', binId)
+    makeSurePathExists(binDir)
+
+    # run Prodigal
+    if not bCalledGenes:
+        prodigal = ProdigalRunner(binDir)
+        if not prodigal.areORFsCalled(bNucORFs):
+            prodigal.run(binFile, bNucORFs)
+        aaGeneFile = prodigal.aaGeneFile
+    else:
+        aaGeneFile = binFile
+        aaGeneFileSave = os.path.join(binDir, DefaultValues.PRODIGAL_AA)
+        if not aaGeneFile.endswith(".gz"):
+            shutil.copyfile(aaGeneFile, aaGeneFileSave)
+        else:
+            with gzip.open(aaGeneFile, 'rt') as f_in:
+                with open(aaGeneFileSave, 'w') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+        aaGeneFile = aaGeneFileSave
+
+    # skip bins without any genes, as there is nothing to search
+    if os.stat(aaGeneFile).st_size == 0:
+        return False
+
+    # run HMMER
+    keepAlignStr = ''
+    if not bKeepAlignment:
+        keepAlignStr = '--noali'
+
+    # when bins are searched in parallel with one thread each, HMMER is run in
+    # serial mode (--cpu 0) as '--cpu 1' uses an additional thread to read
+    # sequences, which costs ~15% more CPU time without reducing the run time
+    cpus = threadsPerSearch if threadsPerSearch > 1 else 0
+
+    hmmer = HMMERRunner()
+    hmmer.search(hmmModelFile, aaGeneFile,
+                 os.path.join(binDir, tableOut), os.path.join(binDir, hmmerOut),
+                 '--cpu ' + str(cpus) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr,
+                 bKeepAlignment)
+
+    return True
+
+
+def _fileSize(f):
+    """Size of a file in bytes, or 0 if it can't be determined."""
+    try:
+        return os.path.getsize(f)
+    except OSError:
+        return 0
 
 
 class MarkerGeneFinder():
@@ -47,7 +119,8 @@ class MarkerGeneFinder():
 
         Returns a dictionary mapping bin IDs to HMM models, sorted by
         bin ID. Bins without any genes are skipped with a warning and
-        are not included in the returned dictionary.
+        are not included in the returned dictionary. Bins that are
+        searched with the same HMMs share the same model dictionary.
         """
 
         # make sure HMMER and prodigal are on system path
@@ -56,60 +129,19 @@ class MarkerGeneFinder():
         if not bCalledGenes:
             ProdigalRunner('')
 
-        # process each fasta file
         self.threadsPerSearch = max(1, int(self.totalThreads / len(binFiles)))
         self.logger.info("Identifying marker genes in %d bins with %d threads:" % (len(binFiles), self.totalThreads))
 
-        # process each bin in parallel
-        workerQueue = mp.Queue()
-        writerQueue = mp.Queue()
+        # determine the HMMs to search for in each bin, grouping bins searched with the same HMMs
+        groups = self._groupBinsByHmms(binFiles, markerFile)
 
-        for binFile in binFiles:
-            workerQueue.put(binFile)
-
-        for _ in range(self.totalThreads):
-            workerQueue.put(None)
-
-        manager = mp.Manager()
-        binIdToModels = manager.dict()
-        skippedBinIds = manager.list()
-
-        calcProc = []
-        writeProc = None
+        tmpDir = tempfile.mkdtemp(prefix='checkm_hmms_')
         try:
-            calcProc = [mp.Process(target=self._processBin, args=(outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, bCalledGenes, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
-            writeProc = mp.Process(target=self._reportProgress, args=(len(binFiles), binIdToModels, skippedBinIds, writerQueue))
-
-            writeProc.start()
-
-            for p in calcProc:
-                p.start()
-
-            for p in calcProc:
-                p.join()
-
-            writerQueue.put((None, None))
-            writeProc.join()
-        except:
-            # make sure all processes are terminated
-            for p in calcProc:
-                p.terminate()
-
-            if writeProc is not None:
-                writeProc.terminate()
-
-        # exit if any process failed, rather than silently continuing without some bins
-        # (checked outside the try/except above so the exit is not caught by it)
-        procs = calcProc + ([writeProc] if writeProc is not None else [])
-        numFailed = sum(1 for p in procs if p.exitcode != 0)
-        if numFailed:
-            self.logger.error(f'{numFailed} of {len(procs)} processes failed while identifying marker genes. See the error messages above.')
-
-            # items left unread in a queue would otherwise block the exit
-            workerQueue.cancel_join_thread()
-            writerQueue.cancel_join_thread()
-
-            sys.exit(1)
+            binIdToModels, skippedBinIds = self._processGroups(groups, markerFile, tmpDir, outDir,
+                                                               tableOut, hmmerOut, bKeepAlignment,
+                                                               bNucORFs, bCalledGenes)
+        finally:
+            shutil.rmtree(tmpDir, ignore_errors=True)
 
         for binId in sorted(skippedBinIds):
             if bCalledGenes:
@@ -121,112 +153,172 @@ class MarkerGeneFinder():
             # bins from the output directory (e.g., tree_qa, lineage_set, qa) skip it too
             shutil.rmtree(os.path.join(outDir, 'bins', binId), ignore_errors=True)
 
-        # create a standard dictionary from the managed dictionary,
-        # with bins in a deterministic order
-        d = {}
-        for binId in sorted(binIdToModels.keys()):
-            d[binId] = binIdToModels[binId]
+        # bins in a deterministic order
+        return {binId: binIdToModels[binId] for binId in sorted(binIdToModels)}
 
-        manager.shutdown()
+    def _groupBinsByHmms(self, binFiles, markerFile):
+        """Group bins by the HMMs they must be searched with.
 
-        return d
+        Returns a list of (HMM accessions, bin files) tuples. The HMM
+        accessions are None if bins are searched with all HMMs in the
+        marker file (i.e., the marker file is a HMM file). The marker
+        file is parsed once, rather than once per bin.
+        """
 
-    def _processBin(self, outDir, tableOut, hmmerOut, markerFile, bKeepAlignment, bNucORFs, bCalledGenes, queueIn, queueOut):
-        """Thread safe bin processing."""
+        markerSetParser = MarkerSetParser()
+        markerFileType = markerSetParser.markerFileType(markerFile)
+        if markerFileType == BinMarkerSets.HMM_MODELS_SET:
+            return [(None, list(binFiles))]
 
-        markerSetParser = MarkerSetParser(self.threadsPerSearch)
+        if markerFileType == BinMarkerSets.TAXONOMIC_MARKER_SET:
+            binMarkerSets = markerSetParser.parseTaxonomicMarkerSetFile(markerFile)
+            binIdToBinMarkerSets = {binIdFromFilename(f): binMarkerSets for f in binFiles}
+        else:
+            binIdToBinMarkerSets = markerSetParser.parseLineageMarkerSetFile(markerFile)
 
-        while True:
-            binFile = queueIn.get(block=True, timeout=None)
-            if binFile == None:
-                break
-
+        markerGenesToBinFiles = {}
+        for binFile in binFiles:
             binId = binIdFromFilename(binFile)
-            binDir = os.path.join(outDir, 'bins', binId)
-            makeSurePathExists(binDir)
+            if binId not in binIdToBinMarkerSets:
+                self.logger.error(f'Bin {binId} is not in the marker file {markerFile}.')
+                sys.exit(1)
 
-            # run Prodigal
-            if not bCalledGenes:
-                prodigal = ProdigalRunner(binDir)
-                if not prodigal.areORFsCalled(bNucORFs):
-                    prodigal.run(binFile, bNucORFs)
-                aaGeneFile = prodigal.aaGeneFile
-            else:
-                aaGeneFile = binFile
-                aaGeneFileSave = os.path.join(binDir, DefaultValues.PRODIGAL_AA)
-                if not aaGeneFile.endswith(".gz"):
-                    shutil.copyfile(aaGeneFile, aaGeneFileSave)
-                else:
-                    with gzip.open(aaGeneFile, 'rt') as f_in:
-                        with open(aaGeneFileSave, 'w') as f_out:
-                            shutil.copyfileobj(f_in, f_out)
-                aaGeneFile = aaGeneFileSave
+            markerGenes = frozenset(binIdToBinMarkerSets[binId].getMarkerGenes())
+            markerGenesToBinFiles.setdefault(markerGenes, []).append(binFile)
 
-            # skip bins without any genes, as there is nothing to search
-            if os.stat(aaGeneFile).st_size == 0:
-                queueOut.put((binId, None))
-                continue
+        pfam = sharedPfam(DefaultValues.PFAM_CLAN_FILE)
+        groups = []
+        for markerGenes, groupBinFiles in markerGenesToBinFiles.items():
+            accessions = frozenset(markerGenes | pfam.genesInSameClan(markerGenes))
+            groups.append((accessions, groupBinFiles))
 
-            # extract HMMs into temporary file
-            hmmModelFile = markerSetParser.createHmmModelFile(binId, markerFile)
+        return groups
 
-            # run HMMER
-            hmmer = HMMERRunner()
-            tableOutPath = os.path.join(binDir, tableOut)
-            hmmerOutPath = os.path.join(binDir, hmmerOut)
+    def _processGroups(self, groups, markerFile, tmpDir, outDir, tableOut, hmmerOut, bKeepAlignment, bNucORFs, bCalledGenes):
+        """Search bins in parallel, creating the HMM file of each group once.
 
-            keepAlignStr = ''
-            if not bKeepAlignment:
-                keepAlignStr = '--noali'
-            try:
-                hmmer.search(hmmModelFile, aaGeneFile, tableOutPath, hmmerOutPath,
-                             '--cpu ' + str(self.threadsPerSearch) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr,
-                             bKeepAlignment)
-            except BaseException:
-                # the writer process removes the temporary HMM file, so remove it here on failure
-                self._removeHmmModelFile(hmmModelFile)
-                raise
+        A group's HMM file is created by a worker when first needed and
+        removed once all bins in the group have been searched. At most one
+        HMM file per thread exists at a time to bound disk usage. Larger
+        bins are processed first so a few large bins are not left running
+        alone at the end.
+        """
 
-            queueOut.put((binId, hmmModelFile))
+        # order bins and groups from largest to smallest
+        orderedGroups = []
+        for accessions, groupBinFiles in groups:
+            groupBinFiles = sorted(groupBinFiles, key=lambda f: (-_fileSize(f), f))
+            orderedGroups.append((accessions, groupBinFiles))
+        orderedGroups.sort(key=lambda g: (-sum(_fileSize(f) for f in g[1]), g[1][0]))
 
-    def _removeHmmModelFile(self, hmmModelFile):
-        """Remove temporary HMM file and its index."""
-        for f in [hmmModelFile, hmmModelFile + '.ssi']:
-            if os.path.exists(f):
-                os.remove(f)
+        # models of a HMM marker file are parsed once
+        markerFileModels = None
+        if any(accessions is None for accessions, _ in orderedGroups):
+            markerFileModels = HmmModelParser(markerFile).models()
 
-    def _reportProgress(self, numBins, binIdToModels, skippedBinIds, queueIn):
-        """Report number of processed bins."""
-
+        numBins = sum(len(groupBinFiles) for _, groupBinFiles in orderedGroups)
         numProcessedBins = 0
+        self._reportProgress(numProcessedBins, numBins)
+
+        binIdToModels = {}
+        skippedBinIds = []
+
+        pendingGroups = deque(range(len(orderedGroups)))  # groups not yet started
+        readySearches = deque()      # (group index, bin file) of bins whose HMM file is ready
+        groupHmmFile = {}            # HMM file of each started group
+        groupModels = {}             # HMM models of each group with a ready HMM file
+        groupRemaining = {}          # number of bins in a group not yet searched
+        running = {}                 # future -> (task, group index, bin file)
+
+        ctx = mp.get_context('fork') if 'fork' in mp.get_all_start_methods() else None
+        pool = cf.ProcessPoolExecutor(max_workers=self.totalThreads, mp_context=ctx)
+        try:
+            while pendingGroups or readySearches or running:
+                # keep all workers busy, preferring searches of bins whose HMM file is ready
+                while len(running) < self.totalThreads:
+                    if readySearches:
+                        groupIdx, binFile = readySearches.popleft()
+                        future = pool.submit(_searchBin, binFile, groupHmmFile[groupIdx], outDir,
+                                             tableOut, hmmerOut, bKeepAlignment, bNucORFs,
+                                             bCalledGenes, self.threadsPerSearch)
+                        running[future] = ('search', groupIdx, binFile)
+                    elif pendingGroups and len(groupHmmFile) < self.totalThreads:
+                        groupIdx = pendingGroups.popleft()
+                        accessions, groupBinFiles = orderedGroups[groupIdx]
+                        groupRemaining[groupIdx] = len(groupBinFiles)
+                        if accessions is None:
+                            # search with the marker file directly
+                            groupHmmFile[groupIdx] = markerFile
+                            groupModels[groupIdx] = markerFileModels
+                            readySearches.extend((groupIdx, f) for f in groupBinFiles)
+                        else:
+                            hmmModelFile = os.path.join(tmpDir, f'markers_{groupIdx}.hmm')
+                            groupHmmFile[groupIdx] = hmmModelFile
+                            future = pool.submit(_fetchHmms, accessions, hmmModelFile)
+                            running[future] = ('fetch', groupIdx, None)
+                    else:
+                        break
+
+                done, _ = cf.wait(list(running), return_when=cf.FIRST_COMPLETED)
+                for future in done:
+                    task, groupIdx, binFile = running.pop(future)
+                    try:
+                        result = future.result()  # re-raises any error from the worker
+                    except (Exception, SystemExit) as e:
+                        failedItem = f'bin {binIdFromFilename(binFile)}' if task == 'search' else 'the HMM file of a marker set'
+                        if isinstance(e, (SystemExit, cf.process.BrokenProcessPool)):
+                            # the worker has already reported the error (or was killed)
+                            self.logger.error(f'Failed to process {failedItem}. See the error messages above.')
+                        else:
+                            self.logger.error(f'Failed to process {failedItem}: {e!r}')
+                        sys.exit(1)
+
+                    if task == 'fetch':
+                        groupModels[groupIdx] = result
+                        readySearches.extend((groupIdx, f) for f in orderedGroups[groupIdx][1])
+                        continue
+
+                    binId = binIdFromFilename(binFile)
+                    if result:
+                        binIdToModels[binId] = groupModels[groupIdx]
+                    else:
+                        skippedBinIds.append(binId)
+
+                    groupRemaining[groupIdx] -= 1
+                    if groupRemaining[groupIdx] == 0:
+                        # all bins in group searched
+                        if orderedGroups[groupIdx][0] is not None:
+                            os.remove(groupHmmFile[groupIdx])
+                        del groupHmmFile[groupIdx]
+                        del groupModels[groupIdx]
+
+                    numProcessedBins += 1
+                    self._reportProgress(numProcessedBins, numBins)
+        except BaseException:
+            # stop remaining work (e.g., after a failure or keyboard interrupt)
+            self._terminatePool(pool)
+            raise
+
+        pool.shutdown()
+
+        if self.logger.getEffectiveLevel() <= logging.INFO:
+            sys.stderr.write('\n')
+
+        return binIdToModels, skippedBinIds
+
+    def _terminatePool(self, pool):
+        """Stop all worker processes of a process pool."""
+        processes = getattr(pool, '_processes', None) or {}
+        for p in list(processes.values()):
+            try:
+                p.terminate()
+            except Exception:
+                pass
+        pool.shutdown(wait=False)
+
+    def _reportProgress(self, numProcessedBins, numBins):
+        """Report number of processed bins."""
         if self.logger.getEffectiveLevel() <= logging.INFO:
             statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
             sys.stderr.write('%s\r' % statusStr)
             sys.stderr.flush()
-
-        while True:
-            binId, hmmModelFile = queueIn.get(block=True, timeout=None)
-            if binId == None:
-                break
-
-            if hmmModelFile is None:
-                # bin has no genes
-                skippedBinIds.append(binId)
-            else:
-                # parse HMM file
-                # (This is done here as pushing the models onto the shared queue is too memory intensive)
-                modelParser = HmmModelParser(hmmModelFile)
-                models = modelParser.models()
-
-                binIdToModels[binId] = models
-
-                self._removeHmmModelFile(hmmModelFile)
-
-            if self.logger.getEffectiveLevel() <= logging.INFO:
-                numProcessedBins += 1
-                statusStr = '    Finished processing %d of %d (%.2f%%) bins.' % (numProcessedBins, numBins, float(numProcessedBins) * 100 / numBins)
-                sys.stderr.write('%s\r' % statusStr)
-                sys.stderr.flush()
-
-        if self.logger.getEffectiveLevel() <= logging.INFO:
-            sys.stderr.write('\n')
