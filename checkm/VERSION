@@ -2,6 +2,7 @@
 - fix to the Pfam same-clan filter, which treated Pfams without a clan as members of the same clan; this can slightly change completeness and contamination estimates
 - fix to reading FASTA files without a trailing newline, which dropped the last base
 - fix to end coordinates of merged adjacent marker gene hits
+- hits to the same marker on a run of consecutive genes (e.g., a gene split into several fragments) are now combined into a single hit, rather than being paired in an order that depended on hits to other markers; this can slightly change contamination and strain heterogeneity estimates
 - failures of external programs (Prodigal, HMMER, pplacer) and of worker processes now cause CheckM to exit with an error instead of exiting with status 0 or silently dropping bins
 - bins without any genes are now skipped with a warning, and FASTA records without sequence data are ignored
 - output is now deterministic (order of HMM models, bins and markers in output files)

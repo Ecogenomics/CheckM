@@ -33,11 +33,12 @@ class Hit(object):
 
     def __init__(self, target_name, query_accession,
                  hmm_from, hmm_to, ali_from, ali_to, env_from, env_to,
-                 target_length=200, full_e_value=1e-30):
+                 target_length=200, full_e_value=1e-30, full_score=100.0):
         self.target_name = target_name
         self.query_accession = query_accession
         self.target_length = target_length
         self.full_e_value = full_e_value
+        self.full_score = full_score
         self.hmm_from = hmm_from
         self.hmm_to = hmm_to
         self.ali_from = ali_from
@@ -94,6 +95,43 @@ class VerifyAdjacentMarkerGenes(unittest.TestCase):
         self.assertEqual((h.hmm_from, h.hmm_to, h.ali_from, h.ali_to, h.env_from, h.env_to),
                          (1, 250, 1, 160, 1, 165))
         self.assertEqual(rm.markerHits['TIGR00001'], [e])
+
+    def testFragmentRuns(self):
+        """A run of consecutive ORFs is combined into one hit, regardless of hit order."""
+        import itertools
+
+        hits = [Hit('contig_1_%d' % n, 'PF00001.1', 10 * n, 10 * n + 50, 1, 50, 1, 55,
+                    target_length=60, full_e_value=1e-10 * n) for n in [28, 29, 30, 31]]
+        for perm in itertools.permutations(hits):
+            rm = self._manager({'PF00001.1': list(perm)})
+            rm.identifyAdjacentMarkerGenes()
+
+            combined = rm.markerHits['PF00001.1']
+            self.assertEqual(len(combined), 1)
+            h = combined[0]
+            self.assertEqual(h.target_name, 'contig_1_28&&contig_1_29&&contig_1_30&&contig_1_31')
+            self.assertEqual(h.target_length, 240)
+            self.assertEqual((h.hmm_from, h.hmm_to), (280, 360))
+            self.assertEqual([c.target_name for c in h.component_hits], ['contig_1_%d' % n for n in [28, 29, 30, 31]])
+
+    def testFragmentRunGaps(self):
+        """Runs are broken by gaps in ORF numbering; ORF numbers are compared numerically."""
+        hits = [Hit('contig_1_%d' % n, 'PF00001.1', 1, 50, 1, 50, 1, 50) for n in [9, 10, 12, 13, 14, 20]]
+        rm = self._manager({'PF00001.1': list(reversed(hits))})
+        rm.identifyAdjacentMarkerGenes()
+
+        self.assertEqual([h.target_name for h in rm.markerHits['PF00001.1']],
+                         ['contig_1_9&&contig_1_10', 'contig_1_12&&contig_1_13&&contig_1_14', 'contig_1_20'])
+
+    def testCombinedHitUsesBestHit(self):
+        """Scores and e-values of a combined hit are those of the best hit."""
+        a = Hit('contig_1_5', 'PF00001.1', 1, 120, 3, 118, 1, 120, full_e_value=1e-5, full_score=20.0)
+        b = Hit('contig_1_6', 'PF00001.1', 110, 300, 2, 190, 1, 195, full_e_value=1e-50, full_score=200.0)
+        rm = self._manager({'PF00001.1': [a, b]})
+        rm.identifyAdjacentMarkerGenes()
+
+        h = rm.markerHits['PF00001.1'][0]
+        self.assertEqual((h.full_e_value, h.full_score), (1e-50, 200.0))
 
     def testNonProdigalNames(self):
         """Gene ids without a numeric suffix are left as they are."""
