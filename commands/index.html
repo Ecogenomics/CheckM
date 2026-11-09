@@ -119,6 +119,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change log</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../references.html">Citing CheckM</a></li>
 </ul>
+<p class="caption" role="heading"><span class="caption-text">Additional information</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../python3.html">Migration to Python 3</a></li>
+</ul>
 
         </div>
       </div>
@@ -247,20 +251,8 @@ these commands also produce summary statistics of sequences required by specific
 </section>
 <section id="removed-commands">
 <h2>Removed commands<a class="headerlink" href="#removed-commands" title="Link to this heading"></a></h2>
-<p>The following commands were removed in CheckM v1.1.x in order to simplify the code base and focus CheckM and
-support requests on critical functionality:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">bin_qa_plot</span></code>: non-critical, rarely used plot which does not scale to the large numbers of MAGs now being
-recovered</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">par_plot</span></code>: non-critical plot and the same information is better presented in the reference
-distribution plots</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">cov_pca</span></code>, <code class="docutils literal notranslate"><span class="pre">tetra_pca</span></code>: alternatives to these static plots exist in tools such as
-<a class="reference external" href="http://merenlab.org/software/anvio/">Anvi’o</a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">len_plot</span></code>: rarely used plot which is largely redundant with the <code class="docutils literal notranslate"><span class="pre">len_hist</span></code> and <code class="docutils literal notranslate"><span class="pre">nx_plot</span></code> plots</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">bin_union</span></code>, <code class="docutils literal notranslate"><span class="pre">bin_compare</span></code>: feature-rich alternatives now exist, such as
-<a class="reference external" href="https://github.com/cmks/DAS_Tool">DAS Tool</a> and <a class="reference external" href="https://github.com/dparks1134/UniteM">UniteM</a></p></li>
-</ul>
-<p>The <code class="docutils literal notranslate"><span class="pre">join_tables</span></code> command is also no longer available.</p>
+<p>Commands removed in CheckM v1.1.x (e.g., <code class="docutils literal notranslate"><span class="pre">bin_qa_plot</span></code>, <code class="docutils literal notranslate"><span class="pre">par_plot</span></code>, <code class="docutils literal notranslate"><span class="pre">cov_pca</span></code>, <code class="docutils literal notranslate"><span class="pre">tetra_pca</span></code>,
+<code class="docutils literal notranslate"><span class="pre">len_plot</span></code>, <code class="docutils literal notranslate"><span class="pre">bin_union</span></code>, <code class="docutils literal notranslate"><span class="pre">bin_compare</span></code>, <code class="docutils literal notranslate"><span class="pre">join_tables</span></code>) are listed in <a class="reference internal" href="../python3.html#python3-removed"><span class="std std-ref">Removed functionality</span></a>.</p>
 </section>
 <section id="checkm-h">
 <h2>checkm -h<a class="headerlink" href="#checkm-h" title="Link to this heading"></a></h2>

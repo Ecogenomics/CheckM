@@ -123,20 +123,8 @@ Reference data and testing
 Removed commands
 ----------------
 
-The following commands were removed in CheckM v1.1.x in order to simplify the code base and focus CheckM and
-support requests on critical functionality:
-
-* ``bin_qa_plot``: non-critical, rarely used plot which does not scale to the large numbers of MAGs now being
-  recovered
-* ``par_plot``: non-critical plot and the same information is better presented in the reference
-  distribution plots
-* ``cov_pca``, ``tetra_pca``: alternatives to these static plots exist in tools such as
-  `Anvi'o <http://merenlab.org/software/anvio/>`_
-* ``len_plot``: rarely used plot which is largely redundant with the ``len_hist`` and ``nx_plot`` plots
-* ``bin_union``, ``bin_compare``: feature-rich alternatives now exist, such as
-  `DAS Tool <https://github.com/cmks/DAS_Tool>`_ and `UniteM <https://github.com/dparks1134/UniteM>`_
-
-The ``join_tables`` command is also no longer available.
+Commands removed in CheckM v1.1.x (e.g., ``bin_qa_plot``, ``par_plot``, ``cov_pca``, ``tetra_pca``,
+``len_plot``, ``bin_union``, ``bin_compare``, ``join_tables``) are listed in :ref:`python3/removed`.
 
 
 checkm -h
