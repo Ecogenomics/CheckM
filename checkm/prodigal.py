@@ -108,7 +108,11 @@ class ProdigalRunner():
         return bestTranslationTable
 
     def _runProdigal(self, procedureStr, translationTable, aaGeneFile, ntGeneFile, gffFile, prodigal_input):
-        """Run Prodigal, returning its return code."""
+        """Run Prodigal, returning its return code and error output.
+
+        Prodigal reports errors (e.g., 'no input sequences to analyze') on
+        stderr even when run with -q, so this is captured to explain failures.
+        """
         cmd = ['prodigal', '-p', procedureStr, '-q', '-m', '-f', 'gff',
                '-g', str(translationTable), '-a', aaGeneFile]
         if ntGeneFile:
@@ -116,7 +120,26 @@ class ProdigalRunner():
         cmd += ['-i', prodigal_input]
 
         with open(gffFile, 'w') as fout:
-            return subprocess.call(cmd, stdout=fout, stderr=subprocess.DEVNULL)
+            proc = subprocess.run(cmd, stdout=fout, stderr=subprocess.PIPE)
+
+        return proc.returncode, self._errorOutput(proc.stderr)
+
+    @staticmethod
+    def _errorOutput(stderr, maxLength=1000):
+        """Error output of Prodigal as a single line."""
+        msg = ' '.join(stderr.decode('utf-8', errors='replace').split())
+        if len(msg) > maxLength:
+            msg = msg[0:maxLength] + ' ...'
+
+        return msg
+
+    @staticmethod
+    def _failureStr(rtn, errorOutput):
+        """Describe a failed run of Prodigal (e.g., 'exit code 18: Error: no input sequences to analyze.')."""
+        if errorOutput:
+            return f'{returnCodeStr(rtn)}: {errorOutput}'
+
+        return returnCodeStr(rtn)
 
     def _run(self, query, prodigal_input, seqs, totalBases, bNucORFs):
         """Call genes with translation tables 4 and 11 and select the best table."""
@@ -134,17 +157,21 @@ class ProdigalRunner():
             else:
                 procedureStr = 'single'  # estimate parameters from data
 
-            rtn = self._runProdigal(procedureStr, translationTable, aaGeneFile, ntGeneFile, gffFile, prodigal_input)
+            rtn, errorOutput = self._runProdigal(procedureStr, translationTable, aaGeneFile, ntGeneFile, gffFile, prodigal_input)
             if procedureStr == 'single' and (rtn != 0 or not self._areORFsCalled(aaGeneFile)):
                 # prodigal will fail to learn a model if the input genome has a large number of N's
                 # so try gene prediction with 'meta'
-                self.logger.warning(f"Prodigal failed or returned no output ({returnCodeStr(rtn)}). "
+                if rtn != 0:
+                    reason = f'failed ({self._failureStr(rtn, errorOutput)})'
+                else:
+                    reason = 'identified no genes'
+                self.logger.warning(f"Prodigal with '-p single' {reason} on: {query}. "
                                     "Retrying with '-p meta' due to possible high N content in the genome.")
                 procedureStr = 'meta'
-                rtn = self._runProdigal(procedureStr, translationTable, aaGeneFile, ntGeneFile, gffFile, prodigal_input)
+                rtn, errorOutput = self._runProdigal(procedureStr, translationTable, aaGeneFile, ntGeneFile, gffFile, prodigal_input)
 
             if rtn != 0:
-                self.logger.error(f"Prodigal failed with '-p {procedureStr}' ({returnCodeStr(rtn)}) on: {query}")
+                self.logger.error(f"Prodigal failed with '-p {procedureStr}' ({self._failureStr(rtn, errorOutput)}) on: {query}")
                 sys.exit(1)
 
             # determine coding density (0 if no genes were identified)
