@@ -1,0 +1,26 @@
+usage: checkm nx_plot [-h] [--image_type {eps,pdf,png,ps,svg}] [--dpi DPI] [--font_size FONT_SIZE]
+                      [-x EXTENSION] [--width WIDTH] [--height HEIGHT] [-s STEP_SIZE] [-q]
+                      bin_input output_dir
+
+Create Nx-plots.
+
+positional arguments:
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+  output_dir            directory to hold plots
+
+options:
+  -h, --help            show this help message and exit
+  --image_type {eps,pdf,png,ps,svg}
+                        desired image type (default: png)
+  --dpi DPI             desired DPI of output image (default: 600)
+  --font_size FONT_SIZE
+                        Desired font size (default: 8)
+  -x, --extension EXTENSION
+                        extension of bins (other files in directory are ignored) (default: fna)
+  --width WIDTH         width of output image (default: 6.5)
+  --height HEIGHT       height of output image (default: 6.5)
+  -s, --step_size STEP_SIZE
+                        x step size for calculating Nx (default: 0.05)
+  -q, --quiet           suppress console output
+
+Example: checkm nx_plot ./bins ./plots

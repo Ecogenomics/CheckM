@@ -86,3 +86,8 @@ pip-log.txt
 #############
 ## CheckM
 #############
+
+#############
+## Documentation
+#############
+docs/build/

@@ -1,0 +1,12 @@
+usage: checkm test [-h] [--tmpdir TMPDIR] output_dir
+
+Test CheckM on E. coli genome.
+
+positional arguments:
+  output_dir       output directory for test data
+
+options:
+  -h, --help       show this help message and exit
+  --tmpdir TMPDIR  specify an alternative directory for temporary files
+
+Example: checkm test ~/checkm_test

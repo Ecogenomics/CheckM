@@ -1,0 +1,22 @@
+usage: checkm outliers [-h] [-d dist_value] [-r {any,all}] [-x EXTENSION] [-q]
+                       results_dir bin_input tetra_profile output_file
+
+Identify outliers in bins relative to reference distributions.
+
+positional arguments:
+  results_dir           output directory of the analyze, lineage_wf or taxonomy_wf command (for marker_plot, qa must also have been run)
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+  tetra_profile         tetranucleotide profiles for each sequence (see tetra command)
+  output_file           print results to file
+
+options:
+  -h, --help            show this help message and exit
+  -d, --distributions dist_value
+                        reference distribution used to identify outliers; integer between 0 and 100 (default: 95)
+  -r, --report_type {any,all}
+                        report sequences that are outliers in 'all' or 'any' reference distribution (default: any)
+  -x, --extension EXTENSION
+                        extension of bins (other files in directory are ignored) (default: fna)
+  -q, --quiet           suppress console output
+
+Example: checkm outliers ./output ./bins tetra.tsv outliers.tsv

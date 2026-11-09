@@ -1,0 +1,50 @@
+                ...::: CheckM v1.2.10 :::...
+
+  Lineage-specific marker set:
+    tree         -> Place bins in the reference genome tree
+    tree_qa      -> Assess phylogenetic markers found in each bin
+    lineage_set  -> Infer lineage-specific marker sets for each bin
+
+  Taxonomic-specific marker set:
+    taxon_list   -> List available taxonomic-specific marker sets
+    taxon_set    -> Generate taxonomic-specific marker set
+
+  Apply marker set to genome bins:
+    analyze      -> Identify marker genes in bins
+    qa           -> Assess bins for contamination and completeness
+
+  Common workflows (combines above commands):
+    lineage_wf   -> Runs tree, lineage_set, analyze, qa
+    taxonomy_wf  -> Runs taxon_set, analyze, qa
+
+  Reference distribution plots:
+    gc_plot      -> Create GC histogram and delta-GC plot
+    coding_plot  -> Create coding density (CD) histogram and delta-CD plot
+    tetra_plot   -> Create tetranucleotide distance (TD) histogram and delta-TD plot
+    dist_plot    -> Create image with GC, CD, and TD distribution plots together
+
+  General plots:
+    nx_plot      -> Create Nx-plots
+    len_hist     -> Sequence length histogram
+    marker_plot  -> Plot position of marker genes on sequences
+    gc_bias_plot -> Plot bin coverage as a function of GC
+
+  Bin exploration and modification:
+    unique       -> Ensure no sequences are assigned to multiple bins
+    merge        -> Identify bins with complementary sets of marker genes
+    outliers     -> [Experimental] Identify outliers in bins relative to reference distributions
+    modify       -> [Experimental] Modify sequences in a bin
+
+  Utility functions:
+    unbinned     -> Identify unbinned sequences
+    coverage     -> Calculate coverage of sequences
+    tetra        -> Calculate tetranucleotide signature of sequences
+    profile      -> Calculate percentage of reads mapped to each bin
+    ssu_finder   -> Identify SSU (16S/18S) rRNAs in sequences
+
+  Testing:
+    test         -> Run CheckM on a test genome (E. coli) to verify operation
+
+  Use 'checkm data setRoot <checkm_data_dir>' to specify the location of CheckM database files.
+
+  Usage: checkm <command> -h for command specific help

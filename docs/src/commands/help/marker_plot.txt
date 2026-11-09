@@ -1,0 +1,28 @@
+usage: checkm marker_plot [-h] [--image_type {eps,pdf,png,ps,svg}] [--dpi DPI]
+                          [--font_size FONT_SIZE] [-x EXTENSION] [--width WIDTH] [--height HEIGHT]
+                          [--fig_padding FIG_PADDING] [-q]
+                          results_dir bin_input output_dir
+
+Plot position of marker genes on sequences.
+
+positional arguments:
+  results_dir           output directory of the analyze, lineage_wf or taxonomy_wf command (for marker_plot, qa must also have been run)
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+  output_dir            directory to hold plots
+
+options:
+  -h, --help            show this help message and exit
+  --image_type {eps,pdf,png,ps,svg}
+                        desired image type (default: png)
+  --dpi DPI             desired DPI of output image (default: 600)
+  --font_size FONT_SIZE
+                        Desired font size (default: 8)
+  -x, --extension EXTENSION
+                        extension of bins (other files in directory are ignored) (default: fna)
+  --width WIDTH         width of output image (default: 6.5)
+  --height HEIGHT       height of output image (default: 6.5)
+  --fig_padding FIG_PADDING
+                        white space to place around figure (in inches) (default: 0.2)
+  -q, --quiet           suppress console output
+
+Example: checkm marker_plot ./output ./bins ./plots

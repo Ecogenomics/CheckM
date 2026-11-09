@@ -1,0 +1,20 @@
+usage: checkm unbinned [-h] [-x EXTENSION] [-s MIN_SEQ_LEN] [-q]
+                       bin_input seq_file output_seq_file output_stats_file
+
+Identify unbinned sequences.
+
+positional arguments:
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+  seq_file              sequences used to generate bins (fasta format)
+  output_seq_file       write unbinned sequences to file
+  output_stats_file     write unbinned sequence statistics to file
+
+options:
+  -h, --help            show this help message and exit
+  -x, --extension EXTENSION
+                        extension of bins (other files in directory are ignored) (default: fna)
+  -s, --min_seq_len MIN_SEQ_LEN
+                        required length of sequence
+  -q, --quiet           suppress console output
+
+Example: checkm unbinned ./bins seqs.fna unbinned.fna unbinned_stats.tsv

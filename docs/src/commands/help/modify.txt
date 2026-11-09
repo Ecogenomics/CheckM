@@ -1,0 +1,19 @@
+usage: checkm modify [-h] [-a ADD] [-r REMOVE] [-o OUTLIER_FILE] [-q]
+                     seq_file bin_file output_file
+
+Modify sequences in a bin.
+
+positional arguments:
+  seq_file              sequences used to generate bins (fasta format)
+  bin_file              bin to be modified
+  output_file           modified bin
+
+options:
+  -h, --help            show this help message and exit
+  -a, --add ADD         ID of sequence to add to bin (may specify multiple times)
+  -r, --remove REMOVE   ID of sequence to remove from bin (may specify multiple times)
+  -o, --outlier_file OUTLIER_FILE
+                        remove all sequences marked as outliers in the bin (see outlier command)
+  -q, --quiet           suppress console output
+
+Example: checkm modify -r seq_id1 -r seq_id2 seqs.fna bin.fna new_bin.fna

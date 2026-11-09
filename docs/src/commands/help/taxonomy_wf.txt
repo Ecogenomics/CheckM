@@ -1,0 +1,47 @@
+usage: checkm taxonomy_wf [-h] [--ali] [--nt] [-g] [--individual_markers] [--skip_adj_correction]
+                          [--skip_pseudogene_correction] [--aai_strain AAI_STRAIN]
+                          [-a ALIGNMENT_FILE] [--ignore_thresholds] [-e E_VALUE] [-l LENGTH]
+                          [-c COVERAGE_FILE] [-f FILE] [--tab_table] [-x EXTENSION] [-t THREADS]
+                          [-q] [--tmpdir TMPDIR]
+                          {life,domain,phylum,class,order,family,genus,species} taxon bin_input
+                          output_dir
+
+Runs taxon_set, analyze, qa
+
+positional arguments:
+  {life,domain,phylum,class,order,family,genus,species}
+                        taxonomic rank
+  taxon                 taxon of interest
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+  output_dir            directory to write output files
+
+options:
+  -h, --help            show this help message and exit
+  --ali                 generate HMMER alignment file for each bin
+  --nt                  generate nucleotide gene sequences for each bin
+  -g, --genes           bins contain genes as amino acids instead of nucleotide contigs
+  --individual_markers  treat marker as independent (i.e., ignore co-located set structure)
+  --skip_adj_correction
+                        do not exclude adjacent marker genes when estimating contamination
+  --skip_pseudogene_correction
+                        skip identification and filtering of pseudogenes
+  --aai_strain AAI_STRAIN
+                        AAI threshold used to identify strain heterogeneity (default: 0.9)
+  -a, --alignment_file ALIGNMENT_FILE
+                        produce file showing alignment of multi-copy genes and their AAI identity
+  --ignore_thresholds   ignore model-specific score thresholds
+  -e, --e_value E_VALUE
+                        e-value cut off (default: 1e-10)
+  -l, --length LENGTH   minimum alignment length as a fraction of the marker HMM length (default: 0.7)
+  -c, --coverage_file COVERAGE_FILE
+                        file containing coverage of each sequence; coverage information added to table type 2 (see coverage command)
+  -f, --file FILE       print results to file (default: stdout)
+  --tab_table           print tab-separated values table
+  -x, --extension EXTENSION
+                        extension of bins (other files in directory are ignored) (default: fna)
+  -t, --threads THREADS
+                        number of threads (default: 1)
+  -q, --quiet           suppress console output
+  --tmpdir TMPDIR       specify an alternative directory for temporary files
+
+Example: checkm taxonomy_wf domain Bacteria ./bins ./output

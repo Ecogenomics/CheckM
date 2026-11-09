@@ -1,0 +1,31 @@
+usage: checkm coding_plot [-h] [--image_type {eps,pdf,png,ps,svg}] [--dpi DPI]
+                          [--font_size FONT_SIZE] [-x EXTENSION] [--width WIDTH] [--height HEIGHT]
+                          [-w CD_WINDOW_SIZE] [-b CD_BIN_WIDTH] [-q]
+                          results_dir bin_input output_dir dist_value [dist_value ...]
+
+Create coding density (CD) histogram and delta-CD plot.
+
+positional arguments:
+  results_dir           output directory of the analyze, lineage_wf or taxonomy_wf command (for marker_plot, qa must also have been run)
+  bin_input             directory containing bins (fasta format) or path to file describing genomes/genes - tab separated in 2 or 3 columns [genome ID, genome fna, genome translation file (pep)]
+  output_dir            directory to hold plots
+  dist_value            reference distribution(s) to plot; integer between 0 and 100
+
+options:
+  -h, --help            show this help message and exit
+  --image_type {eps,pdf,png,ps,svg}
+                        desired image type (default: png)
+  --dpi DPI             desired DPI of output image (default: 600)
+  --font_size FONT_SIZE
+                        Desired font size (default: 8)
+  -x, --extension EXTENSION
+                        extension of bins (other files in directory are ignored) (default: fna)
+  --width WIDTH         width of output image (default: 6.5)
+  --height HEIGHT       height of output image (default: 3.5)
+  -w, --cd_window_size CD_WINDOW_SIZE
+                        window size used to calculate CD histogram (default: 10000)
+  -b, --cd_bin_width CD_BIN_WIDTH
+                        width of CD bars in histogram (default: 0.01)
+  -q, --quiet           suppress console output
+
+Example: checkm coding_plot ./output ./bins ./plots 95
