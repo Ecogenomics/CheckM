@@ -103,4 +103,5 @@ If you use CheckM in your research, please cite CheckM and the software it relie
    :caption: Additional information
    :maxdepth: 1
 
+   performance
    python3
