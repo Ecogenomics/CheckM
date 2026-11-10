@@ -14,7 +14,8 @@ make html SPHINXOPTS="-W --keep-going"   # warnings are errors, as in the workfl
 ```
 
 Open `build/html/index.html` in a browser. The version shown is read from
-`../checkm/VERSION` and the change log page includes that file.
+`../checkm/VERSION`, and the change log page includes `../CHANGELOG.md`
+(rendered with MyST).
 
 ## Regenerating the command help
 

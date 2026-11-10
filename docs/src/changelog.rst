@@ -3,10 +3,9 @@
 Change log
 ==========
 
-The changes in each release of CheckM are listed below, most recent first. This list is included directly
-from the ``checkm/VERSION`` file of the CheckM source code, which also defines the version number (first
-line). The releases are also available on `GitHub <https://github.com/Ecogenomics/CheckM/releases>`_ and
-`PyPI <https://pypi.org/project/checkm-genome/#history>`_.
+.. The contents come from CHANGELOG.md at the root of the CheckM source code; its first line
+   ("# Change log") is skipped as the title is given above.
 
-.. literalinclude:: ../../checkm/VERSION
-   :language: text
+.. include:: ../../CHANGELOG.md
+   :parser: myst_parser.sphinx_
+   :start-line: 1

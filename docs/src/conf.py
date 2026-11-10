@@ -25,7 +25,12 @@ pygments_style = 'sphinx'
 
 # -- General configuration ---------------------------------------------------
 
-extensions = ['sphinx_sitemap']
+# myst_parser renders CHANGELOG.md, which changelog.rst includes
+extensions = ['sphinx_sitemap', 'myst_parser']
+
+# changelog.rst includes CHANGELOG.md without its "# Change log" title, so the included
+# headings start at H2 under the page title given in changelog.rst
+suppress_warnings = ['myst.header']
 
 templates_path = []
 exclude_patterns = []
