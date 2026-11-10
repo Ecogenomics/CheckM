@@ -1,0 +1,253 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quality estimate changes &mdash; CheckM 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/quality_estimate_changes.html" />
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Migration to Python 3" href="python3.html" />
+    <link rel="prev" title="Performance" href="performance.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing/index.html">Installing CheckM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflows.html">Workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="commands/index.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Citing CheckM</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional information</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Performance</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quality estimate changes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#bug-fixes-that-change-estimates">Bug fixes that change estimates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#test">Test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#results">Results</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="python3.html">Migration to Python 3</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Quality estimate changes</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/quality_estimate_changes.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="quality-estimate-changes">
+<span id="id1"></span><h1>Quality estimate changes<a class="headerlink" href="#quality-estimate-changes" title="Link to this heading"></a></h1>
+<p>CheckM 1.2.8 fixed two bugs that can change the completeness, contamination and strain heterogeneity
+estimates of a genome. The changes are small and affect few genomes. CheckM 1.2.8, 1.2.9, 1.2.10 and 1.3.0
+give identical estimates, so the changes below apply to any CheckM &gt;= 1.2.8 compared with CheckM &lt;= 1.2.7.</p>
+<section id="bug-fixes-that-change-estimates">
+<h2>Bug fixes that change estimates<a class="headerlink" href="#bug-fixes-that-change-estimates" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Pfam same-clan filter.</strong> When two Pfam markers hit the same gene, CheckM keeps only the best hit if the
+two Pfams belong to the same Pfam clan. CheckM &lt;= 1.2.7 treated two Pfams without a clan as members of the
+same clan, so a hit to an unrelated marker could be discarded. With the fix, such a marker can be found in
+a genome (higher completeness) or found in an additional copy (higher contamination).</p></li>
+<li><p><strong>Gene fragments.</strong> Hits to the same marker on a run of consecutive genes (e.g., a gene split into
+several fragments) are now combined into a single hit, as these are most likely one gene split by a gene
+calling or assembly error. CheckM &lt;= 1.2.7 combined such hits in pairs, in an order that depended on hits
+to other markers, so a gene split into three or more fragments could be counted as more than one copy of
+the marker. With the fix, contamination and strain heterogeneity can be lower.</p></li>
+</ul>
+<p>The other fixes in CheckM 1.2.8 (see <a class="reference internal" href="changelog.html#changelog"><span class="std std-ref">Change log</span></a>) did not change the estimates of any test genome.</p>
+</section>
+<section id="test">
+<h2>Test<a class="headerlink" href="#test" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> was run with CheckM 1.2.7 and 1.3.0 on two sets of genomes randomly selected from the
+non-isolate (metagenome-assembled and single-cell) genomes in <a class="reference external" href="https://globdb.org/">GlobDB</a> release 232:</p>
+<ul class="simple">
+<li><p>128 genomes (112 bacteria and 16 archaea)</p></li>
+<li><p>1,000 genomes (875 bacteria and 125 archaea)</p></li>
+</ul>
+<p>These are the genomes used for the <a class="reference internal" href="performance.html#performance"><span class="std std-ref">Performance</span></a> results. The marker lineage, completeness,
+contamination and strain heterogeneity of each genome were compared between the two versions.</p>
+</section>
+<section id="results">
+<h2>Results<a class="headerlink" href="#results" title="Link to this heading"></a></h2>
+<p>The estimates changed for 1 of the 128 genomes and 6 of the 1,000 genomes (0.6%). The marker lineage did not
+change for any genome, and no change was larger than 0.18 percentage points for completeness or
+contamination. No genome crossed a MIMAG quality threshold (completeness of 50% or 90%, contamination of 5%
+or 10%).</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 13.0%" />
+<col style="width: 11.0%" />
+<col style="width: 24.0%" />
+<col style="width: 13.0%" />
+<col style="width: 13.0%" />
+<col style="width: 14.0%" />
+<col style="width: 12.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Genome</p></th>
+<th class="head"><p>Genome set</p></th>
+<th class="head"><p>Marker lineage</p></th>
+<th class="head"><p>Completeness</p></th>
+<th class="head"><p>Contamination</p></th>
+<th class="head"><p>Strain heterogeneity</p></th>
+<th class="head"><p>Cause</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>GCA_035327525</p></td>
+<td><p>128</p></td>
+<td><p>k__Bacteria (UID203)</p></td>
+<td><p>75.99 → 76.15</p></td>
+<td></td>
+<td></td>
+<td><p>Clan filter</p></td>
+</tr>
+<tr class="row-odd"><td><p>GCA_018701055</p></td>
+<td><p>1,000</p></td>
+<td><p>c__Gammaproteobacteria (UID4267)</p></td>
+<td><p>74.87 → 74.90</p></td>
+<td></td>
+<td></td>
+<td><p>Clan filter</p></td>
+</tr>
+<tr class="row-even"><td><p>GCA_030455605</p></td>
+<td><p>1,000</p></td>
+<td><p>g__Lactobacillus (UID377)</p></td>
+<td></td>
+<td><p>0.41 → 0.51</p></td>
+<td></td>
+<td><p>Clan filter</p></td>
+</tr>
+<tr class="row-odd"><td><p>GCA_045561055</p></td>
+<td><p>1,000</p></td>
+<td><p>c__Gammaproteobacteria (UID4267)</p></td>
+<td></td>
+<td><p>1.58 → 1.62</p></td>
+<td><p>16.67 → 14.29</p></td>
+<td><p>Clan filter</p></td>
+</tr>
+<tr class="row-even"><td><p>GCA_964384205</p></td>
+<td><p>1,000</p></td>
+<td><p>k__Bacteria (UID2495)</p></td>
+<td></td>
+<td><p>5.54 → 5.64</p></td>
+<td></td>
+<td><p>Clan filter</p></td>
+</tr>
+<tr class="row-odd"><td><p>GCA_963783575</p></td>
+<td><p>1,000</p></td>
+<td><p>k__Bacteria (UID203)</p></td>
+<td></td>
+<td><p>3.93 → 3.77</p></td>
+<td></td>
+<td><p>Gene fragments</p></td>
+</tr>
+<tr class="row-even"><td><p>GCA_965202795</p></td>
+<td><p>1,000</p></td>
+<td><p>k__Bacteria (UID3187)</p></td>
+<td></td>
+<td><p>0.18 → 0.00</p></td>
+<td></td>
+<td><p>Gene fragments</p></td>
+</tr>
+</tbody>
+</table>
+<p>Values are CheckM 1.2.7 → CheckM 1.3.0; empty cells are unchanged.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="performance.html" class="btn btn-neutral float-left" title="Performance" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="python3.html" class="btn btn-neutral float-right" title="Migration to Python 3" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

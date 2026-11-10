@@ -104,4 +104,5 @@ If you use CheckM in your research, please cite CheckM and the software it relie
    :maxdepth: 1
 
    performance
+   quality_estimate_changes
    python3
