@@ -136,9 +136,9 @@ Prodigal:</p>
 <li><p>Fedora: <code class="docutils literal notranslate"><span class="pre">dnf</span> <span class="pre">install</span> <span class="pre">hmmer</span></code> (Prodigal needs to be obtained separately, e.g. from Bioconda)</p></li>
 </ul>
 <p>Alternatively, a Conda environment can be set up with the dependencies from Bioconda and CheckM installed
-with <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>checkm<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>-c<span class="w"> </span>bioconda<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.12<span class="w"> </span>hmmer<span class="w"> </span>prodigal
-conda<span class="w"> </span>activate<span class="w"> </span>checkm
+with <code class="docutils literal notranslate"><span class="pre">pip</span></code>. This can be done with mamba (recommended) or conda (replace <code class="docutils literal notranslate"><span class="pre">mamba</span></code> with <code class="docutils literal notranslate"><span class="pre">conda</span></code>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mamba<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>checkm<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>-c<span class="w"> </span>bioconda<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.12<span class="w"> </span>hmmer<span class="w"> </span>prodigal
+mamba<span class="w"> </span>activate<span class="w"> </span>checkm
 pip3<span class="w"> </span>install<span class="w"> </span>checkm-genome<span class="w"> </span>gtdb-gplace
 </pre></div>
 </div>
