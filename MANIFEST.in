@@ -1,4 +1,4 @@
-include *.txt
+include CHANGELOG.md
 recursive-include docs *.txt
 include README.md
 include LICENSE

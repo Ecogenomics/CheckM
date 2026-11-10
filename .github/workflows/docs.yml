@@ -3,8 +3,8 @@ name: Documentation update
 on:
   push:
     branches: [master]
-    # checkm/VERSION holds the version number and change log shown on the site
-    paths: ['docs/**', 'checkm/VERSION', '.github/workflows/docs.yml']
+    # checkm/VERSION holds the version number and CHANGELOG.md the change log shown on the site
+    paths: ['docs/**', 'checkm/VERSION', 'CHANGELOG.md', '.github/workflows/docs.yml']
   workflow_dispatch:
 
 permissions:
