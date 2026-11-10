@@ -78,6 +78,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Additional information</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../performance.html">Performance</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../python3.html">Migration to Python 3</a></li>
 </ul>
 
@@ -126,13 +127,15 @@ installing CheckM from the master branch, which may be unstable; please install 
 <span id="installing-system-requirements"></span><h2>System requirements<a class="headerlink" href="#system-requirements" title="Link to this heading"></a></h2>
 <p>CheckM is designed to run on Linux. The limiting requirement for CheckM is memory. Inference of
 <a class="reference internal" href="../workflows.html#workflows-lineage"><span class="std std-ref">lineage-specific marker sets</span></a> places genomes in the reference genome tree with
-<a class="reference external" href="https://github.com/cmc-aau/gPlace">gPlace</a>, which requires approximately <strong>12 GB</strong> of memory, most of it for
-the reference tree, so it hardly depends on the number of genomes (12.0 GB for 128 genomes and 12.1 GB for
-1,000 genomes with 64 threads). On machines with less memory, use <code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span></code> (e.g.,
-<code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span> <span class="pre">6G</span></code>) to have gPlace place genomes tile by tile within this limit, which gives identical
-results: 128 genomes can be placed with 6 GB of memory.</p>
-<p>CheckM &lt;= 1.2.10 placed genomes with pplacer, which required approximately 40 GB of memory with the full
-reference genome tree, or less than 16 GB with the reduced tree (<code class="docutils literal notranslate"><span class="pre">--reduced_tree</span></code>, removed in CheckM 1.3.0).</p>
+<a class="reference external" href="https://github.com/cmc-aau/gPlace">gPlace</a>, which requires approximately <strong>18 GB</strong> of memory with 64
+threads. Most of this holds the reference tree, so it depends little on the number of genomes (16.7 GiB for
+128 genomes and 18.2 GiB for 1,000 genomes with 64 threads; see <a class="reference internal" href="../performance.html#performance"><span class="std std-ref">Performance</span></a>). On machines with less
+memory, use <code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span></code> (e.g., <code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span> <span class="pre">6G</span></code>) to have gPlace place genomes tile by
+tile within this limit, which gives identical results. With <code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span> <span class="pre">8G</span></code>, gPlace used 6.2 GiB
+for 1,000 genomes, and the workflow as a whole 8.4 GiB, mostly for calling genes with 64 threads.</p>
+<p>CheckM &lt;= 1.2.10 placed genomes with pplacer, which required approximately 45 GB of memory with the full
+reference genome tree (43 GiB for 128 genomes and 47 GiB for 1,000 genomes with 64 threads), or less than
+16 GB with the reduced tree (<code class="docutils literal notranslate"><span class="pre">--reduced_tree</span></code>, removed in CheckM 1.3.0).</p>
 <p>System requirements are <strong>far more modest</strong> if you plan to make use of
 <a class="reference internal" href="../workflows.html#workflows-taxonomy"><span class="std std-ref">taxonomic-specific marker sets</span></a> or your own
 <a class="reference internal" href="../workflows.html#workflows-custom"><span class="std std-ref">custom marker genes</span></a>, as this bypasses the need to place genomes in the reference

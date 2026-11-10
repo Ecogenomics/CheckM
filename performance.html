@@ -1,0 +1,250 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Performance &mdash; CheckM 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/performance.html" />
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Migration to Python 3" href="python3.html" />
+    <link rel="prev" title="Citing CheckM" href="references.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing/index.html">Installing CheckM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflows.html">Workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="commands/index.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Citing CheckM</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional information</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Performance</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#results">Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="python3.html">Migration to Python 3</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Performance</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/performance.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="performance">
+<span id="id1"></span><h1>Performance<a class="headerlink" href="#performance" title="Link to this heading"></a></h1>
+<p>The run time, memory and disk space used by <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> were measured for CheckM 1.2.7, 1.2.10 and 1.3.0
+on two sets of genomes randomly selected from the non-isolate (metagenome-assembled and single-cell) genomes in
+<a class="reference external" href="https://globdb.org/">GlobDB</a> release 232:</p>
+<ul class="simple">
+<li><p>128 genomes (112 bacteria and 16 archaea)</p></li>
+<li><p>1,000 genomes (875 bacteria and 125 archaea)</p></li>
+</ul>
+<p>CheckM 1.3.0 places genomes in the reference genome tree with <a class="reference external" href="https://github.com/cmc-aau/gPlace">gPlace</a>
+instead of pplacer. CheckM 1.3.0 and 1.2.10 gave identical marker lineages, completeness, contamination and
+strain heterogeneity for all genomes. CheckM 1.2.7 differed for 1 of the 128 genomes and 6 of the 1,000 genomes
+due to bug fixes in CheckM 1.2.8 (see <a class="reference internal" href="changelog.html#changelog"><span class="std std-ref">Change log</span></a>).</p>
+<section id="results">
+<h2>Results<a class="headerlink" href="#results" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 22.0%" />
+<col style="width: 12.0%" />
+<col style="width: 14.0%" />
+<col style="width: 16.0%" />
+<col style="width: 16.0%" />
+<col style="width: 20.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>CheckM version</p></th>
+<th class="head"><p>Genomes</p></th>
+<th class="head"><p>Wall time</p></th>
+<th class="head"><p>Peak memory</p></th>
+<th class="head"><p>Placement memory</p></th>
+<th class="head"><p>Output size</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1.2.7</p></td>
+<td><p>128</p></td>
+<td><p>9.7 min</p></td>
+<td><p>43.1 GiB</p></td>
+<td><p>43.0 GiB</p></td>
+<td><p>0.62 GB</p></td>
+</tr>
+<tr class="row-odd"><td><p>1.2.10</p></td>
+<td><p>128</p></td>
+<td><p>8.5 min</p></td>
+<td><p>43.2 GiB</p></td>
+<td><p>43.1 GiB</p></td>
+<td><p>0.62 GB</p></td>
+</tr>
+<tr class="row-even"><td><p>1.3.0</p></td>
+<td><p>128</p></td>
+<td><p>5.0 min</p></td>
+<td><p>16.8 GiB</p></td>
+<td><p>16.7 GiB</p></td>
+<td><p>0.18 GB</p></td>
+</tr>
+<tr class="row-odd"><td><p>1.2.7</p></td>
+<td><p>1,000</p></td>
+<td><p>41.2 min</p></td>
+<td><p>46.8 GiB</p></td>
+<td><p>46.6 GiB</p></td>
+<td><p>4.46 GB</p></td>
+</tr>
+<tr class="row-even"><td><p>1.2.10</p></td>
+<td><p>1,000</p></td>
+<td><p>24.3 min</p></td>
+<td><p>46.7 GiB</p></td>
+<td><p>46.6 GiB</p></td>
+<td><p>4.43 GB</p></td>
+</tr>
+<tr class="row-odd"><td><p>1.3.0</p></td>
+<td><p>1,000</p></td>
+<td><p>19.6 min</p></td>
+<td><p>18.3 GiB</p></td>
+<td><p>18.2 GiB</p></td>
+<td><p>1.23 GB</p></td>
+</tr>
+<tr class="row-even"><td><p>1.3.0 (<code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span> <span class="pre">8G</span></code>)</p></td>
+<td><p>1,000</p></td>
+<td><p>20.3 min</p></td>
+<td><p>8.4 GiB</p></td>
+<td><p>6.2 GiB</p></td>
+<td><p>1.23 GB</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Peak memory</strong> is the peak memory of the whole workflow.</p></li>
+<li><p><strong>Placement memory</strong> is the peak memory of the step that places genomes in the reference genome tree
+(pplacer for CheckM &lt;= 1.2.10, gPlace for CheckM 1.3.0). This step sets the peak memory of the workflow,
+except when gPlace’s memory is limited with <code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span></code>: the peak (8.4 GiB) is then reached
+while calling genes with 64 threads at the start of the workflow.</p></li>
+<li><p><strong>Output size</strong> is the size of the output folder. Most output files are gzip-compressed from CheckM 1.3.0
+(see <a class="reference internal" href="outputs/files.html#outputs-files"><span class="std std-ref">Output files</span></a>).</p></li>
+</ul>
+<p>Placing genomes in the tree took 3.7 min (128 genomes) and 5.5 min (1,000 genomes) with pplacer, and 14 s and
+19 s with gPlace. Limiting gPlace to 8 GiB of memory increased this to 53 s for 1,000 genomes, as gPlace then
+places genomes tile by tile, and gave identical results.</p>
+<p>With 1,000 genomes, CheckM 1.3.0 takes 19% less time than CheckM 1.2.10 and needs 61% less memory and 72% less
+disk space. The memory used by gPlace depends little on the number of genomes, as most of it holds the
+reference genome tree. The memory used while calling genes and placing genomes increases with the number of
+threads.</p>
+</section>
+<section id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Machine:</strong> 2x AMD EPYC 7402 24-core processors (96 threads) and 502 GB of memory, running Linux.</p></li>
+<li><p><strong>Commands:</strong> <code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">lineage_wf</span> <span class="pre">-t</span> <span class="pre">64</span> <span class="pre">-x</span> <span class="pre">fna</span> <span class="pre">&lt;genome</span> <span class="pre">folder&gt;</span> <span class="pre">&lt;output</span> <span class="pre">folder&gt;</span></code>, with
+<code class="docutils literal notranslate"><span class="pre">--pplacer_threads</span> <span class="pre">64</span></code> for CheckM &lt;= 1.2.10. Runs were made one at a time.</p></li>
+<li><p><strong>Software:</strong> HMMER 3.4, Prodigal 2.6.3, pplacer 1.1.alpha20 (CheckM &lt;= 1.2.10) and gPlace 0.1.0
+(CheckM 1.3.0).</p></li>
+<li><p><strong>Memory:</strong> the memory of all processes started by CheckM was sampled once a second from the memory cgroup
+of the run. This counts memory shared between processes once, which matters as pplacer and gPlace use
+worker processes that share the reference genome tree; the largest single process (as reported by
+<code class="docutils literal notranslate"><span class="pre">/usr/bin/time</span> <span class="pre">-v</span></code>) used 34.9 GiB with pplacer and 12.0 GiB with gPlace. Memory used by the kernel to
+cache files is not included. The memory in use on the whole machine agreed to within 0.2 GiB.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="references.html" class="btn btn-neutral float-left" title="Citing CheckM" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="python3.html" class="btn btn-neutral float-right" title="Migration to Python 3" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

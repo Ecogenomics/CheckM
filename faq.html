@@ -74,6 +74,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Additional information</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Performance</a></li>
 <li class="toctree-l1"><a class="reference internal" href="python3.html">Migration to Python 3</a></li>
 </ul>
 
@@ -106,7 +107,8 @@
 <section id="processing-large-numbers-of-genomes">
 <span id="faq-large-numbers"></span><h2>Processing large numbers of genomes<a class="headerlink" href="#processing-large-numbers-of-genomes" title="Link to this heading"></a></h2>
 <p>If you plan to process a large number of genomes, you may wish to break these into smaller batches.
-With CheckM 1.3.0, running 1,000 genomes at a time with 64 threads takes ~20 minutes and 12 GB of memory.
+With CheckM 1.3.0, running 1,000 genomes at a time with 64 threads takes ~20 minutes and 18 GB of memory
+(see <a class="reference internal" href="performance.html#performance"><span class="std std-ref">Performance</span></a>).
 Exceeding the available memory of your machine will cause CheckM to use swap space (as per any
 program), which will substantially increase the time to process genomes; use <code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span></code> to limit
 the memory used to place genomes in the reference genome tree (see <a class="reference internal" href="installing/index.html#installing-system-requirements"><span class="std std-ref">System requirements</span></a>).

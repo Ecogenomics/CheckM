@@ -27,7 +27,7 @@ CheckM consists of a series of commands in order to support a number of differen
 
 For a full list of options, run ``checkm lineage_wf -h`` (see :ref:`commands/lineage_wf`). To speed up
 processing, use the ``-t`` flag to specify the desired number of threads. Placing genomes in the reference
-genome tree requires approximately 12 GB of memory; on a machine with less memory, use
+genome tree requires approximately 18 GB of memory with 64 threads; on a machine with less memory, use
 ``--gplace_max_memory`` (see :ref:`installing/system_requirements`).
 
 The results are written to the tab-separated file ``quality_report.tsv`` in the output folder (see
@@ -46,13 +46,13 @@ CheckM output directory specified (``lineage.ms.gz`` for ``lineage_wf`` or ``<ta
 Example usage
 -------------
 
-Assume you have putative genomes in the directory ``/home/donovan/bins`` with ``fa`` as the file extension
-and want to store the CheckM results in ``/home/donovan/checkm``. To process these genomes with 8 threads,
+Assume you have putative genomes in the directory ``/example_dir/bins`` with ``fa`` as the file extension
+and want to store the CheckM results in ``/example_dir/checkm``. To process these genomes with 8 threads,
 simply run:
 
 .. code-block:: bash
 
-    checkm lineage_wf -t 8 -x fa /home/donovan/bins /home/donovan/checkm
+    checkm lineage_wf -t 8 -x fa /example_dir/bins /example_dir/checkm
 
 Or, to process files of called genes in amino acid space which have the extension ``faa``, use:
 
@@ -60,5 +60,5 @@ Or, to process files of called genes in amino acid space which have the extensio
 
     checkm lineage_wf --genes -t 8 -x faa <bin folder> <output folder>
 
-The results are written to ``/home/donovan/checkm/quality_report.tsv``. The completeness, contamination, and
+The results are written to ``/example_dir/checkm/quality_report.tsv``. The completeness, contamination, and
 other statistics reported by CheckM are described in :ref:`outputs/qa`.

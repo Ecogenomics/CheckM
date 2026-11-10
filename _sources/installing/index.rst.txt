@@ -28,14 +28,16 @@ System requirements
 
 CheckM is designed to run on Linux. The limiting requirement for CheckM is memory. Inference of
 :ref:`lineage-specific marker sets <workflows/lineage>` places genomes in the reference genome tree with
-`gPlace <https://github.com/cmc-aau/gPlace>`_, which requires approximately **12 GB** of memory, most of it for
-the reference tree, so it hardly depends on the number of genomes (12.0 GB for 128 genomes and 12.1 GB for
-1,000 genomes with 64 threads). On machines with less memory, use ``--gplace_max_memory`` (e.g.,
-``--gplace_max_memory 6G``) to have gPlace place genomes tile by tile within this limit, which gives identical
-results: 128 genomes can be placed with 6 GB of memory.
+`gPlace <https://github.com/cmc-aau/gPlace>`_, which requires approximately **18 GB** of memory with 64
+threads. Most of this holds the reference tree, so it depends little on the number of genomes (16.7 GiB for
+128 genomes and 18.2 GiB for 1,000 genomes with 64 threads; see :ref:`performance`). On machines with less
+memory, use ``--gplace_max_memory`` (e.g., ``--gplace_max_memory 6G``) to have gPlace place genomes tile by
+tile within this limit, which gives identical results. With ``--gplace_max_memory 8G``, gPlace used 6.2 GiB
+for 1,000 genomes, and the workflow as a whole 8.4 GiB, mostly for calling genes with 64 threads.
 
-CheckM <= 1.2.10 placed genomes with pplacer, which required approximately 40 GB of memory with the full
-reference genome tree, or less than 16 GB with the reduced tree (``--reduced_tree``, removed in CheckM 1.3.0).
+CheckM <= 1.2.10 placed genomes with pplacer, which required approximately 45 GB of memory with the full
+reference genome tree (43 GiB for 128 genomes and 47 GiB for 1,000 genomes with 64 threads), or less than
+16 GB with the reduced tree (``--reduced_tree``, removed in CheckM 1.3.0).
 
 System requirements are **far more modest** if you plan to make use of
 :ref:`taxonomic-specific marker sets <workflows/taxonomy>` or your own
