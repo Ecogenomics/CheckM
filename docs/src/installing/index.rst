@@ -68,9 +68,9 @@ CheckM requires the following programs to be
     less memory and time. CheckM <= 1.2.10 requires `pplacer <https://matsen.fhcrc.org/pplacer/>`_ (>= 1.1)
     and ``guppy`` instead.
 
-These programs are installed automatically in the :ref:`Docker <installing/docker>` image, but must be
-installed separately when CheckM is installed with :ref:`pip <installing/pip>`. See
-:ref:`installing/bioconda` for the Bioconda package.
+These programs are installed automatically with the :ref:`Bioconda <installing/bioconda>` package and in
+the :ref:`Docker <installing/docker>` image, but must be installed separately when CheckM is installed with
+:ref:`pip <installing/pip>`.
 
 
 .. _installing/python_dependencies:
