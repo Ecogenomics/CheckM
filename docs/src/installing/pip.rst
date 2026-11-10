@@ -35,12 +35,12 @@ Prodigal:
 * Fedora: ``dnf install hmmer`` (Prodigal needs to be obtained separately, e.g. from Bioconda)
 
 Alternatively, a Conda environment can be set up with the dependencies from Bioconda and CheckM installed
-with ``pip``:
+with ``pip``. This can be done with mamba (recommended) or conda (replace ``mamba`` with ``conda``):
 
 .. code-block:: bash
 
-    conda create -n checkm -c conda-forge -c bioconda python=3.12 hmmer prodigal
-    conda activate checkm
+    mamba create -n checkm -c conda-forge -c bioconda python=3.12 hmmer prodigal
+    mamba activate checkm
     pip3 install checkm-genome gtdb-gplace
 
 Finally, download and configure the :ref:`reference data <installing/reference_data>`.
