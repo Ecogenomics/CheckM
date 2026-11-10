@@ -13,7 +13,7 @@ on two sets of genomes randomly selected from the non-isolate (metagenome-assemb
 CheckM 1.3.0 places genomes in the reference genome tree with `gPlace <https://github.com/cmc-aau/gPlace>`_
 instead of pplacer. CheckM 1.3.0 and 1.2.10 gave identical marker lineages, completeness, contamination and
 strain heterogeneity for all genomes. CheckM 1.2.7 differed for 1 of the 128 genomes and 6 of the 1,000 genomes
-due to bug fixes in CheckM 1.2.8 (see :ref:`changelog`).
+due to bug fixes in CheckM 1.2.8 (see :ref:`quality_estimate_changes`).
 
 
 Results

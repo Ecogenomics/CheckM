@@ -14,10 +14,10 @@ Outside of minor updates to fix compatibility issues with external dependencies 
 
 ## CheckM v1.3 changes
 
-CheckM v1.3 gives the same completeness and contamination estimates as earlier versions, but is faster and uses less memory and disk space. It also changes some arguments and outputs:
+CheckM v1.3 gives the same completeness and contamination estimates as v1.2.8 to v1.2.10, but is faster and uses less memory and disk space. Bug fixes in v1.2.8 slightly changed the estimates of a few genomes (7 of 1,128 test genomes) compared with v1.2.7 and earlier; see [Quality estimate changes](https://ecogenomics.github.io/CheckM/quality_estimate_changes.html). CheckM v1.3 also changes some arguments and outputs:
 
-* **gPlace replaces pplacer:** genomes are placed in the reference tree with [gPlace](https://github.com/cmc-aau/gPlace) (`pip install gtdb-gplace`), which gives the same placements as pplacer. pplacer and guppy are no longer required.
-* **Performance:** on 1,000 genomes with 64 threads, `lineage_wf` takes 19% less time (24 to 20 minutes) and needs 61% less memory (47 to 18 GiB) and 72% less disk space (4.4 to 1.2 GB). See the [performance results](https://ecogenomics.github.io/CheckM/performance.html).
+* **gPlace replaces pplacer:** genomes are placed in the reference tree with [gPlace](https://github.com/cmc-aau/gPlace), which gives the same placements as pplacer. pplacer and guppy are no longer required.
+* **Performance:** on 1,000 genomes with 64 threads, `lineage_wf` takes 19% less time and needs 61% less memory (47 to 18 GiB) and 72% less disk space (4.4 to 1.2 GB). See the [performance results](https://ecogenomics.github.io/CheckM/performance.html).
 * **Results file:** `lineage_wf` and `taxonomy_wf` write their results to `quality_report.tsv` (the `qa -o 2 --tab_table` table) in the output directory, instead of printing a table.
 * **Compressed output:** most output files are gzip-compressed (e.g., `lineage.ms.gz`). CheckM still reads the outputs of earlier versions.
 * **Removed arguments:** `--reduced_tree` and `--pplacer_threads` (`tree`, `lineage_wf`), and `-f/--file` and `--tab_table` (`lineage_wf`, `taxonomy_wf`).
