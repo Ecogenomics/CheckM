@@ -12,6 +12,18 @@ CheckM v2 has been released and can be found [here](https://github.com/chklovski
 
 Outside of minor updates to fix compatibility issues with external dependencies no maintanence is intended for CheckM v1.
 
+## CheckM v1.3 changes
+
+CheckM v1.3 gives the same completeness and contamination estimates as earlier versions, but is faster and uses less memory and disk space. It also changes some arguments and outputs:
+
+* **gPlace replaces pplacer:** genomes are placed in the reference tree with [gPlace](https://github.com/cmc-aau/gPlace) (`pip install gtdb-gplace`), which gives the same placements as pplacer. pplacer and guppy are no longer required.
+* **Performance:** on 1,000 genomes with 64 threads, `lineage_wf` takes 19% less time (24 to 20 minutes) and needs 61% less memory (47 to 18 GiB) and 72% less disk space (4.4 to 1.2 GB). See the [performance results](https://ecogenomics.github.io/CheckM/performance.html).
+* **Results file:** `lineage_wf` and `taxonomy_wf` write their results to `quality_report.tsv` (the `qa -o 2 --tab_table` table) in the output directory, instead of printing a table.
+* **Compressed output:** most output files are gzip-compressed (e.g., `lineage.ms.gz`). CheckM still reads the outputs of earlier versions.
+* **Removed arguments:** `--reduced_tree` and `--pplacer_threads` (`tree`, `lineage_wf`), and `-f/--file` and `--tab_table` (`lineage_wf`, `taxonomy_wf`).
+* **New arguments:** `--gplace_max_memory` limits the memory used by gPlace, and `--rm_tmp_files` removes intermediate files once a workflow has finished.
+* CheckM v1.3 requires Python >= 3.11.
+
 ## Installing and using CheckM
 Please see the CheckM documentation for usage details and installation instructions: https://ecogenomics.github.io/CheckM
 
