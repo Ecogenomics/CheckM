@@ -2,6 +2,14 @@
 
 All published releases of CheckM are listed below, most recent first. Dates are those of the [GitHub release](https://github.com/Ecogenomics/CheckM/releases) or, where there is none, of the upload to [PyPI](https://pypi.org/project/checkm-genome/#history). Some version numbers were not released separately; their changes are listed under the release that first included them.
 
+## 1.3.2 (2026-11-19)
+
+Reduces the memory needed to call genes and fixes occasional high memory usage by `analyze`. Results are unchanged: all outputs of `lineage_wf` and `taxonomy_wf` are identical to CheckM 1.3.1 on 128 test genomes, and `quality_report.tsv` is identical on 1,000 genomes.
+
+- Gene calling (the first step of `tree`, `lineage_wf` and `taxonomy_wf`) no longer starts the largest genomes all at once. Genomes are still processed from largest to smallest, but a genome is only started if the estimated memory of Prodigal fits within a budget set from the sizes of the genomes, and smaller genomes are processed in the meantime. With 64 threads and 1,000 genomes, gene calling needs 5.5 GiB instead of 8.3 GiB and takes 4% longer (about 10 s).
+- `analyze` (including the `analyze` step of `lineage_wf` and `taxonomy_wf`) could occasionally need much more memory: its worker processes sometimes made private copies of the memory of the main process when they ran Python's garbage collector, as fixed for other steps in 1.3.1 (e.g., 10.3 GiB instead of ~3 GiB in one run on 1,000 genomes with 64 threads). Worker processes now keep sharing this memory.
+- Coding density is calculated from the positions of genes instead of an array with 8 bytes per base of each contig, which reduces the memory used by each thread when calling genes and calculating genome statistics (e.g., by ~80 MB for a 10 Mbp genome).
+
 ## 1.3.1 (2026-11-19)
 
 Fixes high memory usage with many genomes and a failure with many novel genomes. Results are unchanged: all outputs of `lineage_wf`, `taxonomy_wf`, every `qa` output format and option, and `tree_qa` are identical to CheckM 1.3.0 on 128 test genomes, and the `qa` results and multi-copy marker alignments are identical on 10,000 genomes.
