@@ -2,7 +2,7 @@
 
 All published releases of CheckM are listed below, most recent first. Dates are those of the [GitHub release](https://github.com/Ecogenomics/CheckM/releases) or, where there is none, of the upload to [PyPI](https://pypi.org/project/checkm-genome/#history). Some version numbers were not released separately; their changes are listed under the release that first included them.
 
-## 1.3.1 (2026-11-20)
+## 1.3.1 (2026-11-19)
 
 Fixes high memory usage with many genomes and a failure with many novel genomes. Results are unchanged: all outputs of `lineage_wf`, `taxonomy_wf`, every `qa` output format and option, and `tree_qa` are identical to CheckM 1.3.0 on 128 test genomes, and the `qa` results and multi-copy marker alignments are identical on 10,000 genomes.
 
