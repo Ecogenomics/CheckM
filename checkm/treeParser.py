@@ -39,7 +39,24 @@ from checkm.util.compression import openFile
 def readTree(treeFile):
     """Read the tree of placed bins (which may be gzip-compressed)."""
     with openFile(treeFile) as f:
-        return dendropy.Tree.get(file=f, schema='newick', rooting="force-rooted", preserve_underscores=True)
+        newick = f.read()
+
+    # DendroPy reads and writes trees recursively. Many bins placed on the same branch
+    # give a deeply nested tree (e.g., a depth of ~1,000 for 10,000 novel genomes), which
+    # exceeds Python's default recursion limit, so the limit is raised to suit the tree.
+    depth = maxDepth = 0
+    for ch in newick:
+        if ch == '(':
+            depth += 1
+            maxDepth = max(maxDepth, depth)
+        elif ch == ')':
+            depth -= 1
+
+    requiredLimit = 10 * maxDepth + 1000
+    if sys.getrecursionlimit() < requiredLimit:
+        sys.setrecursionlimit(requiredLimit)
+
+    return dendropy.Tree.get(data=newick, schema='newick', rooting="force-rooted", preserve_underscores=True)
 
 
 class TreeParser():

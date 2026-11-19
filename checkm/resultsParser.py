@@ -23,9 +23,10 @@ import sys
 import os
 import ast
 import copy
+import itertools
 import multiprocessing as mp
 import concurrent.futures as cf
-from collections import defaultdict
+from collections import defaultdict, deque
 import logging
 
 import checkm.prettytable as prettytable
@@ -36,6 +37,7 @@ from checkm.coverage import Coverage
 from checkm.hmmer import HMMERParser, FormatError, HMMERError
 
 from checkm.util.pfam import sharedPfam
+from checkm.util.forking import frozenHeap
 from checkm.util.seqUtils import readFasta
 from checkm.util.progress import progressBar
 from checkm.util.compression import openFile, resolvePath
@@ -85,10 +87,61 @@ class ResultsParser():
 
         return binStats
 
+    def reportResults(self,
+                      outDir,
+                      binStatsFile,
+                      hmmTableFile,
+                      outputFormat,
+                      aai,
+                      binIdToBinMarkerSets,
+                      bIndividualMarkers,
+                      coverageFile,
+                      bTabTable,
+                      outFile,
+                      bIgnoreThresholds=False,
+                      evalueThreshold=DefaultValues.E_VAL,
+                      lengthThreshold=DefaultValues.LENGTH,
+                      bSkipPseudoGeneCorrection=False,
+                      bSkipAdjCorrection=False,
+                      ):
+        """Parse, report and cache the results of each bin in the output directory.
+
+        This gives the same output as analyseResults(), printSummary() and
+        cacheResults(), but the HMM hits of a bin are discarded once the bin has
+        been reported, so memory does not grow with the number of bins. Results
+        are not retained in self.results.
+        """
+
+        # read bin and sequence stats into dictionaries
+        binStats = self.parseBinStats(outDir, binStatsFile)
+
+        self._checkModels()
+        self.logger.info('Parsing HMM hits to marker genes:')
+
+        resultsManagerArgs = (bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats)
+        binIds = sorted(self.models)
+
+        progress = progressBar(len(binIds), 'Parsing hits', 'bin')
+        try:
+            binResults = self._iterBinResults(outDir, hmmTableFile, binIds, bSkipAdjCorrection, resultsManagerArgs, progress)
+            self._reportBins(binResults, outputFormat, aai, binIdToBinMarkerSets, bIndividualMarkers,
+                             coverageFile, bTabTable, outFile, outDir, cacheDir=outDir)
+        finally:
+            progress.close()
+
+        return binStats
+
     def cacheResults(self, outDir, binIdToBinMarkerSets, bIndividualMarkers):
         # cache critical results to file
         self._writeBinStatsExt(outDir, binIdToBinMarkerSets, bIndividualMarkers)
         self._writeMarkerGeneStats(outDir, binIdToBinMarkerSets, bIndividualMarkers)
+
+    def _checkModels(self):
+        """Exit if the HMM models of the bins are unknown."""
+        if not self.models:
+            self.logger.error(
+                'Models must be parsed before identifying HMM hits.')
+            sys.exit(1)
 
     def parseBinHits(self, outDir,
                      hmmTableFile,
@@ -100,17 +153,27 @@ class ResultsParser():
                      binStats=None):
         """ Parse HMM hits for each bin."""
 
-        if not self.models:
-            self.logger.error(
-                'Models must be parsed before identifying HMM hits.')
-            sys.exit(1)
-
+        self._checkModels()
         self.logger.info('Parsing HMM hits to marker genes:')
 
         resultsManagerArgs = (bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats)
         binIds = list(self.models)
 
         progress = progressBar(len(binIds), 'Parsing hits', 'bin')
+        try:
+            for resultsManager in self._iterBinResults(outDir, hmmTableFile, binIds, bSkipAdjCorrection, resultsManagerArgs, progress):
+                self.results[resultsManager.binId] = resultsManager
+        finally:
+            progress.close()
+
+    def _iterBinResults(self, outDir, hmmTableFile, binIds, bSkipAdjCorrection, resultsManagerArgs, progress):
+        """Parse the HMM hits of bins, yielding the results of each bin in the order given.
+
+        Bins are parsed ahead of the bin being yielded, but only a limited number
+        at a time (a multiple of the number of threads). A caller that discards
+        the results of each bin thus uses memory independent of the number of bins.
+        """
+
         if self.threads > 1 and len(binIds) > 1:
             # bins are parsed in parallel by forked worker processes, which inherit the
             # arguments (incl. the HMM models) rather than having them sent to each process
@@ -119,15 +182,25 @@ class ResultsParser():
 
             ctx = mp.get_context('fork') if 'fork' in mp.get_all_start_methods() else None
             numWorkers = min(self.threads, len(binIds))
-            chunksize = max(1, min(16, len(binIds) // (4 * numWorkers)))
             try:
                 with cf.ProcessPoolExecutor(max_workers=numWorkers, mp_context=ctx) as pool:
                     # results are returned in the order of the bins
-                    for binId, markerHits in zip(binIds, pool.map(_parseBinHitsWorker, binIds, chunksize=chunksize)):
+                    remainingBinIds = iter(binIds)
+                    with frozenHeap():
+                        # all worker processes are started by the first submit
+                        pending = deque([(binId, pool.submit(_parseBinHitsWorker, binId))
+                                         for binId in itertools.islice(remainingBinIds, 2 * numWorkers)])
+                    while pending:
+                        binId, future = pending.popleft()
                         resultsManager = self._resultsManager(binId, *resultsManagerArgs)
-                        resultsManager.markerHits = markerHits
-                        self.results[binId] = resultsManager
+                        resultsManager.markerHits = future.result()
+                        del future
+
+                        for nextBinId in itertools.islice(remainingBinIds, 1):
+                            pending.append((nextBinId, pool.submit(_parseBinHitsWorker, nextBinId)))
+
                         progress.update(1)
+                        yield resultsManager
             except cf.process.BrokenProcessPool:
                 progress.close()
                 self.logger.error('A process parsing HMMER results failed unexpectedly.')
@@ -140,10 +213,8 @@ class ResultsParser():
                 hmmerTableFile = os.path.join(outDir, 'bins', binId, hmmTableFile)
                 self.parseHmmerResults(
                     hmmerTableFile, resultsManager, bSkipAdjCorrection)
-                self.results[binId] = resultsManager
                 progress.update(1)
-
-        progress.close()
+                yield resultsManager
 
     def _resultsManager(self, binId, bIgnoreThresholds, evalueThreshold, lengthThreshold, bSkipPseudoGeneCorrection, binStats):
         """Create results manager for a bin."""
@@ -154,17 +225,24 @@ class ResultsParser():
         return ResultsManager(binId, self.models[binId], bIgnoreThresholds, evalueThreshold,
                               lengthThreshold, bSkipPseudoGeneCorrection)
 
+    def _binStatsExtLine(self, resultsManager, binMarkerSets, bIndividualMarkers):
+        """Extended statistics of a bin, as written to the bin statistics file."""
+        binStatsExt = resultsManager.getSummary(binMarkerSets, bIndividualMarkers, outputFormat=2)
+        binStatsExt.update(resultsManager.geneCopyNumber(binMarkerSets))
+        return resultsManager.binId + '\t' + str(binStatsExt) + '\n'
+
+    def _markerGeneStatsLine(self, resultsManager, binMarkerSets, bIndividualMarkers):
+        """Position of the marker genes of a bin, as written to the marker gene statistics file."""
+        markerGenesHits = resultsManager.getSummary(binMarkerSets, bIndividualMarkers, outputFormat=8)
+        return resultsManager.binId + '\t' + str(markerGenesHits) + '\n'
+
     def _writeBinStatsExt(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
         binStatsExtFile = os.path.join(directory, 'storage', DefaultValues.BIN_STATS_EXT_OUT)
-        
+
         fout = openFile(binStatsExtFile, 'wt')
 
         for binId in sorted(self.results):
-            binStatsExt = self.results[binId].getSummary(
-                binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=2)
-            binStatsExt.update(self.results[binId].geneCopyNumber(
-                binIdToBinMarkerSets[binId]))
-            fout.write(binId + '\t' + str(binStatsExt) + '\n')
+            fout.write(self._binStatsExtLine(self.results[binId], binIdToBinMarkerSets[binId], bIndividualMarkers))
         fout.close()
 
     def _writeMarkerGeneStats(self, directory, binIdToBinMarkerSets, bIndividualMarkers):
@@ -173,9 +251,7 @@ class ResultsParser():
         fout = openFile(markerGenesFile, 'wt')
 
         for binId in sorted(self.results):
-            markerGenesHits = self.results[binId].getSummary(
-                binIdToBinMarkerSets[binId], bIndividualMarkers, outputFormat=8)
-            fout.write(binId + '\t' + str(markerGenesHits) + '\n')
+            fout.write(self._markerGeneStatsLine(self.results[binId], binIdToBinMarkerSets[binId], bIndividualMarkers))
         fout.close()
 
     def parseBinStats(self, resultsFolder, binStatsFile):
@@ -304,50 +380,75 @@ class ResultsParser():
         return header
 
     def printSummary(self, outputFormat, aai, binIdToBinMarkerSets, bIndividualMarkers, coverageFile, bTabTable, outFile, anaFolder):
-        # redirect output
-        oldStdOut = reassignStdOut(outFile)
+        binResults = (self.results[binId] for binId in sorted(self.results.keys()))
+        self._reportBins(binResults, outputFormat, aai, binIdToBinMarkerSets, bIndividualMarkers, coverageFile, bTabTable, outFile, anaFolder)
+
+    def _reportBins(self, binResults, outputFormat, aai, binIdToBinMarkerSets, bIndividualMarkers, coverageFile, bTabTable, outFile, anaFolder, cacheDir=None):
+        """Print summary of the results of each bin, which must be ordered by bin ID.
+
+        If cacheDir is given, critical results of each bin are also cached to file
+        (as by cacheResults), so the bins only need to be processed once.
+        """
 
         coverageBinProfiles = None
         if coverageFile:
             coverage = Coverage(1)
             coverageBinProfiles = coverage.binProfiles(coverageFile)
 
-        prettyTableFormats = [1, 2, 3, 9]
+        binStatsExtOut = None
+        markerGeneStatsOut = None
+        if cacheDir:
+            binStatsExtOut = openFile(os.path.join(cacheDir, 'storage', DefaultValues.BIN_STATS_EXT_OUT), 'wt')
+            markerGeneStatsOut = openFile(os.path.join(cacheDir, 'storage', DefaultValues.MARKER_GENE_STATS), 'wt')
 
-        header = self._getHeader(outputFormat, binIdToBinMarkerSets[list(binIdToBinMarkerSets.keys())[0]], coverageBinProfiles, bTabTable)
+        # redirect output
+        oldStdOut = reassignStdOut(outFile)
+        try:
+            prettyTableFormats = [1, 2, 3, 9]
 
-        if bTabTable or outputFormat not in prettyTableFormats:
-            bTabTable = True
-            pTable = None
+            header = self._getHeader(outputFormat, binIdToBinMarkerSets[list(binIdToBinMarkerSets.keys())[0]], coverageBinProfiles, bTabTable)
 
-            if header != None:
-                print('\t'.join(header))
-        else:
-            pTable = prettytable.PrettyTable(header)
-            pTable.float_format = '.2'
-            pTable.align = 'c'
-            pTable.align[header[0]] = 'l'
-            pTable.hrules = prettytable.FRAME
-            pTable.vrules = prettytable.NONE
+            if bTabTable or outputFormat not in prettyTableFormats:
+                bTabTable = True
+                pTable = None
 
-        seqsReported = 0
-        for binId in sorted(self.results.keys()):
-            seqsReported += self.results[binId].printSummary(
-                outputFormat, aai, binIdToBinMarkerSets[binId], bIndividualMarkers, coverageBinProfiles, pTable, anaFolder)
-
-        if outputFormat in [6, 7] and seqsReported == 0:
-            print('[No marker genes satisfied the reporting criteria.]')
-
-        if not bTabTable:
-            if outputFormat in [1, 2]:
-                print(pTable.get_string(sortby='Completeness', reversesort=True))
+                if header != None:
+                    print('\t'.join(header))
             else:
-                # only print if there are rows
-                if pTable.get_string(print_empty=False):
-                    print(pTable.get_string(print_empty=False))
+                pTable = prettytable.PrettyTable(header)
+                pTable.float_format = '.2'
+                pTable.align = 'c'
+                pTable.align[header[0]] = 'l'
+                pTable.hrules = prettytable.FRAME
+                pTable.vrules = prettytable.NONE
 
-        # restore stdout
-        restoreStdOut(outFile, oldStdOut)
+            seqsReported = 0
+            for resultsManager in binResults:
+                binMarkerSets = binIdToBinMarkerSets[resultsManager.binId]
+                seqsReported += resultsManager.printSummary(
+                    outputFormat, aai, binMarkerSets, bIndividualMarkers, coverageBinProfiles, pTable, anaFolder)
+
+                if cacheDir:
+                    binStatsExtOut.write(self._binStatsExtLine(resultsManager, binMarkerSets, bIndividualMarkers))
+                    markerGeneStatsOut.write(self._markerGeneStatsLine(resultsManager, binMarkerSets, bIndividualMarkers))
+
+            if outputFormat in [6, 7] and seqsReported == 0:
+                print('[No marker genes satisfied the reporting criteria.]')
+
+            if not bTabTable:
+                if outputFormat in [1, 2]:
+                    print(pTable.get_string(sortby='Completeness', reversesort=True))
+                else:
+                    # only print if there are rows
+                    if pTable.get_string(print_empty=False):
+                        print(pTable.get_string(print_empty=False))
+        finally:
+            # restore stdout
+            restoreStdOut(outFile, oldStdOut)
+
+            if cacheDir:
+                binStatsExtOut.close()
+                markerGeneStatsOut.close()
 
 
 class ResultsManager():
