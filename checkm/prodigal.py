@@ -21,12 +21,11 @@
 
 import os
 import sys
+import bisect
 import subprocess
 import logging
 import shutil
 import tempfile
-
-import numpy as np
 
 from checkm.defaultValues import DefaultValues
 from checkm.common import checkFileExists
@@ -273,9 +272,12 @@ class ProdigalGeneFeatureParser():
 
         self._parseGFF(filename)
 
-        self.codingBaseMasks = {}
+        # coding bases are counted from the merged intervals of the genes on each
+        # sequence, rather than from a per-base mask, which needed 8 bytes per base
+        # (e.g., ~80 MB for a 10 Mbp genome in each of the parallel worker processes)
+        self.codingIntervals = {}
         for seqId in self.genes:
-            self.codingBaseMasks[seqId] = self._buildCodingBaseMask(seqId)
+            self.codingIntervals[seqId] = self._mergeCodingIntervals(seqId)
 
     def _parseGFF(self, filename):
         """Parse genes from GFF file."""
@@ -311,27 +313,63 @@ class ProdigalGeneFeatureParser():
                 self.genes[seqId][geneId] = [start, end]
                 self.lastCodingBase[seqId] = max(self.lastCodingBase[seqId], end)
 
-    def _buildCodingBaseMask(self, seqId):
-        """Build mask indicating which bases in a sequence are coding."""
+    def _mergeCodingIntervals(self, seqId):
+        """Merge the genes of a sequence into disjoint coding intervals.
 
-        # safe way to calculate coding bases as it accounts
-        # for the potential of overlapping genes; indices adjusted
-        # to account for GFF file using 1-based indexing
-        codingBaseMask = np.zeros(self.lastCodingBase[seqId])
-        for pos in self.genes[seqId].values():
-            codingBaseMask[pos[0]-1:pos[1]] = 1
+        Overlapping genes are merged so that their shared bases are counted
+        once. Returns the 0-based, half-open [start, end) intervals in order
+        as lists of starts and ends, and the cumulative length of the
+        intervals before each interval (cumLen[i] = length of intervals 0..i-1).
+        """
 
-        return codingBaseMask
+        starts = []
+        ends = []
+        # GFF positions are 1-based and inclusive
+        for s, e in sorted((pos[0] - 1, pos[1]) for pos in self.genes[seqId].values()):
+            if s >= e:
+                continue
+
+            if ends and s <= ends[-1]:
+                # overlaps or abuts the previous interval
+                ends[-1] = max(ends[-1], e)
+            else:
+                starts.append(s)
+                ends.append(e)
+
+        cumLen = [0]
+        for s, e in zip(starts, ends):
+            cumLen.append(cumLen[-1] + e - s)
+
+        return starts, ends, cumLen
 
     def codingBases(self, seqId, start=0, end=None):
-        """Calculate number of coding bases in sequence between [start, end)."""
+        """Calculate number of coding bases in sequence between [start, end).
+
+        Positions are 0-based; start and end must not be negative.
+        """
 
         # check if sequence has any genes
         if seqId not in self.genes:
             return 0
 
         # set end to last coding base if not specified
-        if end == None:
+        if end is None:
             end = self.lastCodingBase[seqId]
 
-        return np.sum(self.codingBaseMasks[seqId][start:end])
+        if end <= start:
+            return 0
+
+        starts, ends, cumLen = self.codingIntervals[seqId]
+
+        # intervals overlapping [start, end) are those with index first..last-1
+        first = bisect.bisect_right(ends, start)
+        last = bisect.bisect_left(starts, end)
+        if first >= last:
+            return 0
+
+        # length of these intervals, excluding any part before start or after end
+        codingBases = cumLen[last] - cumLen[first]
+        codingBases -= max(0, start - starts[first])
+        codingBases -= max(0, ends[last - 1] - end)
+
+        return codingBases
