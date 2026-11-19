@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Change log &mdash; CheckM 1.3.1 documentation</title>
+  <title>Change log &mdash; CheckM 1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=05c9bb44" />
@@ -16,7 +16,7 @@
     <link rel="canonical" href="https://ecogenomics.github.io/CheckM/changelog.html" />
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=bb516dca"></script>
+      <script src="_static/documentation_options.js?v=8ca9e7a0"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
@@ -61,58 +61,59 @@
 <p class="caption" role="heading"><span class="caption-text">About</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Change log</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#id1">1.3.1 (2026-11-19)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id2">1.3.0 (2026-11-10)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id3">1.2.10 (2026-11-09)</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id4">1.2.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">1.3.2 (2026-11-19)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">1.3.1 (2026-11-19)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">1.3.0 (2026-11-10)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">1.2.10 (2026-11-09)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id5">1.2.10</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#not-released-separately">1.2.9 (not released separately)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id5">1.2.8 (not released separately)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id6">1.2.8 (not released separately)</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#id6">1.2.7 (2026-11-08)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id7">1.2.5 (2026-03-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id8">1.2.4 (2025-06-12)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id9">1.2.3 (2024-06-25)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id10">1.2.2 (2022-10-31)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id11">1.2.1 (2022-08-03)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id12">1.2.0 (2022-04-30)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id13">1.1.11 (2022-04-24)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id14">1.1.10 (2022-04-21)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id15">1.1.9 (2022-04-14)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id16">1.1.8 (2022-04-10)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id17">1.1.7 (2022-04-10)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id18">1.1.6 (2022-04-09)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id19">1.1.5 (2022-04-09)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id20">1.1.4 (2022-04-09)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id21">1.1.3 (2020-07-09)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id22">1.1.2 (2019-12-22)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id23">1.1.1 (2019-12-04)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id24">1.1.0 (2019-12-01)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id25">1.0.18 (2019-08-11)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id26">1.0.17 (2019-08-10)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id27">1.0.16 (2019-08-08)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id28">1.0.15 (2019-08-08)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id29">1.0.13 (2019-01-07)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id30">1.0.12 (2018-09-14)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id31">1.0.11 (2018-01-03)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id32">1.0.10 (2017-12-22)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id33">1.0.9 (2017-12-22)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id34">1.0.8 (2017-11-09)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id35">1.0.7 (2016-09-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id36">1.0.6 (2016-04-23)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id37">1.0.5 (2015-11-03)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id38">1.0.4 (2015-09-11)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id39">1.0.3 (2015-06-29)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id40">1.0.2 (2015-06-23)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id41">1.0.1 (2015-06-12)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id42">1.0.0 (2015-06-11)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id43">0.9.7 (2015-01-16)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id44">0.9.6 (2014-12-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id45">0.9.5 (2014-11-20)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id46">0.9.4 (2014-09-09)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id47">0.9.2 (2014-09-06)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id48">0.9.1 (2014-09-05)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id49">0.9.0 (2014-09-04)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id7">1.2.7 (2026-11-08)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id8">1.2.5 (2026-03-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id9">1.2.4 (2025-06-12)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id10">1.2.3 (2024-06-25)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id11">1.2.2 (2022-10-31)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id12">1.2.1 (2022-08-03)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id13">1.2.0 (2022-04-30)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id14">1.1.11 (2022-04-24)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id15">1.1.10 (2022-04-21)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id16">1.1.9 (2022-04-14)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id17">1.1.8 (2022-04-10)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id18">1.1.7 (2022-04-10)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id19">1.1.6 (2022-04-09)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id20">1.1.5 (2022-04-09)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id21">1.1.4 (2022-04-09)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id22">1.1.3 (2020-07-09)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id23">1.1.2 (2019-12-22)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id24">1.1.1 (2019-12-04)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id25">1.1.0 (2019-12-01)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id26">1.0.18 (2019-08-11)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id27">1.0.17 (2019-08-10)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id28">1.0.16 (2019-08-08)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id29">1.0.15 (2019-08-08)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id30">1.0.13 (2019-01-07)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id31">1.0.12 (2018-09-14)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id32">1.0.11 (2018-01-03)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id33">1.0.10 (2017-12-22)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id34">1.0.9 (2017-12-22)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id35">1.0.8 (2017-11-09)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id36">1.0.7 (2016-09-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id37">1.0.6 (2016-04-23)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id38">1.0.5 (2015-11-03)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id39">1.0.4 (2015-09-11)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id40">1.0.3 (2015-06-29)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id41">1.0.2 (2015-06-23)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id42">1.0.1 (2015-06-12)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id43">1.0.0 (2015-06-11)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id44">0.9.7 (2015-01-16)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id45">0.9.6 (2014-12-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id46">0.9.5 (2014-11-20)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id47">0.9.4 (2014-09-09)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id48">0.9.2 (2014-09-06)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id49">0.9.1 (2014-09-05)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id50">0.9.0 (2014-09-04)</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="references.html">Citing CheckM</a></li>
@@ -152,15 +153,24 @@
 <span id="changelog"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>All published releases of CheckM are listed below, most recent first. Dates are those of the <a class="reference external" href="https://github.com/Ecogenomics/CheckM/releases">GitHub release</a> or, where there is none, of the upload to <a class="reference external" href="https://pypi.org/project/checkm-genome/#history">PyPI</a>. Some version numbers were not released separately; their changes are listed under the release that first included them.</p>
 <section id="id1">
-<h2>1.3.1 (2026-11-19)<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<h2>1.3.2 (2026-11-19)<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<p>Reduces the memory needed to call genes and fixes occasional high memory usage by <code class="docutils literal notranslate"><span class="pre">analyze</span></code>. Results are unchanged: all outputs of <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> and <code class="docutils literal notranslate"><span class="pre">taxonomy_wf</span></code> are identical to CheckM 1.3.1 on 128 test genomes, and <code class="docutils literal notranslate"><span class="pre">quality_report.tsv</span></code> is identical on 1,000 genomes.</p>
+<ul class="simple">
+<li><p>Gene calling (the first step of <code class="docutils literal notranslate"><span class="pre">tree</span></code>, <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> and <code class="docutils literal notranslate"><span class="pre">taxonomy_wf</span></code>) no longer starts the largest genomes all at once. Genomes are still processed from largest to smallest, but a genome is only started if the estimated memory of Prodigal fits within a budget set from the sizes of the genomes, and smaller genomes are processed in the meantime. With 64 threads and 1,000 genomes, gene calling needs 5.5 GiB instead of 8.3 GiB and takes 4% longer (about 10 s).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">analyze</span></code> (including the <code class="docutils literal notranslate"><span class="pre">analyze</span></code> step of <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> and <code class="docutils literal notranslate"><span class="pre">taxonomy_wf</span></code>) could occasionally need much more memory: its worker processes sometimes made private copies of the memory of the main process when they ran Python’s garbage collector, as fixed for other steps in 1.3.1 (e.g., 10.3 GiB instead of ~3 GiB in one run on 1,000 genomes with 64 threads). Worker processes now keep sharing this memory.</p></li>
+<li><p>Coding density is calculated from the positions of genes instead of an array with 8 bytes per base of each contig, which reduces the memory used by each thread when calling genes and calculating genome statistics (e.g., by ~80 MB for a 10 Mbp genome).</p></li>
+</ul>
+</section>
+<section id="id2">
+<h2>1.3.1 (2026-11-19)<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
 <p>Fixes high memory usage with many genomes and a failure with many novel genomes. Results are unchanged: all outputs of <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code>, <code class="docutils literal notranslate"><span class="pre">taxonomy_wf</span></code>, every <code class="docutils literal notranslate"><span class="pre">qa</span></code> output format and option, and <code class="docutils literal notranslate"><span class="pre">tree_qa</span></code> are identical to CheckM 1.3.0 on 128 test genomes, and the <code class="docutils literal notranslate"><span class="pre">qa</span></code> results and multi-copy marker alignments are identical on 10,000 genomes.</p>
 <ul class="simple">
 <li><p>Less memory is needed by <code class="docutils literal notranslate"><span class="pre">analyze</span></code> (the “Aligning marker genes with multiple hits in a single bin” and genome statistics steps), <code class="docutils literal notranslate"><span class="pre">qa</span></code> and the <code class="docutils literal notranslate"><span class="pre">qa</span></code> step of <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> and <code class="docutils literal notranslate"><span class="pre">taxonomy_wf</span></code>. Previously, the HMM hits of all genomes were read before the work was split across threads, and each thread made its own copy of this data, so memory grew with the number of genomes multiplied by the number of threads. HMM hits are now read and reported one genome at a time, marker sets and HMM models are shared between genomes, and threads no longer copy the data of the main process. With 64 threads and 10,000 genomes, the multi-hit alignment step needs 3.9 GiB instead of about 40 GiB and <code class="docutils literal notranslate"><span class="pre">qa</span></code> needs 3.9 GiB instead of 29.5 GiB. With 32 threads and 1,000 genomes, the multi-hit alignment step needs 3.3 GiB instead of 35 GiB.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">lineage_set</span></code> and <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> no longer fail with a <code class="docutils literal notranslate"><span class="pre">RecursionError</span></code> when many genomes are placed on the same branch of the reference tree (e.g., 10,000 novel genomes gave a tree nested ~1,000 levels deep).</p></li>
 </ul>
 </section>
-<section id="id2">
-<h2>1.3.0 (2026-11-10)<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<section id="id3">
+<h2>1.3.0 (2026-11-10)<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
 <p><strong>CheckM 1.3.0 changes some arguments and outputs, so scripts that run CheckM or read its output files may need to be updated.</strong> Completeness and contamination estimates are identical to CheckM 1.2.8 to 1.2.10 on all 1,128 test genomes. On 1,000 genomes with 64 threads, <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> takes 19% less time and needs 61% less memory (47 to 18 GiB) and 72% less disk space (4.4 to 1.2 GB). See the <a class="reference external" href="https://ecogenomics.github.io/CheckM/performance.html">performance results</a> and the <a class="reference external" href="https://ecogenomics.github.io/CheckM/quality_estimate_changes.html">quality estimate changes</a> compared with CheckM 1.2.7 and earlier.</p>
 <ul class="simple">
 <li><p>pplacer has been replaced by <a class="reference external" href="https://github.com/cmc-aau/gPlace">gPlace</a> (PyPI: <code class="docutils literal notranslate"><span class="pre">gtdb-gplace</span></code>), which gives the same placements as pplacer, bit for bit, using less memory and time. gPlace &gt;= 0.1.0 must be on the system path (it requires Python &gt;= 3.12 and can be installed in a separate environment), and pplacer and guppy are no longer required.</p></li>
@@ -186,11 +196,11 @@
 <li><p>New <code class="docutils literal notranslate"><span class="pre">--rm_tmp_files</span></code> option for <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> and <code class="docutils literal notranslate"><span class="pre">taxonomy_wf</span></code> removes the <code class="docutils literal notranslate"><span class="pre">bins</span></code> and <code class="docutils literal notranslate"><span class="pre">storage</span></code> directories once the quality report has been written (other commands, such as <code class="docutils literal notranslate"><span class="pre">qa</span></code> and the plots, need these directories).</p></li>
 </ul>
 </section>
-<section id="id3">
-<h2>1.2.10 (2026-11-09)<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
-<p>This release includes the changes from 1.2.8 and 1.2.9, which were not released separately. <strong>Completeness and contamination estimates can change compared with 1.2.7, but changes are expected to be rare and small.</strong> On 1,000 randomly selected GlobDB MAGs, only 6 genomes (0.6%) changed: completeness by +0.03 for one genome and contamination by between -0.18 and +0.10 for five. No marker lineage or MIMAG quality tier changed. These changes come from two 1.2.8 bug fixes (see <a class="reference external" href="https://github.com/Ecogenomics/CheckM/pull/423">#423</a>). The 1.2.9 and 1.2.10 changes do not affect results.</p>
 <section id="id4">
-<h3>1.2.10<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<h2>1.2.10 (2026-11-09)<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
+<p>This release includes the changes from 1.2.8 and 1.2.9, which were not released separately. <strong>Completeness and contamination estimates can change compared with 1.2.7, but changes are expected to be rare and small.</strong> On 1,000 randomly selected GlobDB MAGs, only 6 genomes (0.6%) changed: completeness by +0.03 for one genome and contamination by between -0.18 and +0.10 for five. No marker lineage or MIMAG quality tier changed. These changes come from two 1.2.8 bug fixes (see <a class="reference external" href="https://github.com/Ecogenomics/CheckM/pull/423">#423</a>). The 1.2.9 and 1.2.10 changes do not affect results.</p>
+<section id="id5">
+<h3>1.2.10<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Prodigal’s error output is now captured and included in the error message when Prodigal fails (e.g., <code class="docutils literal notranslate"><span class="pre">exit</span> <span class="pre">code</span> <span class="pre">18:</span> <span class="pre">Error:</span> <span class="pre">no</span> <span class="pre">input</span> <span class="pre">sequences</span> <span class="pre">to</span> <span class="pre">analyze.</span></code>). Results are unchanged.</p></li>
 </ul>
@@ -207,8 +217,8 @@
 <li><p>README badges are cached for a shorter time.</p></li>
 </ul>
 </section>
-<section id="id5">
-<h3>1.2.8 (not released separately)<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<section id="id6">
+<h3>1.2.8 (not released separately)<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
 <p>Bug fixes.</p>
 <ul class="simple">
 <li><p>Fix to the Pfam same-clan filter, which treated Pfams without a clan as members of the same clan. This can slightly change completeness and contamination estimates.</p></li>
@@ -231,8 +241,8 @@
 </ul>
 </section>
 </section>
-<section id="id6">
-<h2>1.2.7 (2026-11-08)<a class="headerlink" href="#id6" title="Link to this heading"></a></h2>
+<section id="id7">
+<h2>1.2.7 (2026-11-08)<a class="headerlink" href="#id7" title="Link to this heading"></a></h2>
 <p>This release includes the changes from 1.2.6, which was not released separately.</p>
 <ul class="simple">
 <li><p>Fix to crash in <code class="docutils literal notranslate"><span class="pre">BinStatistics.sequenceStats</span></code> when no called genes are available.</p></li>
@@ -241,120 +251,120 @@
 <li><p>Fix to the <code class="docutils literal notranslate"><span class="pre">coverage</span></code> command dropping bins that contain sequences with the same ID as sequences in other bins (<a class="reference external" href="https://github.com/Ecogenomics/CheckM/issues/386">#386</a>). <em>(1.2.6)</em></p></li>
 </ul>
 </section>
-<section id="id7">
-<h2>1.2.5 (2026-03-02)<a class="headerlink" href="#id7" title="Link to this heading"></a></h2>
+<section id="id8">
+<h2>1.2.5 (2026-03-02)<a class="headerlink" href="#id8" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fix to regular expression syntax warnings in <code class="docutils literal notranslate"><span class="pre">prettytable.py</span></code>.</p></li>
 <li><p>Fix to use of setuptools in <code class="docutils literal notranslate"><span class="pre">checkmData.py</span></code> (thanks to meereeum).</p></li>
 <li><p>Fix to pysam import in <code class="docutils literal notranslate"><span class="pre">coverage.py</span></code> (thanks to baptwr).</p></li>
 </ul>
 </section>
-<section id="id8">
-<h2>1.2.4 (2025-06-12)<a class="headerlink" href="#id8" title="Link to this heading"></a></h2>
+<section id="id9">
+<h2>1.2.4 (2025-06-12)<a class="headerlink" href="#id9" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed issue with Prodigal not trying the metagenomic model (<code class="docutils literal notranslate"><span class="pre">-p</span> <span class="pre">meta</span></code>) for failed genomes (fix provided by noelle-haddad).</p></li>
 <li><p>Added Dockerfile provided by Louis-MG.</p></li>
 </ul>
 </section>
-<section id="id9">
-<h2>1.2.3 (2024-06-25)<a class="headerlink" href="#id9" title="Link to this heading"></a></h2>
+<section id="id10">
+<h2>1.2.3 (2024-06-25)<a class="headerlink" href="#id10" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Changes to support numpy 2.0.</p></li>
 <li><p>Better handling of non-zero return codes from external programs.</p></li>
 </ul>
 </section>
-<section id="id10">
-<h2>1.2.2 (2022-10-31)<a class="headerlink" href="#id10" title="Link to this heading"></a></h2>
+<section id="id11">
+<h2>1.2.2 (2022-10-31)<a class="headerlink" href="#id11" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Support gzipped protein files as input (thanks to alienzj for the PR).</p></li>
 </ul>
 </section>
-<section id="id11">
-<h2>1.2.1 (2022-08-03)<a class="headerlink" href="#id11" title="Link to this heading"></a></h2>
+<section id="id12">
+<h2>1.2.1 (2022-08-03)<a class="headerlink" href="#id12" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Renamed private classes to resolve a multiprocessing <code class="docutils literal notranslate"><span class="pre">AttributeError</span></code> (thanks to misialq for the PR).</p></li>
 </ul>
 </section>
-<section id="id12">
-<h2>1.2.0 (2022-04-30)<a class="headerlink" href="#id12" title="Link to this heading"></a></h2>
+<section id="id13">
+<h2>1.2.0 (2022-04-30)<a class="headerlink" href="#id13" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Modified how bin IDs are identified to improve output tables when processing compressed files (e.g., the output bin ID will be <code class="docutils literal notranslate"><span class="pre">my_bin</span></code> instead of <code class="docutils literal notranslate"><span class="pre">my_bin.fna</span></code>).</p></li>
 </ul>
 </section>
-<section id="id13">
-<h2>1.1.11 (2022-04-24)<a class="headerlink" href="#id13" title="Link to this heading"></a></h2>
+<section id="id14">
+<h2>1.1.11 (2022-04-24)<a class="headerlink" href="#id14" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed error with <code class="docutils literal notranslate"><span class="pre">inverse_transformed</span></code> being deprecated in newer versions of Matplotlib.</p></li>
 <li><p>Updated minimum required versions of Python packages.</p></li>
 </ul>
 </section>
-<section id="id14">
-<h2>1.1.10 (2022-04-21)<a class="headerlink" href="#id14" title="Link to this heading"></a></h2>
+<section id="id15">
+<h2>1.1.10 (2022-04-21)<a class="headerlink" href="#id15" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed bug with missing <code class="docutils literal notranslate"><span class="pre">bCalledGenes</span></code> flag that was impacting a number of commands.</p></li>
 </ul>
 </section>
-<section id="id15">
-<h2>1.1.9 (2022-04-14)<a class="headerlink" href="#id15" title="Link to this heading"></a></h2>
+<section id="id16">
+<h2>1.1.9 (2022-04-14)<a class="headerlink" href="#id16" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed support for gzipped input FASTA files.</p></li>
 </ul>
 </section>
-<section id="id16">
-<h2>1.1.8 (2022-04-10)<a class="headerlink" href="#id16" title="Link to this heading"></a></h2>
+<section id="id17">
+<h2>1.1.8 (2022-04-10)<a class="headerlink" href="#id17" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Updated <code class="docutils literal notranslate"><span class="pre">setup.py</span></code> to include a long description and fix the PyPI URL.</p></li>
 </ul>
 </section>
-<section id="id17">
-<h2>1.1.7 (2022-04-10)<a class="headerlink" href="#id17" title="Link to this heading"></a></h2>
+<section id="id18">
+<h2>1.1.7 (2022-04-10)<a class="headerlink" href="#id18" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Added Jie Zhu’s (alienzj) PR to allow input files to be specified via a file.</p></li>
 <li><p>Added Jeremy Jacobson’s (jjacobson95) PR to fix a prettytable import issue.</p></li>
 <li><p>Added fix by Jie Li (jili6t) regarding more stringent matching of bin extensions.</p></li>
 </ul>
 </section>
-<section id="id18">
-<h2>1.1.6 (2022-04-09)<a class="headerlink" href="#id18" title="Link to this heading"></a></h2>
+<section id="id19">
+<h2>1.1.6 (2022-04-09)<a class="headerlink" href="#id19" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Allow the CheckM data path to be set through the <code class="docutils literal notranslate"><span class="pre">CHECKM_DATA_PATH</span></code> environment variable.</p></li>
 </ul>
 </section>
-<section id="id19">
-<h2>1.1.5 (2022-04-09)<a class="headerlink" href="#id19" title="Link to this heading"></a></h2>
+<section id="id20">
+<h2>1.1.5 (2022-04-09)<a class="headerlink" href="#id20" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Small fix to maxibor’s PR to allow the path to the <code class="docutils literal notranslate"><span class="pre">DATA_CONFIG</span></code> file to be set.</p></li>
 </ul>
 </section>
-<section id="id20">
-<h2>1.1.4 (2022-04-09)<a class="headerlink" href="#id20" title="Link to this heading"></a></h2>
+<section id="id21">
+<h2>1.1.4 (2022-04-09)<a class="headerlink" href="#id21" title="Link to this heading"></a></h2>
 <p>Released on PyPI only.</p>
 <ul class="simple">
 <li><p>Added Maxime Borry’s (maxibor) PR to allow the path to the <code class="docutils literal notranslate"><span class="pre">DATA_CONFIG</span></code> file to be set.</p></li>
 </ul>
 </section>
-<section id="id21">
-<h2>1.1.3 (2020-07-09)<a class="headerlink" href="#id21" title="Link to this heading"></a></h2>
+<section id="id22">
+<h2>1.1.3 (2020-07-09)<a class="headerlink" href="#id22" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed error resulting from incorrect GFF files produced by Prodigal on FASTA files with Windows-style line endings.</p></li>
 <li><p>Replaced usage of the <code class="docutils literal notranslate"><span class="pre">normed</span></code> keyword with <code class="docutils literal notranslate"><span class="pre">density</span></code> as required for Matplotlib &gt;= 3.2.0.</p></li>
 </ul>
 </section>
-<section id="id22">
-<h2>1.1.2 (2019-12-22)<a class="headerlink" href="#id22" title="Link to this heading"></a></h2>
+<section id="id23">
+<h2>1.1.2 (2019-12-22)<a class="headerlink" href="#id23" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Removed erroneous error message when setting the root of the CheckM reference data.</p></li>
 <li><p>Fixed infinite loop when trying to install the CheckM reference data to a directory without write permission.</p></li>
 </ul>
 </section>
-<section id="id23">
-<h2>1.1.1 (2019-12-04)<a class="headerlink" href="#id23" title="Link to this heading"></a></h2>
+<section id="id24">
+<h2>1.1.1 (2019-12-04)<a class="headerlink" href="#id24" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixes a few legacy Python 2 syntax issues (thanks to Sebastian Jaenicke).</p></li>
 </ul>
 </section>
-<section id="id24">
-<h2>1.1.0 (2019-12-01)<a class="headerlink" href="#id24" title="Link to this heading"></a></h2>
+<section id="id25">
+<h2>1.1.0 (2019-12-01)<a class="headerlink" href="#id25" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Migration to Python 3. Massive thanks to baudrly, vinisalazar and asafpr for the initial Python 2 to 3 port.</p></li>
 <li><p>Fixed bug in <code class="docutils literal notranslate"><span class="pre">ssu_finder</span></code> that on rare occasions caused an SSU sequence to be reported more than once.</p></li>
@@ -363,27 +373,27 @@
 <li><p>Fixed CLI issue with the <code class="docutils literal notranslate"><span class="pre">outliers</span></code> command.</p></li>
 </ul>
 </section>
-<section id="id25">
-<h2>1.0.18 (2019-08-11)<a class="headerlink" href="#id25" title="Link to this heading"></a></h2>
+<section id="id26">
+<h2>1.0.18 (2019-08-11)<a class="headerlink" href="#id26" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fix to the command-line interface of <code class="docutils literal notranslate"><span class="pre">bin_qa_plot</span></code> (thanks to Finesim97 for the PR).</p></li>
 </ul>
 </section>
-<section id="id26">
-<h2>1.0.17 (2019-08-10)<a class="headerlink" href="#id26" title="Link to this heading"></a></h2>
+<section id="id27">
+<h2>1.0.17 (2019-08-10)<a class="headerlink" href="#id27" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed bug with the CLI of plotting commands introduced in 1.0.16.</p></li>
 </ul>
 </section>
-<section id="id27">
-<h2>1.0.16 (2019-08-08)<a class="headerlink" href="#id27" title="Link to this heading"></a></h2>
+<section id="id28">
+<h2>1.0.16 (2019-08-08)<a class="headerlink" href="#id28" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Made <code class="docutils literal notranslate"><span class="pre">~/.checkm</span></code> the default directory for the CheckM reference data.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">data</span> <span class="pre">setRoot</span></code> is no longer interactive and the directory must be given on the command line.</p></li>
 </ul>
 </section>
-<section id="id28">
-<h2>1.0.15 (2019-08-08)<a class="headerlink" href="#id28" title="Link to this heading"></a></h2>
+<section id="id29">
+<h2>1.0.15 (2019-08-08)<a class="headerlink" href="#id29" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed the <code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">data</span> <span class="pre">setRoot</span></code> command to work from the command line (thanks to cbt for the PR).</p></li>
 <li><p>Added logging to files.</p></li>
@@ -391,33 +401,33 @@
 <li><p>Removed the <code class="docutils literal notranslate"><span class="pre">--force-overwrite</span></code> option; output directories are now allowed to already exist. (1.0.14, which was not released separately, had fixed <code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">test</span></code> missing this option.)</p></li>
 </ul>
 </section>
-<section id="id29">
-<h2>1.0.13 (2019-01-07)<a class="headerlink" href="#id29" title="Link to this heading"></a></h2>
+<section id="id30">
+<h2>1.0.13 (2019-01-07)<a class="headerlink" href="#id30" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Failed commands now exit with error code 1.</p></li>
 <li><p>Added <code class="docutils literal notranslate"><span class="pre">--force-overwrite</span></code> option.</p></li>
 </ul>
 </section>
-<section id="id30">
-<h2>1.0.12 (2018-09-14)<a class="headerlink" href="#id30" title="Link to this heading"></a></h2>
+<section id="id31">
+<h2>1.0.12 (2018-09-14)<a class="headerlink" href="#id31" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed issue with a missing <code class="docutils literal notranslate"><span class="pre">bVerbose</span></code> parameter causing CheckM to fail on some systems; the <code class="docutils literal notranslate"><span class="pre">bVerbose</span></code> option was removed from all commands.</p></li>
 </ul>
 </section>
-<section id="id31">
-<h2>1.0.11 (2018-01-03)<a class="headerlink" href="#id31" title="Link to this heading"></a></h2>
+<section id="id32">
+<h2>1.0.11 (2018-01-03)<a class="headerlink" href="#id32" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> CLI bug causing a crash due to a missing <code class="docutils literal notranslate"><span class="pre">coverage_file</span></code> argument.</p></li>
 </ul>
 </section>
-<section id="id32">
-<h2>1.0.10 (2017-12-22)<a class="headerlink" href="#id32" title="Link to this heading"></a></h2>
+<section id="id33">
+<h2>1.0.10 (2017-12-22)<a class="headerlink" href="#id33" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Version number update required for upload to PyPI; otherwise the same as 1.0.9.</p></li>
 </ul>
 </section>
-<section id="id33">
-<h2>1.0.9 (2017-12-22)<a class="headerlink" href="#id33" title="Link to this heading"></a></h2>
+<section id="id34">
+<h2>1.0.9 (2017-12-22)<a class="headerlink" href="#id34" title="Link to this heading"></a></h2>
 <p>Released on GitHub only (see 1.0.10).</p>
 <ul class="simple">
 <li><p>Removed ScreamingBackpack as a dependency and modified CheckM to never remove user files.</p></li>
@@ -426,35 +436,35 @@
 <li><p>Fixed bug with processing identical user genomes, which caused pplacer to create polytomies.</p></li>
 </ul>
 </section>
-<section id="id34">
-<h2>1.0.8 (2017-11-09)<a class="headerlink" href="#id34" title="Link to this heading"></a></h2>
+<section id="id35">
+<h2>1.0.8 (2017-11-09)<a class="headerlink" href="#id35" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fix for the <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> command that was causing an invalid marker set to be selected in rare cases when using <code class="docutils literal notranslate"><span class="pre">--reduced_tree</span></code>. This caused CheckM to fail with <code class="docutils literal notranslate"><span class="pre">[Error]</span> <span class="pre">Failed</span> <span class="pre">to</span> <span class="pre">set</span> <span class="pre">a</span> <span class="pre">selected</span> <span class="pre">lineage-specific</span> <span class="pre">marker</span> <span class="pre">set.</span></code></p></li>
 </ul>
 </section>
-<section id="id35">
-<h2>1.0.7 (2016-09-02)<a class="headerlink" href="#id35" title="Link to this heading"></a></h2>
+<section id="id36">
+<h2>1.0.7 (2016-09-02)<a class="headerlink" href="#id36" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed incorrect reporting of the number of marker genes/sets for taxon-specific marker sets.</p></li>
 </ul>
 </section>
-<section id="id36">
-<h2>1.0.6 (2016-04-23)<a class="headerlink" href="#id36" title="Link to this heading"></a></h2>
+<section id="id37">
+<h2>1.0.6 (2016-04-23)<a class="headerlink" href="#id37" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Minor bug fixes.</p></li>
 <li><p>Fixed <code class="docutils literal notranslate"><span class="pre">--pplacer_threads</span></code> issue with the <code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">test</span></code> command.</p></li>
 <li><p>Fixed issue with <code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">setRoot</span> <span class="pre">/my/data/directory</span></code> interactively requesting the data directory.</p></li>
 </ul>
 </section>
-<section id="id37">
-<h2>1.0.5 (2015-11-03)<a class="headerlink" href="#id37" title="Link to this heading"></a></h2>
+<section id="id38">
+<h2>1.0.5 (2015-11-03)<a class="headerlink" href="#id38" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Added <code class="docutils literal notranslate"><span class="pre">--pplacer_threads</span></code> option to the <code class="docutils literal notranslate"><span class="pre">tree</span></code> and <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> commands to allow control over the number of threads used by pplacer. This can substantially reduce the peak memory requirements of CheckM.</p></li>
 <li><p>Minor bug fixes.</p></li>
 </ul>
 </section>
-<section id="id38">
-<h2>1.0.4 (2015-09-11)<a class="headerlink" href="#id38" title="Link to this heading"></a></h2>
+<section id="id39">
+<h2>1.0.4 (2015-09-11)<a class="headerlink" href="#id39" title="Link to this heading"></a></h2>
 <p>Minor bug fixes and enhancements.</p>
 <ul class="simple">
 <li><p>Removed import of pylab as this may have a GTK dependency.</p></li>
@@ -463,27 +473,27 @@
 <li><p>Fixed bug with the <code class="docutils literal notranslate"><span class="pre">tetra</span></code> command when processing lowercase bases.</p></li>
 </ul>
 </section>
-<section id="id39">
-<h2>1.0.3 (2015-06-29)<a class="headerlink" href="#id39" title="Link to this heading"></a></h2>
+<section id="id40">
+<h2>1.0.3 (2015-06-29)<a class="headerlink" href="#id40" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed incompatibility with the GFF output of Prodigal &gt;= 2.6.1.</p></li>
 </ul>
 </section>
-<section id="id40">
-<h2>1.0.2 (2015-06-23)<a class="headerlink" href="#id40" title="Link to this heading"></a></h2>
+<section id="id41">
+<h2>1.0.2 (2015-06-23)<a class="headerlink" href="#id41" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed issue with pysam that was causing the <code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">coverage</span></code> command to report no mapped reads.</p></li>
 </ul>
 </section>
-<section id="id41">
-<h2>1.0.1 (2015-06-12)<a class="headerlink" href="#id41" title="Link to this heading"></a></h2>
+<section id="id42">
+<h2>1.0.1 (2015-06-12)<a class="headerlink" href="#id42" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed bug in the E. coli test (<code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">test</span></code>).</p></li>
 <li><p>Fixed bug in the installation of CheckM from PyPI.</p></li>
 </ul>
 </section>
-<section id="id42">
-<h2>1.0.0 (2015-06-11)<a class="headerlink" href="#id42" title="Link to this heading"></a></h2>
+<section id="id43">
+<h2>1.0.0 (2015-06-11)<a class="headerlink" href="#id43" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Added output format to the <code class="docutils literal notranslate"><span class="pre">qa</span></code> command that writes all marker genes to a FASTA file (courtesy of Hunter Cameron, <a class="reference external" href="https://github.com/Ecogenomics/CheckM/pull/31">#31</a>).</p></li>
 <li><p>Added unique node IDs to <code class="docutils literal notranslate"><span class="pre">qa</span></code> output tables.</p></li>
@@ -491,22 +501,22 @@
 <li><p>Fix to remove temporary <code class="docutils literal notranslate"><span class="pre">*.ssi</span></code> files.</p></li>
 </ul>
 </section>
-<section id="id43">
-<h2>0.9.7 (2015-01-16)<a class="headerlink" href="#id43" title="Link to this heading"></a></h2>
+<section id="id44">
+<h2>0.9.7 (2015-01-16)<a class="headerlink" href="#id44" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Added unique IDs of selected marker sets to CheckM output tables.</p></li>
 <li><p>Improved quality of internal taxonomic labels in the reference genome tree.</p></li>
 </ul>
 </section>
-<section id="id44">
-<h2>0.9.6 (2014-12-02)<a class="headerlink" href="#id44" title="Link to this heading"></a></h2>
+<section id="id45">
+<h2>0.9.6 (2014-12-02)<a class="headerlink" href="#id45" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Fixed bug preventing <code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">test</span></code> from running.</p></li>
 <li><p>Moving towards PEP 8 compliance.</p></li>
 </ul>
 </section>
-<section id="id45">
-<h2>0.9.5 (2014-11-20)<a class="headerlink" href="#id45" title="Link to this heading"></a></h2>
+<section id="id46">
+<h2>0.9.5 (2014-11-20)<a class="headerlink" href="#id46" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Added support for a reduced reference tree through the <code class="docutils literal notranslate"><span class="pre">--reduced_tree</span></code> option.</p></li>
 <li><p>Added support for using previously called genes instead of identifying these de novo.</p></li>
@@ -515,8 +525,8 @@
 <li><p>Improved command-line help.</p></li>
 </ul>
 </section>
-<section id="id46">
-<h2>0.9.4 (2014-09-09)<a class="headerlink" href="#id46" title="Link to this heading"></a></h2>
+<section id="id47">
+<h2>0.9.4 (2014-09-09)<a class="headerlink" href="#id47" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Updated plots.</p></li>
 <li><p>Made marker set refinement on by default.</p></li>
@@ -524,16 +534,16 @@
 <li><p>Updated E. coli test.</p></li>
 </ul>
 </section>
-<section id="id47">
-<h2>0.9.2 (2014-09-06)<a class="headerlink" href="#id47" title="Link to this heading"></a></h2>
-<p>Released on PyPI only. No release notes were published.</p>
-</section>
 <section id="id48">
-<h2>0.9.1 (2014-09-05)<a class="headerlink" href="#id48" title="Link to this heading"></a></h2>
+<h2>0.9.2 (2014-09-06)<a class="headerlink" href="#id48" title="Link to this heading"></a></h2>
 <p>Released on PyPI only. No release notes were published.</p>
 </section>
 <section id="id49">
-<h2>0.9.0 (2014-09-04)<a class="headerlink" href="#id49" title="Link to this heading"></a></h2>
+<h2>0.9.1 (2014-09-05)<a class="headerlink" href="#id49" title="Link to this heading"></a></h2>
+<p>Released on PyPI only. No release notes were published.</p>
+</section>
+<section id="id50">
+<h2>0.9.0 (2014-09-04)<a class="headerlink" href="#id50" title="Link to this heading"></a></h2>
 <p>First public release. No release notes were published.</p>
 </section>
 </section>
