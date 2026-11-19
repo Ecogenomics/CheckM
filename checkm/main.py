@@ -556,28 +556,24 @@ class OptionsParser():
                                                              options.marker_file,
                                                              options.exclude_markers)
 
-        # get results for each bin
+        # parse, report and cache the results of each bin in turn, so
+        # memory does not grow with the number of bins
         RP = ResultsParser(binIdToModels, options.threads)
-        RP.analyseResults(options.analyze_dir,
-                          DefaultValues.BIN_STATS_OUT,
-                          DefaultValues.HMMER_TABLE_OUT,
-                          bIgnoreThresholds=options.bIgnoreThresholds,
-                          evalueThreshold=options.e_value,
-                          lengthThreshold=options.length,
-                          bSkipPseudoGeneCorrection=options.bSkipPseudoGeneCorrection,
-                          bSkipAdjCorrection=options.bSkipAdjCorrection
-                          )
-
-        RP.printSummary(options.out_format,
-                        aai, binIdToBinMarkerSets,
-                        options.bIndividualMarkers,
-                        options.coverage_file,
-                        options.bTabTable,
-                        options.file,
-                        anaFolder=options.analyze_dir)
-        RP.cacheResults(options.analyze_dir,
-                        binIdToBinMarkerSets,
-                        options.bIndividualMarkers)
+        RP.reportResults(options.analyze_dir,
+                         DefaultValues.BIN_STATS_OUT,
+                         DefaultValues.HMMER_TABLE_OUT,
+                         options.out_format,
+                         aai, binIdToBinMarkerSets,
+                         options.bIndividualMarkers,
+                         options.coverage_file,
+                         options.bTabTable,
+                         options.file,
+                         bIgnoreThresholds=options.bIgnoreThresholds,
+                         evalueThreshold=options.e_value,
+                         lengthThreshold=options.length,
+                         bSkipPseudoGeneCorrection=options.bSkipPseudoGeneCorrection,
+                         bSkipAdjCorrection=options.bSkipAdjCorrection
+                         )
 
         if options.file != '':
             self.logger.info('QA information written to: ' + options.file)

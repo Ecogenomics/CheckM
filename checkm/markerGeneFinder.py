@@ -220,6 +220,7 @@ class MarkerGeneFinder():
         readySearches = deque()      # (group index, bin file) of bins whose HMM file is ready
         groupHmmFile = {}            # HMM file of each started group
         groupModels = {}             # HMM models of each group with a ready HMM file
+        sharedModels = {}            # HMM accession -> model; groups share the models of HMMs they have in common
         groupRemaining = {}          # number of bins in a group not yet searched
         running = {}                 # future -> (task, group index, bin file)
 
@@ -267,7 +268,9 @@ class MarkerGeneFinder():
                         sys.exit(1)
 
                     if task == 'fetch':
-                        groupModels[groupIdx] = result
+                        # all models are from the same marker file, so a model parsed for an earlier
+                        # group is reused; memory then depends on the number of HMMs, not groups
+                        groupModels[groupIdx] = {acc: sharedModels.setdefault(acc, model) for acc, model in result.items()}
                         readySearches.extend((groupIdx, f) for f in orderedGroups[groupIdx][1])
                         continue
 

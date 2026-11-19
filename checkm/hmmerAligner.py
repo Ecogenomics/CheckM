@@ -30,6 +30,7 @@ from collections import defaultdict
 from checkm.defaultValues import DefaultValues
 from checkm.common import makeSurePathExists
 from checkm.util.seqUtils import readFasta
+from checkm.util.forking import frozenHeap
 from checkm.hmmer import HMMERRunner
 from checkm.resultsParser import ResultsParser
 from checkm.util.progress import progressBar
@@ -138,11 +139,12 @@ class HmmerAligner:
 
         makeSurePathExists(alignOutputDir)
 
-        # parse HMM information
-        resultsParser = ResultsParser(binIdToModels, self.totalThreads)
-
-        # get HMM hits to each bin
-        resultsParser.parseBinHits(outDir, hmmTableFile, False, bIgnoreThresholds, evalueThreshold, lengthThreshold)
+        # The HMM hits of a bin are parsed by the worker process that aligns its markers,
+        # and are discarded once the bin is processed. Memory therefore does not grow with
+        # the number of bins, as it would if the hits of all bins were parsed up front
+        # and inherited by every worker process.
+        resultsParser = ResultsParser(binIdToModels)
+        resultsManagerArgs = (bIgnoreThresholds, evalueThreshold, lengthThreshold, False, None)
 
         # align any markers with multiple hits in a bin
         self.logger.info('Aligning marker genes with multiple hits in a single bin:')
@@ -158,13 +160,14 @@ class HmmerAligner:
             workerQueue.put(None)
 
         try:
-            calcProc = [mp.Process(target=self._createMSA, args=(resultsParser, binIdToBinMarkerSets, markerFile, outDir, alignOutputDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
+            calcProc = [mp.Process(target=self._createMSA, args=(resultsParser, resultsManagerArgs, hmmTableFile, binIdToBinMarkerSets, markerFile, outDir, alignOutputDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
             writeProc = mp.Process(target=self._reportBinProgress, args=(len(binIdToModels), writerQueue))
 
-            writeProc.start()
+            with frozenHeap():
+                writeProc.start()
 
-            for p in calcProc:
-                p.start()
+                for p in calcProc:
+                    p.start()
 
             for p in calcProc:
                 p.join()
@@ -180,7 +183,7 @@ class HmmerAligner:
 
         self._checkWorkerExitCodes(calcProc, 'aligning markers with multiple hits', [workerQueue, writerQueue])
 
-    def _createMSA(self, resultsParser, binIdToBinMarkerSets, hmmModelFile, outDir, alignOutputDir, queueIn, queueOut):
+    def _createMSA(self, resultsParser, resultsManagerArgs, hmmTableFile, binIdToBinMarkerSets, hmmModelFile, outDir, alignOutputDir, queueIn, queueOut):
         """Create multiple sequence alignment for markers with multiple hits in a bin."""
 
         HF = HMMERRunner(mode='fetch')
@@ -190,7 +193,11 @@ class HmmerAligner:
             if binId == None:
                 break
 
-            markersWithMultipleHits = self._extractMarkersWithMultipleHits(outDir, binId, resultsParser, binIdToBinMarkerSets[binId])
+            # parse HMM hits to the bin
+            resultsManager = resultsParser._resultsManager(binId, *resultsManagerArgs)
+            resultsParser.parseHmmerResults(os.path.join(outDir, 'bins', binId, hmmTableFile), resultsManager, False)
+
+            markersWithMultipleHits = self._extractMarkersWithMultipleHits(outDir, binId, resultsManager.markerHits, binIdToBinMarkerSets[binId])
 
             if len(markersWithMultipleHits) != 0:
                 # create multiple sequence alignments for markers with multiple hits
@@ -442,19 +449,21 @@ class HmmerAligner:
 
         return rtnSeq
 
-    def _extractMarkersWithMultipleHits(self, outDir, binId, resultsParser, binMarkerSet):
+    def _extractMarkersWithMultipleHits(self, outDir, binId, markerHits, binMarkerSet):
         """Extract markers with multiple hits within a single bin."""
 
         markersWithMultipleHits = defaultdict(dict)
 
+        markerGenes = binMarkerSet.selectedMarkerSet().getMarkerGenes()
+        multipleHits = [(markerId, hits) for markerId, hits in markerHits.items() if markerId in markerGenes and len(hits) >= 2]
+        if not multipleHits:
+            # the genes of the bin do not need to be read
+            return markersWithMultipleHits
+
         aaGeneFile = os.path.join(outDir, 'bins', binId, DefaultValues.PRODIGAL_AA)
         binORFs = readFasta(aaGeneFile)
 
-        markerGenes = binMarkerSet.selectedMarkerSet().getMarkerGenes()
-        for markerId, hits in resultsParser.results[binId].markerHits.items():
-            if markerId not in markerGenes or len(hits) < 2:
-                continue
-
+        for markerId, hits in multipleHits:
             # sort hits from highest to lowest e-value; all hits are retained (each
             # target has at most one hit to a marker), so this only sets the order
             # in which sequences are written for alignment

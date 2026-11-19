@@ -213,16 +213,7 @@ class BinMarkerSets():
     def removeMarkers(self, markersToRemove):
         """Remove specified markers from all marker sets."""
         for markerSet in self.markerSets:
-            curMarkerSet = markerSet.markerSet
-
-            newMarkerSet = []
-            for ms in curMarkerSet:
-                newMS = ms - markersToRemove
-
-                if len(newMS) != 0:
-                    newMarkerSet.append(newMS)
-
-            markerSet.markerSet = newMarkerSet
+            markerSet.removeMarkers(markersToRemove)
 
     def write(self, fout):
         """Write marker set to file."""
@@ -232,16 +223,26 @@ class BinMarkerSets():
             fout.write('\t' + str(ms))
         fout.write('\n')
 
-    def read(self, line):
-        """Construct bin marker set data from line."""
+    def read(self, line, sharedMarkerSets=None):
+        """Construct bin marker set data from line.
+
+        If the dictionary sharedMarkerSets is given, bins read with the same dictionary
+        share the MarkerSet objects of identical marker sets (e.g., bins placed in the same
+        lineage), so memory does not grow with the number of bins. Shared marker sets must
+        only be modified in ways that apply to all bins (e.g., removeMarkers).
+        """
         lineSplit = line.split('\t')
         numMarkerSets = int(lineSplit[1])
         for i in range(0, numMarkerSets):
-            uid = lineSplit[i * 4 + 2]
-            lineageStr = lineSplit[i * 4 + 3]
-            numGenomes = int(lineSplit[i * 4 + 4])
-            markerSet = parseMarkerSetStr(lineSplit[i * 4 + 5])
-            self.markerSets.append(MarkerSet(uid, lineageStr, numGenomes, markerSet))
+            fields = tuple(lineSplit[i * 4 + 2:i * 4 + 6])
+            markerSet = sharedMarkerSets.get(fields) if sharedMarkerSets is not None else None
+            if markerSet is None:
+                uid, lineageStr, numGenomes, markerSetStr = fields
+                markerSet = MarkerSet(uid, lineageStr, int(numGenomes), parseMarkerSetStr(markerSetStr))
+                if sharedMarkerSets is not None:
+                    sharedMarkerSets[fields] = markerSet
+
+            self.markerSets.append(markerSet)
 
 
 class MarkerSet():
@@ -297,7 +298,9 @@ class MarkerSet():
         """Remove specified markers from marker sets."""
         newMarkerSet = []
         for ms in self.markerSet:
-            newMS = ms - markersToRemove
+            # sets without markers to remove are kept as is, since they
+            # may be shared between marker sets (see parseMarkerSetStr)
+            newMS = ms if ms.isdisjoint(markersToRemove) else ms - markersToRemove
 
             if len(newMS) != 0:
                 newMarkerSet.append(newMS)
@@ -471,16 +474,19 @@ class MarkerSetParser():
         # read all marker sets
         selectedMarkerSetMap = self.parseSelectedMarkerSetMap()
 
+        # bins with the same marker set (e.g., bins placed in the same lineage) share a
+        # single MarkerSet object, so memory does not grow with the number of bins
+        sharedMarkerSets = {}
+
         binIdToBinMarkerSets = {}
         with openFile(markerSetFile) as f:
             f.readline()  # skip header
 
             for line in f:
-                lineSplit = line.split('\t')
-                binId = lineSplit[0]
+                binId = line[0:line.find('\t')]
 
                 binMarkerSets = BinMarkerSets(binId, BinMarkerSets.TREE_MARKER_SET)
-                binMarkerSets.read(line)
+                binMarkerSets.read(line.rstrip('\n'), sharedMarkerSets)
 
                 # determine selected marker set
                 binMarkerSets.setLineageSpecificSelectedMarkerSet(selectedMarkerSetMap)

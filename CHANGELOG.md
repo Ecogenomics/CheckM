@@ -2,6 +2,13 @@
 
 All published releases of CheckM are listed below, most recent first. Dates are those of the [GitHub release](https://github.com/Ecogenomics/CheckM/releases) or, where there is none, of the upload to [PyPI](https://pypi.org/project/checkm-genome/#history). Some version numbers were not released separately; their changes are listed under the release that first included them.
 
+## 1.3.1 (2026-11-20)
+
+Fixes high memory usage with many genomes and a failure with many novel genomes. Results are unchanged: all outputs of `lineage_wf`, `taxonomy_wf`, every `qa` output format and option, and `tree_qa` are identical to CheckM 1.3.0 on 128 test genomes, and the `qa` results and multi-copy marker alignments are identical on 10,000 genomes.
+
+- Less memory is needed by `analyze` (the "Aligning marker genes with multiple hits in a single bin" and genome statistics steps), `qa` and the `qa` step of `lineage_wf` and `taxonomy_wf`. Previously, the HMM hits of all genomes were read before the work was split across threads, and each thread made its own copy of this data, so memory grew with the number of genomes multiplied by the number of threads. HMM hits are now read and reported one genome at a time, marker sets and HMM models are shared between genomes, and threads no longer copy the data of the main process. With 64 threads and 10,000 genomes, the multi-hit alignment step needs 3.9 GiB instead of about 40 GiB and `qa` needs 3.9 GiB instead of 29.5 GiB. With 32 threads and 1,000 genomes, the multi-hit alignment step needs 3.3 GiB instead of 35 GiB.
+- `lineage_set` and `lineage_wf` no longer fail with a `RecursionError` when many genomes are placed on the same branch of the reference tree (e.g., 10,000 novel genomes gave a tree nested ~1,000 levels deep).
+
 ## 1.3.0 (2026-11-10)
 
 **CheckM 1.3.0 changes some arguments and outputs, so scripts that run CheckM or read its output files may need to be updated.** Completeness and contamination estimates are identical to CheckM 1.2.8 to 1.2.10 on all 1,128 test genomes. On 1,000 genomes with 64 threads, `lineage_wf` takes 19% less time and needs 61% less memory (47 to 18 GiB) and 72% less disk space (4.4 to 1.2 GB). See the [performance results](https://ecogenomics.github.io/CheckM/performance.html) and the [quality estimate changes](https://ecogenomics.github.io/CheckM/quality_estimate_changes.html) compared with CheckM 1.2.7 and earlier.

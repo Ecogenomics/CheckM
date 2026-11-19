@@ -31,6 +31,7 @@ from checkm.common import binIdFromFilename, makeSurePathExists
 from checkm.prodigal import ProdigalGeneFeatureParser
 from checkm.util.progress import progressBar
 from checkm.util.compression import openFile, resolvePath
+from checkm.util.forking import frozenHeap
 
 from numpy import mean
 
@@ -81,10 +82,11 @@ class BinStatistics():
             calcProc = [mp.Process(target=self._processBin, args=(outDir, workerQueue, writerQueue)) for _ in range(self.totalThreads)]
             writeProc = mp.Process(target=self._reportProgress, args=(outDir, binStatsFile, len(binFiles), writerQueue))
 
-            writeProc.start()
+            with frozenHeap():
+                writeProc.start()
 
-            for p in calcProc:
-                p.start()
+                for p in calcProc:
+                    p.start()
 
             for p in calcProc:
                 p.join()
