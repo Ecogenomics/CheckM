@@ -119,7 +119,7 @@ third column). Bin IDs are always taken from the FASTA file names with the exten
 </div>
 <p>For a full list of options, run <code class="docutils literal notranslate"><span class="pre">checkm</span> <span class="pre">lineage_wf</span> <span class="pre">-h</span></code> (see <a class="reference internal" href="commands/lineage_wf.html#commands-lineage-wf"><span class="std std-ref">lineage_wf</span></a>). To speed up
 processing, use the <code class="docutils literal notranslate"><span class="pre">-t</span></code> flag to specify the desired number of threads. Placing genomes in the reference
-genome tree requires approximately 18 GB of memory with 64 threads; on a machine with less memory, use
+genome tree requires up to approximately 18.5 GiB of memory with 64 threads; on a machine with less memory, use
 <code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span></code> (see <a class="reference internal" href="installing/index.html#installing-system-requirements"><span class="std std-ref">System requirements</span></a>).</p>
 <p>The results are written to the tab-separated file <code class="docutils literal notranslate"><span class="pre">quality_report.tsv</span></code> in the output folder (see
 <a class="reference internal" href="outputs/qa.html#outputs-qa"><span class="std std-ref">Reported statistics</span></a>). Use <code class="docutils literal notranslate"><span class="pre">--rm_tmp_files</span></code> to remove the intermediate <code class="docutils literal notranslate"><span class="pre">bins</span></code> and <code class="docutils literal notranslate"><span class="pre">storage</span></code> folders once the

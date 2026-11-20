@@ -138,7 +138,7 @@ threads.
 Methods
 -------
 
-* **Machine:** 2x AMD EPYC 7402 24-core processors (48 cores, 96 hardware threads) and 502 GB of memory,
+* **Machine:** 2x AMD EPYC 7402 24-core processors (48 cores, 96 hardware threads) and 503 GiB of memory,
   running Linux. CheckM was run with 64 threads.
 * **Commands:** ``checkm lineage_wf -t 64 -x fna <genome folder> <output folder>``, with
   ``--pplacer_threads 64`` for CheckM <= 1.2.10. Runs were made one at a time.
