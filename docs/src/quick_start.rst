@@ -27,7 +27,7 @@ CheckM consists of a series of commands in order to support a number of differen
 
 For a full list of options, run ``checkm lineage_wf -h`` (see :ref:`commands/lineage_wf`). To speed up
 processing, use the ``-t`` flag to specify the desired number of threads. Placing genomes in the reference
-genome tree requires approximately 18 GB of memory with 64 threads; on a machine with less memory, use
+genome tree requires up to approximately 18.5 GiB of memory with 64 threads; on a machine with less memory, use
 ``--gplace_max_memory`` (see :ref:`installing/system_requirements`).
 
 The results are written to the tab-separated file ``quality_report.tsv`` in the output folder (see
