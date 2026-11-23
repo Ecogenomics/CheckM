@@ -82,18 +82,16 @@ class VerifyReturnCodes(unittest.TestCase):
         self.assertEqual(runWithStdout(['sh', '-c', 'exit 1'], outputFile), 1)
         self.assertEqual(runWithStdout(['sh', '-c', 'kill -9 $$'], outputFile), -9)
 
-    @unittest.skipUnless(haveProgram('hmmfetch') and haveProgram('hmmsearch'), 'HMMER is not installed')
     def testHmmerFailureExitCode(self):
-        """Verify a failing HMMER program exits with status 1."""
+        """Verify a failure fetching a HMM exits with status 1."""
         HF = HMMERRunner(mode='fetch')
         with self.assertLogs('timestamp', level='ERROR'):
             with self.assertRaises(SystemExit) as cm:
                 HF.fetch(os.path.join(self.tmpDir, 'missing models.hmm'), 'PF00001', os.path.join(self.tmpDir, 'out.hmm'))
         self.assertEqual(cm.exception.code, 1)
 
-    @unittest.skipUnless(haveProgram('hmmfetch') and haveProgram('hmmsearch'), 'HMMER is not installed')
     def testHmmerPathsWithSpaces(self):
-        """Verify HMMER programs can be run on paths containing spaces."""
+        """Verify HMMs can be indexed and fetched on paths containing spaces."""
         if not os.path.exists(DefaultValues.PHYLO_HMM_MODELS):
             self.skipTest('CheckM reference data is not available')
 
@@ -110,7 +108,6 @@ class VerifyReturnCodes(unittest.TestCase):
             self.assertIn('PF00164.20', f.read())
 
 
-    @unittest.skipUnless(haveProgram('hmmfetch') and haveProgram('hmmsearch'), 'HMMER is not installed')
     def testExtractModelsFailure(self):
         """Verify a failure extracting HMMs for alignment exits with status 1."""
         if not os.path.exists(DefaultValues.PHYLO_HMM_MODELS):
@@ -125,7 +122,6 @@ class VerifyReturnCodes(unittest.TestCase):
 
         HA._removeFiles(hmmModelFiles.values())
 
-    @unittest.skipUnless(haveProgram('hmmfetch') and haveProgram('hmmsearch'), 'HMMER is not installed')
     def testWorkerFailureDoesNotHang(self):
         """Verify the run exits, rather than hanging, when workers fail with many unprocessed items queued."""
         script = (
@@ -206,7 +202,7 @@ class VerifyEmptyBinStatistics(unittest.TestCase):
             shutil.rmtree(tmpDir)
 
 
-@unittest.skipUnless(haveProgram('prodigal') and haveProgram('hmmsearch'), 'prodigal or HMMER is not installed')
+@unittest.skipUnless(haveProgram('prodigal'), 'prodigal is not installed')
 class VerifyGenelessBins(unittest.TestCase):
     def setUp(self):
         self.tmpDir = tempfile.mkdtemp(prefix='checkm test ')
@@ -310,7 +306,7 @@ class VerifyGenelessBins(unittest.TestCase):
         """Verify a failed worker aborts the run with exit status 1 rather than silently dropping the bin."""
         from checkm.markerGeneFinder import MarkerGeneFinder
 
-        # protein FASTA that hmmsearch cannot parse
+        # protein FASTA that HMMER cannot parse
         badBin = os.path.join(self.tmpDir, 'bad.faa')
         with open(badBin, 'w') as f:
             f.write('this is not a FASTA file\n')

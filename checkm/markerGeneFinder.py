@@ -38,7 +38,7 @@ from checkm.prodigal import ProdigalRunner
 from checkm.markerSets import MarkerSetParser, BinMarkerSets
 from checkm.hmmerModelParser import HmmModelParser
 from checkm.util.pfam import sharedPfam
-from checkm.util.forking import frozenHeap
+from checkm.util.forking import frozenHeap, runInChild
 from checkm.util.progress import progressBar
 from checkm.util.compression import compressFile, hasContent, resolvePath
 
@@ -48,7 +48,7 @@ def _fetchHmms(accessions, hmmModelFile):
 
     Run in a worker process.
     """
-    MarkerSetParser().fetchHmms(accessions, hmmModelFile)
+    runInChild(MarkerSetParser().fetchHmms, accessions, hmmModelFile)
     return HmmModelParser(hmmModelFile).models()
 
 
@@ -77,21 +77,10 @@ def _searchBin(binFile, hmmModelFile, outDir, tableOut, hmmerOut, bKeepAlignment
     if not hasContent(aaGeneFile):
         return False
 
-    # run HMMER
-    keepAlignStr = ''
-    if not bKeepAlignment:
-        keepAlignStr = '--noali'
-
-    # when bins are searched in parallel with one thread each, HMMER is run in
-    # serial mode (--cpu 0) as '--cpu 1' uses an additional thread to read
-    # sequences, which costs ~15% more CPU time without reducing the run time
-    cpus = threadsPerSearch if threadsPerSearch > 1 else 0
-
-    hmmer = HMMERRunner()
-    hmmer.search(hmmModelFile, aaGeneFile,
-                 os.path.join(binDir, tableOut), os.path.join(binDir, hmmerOut),
-                 '--cpu ' + str(cpus) + ' --notextw -E 0.1 --domE 0.1 ' + keepAlignStr,
-                 bKeepAlignment)
+    # run HMMER (through pyhmmer)
+    runInChild(HMMERRunner().search, hmmModelFile, aaGeneFile,
+                os.path.join(binDir, tableOut), os.path.join(binDir, hmmerOut),
+                evalue=0.1, domEvalue=0.1, bKeepOutput=bKeepAlignment, threads=threadsPerSearch)
 
     return True
 
@@ -228,9 +217,7 @@ class MarkerGeneFinder():
         searched with the same HMMs share the same model dictionary.
         """
 
-        # make sure HMMER and prodigal are on system path
-        HMMERRunner()
-
+        # make sure prodigal is on system path
         if not bCalledGenes:
             ProdigalRunner('')
 

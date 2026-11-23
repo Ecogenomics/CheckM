@@ -56,12 +56,11 @@ Bioinformatic tool dependencies
 CheckM requires the following programs to be
 `added to your system path <https://unix.stackexchange.com/questions/26047/how-to-correctly-add-a-path-to-path>`_:
 
-* `HMMER <http://hmmer.org/>`_ (>= 3.1b1)
 * `Prodigal <https://github.com/hyattpd/Prodigal>`_ (2.60 or >= 2.6.1)
 
   * the executable must be named ``prodigal`` and not ``prodigal.linux``
 
-* `gPlace <https://github.com/cmc-aau/gPlace>`_ (>= 0.1.0)
+* `gPlace <https://github.com/cmc-aau/gPlace>`_ (>= 0.1.2; CheckM 1.3.x requires >= 0.1.0)
 
   * gPlace requires Python >= 3.12 and can be installed with ``pip install gtdb-gplace``. It can be
     installed in a separate environment as long as the ``gplace`` command is on your system path.
@@ -72,6 +71,11 @@ CheckM requires the following programs to be
 These programs are installed automatically with the :ref:`Bioconda <installing/bioconda>` package and in
 the :ref:`Docker <installing/docker>` image, but must be installed separately when CheckM is installed with
 :ref:`pip <installing/pip>`.
+
+CheckM >= 1.4.0 does not require `HMMER <http://hmmer.org/>`_ to be installed. HMMER is run through
+`pyhmmer <https://pyhmmer.readthedocs.io>`_, a Python library that includes HMMER 3.4 and is installed
+with CheckM (see :ref:`installing/python_dependencies`). CheckM <= 1.3.2 requires the HMMER programs
+(>= 3.1b1) to be on your system path.
 
 
 .. _installing/python_dependencies:
@@ -88,6 +92,7 @@ The following Python libraries are required and are installed automatically by `
 * dendropy >= 4.5.2
 * tqdm >= 4.62
 * xopen >= 2.0 (reads and writes the gzip-compressed :ref:`output files <outputs/files>`)
+* pyhmmer >= 0.12.0 (provides HMMER; available for Linux and macOS)
 * setuptools >= 81
 
 

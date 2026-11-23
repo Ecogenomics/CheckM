@@ -20,6 +20,8 @@
 ###############################################################################
 
 import gc
+import sys
+import multiprocessing as mp
 from contextlib import contextmanager
 
 
@@ -39,3 +41,27 @@ def frozenHeap():
         yield
     finally:
         gc.unfreeze()
+
+
+def runInChild(func, *args, **kwargs):
+    """Run a function in a child process that exits once the function returns.
+
+    HMMER is run within the Python process (through pyhmmer). The memory of a
+    worker process that runs HMMER many times grows well beyond that needed
+    for a single run, and the process writes to memory it shares with its
+    parent, which is then copied. Running each task in its own short-lived
+    process returns this memory to the system, as when the HMMER programs
+    were run as separate processes. Errors are reported by the function,
+    which must exit with a non-zero status on failure; this process then
+    exits with status 1. The function is run directly if processes can't be
+    forked.
+    """
+    if 'fork' not in mp.get_all_start_methods():
+        func(*args, **kwargs)
+        return
+
+    proc = mp.get_context('fork').Process(target=func, args=args, kwargs=kwargs)
+    proc.start()
+    proc.join()
+    if proc.exitcode != 0:
+        sys.exit(1)

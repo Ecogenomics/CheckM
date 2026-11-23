@@ -19,16 +19,17 @@
 #                                                                             #
 ###############################################################################
 
+import io
 import os
 import sys
-import shlex
-import shutil
 import signal
 import logging
-import tempfile
+import contextlib
 import subprocess
 
-from checkm.util.compression import openFile, isGzipped, compressFile, uncompressedName
+import pyhmmer
+
+from checkm.util.compression import openFile, compressFile, uncompressedName
 
 
 class FormatError(BaseException):
@@ -75,13 +76,130 @@ def runWithStdout(cmd, outputFile, append=False):
         return subprocess.call(cmd, stdout=fout)
 
 
+def _exitOnHmmerError(logger, program, error):
+    """Log an error raised by pyhmmer and exit with status 1."""
+    logger.error(f'{program} (pyhmmer) failed: {error!r}')
+    sys.exit(1)
+
+
+def _readProteins(seqFile):
+    """Read a protein FASTA file (which may be gzip-compressed) into memory in digital form."""
+    with openFile(seqFile, 'rb') as fin:
+        data = fin.read()
+
+    with pyhmmer.easel.SequenceFile(io.BytesIO(data), format='fasta', digital=True,
+                                    alphabet=pyhmmer.easel.Alphabet.amino()) as seqFileHandle:
+        return seqFileHandle.read_block()
+
+
+def _tableColumn(hits, tableFormat, column):
+    """Values of a column of the tabular output of HMMER, in the order hits are reported."""
+    table = io.BytesIO()
+    hits.write(table, format=tableFormat, header=False)
+    return [line.split()[column] for line in table.getvalue().decode().splitlines() if line and line[0] != '#']
+
+
+def _writeSearchReport(fout, hits):
+    """Write the hits to a query HMM as in the main output of hmmsearch, including alignments.
+
+    This follows the layout of hmmsearch (with --notextw). The expected
+    number of domains ('exp') and the accuracy of each domain ('acc') are
+    not provided by pyhmmer objects, so they are taken from its tabular
+    output, which reports hits and domains in the same order. The filter
+    statistics and run times of the pipeline are not available.
+    """
+    hmm = hits.query
+    reported = [hit for hit in hits if hit.reported]
+    expDomains = _tableColumn(hits, 'targets', 10)
+    domainAcc = _tableColumn(hits, 'domains', 21)
+    if len(expDomains) != len(reported):
+        expDomains = ['-'] * len(reported)
+    if len(domainAcc) != sum(1 for hit in reported for d in hit.domains if d.reported):
+        domainAcc = None
+
+    def text(value):
+        return value.decode() if isinstance(value, bytes) else value
+
+    fout.write('Query:       %s  [M=%d]\n' % (text(hmm.name), hmm.M))
+    if hmm.accession:
+        fout.write('Accession:   %s\n' % text(hmm.accession))
+    if hmm.description:
+        fout.write('Description: %s\n' % text(hmm.description))
+
+    # scores for complete sequences
+    nameWidth = max([8] + [len(text(hit.name)) for hit in hits])  # as hmmsearch, hits not reported are included
+    fout.write('Scores for complete sequences (score includes all domains):\n')
+    fout.write('  %22s  %22s  %8s\n' % (' --- full sequence ---', ' --- best 1 domain ---', '-#dom-'))
+    fout.write('  %9s %6s %5s  %9s %6s %5s  %5s %2s  %-*s %s\n' % ('E-value', ' score', ' bias', 'E-value', ' score', ' bias',
+                                                                    '  exp', 'N', nameWidth, 'Sequence', 'Description'))
+    fout.write('  %9s %6s %5s  %9s %6s %5s  %5s %2s  %-*s %s\n' % ('-------', '------', '-----', '-------', '------', '-----',
+                                                                    ' ----', '--', nameWidth, '--------', '-----------'))
+    bIncludedThreshold = False
+    for hit, exp in zip(reported, expDomains):
+        if not hit.included and not bIncludedThreshold:
+            fout.write('  ------ inclusion threshold ------\n')
+            bIncludedThreshold = True
+
+        best = hit.best_domain
+        fout.write('  %9.2g %6.1f %5.1f  %9.2g %6.1f %5.1f  %5s %2d  %-*s  %s\n' % (
+            hit.evalue, hit.score, hit.bias, best.i_evalue, best.score, best.bias, exp,
+            sum(1 for d in hit.domains if d.reported), nameWidth, text(hit.name), text(hit.description) or ''))
+
+    if not reported:
+        fout.write('\n   [No hits detected that satisfy reporting thresholds]\n')
+
+    # domains and alignments of each sequence
+    fout.write('\n\nDomain annotation for each sequence (and alignments):\n')
+    domainIndex = 0
+    for hit in reported:
+        fout.write('>> %s  %s\n' % (text(hit.name), text(hit.description) or ''))
+        domains = [d for d in hit.domains if d.reported]
+        if not domains:
+            fout.write('   [No individual domains that satisfy reporting thresholds (although complete target did)]\n\n')
+            continue
+
+        fout.write(' %3s   %6s %5s %9s %9s %7s %7s %2s %7s %7s %2s %7s %7s %2s %4s\n' % (
+            '#', 'score', 'bias', 'c-Evalue', 'i-Evalue', 'hmmfrom', 'hmm to', '  ',
+            'alifrom', 'ali to', '  ', 'envfrom', 'env to', '  ', 'acc'))
+        fout.write(' %3s   %6s %5s %9s %9s %7s %7s %2s %7s %7s %2s %7s %7s %2s %4s\n' % (
+            '---', '------', '-----', '---------', '---------', '-------', '-------', '  ',
+            '-------', '-------', '  ', '-------', '-------', '  ', '----'))
+        for num, d in enumerate(domains, 1):
+            ali = d.alignment
+            fout.write(' %3d %s %6.1f %5.1f %9.2g %9.2g %7d %7d %s%s %7d %7d %s%s %7d %7d %s%s %4s\n' % (
+                num, '!' if d.included else '?', d.score, d.bias, d.c_evalue, d.i_evalue,
+                ali.hmm_from, ali.hmm_to, '[' if ali.hmm_from == 1 else '.', ']' if ali.hmm_to == hmm.M else '.',
+                ali.target_from, ali.target_to, '[' if ali.target_from == 1 else '.', ']' if ali.target_to == hit.length else '.',
+                d.env_from, d.env_to, '[' if d.env_from == 1 else '.', ']' if d.env_to == hit.length else '.',
+                domainAcc[domainIndex + num - 1] if domainAcc else '-'))
+
+        fout.write('\n  Alignments for each domain:\n')
+        for num, d in enumerate(domains, 1):
+            fout.write('  == domain %d  score: %.1f bits;  conditional E-value: %.2g\n' % (num, d.score, d.c_evalue))
+            fout.write(str(d.alignment).rstrip('\n') + '\n\n')
+        domainIndex += len(domains)
+
+    if not reported:
+        fout.write('\n   [No targets detected that satisfy reporting thresholds]\n')
+
+    fout.write('\n\nInternal pipeline statistics summary:\n')
+    fout.write('-------------------------------------\n')
+    fout.write('Query model(s):                   %10d  (%d nodes)\n' % (hits.searched_models, hits.searched_nodes))
+    fout.write('Target sequences:                 %10d  (%d residues searched)\n' % (hits.searched_sequences, hits.searched_residues))
+    fout.write('Initial search space (Z):         %10d\n' % hits.Z)
+    fout.write('Domain search space  (domZ):      %10d\n' % hits.domZ)
+    fout.write('//\n')
+
+
 class HMMERRunner():
-    """Wrapper for running HMMER3."""
+    """Wrapper for running HMMER3 through pyhmmer.
+
+    pyhmmer provides the HMMER library, so the HMMER programs do not need
+    to be installed. The methods give the same results as hmmsearch,
+    hmmalign and hmmfetch, which were run by CheckM <= 1.3.2.
+    """
     def __init__(self, mode="dom"):
         self.logger = logging.getLogger('timestamp')
-
-        # make sure HMMER is installed
-        self.checkForHMMER()
 
         # set the mode
         if mode == "dom":
@@ -93,99 +211,160 @@ class HMMERRunner():
         else:
             raise HMMMERModeError("Mode %s not understood" % mode)
 
-    def search(self, db, query, tableOut, hmmerOut, cmdlineOptions='', bKeepOutput=True):
-        """Run hmmsearch.
+    def search(self, db, query, tableOut, hmmerOut, evalue=0.1, domEvalue=0.1, bKeepOutput=True, threads=1):
+        """Search protein sequences with each HMM in a file, as done by hmmsearch.
 
-        Output files with a '.gz' extension are gzip-compressed: hmmsearch
-        writes them to uncompressed temporary files, which are compressed
-        once the search has finished. The query may be gzip-compressed.
+        The table of domain hits (hmmsearch --domtblout) is written to
+        tableOut. If bKeepOutput is True, a report with the alignment of
+        each hit (see _writeSearchReport) is written to hmmerOut. Output
+        files with a '.gz' extension are gzip-compressed once the search
+        has finished. The query may be gzip-compressed. The sequences are
+        read once and searched with each HMM, whereas hmmsearch reads the
+        sequence file again for each HMM.
         """
         if self.mode != 'domtblout':
             raise HMMMERModeError("Mode %s not compatible with search" % self.mode)
-
-        if not bKeepOutput:
-            hmmerOut = os.devnull
 
         compressedOutputs = []
         if tableOut.endswith('.gz'):
             compressedOutputs.append((uncompressedName(tableOut) + '.tmp', tableOut))
             tableOut = compressedOutputs[-1][0]
-        if hmmerOut.endswith('.gz'):
+        if bKeepOutput and hmmerOut.endswith('.gz'):
             compressedOutputs.append((uncompressedName(hmmerOut) + '.tmp', hmmerOut))
             hmmerOut = compressedOutputs[-1][0]
 
-        # HMMER reads gzip-compressed files by running 'gzip -dc <file>' through a shell,
-        # which fails for paths containing spaces, so a compressed query is decompressed
-        # to a temporary file (next to the output table) that is searched instead
-        tmpQuery = None
-        if isGzipped(query):
-            fd, tmpQuery = tempfile.mkstemp(prefix='.hmmsearch_query_', suffix='.tmp',
-                                            dir=os.path.dirname(os.path.abspath(tableOut)))
-            with openFile(query, 'rb') as fin, os.fdopen(fd, 'wb') as fout:
-                shutil.copyfileobj(fin, fout, 1024 * 1024)
-            query = tmpQuery
-
         try:
-            cmd = ['hmmsearch', '--' + self.mode, tableOut] + shlex.split(cmdlineOptions) + [db, query]
-            rtn = runWithStdout(cmd, hmmerOut)
-        finally:
-            if tmpQuery:
-                os.remove(tmpQuery)
-        exitOnFailure(self.logger, 'hmmsearch', rtn)
+            seqs = _readProteins(query)
+            with contextlib.ExitStack() as stack:
+                hmmFile = stack.enter_context(pyhmmer.plan7.HMMFile(db))
+                tableHandle = stack.enter_context(open(tableOut, 'wb'))
+                reportHandle = stack.enter_context(open(hmmerOut, 'w')) if bKeepOutput else None
+
+                if reportHandle:
+                    reportHandle.write('\n')
+
+                bHeader = True
+                for hits in pyhmmer.hmmsearch(hmmFile, seqs, cpus=threads, E=evalue, domE=domEvalue):
+                    hits.write(tableHandle, format='domains', header=bHeader)
+                    bHeader = False
+                    if reportHandle:
+                        _writeSearchReport(reportHandle, hits)
+
+                if reportHandle:
+                    reportHandle.write('[ok]\n')
+        except Exception as e:
+            _exitOnHmmerError(self.logger, 'hmmsearch', e)
 
         for tmpFile, outputFile in compressedOutputs:
             compressFile(tmpFile, outputFile)
 
     def align(self, db, query, outputFile, writeMode='>', outputFormat='PSIBLAST', trim=True):
-        """Run hmmalign"""
+        """Align sequences to the (first) HMM in a file, as done by hmmalign."""
         if self.mode != 'align':
             raise HMMMERModeError("Mode %s not compatible with align" % self.mode)
 
-        # build up the option list
-        opts = []
-        if trim:
-            opts.append('--trim')
+        try:
+            with pyhmmer.plan7.HMMFile(db) as hmmFile:
+                hmm = hmmFile.read()
+            if hmm is None:
+                raise ValueError(f'no HMM in {db}')
 
-        bAppend = (writeMode == '>>')
-
-        # run hmmer
-        cmd = ['hmmalign', '--allcol'] + opts + ['--outformat', outputFormat, db, query]
-        rtn = runWithStdout(cmd, outputFile, bAppend)
-        if rtn == 1:
-            # assume user has a newer version of HMMER (>= 3.1b1) and the allcol parameter is no longer valid
-            cmd.remove('--allcol')
-            rtn = runWithStdout(cmd, outputFile, bAppend)
-
-        exitOnFailure(self.logger, 'hmmalign', rtn)
+            # markers are aligned in parallel by worker processes, so each alignment uses a single thread
+            msa = pyhmmer.hmmalign(hmm, _readProteins(query), cpus=1, trim=trim)
+            with open(outputFile, 'ab' if writeMode == '>>' else 'wb') as fout:
+                msa.write(fout, outputFormat.lower())
+        except Exception as e:
+            _exitOnHmmerError(self.logger, 'hmmalign', e)
 
     def fetch(self, db, key, fetchFileName, bKeyFile=False):
-        """Run hmmfetch"""
+        """Write the HMM(s) with the given name or accession to a file, as done by hmmfetch.
+
+        If bKeyFile is True, key is a file with one name or accession per
+        line and HMMs are written in this order. HMMs are located with the
+        SSI index of the HMM file (<db>.ssi) if it exists, and by reading
+        the HMM file otherwise.
+        """
         if self.mode != 'fetch':
             raise HMMMERModeError("Mode %s not compatible with fetch" % self.mode)
 
-        cmd = ['hmmfetch']
-        if bKeyFile:
-            cmd.append('-f')
-        cmd += [db, key]
+        try:
+            if bKeyFile:
+                with open(key) as f:
+                    keys = [line.split()[0] for line in f if line.strip() and line[0] != '#']
+            else:
+                keys = [key]
 
-        rtn = runWithStdout(cmd, fetchFileName)
-        exitOnFailure(self.logger, 'hmmfetch', rtn)
+            with open(fetchFileName, 'wb') as fout:
+                if os.path.exists(db + '.ssi'):
+                    self._fetchIndexed(db, keys, fout)
+                else:
+                    self._fetchUnindexed(db, keys, fout)
+        except Exception as e:
+            _exitOnHmmerError(self.logger, 'hmmfetch', e)
+
+    def _fetchIndexed(self, db, keys, fout):
+        """Write HMMs located with the SSI index of a HMM file."""
+        with pyhmmer.easel.SSIReader(db + '.ssi') as index, open(db, 'rb') as fin:
+            for key in keys:
+                try:
+                    fin.seek(index.find_name(key).record_offset)
+                except KeyError:
+                    raise KeyError(f'HMM {key} not found in {db}') from None
+
+                record = []
+                for line in fin:
+                    record.append(line)
+                    if line.rstrip() == b'//':
+                        break
+
+                with pyhmmer.plan7.HMMFile(io.BytesIO(b''.join(record))) as hmmFile:
+                    hmmFile.read().write(fout)
+
+    def _fetchUnindexed(self, db, keys, fout):
+        """Write HMMs found by reading a HMM file (the first HMM with a given name or accession)."""
+        keyToHmm = dict.fromkeys(keys)
+        with pyhmmer.plan7.HMMFile(db) as hmmFile:
+            for hmm in hmmFile:
+                for key in (hmm.name, hmm.accession):
+                    key = key.decode() if isinstance(key, bytes) else key
+                    if key in keyToHmm and keyToHmm[key] is None:
+                        keyToHmm[key] = hmm
+
+        for key in keys:
+            if keyToHmm[key] is None:
+                raise KeyError(f'HMM {key} not found in {db}')
+            keyToHmm[key].write(fout)
 
     def index(self, hmmModelFile):
-        """Index a HMM file."""
+        """Create the SSI index of a HMM file (<file>.ssi), as done by 'hmmfetch --index'."""
         if self.mode != 'fetch':
             raise HMMMERModeError("Mode %s not compatible with fetch" % self.mode)
 
-        rtn = runWithStdout(['hmmfetch', '--index', hmmModelFile], os.devnull)
-        exitOnFailure(self.logger, 'hmmfetch', rtn)
+        try:
+            with pyhmmer.easel.SSIWriter(hmmModelFile + '.ssi', exclusive=False) as index, open(hmmModelFile, 'rb') as fin:
+                fd = index.add_file(os.path.basename(hmmModelFile), format=0)
+                offset = recordOffset = 0
+                name = None
+                accessions = []
+                for line in fin:
+                    if line.startswith(b'NAME '):
+                        name = line.split()[1].decode()
+                    elif line.startswith(b'ACC '):
+                        accessions.append(line.split()[1].decode())
+                    elif line.rstrip() == b'//':
+                        index.add_key(name, fd, recordOffset, 0, 0)
+                        for accession in accessions:
+                            index.add_alias(accession, name)
+                        recordOffset = offset + len(line)
+                        name = None
+                        accessions = []
+                    offset += len(line)
+        except Exception as e:
+            _exitOnHmmerError(self.logger, 'hmmfetch --index', e)
 
     def checkForHMMER(self):
-        """Check to see if HMMER is on the system path."""
-        try:
-            subprocess.call(['hmmsearch', '-h'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-        except:
-            self.logger.error("Make sure HMMER executables (e.g., hmmsearch, hmmfetch) are on your system path.")
-            sys.exit(1)
+        """HMMER is provided by pyhmmer, which is imported with this module."""
+        pass
 
 
 class HMMERParser():

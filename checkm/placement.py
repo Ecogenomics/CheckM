@@ -35,11 +35,11 @@ from checkm.util.compression import compressFile, hasContent, uncompressedName
 
 
 # minimum version of gPlace required by CheckM
-MIN_GPLACE_VERSION = (0, 1, 0)
+MIN_GPLACE_VERSION = (0, 1, 2)
 
 
 def parseGPlaceVersion(versionOutput):
-    """Parse the version from the output of 'gplace --version' (e.g., 'gplace: version 0.1.0 ...').
+    """Parse the version from the output of 'gplace --version' (e.g., 'gplace: version 0.1.2 ...').
 
     Returns a tuple of integers, or None if the version can't be determined.
     """
