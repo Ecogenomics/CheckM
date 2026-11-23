@@ -1,0 +1,253 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migration to pyhmmer &mdash; CheckM 1.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=05c9bb44" />
+
+  
+    <link rel="shortcut icon" href="_static/checkm_icon.png"/>
+    <link rel="canonical" href="https://ecogenomics.github.io/CheckM/pyhmmer_migration.html" />
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=9172181d"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Migration to Python 3" href="python3.html" />
+    <link rel="prev" title="Quality estimate changes" href="quality_estimate_changes.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/checkm_logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing/index.html">Installing CheckM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ and support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Running CheckM</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflows.html">Workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="commands/index.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs/index.html">Outputs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Citing CheckM</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional information</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Performance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quality_estimate_changes.html">Quality estimate changes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Migration to pyhmmer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#what-you-need-to-do">What you need to do</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#changes-to-results-and-output-files">Changes to results and output files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance">Performance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reference">Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="python3.html">Migration to Python 3</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CheckM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Migration to pyhmmer</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/Ecogenomics/CheckM/blob/master/docs/src/pyhmmer_migration.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="migration-to-pyhmmer">
+<span id="pyhmmer-migration"></span><h1>Migration to pyhmmer<a class="headerlink" href="#migration-to-pyhmmer" title="Link to this heading"></a></h1>
+<p>CheckM &gt;= 1.4.0 runs <a class="reference external" href="http://hmmer.org/">HMMER</a> through <a class="reference external" href="https://pyhmmer.readthedocs.io">pyhmmer</a>, a
+Python library that includes HMMER 3.4. CheckM &lt;= 1.3.2 ran the HMMER programs (<code class="docutils literal notranslate"><span class="pre">hmmsearch</span></code>, <code class="docutils literal notranslate"><span class="pre">hmmalign</span></code>,
+<code class="docutils literal notranslate"><span class="pre">hmmfetch</span></code> and <code class="docutils literal notranslate"><span class="pre">nhmmer</span></code>), which had to be installed separately.</p>
+<p>Completeness, contamination and strain heterogeneity estimates are unchanged. The search for marker genes
+takes less time, but needs more memory.</p>
+<section id="what-you-need-to-do">
+<h2>What you need to do<a class="headerlink" href="#what-you-need-to-do" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Installing:</strong> nothing. pyhmmer (&gt;= 0.12.0) is installed with CheckM by pip, Bioconda and Docker (see
+<a class="reference internal" href="installing/index.html#installing"><span class="std std-ref">Installing CheckM</span></a>). It is available for Linux and macOS. The HMMER programs are no longer used, so they do
+not need to be on your system path.</p></li>
+<li><p><strong>gPlace:</strong> CheckM 1.4.0 also requires gPlace &gt;= 0.1.2 (CheckM 1.3.x required &gt;= 0.1.0). Update it with
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">--upgrade</span> <span class="pre">gtdb-gplace</span></code> in the environment where gPlace is installed.</p></li>
+<li><p><strong>Commands:</strong> no arguments were added, removed or changed.</p></li>
+<li><p><strong>Scripts that read CheckM’s output:</strong> check the changes to the output files below. The names and formats
+of the files are unchanged.</p></li>
+</ul>
+</section>
+<section id="changes-to-results-and-output-files">
+<h2>Changes to results and output files<a class="headerlink" href="#changes-to-results-and-output-files" title="Link to this heading"></a></h2>
+<p>CheckM 1.4.0 was compared with CheckM 1.3.2 on the two sets of test genomes described in
+<a class="reference internal" href="performance.html#performance"><span class="std std-ref">Performance</span></a>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">quality_report.tsv</span></code> of <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> is identical for the 128 genomes and the 1,000 genomes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">quality_report.tsv</span></code> of <code class="docutils literal notranslate"><span class="pre">taxonomy_wf</span></code> is identical for the 128 genomes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ssu_summary.tsv</span></code> and <code class="docutils literal notranslate"><span class="pre">ssu.fna</span></code> of <code class="docutils literal notranslate"><span class="pre">ssu_finder</span></code> are identical for the 128 genomes.</p></li>
+</ul>
+<p>pyhmmer was also compared with the programs of HMMER 3.4 on the 128 genomes. The output of <code class="docutils literal notranslate"><span class="pre">hmmfetch</span></code> and
+<code class="docutils literal notranslate"><span class="pre">hmmalign</span></code> is identical. The following files differ:</p>
+<ul class="simple">
+<li><p><strong>HMMER tables</strong> (e.g., <code class="docutils literal notranslate"><span class="pre">bins/&lt;bin</span> <span class="pre">id&gt;/hmmer.analyze.txt.gz</span></code>): E-values that <code class="docutils literal notranslate"><span class="pre">hmmsearch</span></code> writes as
+<code class="docutils literal notranslate"><span class="pre">0</span></code> can be written as very small numbers (e.g., <code class="docutils literal notranslate"><span class="pre">5.2e-313</span></code>). This affected 177 of the 1,125,861 hits
+to the 128 genomes. All other values are identical.</p></li>
+<li><p><strong>Reports written with</strong> <code class="docutils literal notranslate"><span class="pre">--ali</span></code> (e.g., <code class="docutils literal notranslate"><span class="pre">bins/&lt;bin</span> <span class="pre">id&gt;/hmmer.analyze.ali.txt.gz</span></code>): pyhmmer does not
+write this report, so CheckM writes it in the layout of the output of <code class="docutils literal notranslate"><span class="pre">hmmsearch</span></code>. It has the same hits
+and alignments, but not the header and search statistics of <code class="docutils literal notranslate"><span class="pre">hmmsearch</span></code>. The spacing of some column
+headers differs, and E-values of <code class="docutils literal notranslate"><span class="pre">0</span></code> can be very small numbers, as above.</p></li>
+<li><p><strong>Hit tables of</strong> <code class="docutils literal notranslate"><span class="pre">ssu_finder</span></code>: CheckM writes these tables. The hits are those of <code class="docutils literal notranslate"><span class="pre">nhmmer</span></code> run with a
+single thread (<code class="docutils literal notranslate"><span class="pre">--cpu</span> <span class="pre">0</span></code>).</p></li>
+</ul>
+</section>
+<section id="performance">
+<h2>Performance<a class="headerlink" href="#performance" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> was run with 64 threads, as described in <a class="reference internal" href="performance.html#performance"><span class="std std-ref">Performance</span></a>. CheckM 1.4.0 used pyhmmer 0.12.3
+and CheckM 1.3.2 used the programs of HMMER 3.4.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Wall time</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 48.9%" />
+<col style="width: 12.8%" />
+<col style="width: 19.1%" />
+<col style="width: 19.1%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Step</p></th>
+<th class="head"><p>Genomes</p></th>
+<th class="head"><p>CheckM 1.3.2</p></th>
+<th class="head"><p>CheckM 1.4.0</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Calling genes and searching for the 43 marker genes of the reference genome tree (<code class="docutils literal notranslate"><span class="pre">tree</span></code>)</p></td>
+<td><p>128</p></td>
+<td><p>75 s</p></td>
+<td><p>75 s</p></td>
+</tr>
+<tr class="row-odd"><td><p>Searching for the lineage-specific marker genes (<code class="docutils literal notranslate"><span class="pre">analyze</span></code>)</p></td>
+<td><p>128</p></td>
+<td><p>197 s</p></td>
+<td><p>154 s</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code></p></td>
+<td><p>128</p></td>
+<td><p>299 s</p></td>
+<td><p>254 s</p></td>
+</tr>
+<tr class="row-odd"><td><p>Calling genes and searching for the 43 marker genes of the reference genome tree (<code class="docutils literal notranslate"><span class="pre">tree</span></code>)</p></td>
+<td><p>1,000</p></td>
+<td><p>254 s</p></td>
+<td><p>239 s</p></td>
+</tr>
+<tr class="row-even"><td><p>Searching for the lineage-specific marker genes (<code class="docutils literal notranslate"><span class="pre">analyze</span></code>)</p></td>
+<td><p>1,000</p></td>
+<td><p>780 s</p></td>
+<td><p>693 s</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code></p></td>
+<td><p>1,000</p></td>
+<td><p>1,120 s</p></td>
+<td><p>1,018 s</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Time:</strong> searching for the lineage-specific marker genes is the longest step of <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code>, and takes
+22% (128 genomes) and 11% (1,000 genomes) less time with pyhmmer. Most of the time of the <code class="docutils literal notranslate"><span class="pre">tree</span></code> step is
+spent calling genes with Prodigal, so it changes little. <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> takes 15% and 9% less time.</p></li>
+<li><p><strong>Memory:</strong> with 1,000 genomes, searching for the lineage-specific marker genes needed 5.9 GiB of memory
+with pyhmmer and 3.1 GiB with <code class="docutils literal notranslate"><span class="pre">hmmsearch</span></code>. This memory increases with the number of threads. It is less
+than the memory used to place genomes in the reference genome tree (13.7 GiB), so the peak memory of
+<code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> is not changed by pyhmmer. It matters if the memory of gPlace is limited with
+<code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span></code>: <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> with <code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span> <span class="pre">6G</span></code> then needed 6.3 GiB with CheckM
+1.4.0 and 5.3 GiB with CheckM 1.3.2.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ssu_finder</span></code>: took 15 s for the 128 genomes instead of 10 s. pyhmmer searches a sequence file with one
+thread for each HMM, so CheckM searches parts of the file in separate processes.</p></li>
+</ul>
+<p>The lower peak memory of <code class="docutils literal notranslate"><span class="pre">lineage_wf</span></code> in CheckM 1.4.0 without <code class="docutils literal notranslate"><span class="pre">--gplace_max_memory</span></code> (13.7 GiB instead of
+about 17 GiB for 1,000 genomes) is due to gPlace 0.1.2, not pyhmmer.</p>
+</section>
+<section id="reference">
+<h2>Reference<a class="headerlink" href="#reference" title="Link to this heading"></a></h2>
+<p>Larralde M, Zeller G. 2023. PyHMMER: a Python library binding to HMMER for efficient sequence analysis.
+Bioinformatics 39: btad214.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quality_estimate_changes.html" class="btn btn-neutral float-left" title="Quality estimate changes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="python3.html" class="btn btn-neutral float-right" title="Migration to Python 3" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2014-2026, Donovan Parks, Connor Skennerton, Michael Imelfort.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

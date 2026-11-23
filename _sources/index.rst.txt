@@ -105,4 +105,5 @@ If you use CheckM in your research, please cite CheckM and the software it relie
 
    performance
    quality_estimate_changes
+   pyhmmer_migration
    python3

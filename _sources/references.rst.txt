@@ -19,3 +19,5 @@ CheckM relies on several other software packages; we recommend also citing:
 * `Prodigal <https://github.com/hyattpd/Prodigal>`_: Hyatt D, Locascio PF, Hauser LJ, Uberbacher EC. 2012.
   Gene and translation initiation site prediction in metagenomic sequences. Bioinformatics 28: 2223–2230.
 * `HMMER <http://hmmer.org/>`_: `<http://hmmer.org/>`_
+* `pyhmmer <https://pyhmmer.readthedocs.io>`_ (CheckM >= 1.4.0): Larralde M, Zeller G. 2023. PyHMMER: a
+  Python library binding to HMMER for efficient sequence analysis. Bioinformatics 39: btad214.

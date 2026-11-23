@@ -11,7 +11,8 @@ by :ref:`taxon_set <commands/taxon_set>`, or a HMM file of :ref:`custom marker g
 Completeness and contamination are then estimated with the :ref:`qa <commands/qa>` command.
 
 * ``--ali``: generate a HMMER alignment file for each bin in
-  ``<output folder>/bins/<bin id>/hmmer.analyze.ali.txt.gz``.
+  ``<output folder>/bins/<bin id>/hmmer.analyze.ali.txt.gz``. This is a report of the hits to each marker
+  gene and their alignments, in the layout of the output of ``hmmsearch``.
 * ``--nt``: generate nucleotide gene sequences for each bin in ``<output folder>/bins/<bin id>/genes.fna.gz``.
 * ``--genes``: bins contain genes as amino acids instead of nucleotide contigs.
 

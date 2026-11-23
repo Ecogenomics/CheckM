@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Installing CheckM &mdash; CheckM 1.3.2 documentation</title>
+  <title>Installing CheckM &mdash; CheckM 1.4.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=05c9bb44" />
@@ -16,7 +16,7 @@
     <link rel="canonical" href="https://ecogenomics.github.io/CheckM/installing/index.html" />
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=8ca9e7a0"></script>
+      <script src="../_static/documentation_options.js?v=9172181d"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -80,6 +80,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../performance.html">Performance</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quality_estimate_changes.html">Quality estimate changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhmmer_migration.html">Migration to pyhmmer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../python3.html">Migration to Python 3</a></li>
 </ul>
 
@@ -109,7 +110,7 @@
              
   <section id="installing-checkm">
 <span id="installing"></span><h1>Installing CheckM<a class="headerlink" href="#installing-checkm" title="Link to this heading"></a></h1>
-<p>The latest release of CheckM is 1.3.2. CheckM &gt;= 1.3.0 requires Python &gt;= 3.11 (CheckM 1.1.0 to 1.2.10
+<p>The latest release of CheckM is 1.4.0. CheckM &gt;= 1.3.0 requires Python &gt;= 3.11 (CheckM 1.1.0 to 1.2.10
 require Python 3).</p>
 <p>CheckM can be installed with <a class="reference internal" href="pip.html#installing-pip"><span class="std std-ref">pip</span></a> or <a class="reference internal" href="bioconda.html#installing-bioconda"><span class="std std-ref">Bioconda</span></a>, or run
 from a <a class="reference internal" href="docker.html#installing-docker"><span class="std std-ref">Docker</span></a> image built with the Dockerfile in the CheckM repository. All
@@ -149,13 +150,12 @@ genome tree.</p>
 <p>CheckM requires the following programs to be
 <a class="reference external" href="https://unix.stackexchange.com/questions/26047/how-to-correctly-add-a-path-to-path">added to your system path</a>:</p>
 <ul class="simple">
-<li><p><a class="reference external" href="http://hmmer.org/">HMMER</a> (&gt;= 3.1b1)</p></li>
 <li><p><a class="reference external" href="https://github.com/hyattpd/Prodigal">Prodigal</a> (2.60 or &gt;= 2.6.1)</p>
 <ul>
 <li><p>the executable must be named <code class="docutils literal notranslate"><span class="pre">prodigal</span></code> and not <code class="docutils literal notranslate"><span class="pre">prodigal.linux</span></code></p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://github.com/cmc-aau/gPlace">gPlace</a> (&gt;= 0.1.0)</p>
+<li><p><a class="reference external" href="https://github.com/cmc-aau/gPlace">gPlace</a> (&gt;= 0.1.2; CheckM 1.3.x requires &gt;= 0.1.0)</p>
 <ul>
 <li><p>gPlace requires Python &gt;= 3.12 and can be installed with <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gtdb-gplace</span></code>. It can be
 installed in a separate environment as long as the <code class="docutils literal notranslate"><span class="pre">gplace</span></code> command is on your system path.</p></li>
@@ -168,6 +168,10 @@ and <code class="docutils literal notranslate"><span class="pre">guppy</span></c
 <p>These programs are installed automatically with the <a class="reference internal" href="bioconda.html#installing-bioconda"><span class="std std-ref">Bioconda</span></a> package and in
 the <a class="reference internal" href="docker.html#installing-docker"><span class="std std-ref">Docker</span></a> image, but must be installed separately when CheckM is installed with
 <a class="reference internal" href="pip.html#installing-pip"><span class="std std-ref">pip</span></a>.</p>
+<p>CheckM &gt;= 1.4.0 does not require <a class="reference external" href="http://hmmer.org/">HMMER</a> to be installed. HMMER is run through
+<a class="reference external" href="https://pyhmmer.readthedocs.io">pyhmmer</a>, a Python library that includes HMMER 3.4 and is installed
+with CheckM (see <a class="reference internal" href="#installing-python-dependencies"><span class="std std-ref">Python dependencies</span></a>). CheckM &lt;= 1.3.2 requires the HMMER programs
+(&gt;= 3.1b1) to be on your system path.</p>
 </section>
 <section id="python-dependencies">
 <span id="installing-python-dependencies"></span><h2>Python dependencies<a class="headerlink" href="#python-dependencies" title="Link to this heading"></a></h2>
@@ -180,6 +184,7 @@ the <a class="reference internal" href="docker.html#installing-docker"><span cla
 <li><p>dendropy &gt;= 4.5.2</p></li>
 <li><p>tqdm &gt;= 4.62</p></li>
 <li><p>xopen &gt;= 2.0 (reads and writes the gzip-compressed <a class="reference internal" href="../outputs/files.html#outputs-files"><span class="std std-ref">output files</span></a>)</p></li>
+<li><p>pyhmmer &gt;= 0.12.0 (provides HMMER; available for Linux and macOS)</p></li>
 <li><p>setuptools &gt;= 81</p></li>
 </ul>
 </section>
