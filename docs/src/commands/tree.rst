@@ -10,7 +10,8 @@ bin with Prodigal (unless ``--genes`` is used), phylogenetically informative mar
 HMMER, and each bin is placed in the reference genome tree with `gPlace <https://github.com/cmc-aau/gPlace>`_.
 
 * ``--ali``: generate a HMMER alignment file for each bin in
-  ``<output folder>/bins/<bin id>/hmmer.tree.ali.txt.gz``.
+  ``<output folder>/bins/<bin id>/hmmer.tree.ali.txt.gz``. This is a report of the hits to each marker
+  gene and their alignments, in the layout of the output of ``hmmsearch``.
 * ``--nt``: generate nucleotide gene sequences for each bin in ``<output folder>/bins/<bin id>/genes.fna.gz``.
 * ``--genes``: bins contain genes as amino acids instead of nucleotide contigs.
 * ``-t``: number of threads, which is also the number of threads used by gPlace.

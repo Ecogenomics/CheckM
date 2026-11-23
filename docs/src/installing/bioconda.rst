@@ -5,7 +5,7 @@ Bioconda
 
 A Conda package for CheckM is available on `Bioconda <https://anaconda.org/bioconda/checkm-genome>`_ as
 ``checkm-genome``. It installs CheckM along with all of its :ref:`dependencies <installing/dependencies>`,
-including gPlace, HMMER and Prodigal.
+including gPlace and Prodigal.
 
 The package can be installed with either `mamba <https://mamba.readthedocs.io>`_ or
 `conda <https://docs.conda.io>`_. We recommend mamba, which resolves dependencies faster than conda.

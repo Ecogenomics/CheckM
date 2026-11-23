@@ -2,6 +2,18 @@
 
 All published releases of CheckM are listed below, most recent first. Dates are those of the [GitHub release](https://github.com/Ecogenomics/CheckM/releases) or, where there is none, of the upload to [PyPI](https://pypi.org/project/checkm-genome/#history). Some version numbers were not released separately; their changes are listed under the release that first included them.
 
+## 1.4.0 (2026-11-23)
+
+HMMER is now run through [pyhmmer](https://github.com/althonos/pyhmmer), so the HMMER programs no longer need to be installed. Results are unchanged: `quality_report.tsv` of `lineage_wf` is identical to CheckM 1.3.2 on 128 and 1,000 test genomes, and that of `taxonomy_wf` is identical on 128 genomes. On 1,000 genomes with 64 threads, `lineage_wf` takes 9% less time than CheckM 1.3.2 (17.0 instead of 18.7 min). See [Migration to pyhmmer](https://ecogenomics.github.io/CheckM/pyhmmer_migration.html) and the [performance results](https://ecogenomics.github.io/CheckM/performance.html).
+
+- Adds pyhmmer (>= 0.12.0) as a dependency, which is installed with CheckM and includes HMMER 3.4. It is available for Linux and macOS. `hmmsearch`, `hmmalign`, `hmmfetch` and `nhmmer` are no longer required on the system path.
+- Identifying marker genes takes less time but needs more memory. With 64 threads and 1,000 genomes, this step of `analyze` takes 11% less time (11.6 instead of 13.1 min) and needs 5.9 GiB instead of 3.1 GiB. The peak memory of `tree` and `lineage_wf` is still set by gPlace, unless its memory is limited with `--gplace_max_memory` (e.g., 6.3 GiB instead of 5.3 GiB for `lineage_wf` with `--gplace_max_memory 6G`).
+- gPlace >= 0.1.2 is required (previously >= 0.1.0). Its memory no longer differs between runs on the same genomes (13.6 GiB with 64 threads and 1,000 genomes; gPlace 0.1.0 used 14.3 to 18.4 GiB) and it is faster when its memory is limited (19 s instead of about 1 min with `--gplace_max_memory 6G`).
+- E-values that `hmmsearch` prints as `0` may be written as very small numbers (e.g., `5.2e-313`) in the HMMER tables (e.g., `bins/<genome_id>/hmmer.analyze.txt.gz`). All other values are unchanged.
+- The report written with `--ali` (e.g., `bins/<genome_id>/hmmer.analyze.ali.txt.gz`) is now written by CheckM in the layout of the output of `hmmsearch`. It has the same hits and alignments, but not the header and search statistics of `hmmsearch`.
+- `ssu_finder` runs nhmmer through pyhmmer and writes the hit tables itself. `ssu_summary.tsv` and `ssu.fna` are identical to CheckM 1.3.2 on 128 genomes. It is slightly slower (15 s instead of 10 s with 64 threads).
+- The Docker image no longer installs HMMER.
+
 ## 1.3.2 (2026-11-19)
 
 Reduces the memory needed to call genes and fixes occasional high memory usage by `analyze`. Results are unchanged: all outputs of `lineage_wf` and `taxonomy_wf` are identical to CheckM 1.3.1 on 128 test genomes, and `quality_report.tsv` is identical on 1,000 genomes.

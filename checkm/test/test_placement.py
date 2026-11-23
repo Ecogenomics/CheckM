@@ -109,13 +109,13 @@ class VerifyGPlaceCheck(unittest.TestCase):
         self.assertTrue(any('pip install gtdb-gplace' in msg for msg in cm.output))
 
     def testTooOld(self):
-        """CheckM exits with an error if gplace is older than 0.1.0."""
-        fakeGPlace(self.tmpDir, 'gplace: version 0.0.9 Copyright 2026')
+        """CheckM exits with an error if gplace is older than 0.1.2."""
+        fakeGPlace(self.tmpDir, 'gplace: version 0.1.1 Copyright 2026')
         self._usePath(self.tmpDir + os.pathsep + self.origPath)
         with self.assertLogs('timestamp', level='ERROR') as cm:
             with self.assertRaises(SystemExit):
                 GPlaceRunner(threads=1)
-        self.assertTrue(any('gPlace 0.0.9 was found' in msg for msg in cm.output))
+        self.assertTrue(any('gPlace 0.1.1 was found' in msg for msg in cm.output))
 
     def testUnknownVersion(self):
         """CheckM exits with an error if the version of gplace can't be determined."""
@@ -127,16 +127,16 @@ class VerifyGPlaceCheck(unittest.TestCase):
 
     def testSupportedVersion(self):
         """A supported version of gplace is accepted."""
-        fakeGPlace(self.tmpDir, 'gplace: version 0.1.0 Copyright 2026 Pierre-Alain Chaumeil')
+        fakeGPlace(self.tmpDir, 'gplace: version 0.1.2 Copyright 2026')
         self._usePath(self.tmpDir + os.pathsep + self.origPath)
         runner = GPlaceRunner(threads=96)
-        self.assertEqual(runner.version, (0, 1, 0))
+        self.assertEqual(runner.version, (0, 1, 2))
         self.assertEqual(runner.numThreads, 96)
         self.assertIsNone(runner.maxMemory)
 
     def testPlaceCmd(self):
         """--max_memory is passed to 'gplace place' only when a memory limit is given."""
-        fakeGPlace(self.tmpDir, 'gplace: version 0.1.0 Copyright 2026 Pierre-Alain Chaumeil')
+        fakeGPlace(self.tmpDir, 'gplace: version 0.1.2 Copyright 2026')
         self._usePath(self.tmpDir + os.pathsep + self.origPath)
 
         runner = GPlaceRunner(threads=8)
@@ -150,7 +150,7 @@ class VerifyGPlaceCheck(unittest.TestCase):
 
     def testInvalidMaxMemory(self):
         """An invalid memory limit is rejected."""
-        fakeGPlace(self.tmpDir, 'gplace: version 0.1.0 Copyright 2026 Pierre-Alain Chaumeil')
+        fakeGPlace(self.tmpDir, 'gplace: version 0.1.2 Copyright 2026')
         self._usePath(self.tmpDir + os.pathsep + self.origPath)
         with self.assertRaises(ValueError):
             GPlaceRunner(threads=1, maxMemory='lots')

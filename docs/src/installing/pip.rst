@@ -20,26 +20,24 @@ CheckM into a virtual environment:
     source .venv/bin/activate   # or: whatever the venv command tells you to run
     pip3 install checkm-genome  # or: uv pip install checkm-genome
 
-The :ref:`bioinformatic tool dependencies <installing/dependencies>` (HMMER, Prodigal, and gPlace) need to
-be installed separately and placed on your system path. gPlace is installed from PyPI and requires
+The :ref:`bioinformatic tool dependencies <installing/dependencies>` (Prodigal and gPlace) need to
+be installed separately and placed on your system path. HMMER does not need to be installed for
+CheckM >= 1.4.0, as it is provided by the pyhmmer library. gPlace is installed from PyPI and requires
 Python >= 3.12:
 
 .. code-block:: bash
 
     pip3 install gtdb-gplace
 
-If you are not too concerned about having the latest versions, your package manager may provide HMMER and
-Prodigal:
-
-* Debian, Ubuntu, etc.: ``apt install hmmer prodigal``
-* Fedora: ``dnf install hmmer`` (Prodigal needs to be obtained separately, e.g. from Bioconda)
+If you are not too concerned about having the latest version, your package manager may provide Prodigal
+(e.g., ``apt install prodigal`` on Debian and Ubuntu). It is also available from Bioconda.
 
 Alternatively, a Conda environment can be set up with the dependencies from Bioconda and CheckM installed
 with ``pip``. This can be done with mamba (recommended) or conda (replace ``mamba`` with ``conda``):
 
 .. code-block:: bash
 
-    mamba create -n checkm -c conda-forge -c bioconda python=3.12 hmmer prodigal
+    mamba create -n checkm -c conda-forge -c bioconda python=3.12 prodigal
     mamba activate checkm
     pip3 install checkm-genome gtdb-gplace
 

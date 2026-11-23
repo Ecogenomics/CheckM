@@ -164,13 +164,6 @@ class VerifyFrozenHeap(unittest.TestCase):
         """Worker processes are started with the heap frozen, so they do not copy the memory of the parent."""
         import gc
         from checkm.markerGeneFinder import MarkerGeneFinder
-        from checkm.hmmer import HMMERRunner
-
-        try:
-            HMMERRunner()
-        except SystemExit:
-            self.skipTest('HMMER is not on the system path')
-
         freezeCounts = []
 
         def processGroups(*args, **kwargs):

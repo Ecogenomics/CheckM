@@ -6,7 +6,7 @@ Thank you for your interest in CheckM. Please read this page before you open an 
 
 CheckM v1 (this repository) is **unmaintained**. Its successor is [CheckM2](https://github.com/chklovski/CheckM2).
 
-We only make small updates to keep CheckM working with new versions of its external dependencies. These include Python, numpy, scipy, matplotlib, pysam, dendropy, setuptools, HMMER, Prodigal and gPlace. As a result:
+We only make small updates to keep CheckM working with new versions of its external dependencies. These include Python, numpy, scipy, matplotlib, pysam, dendropy, setuptools, pyhmmer, Prodigal and gPlace. As a result:
 
 - **We welcome** bug reports and fixes for crashes or incorrect results caused by new versions of these dependencies.
 - **We will not accept** new features, new commands, changes to the marker sets or reference data, or changes to how completeness and contamination are estimated.
@@ -20,7 +20,7 @@ A useful bug report includes:
 
 - the CheckM version (`checkm -h` prints it) and how CheckM was installed (pip, Bioconda, Docker)
 - your Python version and operating system
-- the versions of HMMER, Prodigal and gPlace (or pplacer, for CheckM < 1.3.0)
+- the versions of pyhmmer (or HMMER, for CheckM < 1.4.0), Prodigal and gPlace (or pplacer, for CheckM < 1.3.0)
 - the exact command you ran
 - the full error message, along with `checkm.log` from the output directory
 - if possible, a small set of genomes that reproduces the problem
@@ -29,9 +29,8 @@ A useful bug report includes:
 
 CheckM requires Python >= 3.11. You also need the following on your `PATH`:
 
-- [HMMER](http://hmmer.org/) >= 3.1
 - [Prodigal](https://github.com/hyattpd/Prodigal) 2.6.3
-- [gPlace](https://github.com/cmc-aau/gPlace) >= 0.1.0 (`pip install gtdb-gplace`; requires Python >= 3.12 and can be installed in a separate environment)
+- [gPlace](https://github.com/cmc-aau/gPlace) >= 0.1.2 (`pip install gtdb-gplace`; requires Python >= 3.12 and can be installed in a separate environment)
 
 Install CheckM from your clone in editable mode:
 
@@ -125,4 +124,4 @@ Other contributions are acknowledged in the [change log](CHANGELOG.md).
 
 We are grateful to the community members who package and maintain CheckM on [Bioconda](https://anaconda.org/bioconda/checkm-genome). We also thank everyone who has reported bugs and suggested fixes through GitHub issues.
 
-CheckM relies on [HMMER](http://hmmer.org/), [Prodigal](https://github.com/hyattpd/Prodigal), [pplacer](https://matsen.fhcrc.org/pplacer/) and [gPlace](https://github.com/cmc-aau/gPlace), and we thank their developers.
+CheckM relies on [HMMER](http://hmmer.org/), [pyhmmer](https://github.com/althonos/pyhmmer), [Prodigal](https://github.com/hyattpd/Prodigal), [pplacer](https://matsen.fhcrc.org/pplacer/) and [gPlace](https://github.com/cmc-aau/gPlace), and we thank their developers.

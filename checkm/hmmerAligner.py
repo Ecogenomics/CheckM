@@ -30,7 +30,7 @@ from collections import defaultdict
 from checkm.defaultValues import DefaultValues
 from checkm.common import makeSurePathExists
 from checkm.util.seqUtils import readFasta
-from checkm.util.forking import frozenHeap
+from checkm.util.forking import frozenHeap, runInChild
 from checkm.hmmer import HMMERRunner
 from checkm.resultsParser import ResultsParser
 from checkm.util.progress import progressBar
@@ -203,16 +203,21 @@ class HmmerAligner:
                 # create multiple sequence alignments for markers with multiple hits
                 binAlignOutputDir = os.path.join(alignOutputDir, binId)
                 makeSurePathExists(binAlignOutputDir)
-                for markerId in markersWithMultipleHits:
-                    tempModelFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-                    try:
-                        HF.fetch(hmmModelFile, markerId, tempModelFile)
-
-                        self._alignMarker(markerId, markersWithMultipleHits[markerId], None, False, binAlignOutputDir, tempModelFile, bKeepUnmaskedAlign=False)
-                    finally:
-                        self._removeFiles([tempModelFile])
+                # HMMER is run in a child process so the memory of this worker does not grow (see runInChild)
+                runInChild(self._alignMarkersWithMultipleHits, HF, hmmModelFile, markersWithMultipleHits, binAlignOutputDir)
 
             queueOut.put(binId)
+
+    def _alignMarkersWithMultipleHits(self, HF, hmmModelFile, markersWithMultipleHits, binAlignOutputDir):
+        """Align the hits of each marker with multiple hits in a bin."""
+        for markerId in markersWithMultipleHits:
+            tempModelFile = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
+            try:
+                HF.fetch(hmmModelFile, markerId, tempModelFile)
+
+                self._alignMarker(markerId, markersWithMultipleHits[markerId], None, False, binAlignOutputDir, tempModelFile, bKeepUnmaskedAlign=False)
+            finally:
+                self._removeFiles([tempModelFile])
 
     def _reportBinProgress(self, numBins, queueIn):
         """Report number of processed bins."""
@@ -290,7 +295,8 @@ class HmmerAligner:
             if markerId == None:
                 break
 
-            self._alignMarker(markerId, markerSeqs[markerId], markerStats[markerId], bReportHitStats, alignOutputDir, hmmModelFiles[markerId], bKeepUnmaskedAlign, bCompress)
+            # HMMER is run in a child process so the memory of this worker does not grow (see runInChild)
+            runInChild(self._alignMarker, markerId, markerSeqs[markerId], markerStats[markerId], bReportHitStats, alignOutputDir, hmmModelFiles[markerId], bKeepUnmaskedAlign, bCompress)
 
             queueOut.put(markerId)
 

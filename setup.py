@@ -48,6 +48,7 @@ setup(
         "dendropy >= 4.5.2",
         "tqdm >= 4.62",
         "xopen >= 2.0",
+        "pyhmmer >= 0.12.0",
         "setuptools >= 81"],
     zip_safe=False
 )
