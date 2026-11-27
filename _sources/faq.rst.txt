@@ -10,8 +10,8 @@ Processing large numbers of genomes
 -----------------------------------
 
 If you plan to process a large number of genomes, you may wish to break these into smaller batches.
-With CheckM >= 1.3.0, running 1,000 genomes at a time with 64 threads takes ~20 minutes and up to ~18.5 GiB
-of memory (see :ref:`performance`).
+With CheckM >= 1.4.0, running 1,000 genomes at a time with 64 threads takes ~17 minutes and ~14 GiB of
+memory (see :ref:`performance`).
 Exceeding the available memory of your machine will cause CheckM to use swap space (as per any
 program), which will substantially increase the time to process genomes; use ``--gplace_max_memory`` to limit
 the memory used to place genomes in the reference genome tree (see :ref:`installing/system_requirements`).
