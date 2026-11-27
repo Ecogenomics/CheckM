@@ -180,8 +180,8 @@ more memory. With 1,000 genomes, identifying marker genes in the ``analyze`` ste
 gPlace, so it only matters when gPlace's memory is limited with ``--gplace_max_memory``. The lower peak
 memory of CheckM 1.4.0 without this limit is due to gPlace 0.1.2. See :ref:`pyhmmer_migration` for details.
 
-With 1,000 genomes, CheckM 1.4.0 takes 30% less time than CheckM 1.2.10 and needs 71% less memory and 73% less
-disk space. The memory used by gPlace depends little on the number of genomes, as most of it holds the
+With 1,000 genomes, CheckM 1.4.0 is 43% faster than CheckM 1.2.10 and needs 71% less memory and 73% less disk
+space. The memory used by gPlace depends little on the number of genomes, as most of it holds the
 reference genome tree. The memory used while calling genes, searching for marker genes and placing genomes
 increases with the number of threads.
 
